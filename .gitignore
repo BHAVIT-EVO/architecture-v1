@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+
+# Rust
+target/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.*
+
+# OS files
+.AppleDouble
+.LSOverride
