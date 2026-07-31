@@ -51,6 +51,7 @@ Accept a Candidate Observation for processing.
 
 Validate that the Candidate Observation conforms to exactly one known Observation Schema.
 
+Observation Schemas are defined in IS-0003 and are composed from the canonical Observation Language defined in IS-0002.
 ---
 
 ### R-3 Canonicalization
@@ -77,8 +78,8 @@ Preserve all provenance associated with the Observation.
 
 ### R-6 Integrity Verification
 
-Verify the structural integrity of the Observation before acceptance.
-
+Verify that the constructed Observation satisfies every structural invariant required for acceptance before persistence.
+This responsibility concerns architectural integrity, not cryptographic verification.
 ---
 
 ### R-7 Persistence
@@ -134,6 +135,8 @@ A Candidate Observation SHALL contain:
 - Observation Schema Identifier
 
 The concrete representation is implementation-defined.
+The Observation Schema Identifier references an Observation Schema defined by IS-0003.
+The Observation Schema composes canonical Observation Language concepts defined by IS-0002.
 
 ---
 
@@ -172,7 +175,7 @@ Observation and Evidence are immutable.
 ### G-3 Schema Conformance
 
 Evidence conforms to exactly one immutable Observation Schema.
-
+Schema conformance guarantees structural compatibility with Evo's canonical Observation Language.
 ---
 
 ### G-4 Provenance
