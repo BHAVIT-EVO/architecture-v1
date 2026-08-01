@@ -177,7 +177,10 @@ mod tests {
         let candidate_schema = schema("app_focus", 1);
         let supplied_schema = schema("window_focus", 1);
 
-        let result = validate(&candidate(candidate_schema.clone()), &supplied_schema);
+        let result = validate(
+            &candidate(candidate_schema.clone()),
+            &supplied_schema,
+        );
 
         assert_eq!(
             result,
@@ -190,7 +193,10 @@ mod tests {
         let candidate_schema = schema("app_focus", 1);
         let supplied_schema = schema("app_focus", 2);
 
-        let result = validate(&candidate(candidate_schema.clone()), &supplied_schema);
+        let result = validate(
+            &candidate(candidate_schema.clone()),
+            &supplied_schema,
+        );
 
         assert_eq!(
             result,
@@ -211,11 +217,17 @@ mod tests {
     fn valid_fact_passes_validation() {
         let schema = schema("facts", 1);
 
-        let fact = ObservedFact::new("app_name", FactValue::Text("VS Code".into())).unwrap();
+        let fact =
+            ObservedFact::new(
+                "app_name",
+                FactValue::Text("VS Code".into()),
+            )
+            .unwrap();
 
         let evidence = Evidence::new(vec![fact]);
 
-        let candidate = CandidateObservation::new(schema.clone(), provenance(), evidence);
+        let candidate =
+            CandidateObservation::new(schema.clone(), provenance(), evidence);
 
         assert!(validate(&candidate, &schema).is_ok());
     }

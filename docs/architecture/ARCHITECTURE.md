@@ -142,9 +142,9 @@ Four engines. Each engine corresponds to one or more pipeline stages, owns a nar
 **Must not:** Decide importance, decide task membership, or perform any semantic processing inline. Capture must never be slowed or made fallible by intelligence — a bug in inference must never cause a dropped Observation.
 
 ### Artifact Engine
-**Responsibility:** Identity resolution — given a raw reference, return a stable Artifact ID.
-**Invariant:** Idempotent; the same real-world thing always resolves to the same ID.
-**Must not:** Score importance, assign artifacts to Workspaces, or merge artifacts based on semantic similarity alone. Identity is resolved by strong signals — same path, same URL, same repository — not by embedding proximity.
+**Responsibility:** Construct and maintain Artifact Identity by deriving the current best identity hypothesis from canonical Observations.
+**Invariant:** Artifact Identity is provisional, replayable, and always accountable to observational evidence. Under identical Observation history and identical derivation rules, the same Artifact Identity shall be reproduced. Improvements to identity derivation shall produce new identity hypotheses through replay rather than rewriting Observation history.
+**Must not:** Determine Workspace membership, user intent, task membership, semantic meaning, or importance. Artifact Identity answers only whether multiple Observations most likely refer to the same external entity.
 
 ### Workspace Engine
 **Responsibility:** For each new Observation and resolved Artifact, decide whether it attaches to an existing Workspace, forms a new one, or attaches nowhere. Maintain each Workspace's cached state, Attachments, and Snapshots.
