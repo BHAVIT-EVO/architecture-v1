@@ -3,4 +3,6 @@ resolver = "2"
 
 members = [
     "crates/evo-observation",
+    "crates/evo-artifact",
+    "crates/evo-workspace"
 ]

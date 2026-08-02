@@ -41,6 +41,12 @@ impl Artifact {
     }
 }
 
+impl Artifact {
+    pub fn new(id: ArtifactId) -> Self {
+        Self { id }
+    }
+}
+
 // ── Tests ────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]

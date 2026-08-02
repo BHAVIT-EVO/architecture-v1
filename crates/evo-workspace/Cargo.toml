@@ -1,0 +1,8 @@
+[package]
+name = "evo-workspace"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+evo-artifact = { path = "../evo-artifact" }
+uuid = { version = "1", features = ["v4"] }

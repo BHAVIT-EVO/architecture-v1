@@ -1,0 +1,7 @@
+[package]
+name = "evo-artifact"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+evo-observation = { path = "../evo-observation" }

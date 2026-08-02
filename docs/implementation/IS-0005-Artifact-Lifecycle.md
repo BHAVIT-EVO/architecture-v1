@@ -97,11 +97,112 @@ Canonicalization SHALL NOT alter the meaning of the identity hypothesis.
 
 ⸻
 
-Stage 3 — Identity Assignment
+Stage 3: Identity Assignment
 
-Canonical Candidate Artifacts SHALL receive canonical Artifact Identity.
+Purpose
 
-Identity Assignment establishes the stable computational identity of the accepted Artifact.
+Identity Assignment establishes the canonical computational identity of an accepted Artifact.
+
+Identity Assignment SHALL NOT infer identity.
+
+Identity Assignment SHALL NOT decide whether multiple Observations represent the same External Entity.
+
+Those decisions have already occurred before the Acceptance Pipeline begins.
+
+Identity Assignment exists solely to transform an accepted Identity Hypothesis into a stable computational identity.
+
+⸻
+
+Inputs
+
+Identity Assignment SHALL receive:
+
+* one Canonical Candidate Artifact
+
+It SHALL NOT receive:
+
+* raw Observations
+* Candidate Observations
+* Evidence
+* Provenance
+* Workspace state
+* User state
+* Knowledge
+* Decisions
+
+The Acceptance Pipeline operates exclusively on Candidate Artifacts.
+
+⸻
+
+Outputs
+
+Identity Assignment SHALL produce exactly one canonical Artifact Identity.
+
+That identity SHALL become permanently associated with the accepted Artifact.
+
+Canonical Artifact Identity SHALL be created exclusively during Stage 3 of the Artifact Acceptance Pipeline.
+
+No other component in Evo SHALL construct canonical Artifact Identity.
+
+⸻
+
+Responsibilities
+
+Identity Assignment SHALL
+
+* assign exactly one ArtifactId
+* produce stable computational identity
+* remain deterministic
+* produce no semantic interpretation
+* produce no user-visible output
+
+⸻
+
+Non-responsibilities
+
+Identity Assignment SHALL NOT
+
+* infer identity
+* cluster observations
+* compare artifacts
+* merge artifacts
+* split artifacts
+* modify observations
+* canonicalize representation
+* verify integrity
+* persist data
+
+⸻
+
+Ownership
+
+Identity Assignment is owned exclusively by the Artifact Acceptance Pipeline.
+
+Higher computational layers SHALL NOT assign Artifact Identity.
+
+Higher computational layers SHALL consume Artifact Identity only after successful Artifact Acceptance.
+
+⸻
+
+Failure
+
+Identity Assignment SHALL fail if exactly one canonical Artifact Identity cannot be established.
+
+Failure SHALL terminate the Acceptance Pipeline immediately.
+
+No Artifact SHALL be accepted.
+
+⸻
+
+Invariants
+
+Identity Assignment SHALL
+
+* produce exactly one ArtifactId
+* never modify CandidateArtifact
+* never modify Observations
+* never create multiple identities
+* never emit partial acceptance
 
 ⸻
 

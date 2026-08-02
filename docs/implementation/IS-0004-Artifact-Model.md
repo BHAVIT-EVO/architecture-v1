@@ -82,6 +82,10 @@ It SHALL NOT possess canonical Artifact Identity.
 
 It SHALL NOT be referenced by higher computational layers.
 
+A Candidate Artifact represents exactly one Identity Hypothesis awaiting acceptance.
+
+A Candidate Artifact SHALL exist only within the Artifact Acceptance Pipeline.
+
 ⸻
 
 External Entity
@@ -94,9 +98,29 @@ This specification intentionally does not constrain the nature of an External En
 
 Identity Hypothesis
 
-An Identity Hypothesis is Evo’s current best explanation that multiple Observations refer to the same External Entity.
+An Identity Hypothesis is Evo's current best explanation that one or more canonical Observations refer to the same External Entity.
 
-Identity Hypotheses are provisional.
+An Identity Hypothesis is derived exclusively from canonical Observations.
+
+An Identity Hypothesis is provisional.
+
+It expresses Evo's current belief only.
+
+It does not represent objective truth.
+
+Identity Hypotheses exist only until accepted or rejected by the Artifact Acceptance Pipeline.
+
+An accepted Identity Hypothesis becomes one canonical Artifact.
+
+A rejected Identity Hypothesis ceases to exist.
+
+Identity Hypotheses SHALL NOT possess canonical Artifact Identity.
+
+Identity Hypotheses SHALL NOT be referenced by higher computational layers.
+
+Identity Hypotheses remain replayable.
+
+Given identical canonical Observation history and identical identity derivation rules, replay SHALL reproduce equivalent Identity Hypotheses.
 
 They may change when identity derivation improves.
 
@@ -118,7 +142,7 @@ An Artifact SHALL NOT exist independently of observational evidence.
 
 R-2 Identity Representation
 
-An Artifact SHALL represent exactly one current identity hypothesis.
+An Artifact SHALL represent exactly one accepted Identity Hypothesis.
 
 An Artifact SHALL answer only the identity question defined by RFC-0002:
 
@@ -227,7 +251,7 @@ Every Artifact SHALL be derived exclusively from one or more canonical Observati
 
 I-2 Represents One Identity Hypothesis
 
-Every Artifact SHALL represent exactly one current identity hypothesis.
+Every Artifact SHALL represent exactly one accepted Identity Hypothesis.
 
 An Artifact SHALL NOT simultaneously represent multiple independent identity hypotheses.
 
@@ -281,6 +305,8 @@ Observation → Artifact
 One or more canonical Observations MAY support one Artifact.
 
 An Observation contributes observational evidence.
+
+Identity Hypotheses provide the transient bridge between canonical Observation and accepted Artifact.
 
 An Artifact contributes identity continuity.
 
