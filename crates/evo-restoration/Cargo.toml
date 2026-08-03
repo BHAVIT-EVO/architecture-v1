@@ -1,0 +1,8 @@
+[package]
+name = "evo-restoration"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+evo-artifact = { path = "../evo-artifact" }
+evo-workspace = { path = "../evo-workspace" }

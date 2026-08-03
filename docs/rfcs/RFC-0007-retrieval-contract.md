@@ -220,6 +220,55 @@ Changes in implementation do not change Retrieval identity.
 
 ---
 
+Public Computational Contract
+
+Retrieval is exposed to the remainder of the architecture solely through a single computational boundary.
+
+Every compliant implementation SHALL provide a Retrieval service.
+
+The Retrieval service SHALL consume:
+
+* one architectural Trigger;
+* the current committed Workspaces.
+
+The Retrieval service SHALL produce:
+
+* zero or more candidate WorkspaceIds.
+
+Returned WorkspaceIds SHALL preserve the architectural ordering determined by the implementation.
+
+Returned WorkspaceIds SHALL NOT duplicate the same Workspace.
+
+An empty result is a valid architectural outcome.
+
+It represents that no current committed Workspace satisfies the supplied Trigger.
+
+Retrieval SHALL NOT:
+
+* return Workspace objects;
+* return Historical Understanding;
+* modify any Workspace;
+* construct any Workspace;
+* expose implementation-specific ranking information;
+* expose implementation-specific confidence scores.
+
+Errors SHALL be limited to failures that prevent Retrieval from executing according to this RFC.
+
+The absence of matching Workspaces SHALL NOT be considered an error.
+
+The computational contract intentionally does not prescribe:
+
+* public method signatures;
+* search algorithms;
+* ranking strategies;
+* indexing structures;
+* embedding models;
+* storage engines.
+
+Any implementation satisfying this computational contract remains compliant with this RFC.
+
+---
+
 # Non-Goals
 
 Retrieval is not responsible for:
