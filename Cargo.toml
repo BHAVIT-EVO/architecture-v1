@@ -4,5 +4,11 @@ resolver = "2"
 members = [
     "crates/evo-observation",
     "crates/evo-artifact",
-    "crates/evo-workspace"
+    "crates/evo-workspace",
+    "crates/evo-replay",
+    "crates/evo-restoration",
+    "crates/evo-knowledge",
+    "crates/evo-history",
+    "crates/evo-retrieval",
+    "crates/evo-storage"
 ]

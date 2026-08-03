@@ -22,11 +22,58 @@ dependencies = [
 ]
 
 [[package]]
+name = "evo-history"
+version = "0.1.0"
+dependencies = [
+ "evo-artifact",
+ "evo-restoration",
+ "evo-workspace",
+ "uuid",
+]
+
+[[package]]
+name = "evo-knowledge"
+version = "0.1.0"
+dependencies = [
+ "evo-artifact",
+ "evo-observation",
+ "uuid",
+]
+
+[[package]]
 name = "evo-observation"
 version = "0.1.0"
 dependencies = [
  "uuid",
 ]
+
+[[package]]
+name = "evo-replay"
+version = "0.1.0"
+dependencies = [
+ "evo-artifact",
+ "evo-observation",
+ "evo-workspace",
+]
+
+[[package]]
+name = "evo-restoration"
+version = "0.1.0"
+dependencies = [
+ "evo-artifact",
+ "evo-workspace",
+]
+
+[[package]]
+name = "evo-retrieval"
+version = "0.1.0"
+dependencies = [
+ "evo-workspace",
+]
+
+[[package]]
+name = "evo-storage"
+version = "0.1.0"
 
 [[package]]
 name = "evo-workspace"

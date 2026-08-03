@@ -1,0 +1,9 @@
+[package]
+name = "evo-replay"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+evo-observation = { path = "../evo-observation" }
+evo-artifact = { path = "../evo-artifact" }
+evo-workspace = { path = "../evo-workspace" }

@@ -1,0 +1,7 @@
+[package]
+name = "evo-retrieval"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+evo-workspace = { path = "../evo-workspace" }

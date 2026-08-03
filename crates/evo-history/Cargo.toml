@@ -1,0 +1,13 @@
+[package]
+name = "evo-history"
+version = "0.1.0"
+edition = "2021"
+
+[dev-dependencies]
+evo-artifact = { path = "../evo-artifact" }
+
+[dependencies]
+evo-restoration = { path = "../evo-restoration" }
+evo-workspace = { path = "../evo-workspace" }
+uuid = { version = "1", features = ["v4"] }
+
