@@ -128,12 +128,7 @@ mod tests {
 
     #[test]
     fn multiple_distinct_artifacts_are_valid() {
-        let chain = ContextChain::new(vec![
-            aid("cc-a"),
-            aid("cc-b"),
-            aid("cc-c"),
-        ])
-        .unwrap();
+        let chain = ContextChain::new(vec![aid("cc-a"), aid("cc-b"), aid("cc-c")]).unwrap();
         assert_eq!(chain.len(), 3);
     }
 

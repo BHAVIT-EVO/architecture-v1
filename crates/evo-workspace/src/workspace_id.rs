@@ -14,6 +14,7 @@
 //! Once assigned, a `WorkspaceId` is immutable.
 
 use uuid::Uuid;
+use std::str::FromStr;
 
 // ── WorkspaceId ───────────────────────────────────────────────────────────────
 
@@ -40,6 +41,22 @@ impl WorkspaceId {
         Self(Uuid::new_v4())
     }
 
+    /// Constructs a `WorkspaceId` from a stable 128-bit value.
+    ///
+    /// This constructor is crate-visible so deterministic Workspace
+    /// Formation can derive replayable identities without changing the
+    /// public API surface.
+    pub(crate) fn from_u128(value: u128) -> Self {
+        Self(Uuid::from_u128(value))
+    }
+
+    /// Constructs the opaque Workspace identity for a stable work hypothesis.
+    /// The UUID remains semantically opaque; the source identity is owned by
+    /// evo-engagement and is only carried across this projection boundary.
+    pub fn from_work_id(value: u128) -> Self {
+        Self::from_u128(value)
+    }
+
     /// Returns the canonical string representation of this identity.
     ///
     /// The string form is stable for the lifetime of the `WorkspaceId`.
@@ -51,6 +68,14 @@ impl WorkspaceId {
 impl Default for WorkspaceId {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl FromStr for WorkspaceId {
+    type Err = uuid::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self(Uuid::parse_str(s)?))
     }
 }
 

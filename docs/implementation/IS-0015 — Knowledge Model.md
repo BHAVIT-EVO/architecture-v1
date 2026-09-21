@@ -156,7 +156,9 @@ Knowledge is continuously revisable rather than completed.
 
 8. Construction
 
-Knowledge SHALL be constructed only when sufficient supporting evidence exists.
+Knowledge SHALL be constructed only when corroborated supporting evidence exists.
+
+Corroborated supporting evidence SHALL reference multiple independent canonical occurrences.
 
 Construction SHALL establish:
 
@@ -164,6 +166,8 @@ Construction SHALL establish:
 * Constraint;
 * Supporting Evidence;
 * Revision State.
+
+Construction SHALL reject evidence that does not satisfy the corroboration requirement.
 
 Construction SHALL NOT modify:
 
@@ -265,6 +269,7 @@ No additional canonical computational objects are introduced by this specificati
 KI-1  Every Knowledge possesses exactly one immutable KnowledgeId.
 KI-2  Every Knowledge represents exactly one architectural constraint.
 KI-3  Knowledge never exists without supporting evidence.
+KI-3A Knowledge SHALL NOT be constructed from a single canonical occurrence.
 KI-4  Supporting Evidence references canonical lower-layer objects only.
 KI-5  Knowledge never references Workspace state.
 KI-6  Knowledge never duplicates canonical history.

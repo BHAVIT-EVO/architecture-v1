@@ -1,42 +1,48 @@
-//! evo-retrieval — Retrieval Service Boundary.
+//! evo-retrieval — resolving a trigger phrase to a body of work.
 //!
-//! This crate exposes the retrieval service boundary defined by RFC-0007.
-//! RFC-0007 specifies what Retrieval consumes and what it produces, but it
-//! does not prescribe a retrieval algorithm. The crate therefore defines only
-//! the public service shape required by the architecture.
+//! # What this crate does
 //!
-//! # Public Computational Surface
+//! Given a trigger — a phrase a person typed or spoke to get back to something —
+//! and a [`Reconstruction`](evo_engagement::Reconstruction) of their history,
+//! retrieval decides which reconstructed thread the phrase means. It scores the
+//! trigger against every thread's own vocabulary, weighting distinctive words
+//! (by inverse document frequency across threads) and members that genuinely
+//! belong to the thread (by specificity), and returns one of three honest
+//! answers.
 //!
-//! - [`Retrieval`] — the retrieval service boundary.
-//! - [`RetrievalError`] — failures that prevent Retrieval from executing
-//!   according to RFC-0007.
+//! # Public surface
+//!
+//! - [`Retrieval`] — the boundary value; holds no state.
+//! - [`Resolution`] — [`Resolved`](Resolution::Resolved),
+//!   [`Ambiguous`](Resolution::Ambiguous), or [`NotFound`](Resolution::NotFound).
 //!
 //! # Contract
 //!
-//! - Consume one trigger and the current committed Workspaces.
-//! - Produce zero or more candidate `WorkspaceId` values.
-//! - Preserve the implementation-determined ordering of candidate
-//!   `WorkspaceId` values.
-//! - Reject duplicate candidate `WorkspaceId` values.
-//! - Reject candidate `WorkspaceId` values that are not present in the input
-//!   Workspace set.
+//! - Score a trigger against *every* reconstructed thread, not only the bodies
+//!   of work Home presents — so a resource witnessed once and never returned to
+//!   is still retrievable by name.
+//! - Resolve to a single thread only when it clearly outscores the runner-up
+//!   (by [`EngagementParams::retrieval_margin`](evo_engagement::EngagementParams::retrieval_margin));
+//!   otherwise return the contenders as `Ambiguous` and let the caller ask which.
+//! - Be a pure, deterministic function of the trigger and the reconstruction:
+//!   no clock, no randomness, identical on every replay.
 //!
-//! # Non-Responsibilities
+//! # Relationship to RFC-0007
 //!
-//! This crate does not define:
+//! RFC-0007 fixed the boundary but deliberately left the algorithm open. This
+//! crate implements the algorithm WORK-MODEL §3 specifies. It resolves to a
+//! *thread* rather than to a `WorkspaceId`, because the answer to "the thing I
+//! read once last Tuesday" is a remembered thread that was never promoted to a
+//! Workspace; mapping a resolved thread to a committed Workspace, when one
+//! exists, is the daemon's job.
 //!
-//! - Trigger models.
-//! - Query objects.
-//! - Ranking objects.
-//! - Embedding types.
-//! - Search request or result types.
-//! - Index structures.
-//! - Retrieval algorithms.
+//! # No hardcoded categories
 //!
-//! Those remain intentionally unspecified by RFC-0007.
+//! Nothing here names an application, domain, file type, profession, or category
+//! of work. What a trigger matches is learned entirely from the tokens of the
+//! person's own witnessed subjects and the specificity the reconstruction
+//! measured. See [`retrieval`] for the scoring.
 
-mod errors;
 mod retrieval;
 
-pub use errors::RetrievalError;
-pub use retrieval::Retrieval;
+pub use retrieval::{Resolution, Retrieval, RetrievalIndex, WorkResolution};

@@ -69,7 +69,10 @@ impl NextStep {
     /// - Belongs to exactly one Workspace (NS-1).
     /// - Platform-independent; no execution mechanism implied (NS-3).
     /// - Immutable after construction.
-    pub fn new(workspace_id: WorkspaceId, description: impl Into<String>) -> Result<Self, RestorationError> {
+    pub fn new(
+        workspace_id: WorkspaceId,
+        description: impl Into<String>,
+    ) -> Result<Self, RestorationError> {
         Ok(Self {
             workspace_id,
             description: description.into(),

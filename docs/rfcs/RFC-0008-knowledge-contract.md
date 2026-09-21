@@ -102,11 +102,15 @@ Historical preservation belongs to Observations and Historical Understanding.
 
 ## Requirement 2 — Sufficient Justification
 
-Knowledge SHALL exist only when supported by sufficient justification.
+Knowledge SHALL exist only when supported by corroborated canonical evidence.
 
-This RFC intentionally does not prescribe what constitutes sufficient justification.
+Corroborated evidence SHALL originate from multiple independent canonical occurrences.
 
-Future implementations may satisfy this requirement using different evidence aggregation strategies while preserving identical behavioral guarantees.
+Supporting evidence SHALL consist exclusively of canonical Observations and canonical Artifacts.
+
+Single-occurrence evidence SHALL NOT produce Knowledge.
+
+This RFC intentionally does not prescribe the implementation used to detect corroboration.
 
 ---
 

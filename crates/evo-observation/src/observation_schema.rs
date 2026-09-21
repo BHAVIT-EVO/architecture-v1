@@ -95,6 +95,155 @@ impl ObservationSchema {
         Ok(Self { name, version })
     }
 
+    fn canonical(name: &'static str) -> Self {
+        Self {
+            name: name.to_string(),
+            version: 1,
+        }
+    }
+
+    /// Returns the frozen schema for `WindowFocusGained`.
+    pub fn window_focus_gained_v1() -> Self {
+        Self::canonical("OBS-WINDOW-FOCUS-GAINED")
+    }
+
+    /// Returns the v2 schema for `WindowFocusGained`.
+    ///
+    /// v2 marks the witnessed contract under which the observation also
+    /// carries owning-process provenance in `Provenance::context` (the
+    /// process that owned the focused window, BE-AUDIT-0001 §8.6 /
+    /// BE-TRACE-0001 §2.1). The Evidence structure is unchanged: exactly one
+    /// canonical fact (`WindowFocusGained` carrying the subject). v1
+    /// observations remain canonical, readable, and interpretable; they
+    /// simply carry no owning-process context.
+    pub fn window_focus_gained_v2() -> Self {
+        Self {
+            name: "OBS-WINDOW-FOCUS-GAINED".to_string(),
+            version: 2,
+        }
+    }
+
+    /// v3 permits the directly witnessed, generic accessibility state defined
+    /// by [`crate::observed_state::ObservedState`] in provenance context.
+    pub fn window_focus_gained_v3() -> Self {
+        Self { name: "OBS-WINDOW-FOCUS-GAINED".to_string(), version: 3 }
+    }
+
+    /// Returns the frozen schema for `FileSaved`.
+    pub fn file_saved_v1() -> Self {
+        Self::canonical("OBS-FILE-SAVED")
+    }
+
+    /// Returns the frozen schema for `URLNavigated`.
+    pub fn url_navigated_v1() -> Self {
+        Self::canonical("OBS-URL-NAVIGATED")
+    }
+
+    /// Returns the frozen schema for `CommitMade`.
+    pub fn commit_made_v1() -> Self {
+        Self::canonical("OBS-COMMIT-MADE")
+    }
+
+    /// Returns the frozen schema for `WorkDesignated` (RFC-0011, IS-0003
+    /// §4.1.5).
+    pub fn work_designated_v1() -> Self {
+        Self::canonical("OBS-WORK-DESIGNATED")
+    }
+
+    /// Returns the frozen schema for `RepositoryMembership` (RFC-0012,
+    /// IS-0003 §4.1.6).
+    pub fn repository_membership_v1() -> Self {
+        Self::canonical("OBS-REPOSITORY-MEMBERSHIP")
+    }
+
+    /// Returns the frozen schema for `WorkGrouped` (RFC-0012, IS-0003 §4.1.7).
+    pub fn work_grouped_v1() -> Self {
+        Self::canonical("OBS-WORK-GROUPED")
+    }
+
+    /// Returns the frozen schema for `ContinuationSurface` (RFC-0013,
+    /// IS-0003 §4.1.8).
+    pub fn continuation_surface_v1() -> Self {
+        Self::canonical("OBS-CONTINUATION-SURFACE")
+    }
+
+    /// Returns the frozen schema for `InputActivity`: content-free input
+    /// counters (keys, clicks, scrolls) aggregated over one flush bucket on
+    /// one subject. The counts are the entire evidence; input content is
+    /// never observed and cannot be reconstructed.
+    pub fn input_activity_v1() -> Self {
+        Self::canonical("OBS-INPUT-ACTIVITY")
+    }
+
+    /// Returns `true` when this schema is one of the frozen IS-0003 schemas.
+    pub fn is_canonical(&self) -> bool {
+        matches!(
+            (self.name.as_str(), self.version),
+            ("OBS-WINDOW-FOCUS-GAINED", 1)
+                | ("OBS-WINDOW-FOCUS-GAINED", 2)
+                | ("OBS-WINDOW-FOCUS-GAINED", 3)
+                | ("OBS-FILE-SAVED", 1)
+                | ("OBS-URL-NAVIGATED", 1)
+                | ("OBS-COMMIT-MADE", 1)
+                | ("OBS-WORK-DESIGNATED", 1)
+                | ("OBS-REPOSITORY-MEMBERSHIP", 1)
+                | ("OBS-WORK-GROUPED", 1)
+                | ("OBS-CONTINUATION-SURFACE", 1)
+                | ("OBS-INPUT-ACTIVITY", 1)
+        )
+    }
+
+    /// Returns `true` when this schema is a reference-only evidence class
+    /// (RFC-0011 §4, RFC-0012 §Artifact Interaction, RFC-0013 §Artifact
+    /// Interaction): the Observation references canonical subjects other
+    /// Observations have already established and SHALL NOT by itself
+    /// establish an Artifact.
+    pub fn is_reference_only(&self) -> bool {
+        matches!(
+            (self.name.as_str(), self.version),
+            ("OBS-WORK-DESIGNATED", 1)
+                | ("OBS-REPOSITORY-MEMBERSHIP", 1)
+                | ("OBS-WORK-GROUPED", 1)
+                | ("OBS-CONTINUATION-SURFACE", 1)
+        )
+    }
+
+    /// Returns `true` when this schema carries the person's explicit word —
+    /// a declaration made through a user channel, as opposed to a
+    /// reference-only fact the capture layer witnessed on its own (a file's
+    /// repository membership is observed by the file watcher, not spoken).
+    ///
+    /// The distinction matters for immediacy: a person's declaration is
+    /// rare and intentional, so downstream derivation may settle on it at
+    /// once; a machine-witnessed reference arrives in bursts with every
+    /// build or sync and must never trigger per-record derivation.
+    pub fn is_user_declaration(&self) -> bool {
+        matches!(
+            (self.name.as_str(), self.version),
+            ("OBS-WORK-DESIGNATED", 1)
+                | ("OBS-WORK-GROUPED", 1)
+                | ("OBS-CONTINUATION-SURFACE", 1)
+        )
+    }
+
+    /// Returns the canonical fact name associated with this schema.
+    pub fn canonical_fact_name(&self) -> Option<&'static str> {
+        match (self.name.as_str(), self.version) {
+            ("OBS-WINDOW-FOCUS-GAINED", 1) => Some("WindowFocusGained"),
+            ("OBS-WINDOW-FOCUS-GAINED", 2) => Some("WindowFocusGained"),
+            ("OBS-WINDOW-FOCUS-GAINED", 3) => Some("WindowFocusGained"),
+            ("OBS-FILE-SAVED", 1) => Some("FileSaved"),
+            ("OBS-URL-NAVIGATED", 1) => Some("URLNavigated"),
+            ("OBS-COMMIT-MADE", 1) => Some("CommitMade"),
+            ("OBS-WORK-DESIGNATED", 1) => Some("WorkDesignated"),
+            ("OBS-REPOSITORY-MEMBERSHIP", 1) => Some("RepositoryMembership"),
+            ("OBS-WORK-GROUPED", 1) => Some("WorkGrouped"),
+            ("OBS-CONTINUATION-SURFACE", 1) => Some("ContinuationSurface"),
+            ("OBS-INPUT-ACTIVITY", 1) => Some("InputActivity"),
+            _ => None,
+        }
+    }
+
     /// Returns the schema name.
     pub fn name(&self) -> &str {
         &self.name
@@ -203,6 +352,28 @@ mod tests {
         let v1 = ObservationSchema::new("app_focus", 1).unwrap();
         let v2 = ObservationSchema::new("app_focus", 2).unwrap();
         assert_ne!(v1, v2);
+    }
+
+    #[test]
+    fn window_focus_v2_is_canonical_not_reference_only_with_the_same_fact_name() {
+        // OBS-WINDOW-FOCUS-GAINED/v2 (BE-TRACE-0001 §3.1): the v2 schema is a
+        // canonical content schema — the pid rides in `Provenance::context`,
+        // not in Evidence — so it must be canonical, must not be
+        // reference-only, and must carry the same canonical fact name as v1
+        // so identity derivation, locator classification, and subject
+        // presentation keep working for v2 records.
+        let v1 = ObservationSchema::window_focus_gained_v1();
+        let v2 = ObservationSchema::window_focus_gained_v2();
+        assert_ne!(v1, v2);
+        assert_eq!(v1.name(), v2.name());
+        assert_eq!(v1.version(), 1);
+        assert_eq!(v2.version(), 2);
+        assert!(v1.is_canonical());
+        assert!(v2.is_canonical());
+        assert!(!v1.is_reference_only());
+        assert!(!v2.is_reference_only());
+        assert_eq!(v1.canonical_fact_name(), Some("WindowFocusGained"));
+        assert_eq!(v2.canonical_fact_name(), Some("WindowFocusGained"));
     }
 
     #[test]
