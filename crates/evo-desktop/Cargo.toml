@@ -1,0 +1,26 @@
+[package]
+name = "evo-desktop"
+version = "0.1.0"
+edition = "2024"
+description = "Evo desktop shell — macOS-native presentation of the canonical Workspace/Snapshot state"
+
+[dependencies]
+eframe = "0.35"
+egui = "0.35"
+evo-artifact = { path = "../evo-artifact" }
+evo-daemon = { path = "../evo-daemon" }
+evo-threads = { path = "../evo-threads" }
+evo-ledger = { path = "../evo-ledger" }
+evo-engagement = { path = "../evo-engagement" }
+evo-execution = { path = "../evo-execution" }
+evo-restoration = { path = "../evo-restoration" }
+evo-storage = { path = "../evo-storage" }
+evo-workspace = { path = "../evo-workspace" }
+
+[dev-dependencies]
+evo-capture = { path = "../evo-capture" }
+evo-observation = { path = "../evo-observation" }
+
+[build-dependencies]
+# Compiles the ObjC exception guard used by the WebKit surface (websurface.rs).
+cc = "1"

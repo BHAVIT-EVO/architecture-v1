@@ -46,6 +46,18 @@ Retrieval therefore forms the bridge between user intent and architectural under
 
 Retrieval is the architectural process that resolves a trigger into one or more candidate current Workspaces.
 
+### Architectural Trigger
+
+A Trigger represents one architectural request presented to the Retrieval layer.
+
+A Trigger identifies the current retrieval request.
+
+A Trigger SHALL be treated as an immutable input to Retrieval.
+
+The architectural source of a Trigger SHALL NOT alter Retrieval behavior.
+
+Retrieval SHALL operate exclusively upon the canonical Trigger presented to it.
+
 Its purpose is to activate the Workspace that most faithfully satisfies the trigger according to Evo's current understanding.
 
 Retrieval never constructs new understanding.
@@ -235,7 +247,17 @@ The Retrieval service SHALL produce:
 
 * zero or more candidate WorkspaceIds.
 
-Returned WorkspaceIds SHALL preserve the architectural ordering determined by the implementation.
+Returned WorkspaceIds SHALL preserve one deterministic architectural ordering.
+
+Given identical:
+
+* Trigger;
+* committed Workspace understanding;
+* Retrieval rules;
+
+identical ordered WorkspaceIds SHALL be produced.
+
+Implementations MAY use any internal strategy provided the resulting architectural ordering remains deterministic.
 
 Returned WorkspaceIds SHALL NOT duplicate the same Workspace.
 

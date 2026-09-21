@@ -12,8 +12,8 @@
 //!   explainability;
 //! - backend independence.
 //!
-//! This crate therefore exposes only a backend-agnostic service boundary and
-//! does not implement a concrete storage engine.
+//! This crate exposes the storage service boundary used by the architecture's
+//! canonical persistence layer.
 //!
 //! # Public Computational Surface
 //!
@@ -28,12 +28,20 @@
 //! - Observation, Artifact, Workspace, Knowledge, History, Retrieval,
 //!   or Restoration business logic;
 //! - serialization formats;
-//! - concrete storage backends;
-//! - migration or replay policy.
+//! - replay policy.
+//!
+//! This crate does own canonical storage-root resolution and the single
+//! legacy-root migration performed at startup ([`root`]); it defines no
+//! record-level migration or versioning framework beyond that.
 
 mod errors;
+mod root;
 mod storage;
 
 pub use errors::StorageError;
+pub use root::{
+    canonical_storage_root, default_storage_root, fabrication_root, legacy_storage_root,
+    migrate_legacy_root, prepare_storage_root, MigrationOutcome,
+};
 pub use storage::Storage;
 pub use storage::StorageObjectKind;

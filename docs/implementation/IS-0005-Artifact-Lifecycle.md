@@ -86,15 +86,106 @@ Validation verifies that the candidate satisfies all structural requirements req
 Validation SHALL reject structurally invalid candidates.
 
 ⸻
+⸻
 
 Stage 2 — Canonicalization
 
-Validated Candidate Artifacts SHALL be canonicalized.
+Purpose
 
-Canonicalization produces one canonical representation of the accepted Artifact.
+Canonicalization transforms a validated Candidate Artifact into a single deterministic canonical representation.
 
-Canonicalization SHALL NOT alter the meaning of the identity hypothesis.
+Canonicalization SHALL preserve computational meaning.
 
+Canonicalization SHALL modify representation only.
+
+Canonicalization SHALL NOT perform identity inference.
+
+Canonicalization SHALL NOT assign canonical Artifact Identity.
+
+Identity Assignment remains exclusively the responsibility of Stage 3.
+
+⸻
+
+Inputs
+
+Canonicalization SHALL receive:
+
+* one validated Candidate Artifact
+
+It SHALL NOT receive:
+
+* raw Observations
+* Candidate Observations
+* Evidence
+* Provenance
+* Workspace state
+* Knowledge
+* Decisions
+* previously accepted Artifacts
+
+⸻
+
+Outputs
+
+Canonicalization SHALL produce:
+
+* exactly one Canonical Candidate Artifact
+
+A Canonical Candidate Artifact SHALL be suitable for Identity Assignment.
+
+⸻
+
+Responsibilities
+
+Canonicalization SHALL:
+
+* produce exactly one canonical representation
+* preserve the computational meaning of the Identity Hypothesis
+* preserve Observation membership
+* preserve Observation identity
+* remain deterministic
+* produce no user-visible output
+
+⸻
+
+Non-Responsibilities
+
+Canonicalization SHALL NOT:
+
+* infer identity
+* assign Artifact Identity
+* modify Observations
+* modify Identity Hypothesis semantics
+* perform integrity verification
+* perform persistence
+* perform replay
+* interact with Workspace formation
+* interact with Knowledge formation
+
+⸻
+
+Failure
+
+Canonicalization SHALL fail if a deterministic canonical representation cannot be produced.
+
+Failure SHALL terminate the Acceptance Pipeline immediately.
+
+Subsequent pipeline stages SHALL NOT execute.
+
+⸻
+
+Invariants
+
+Canonicalization SHALL:
+
+* preserve exactly one Identity Hypothesis
+* preserve all referenced Observations
+* preserve canonical Observation Identity
+* produce exactly one Canonical Candidate Artifact
+* remain deterministic
+* preserve computational semantics
+
+⸻
 ⸻
 
 Stage 3: Identity Assignment
@@ -146,6 +237,26 @@ No other component in Evo SHALL construct canonical Artifact Identity.
 
 ⸻
 
+ArtifactId Generation
+
+Identity Assignment SHALL generate exactly one deterministic ArtifactId for every Canonical Candidate Artifact.
+
+ArtifactId generation SHALL depend exclusively on the Canonical Candidate Artifact.
+
+ArtifactId generation SHALL NOT depend on:
+
+* Workspace state
+* Knowledge
+* Retrieval
+* Restoration
+* Runtime state
+* User state
+* Previous Artifact graphs
+
+Given identical Canonical Candidate Artifacts under identical derivation rules, Identity Assignment SHALL generate identical ArtifactIds.
+
+⸻
+
 Responsibilities
 
 Identity Assignment SHALL
@@ -186,7 +297,7 @@ Higher computational layers SHALL consume Artifact Identity only after successfu
 
 Failure
 
-Identity Assignment SHALL fail if exactly one canonical Artifact Identity cannot be established.
+Identity Assignment SHALL fail only when a deterministic ArtifactId cannot be generated from the Canonical Candidate Artifact.
 
 Failure SHALL terminate the Acceptance Pipeline immediately.
 
@@ -205,22 +316,169 @@ Identity Assignment SHALL
 * never emit partial acceptance
 
 ⸻
+⸻
 
 Stage 4 — Integrity Verification
 
-The Accepted Artifact SHALL undergo integrity verification.
+Purpose
 
-Integrity verification SHALL verify acceptance invariants.
+Integrity Verification confirms that the Accepted Artifact satisfies every invariant established by the Artifact Acceptance Pipeline.
 
-Integrity verification SHALL NOT perform identity inference.
+Integrity Verification SHALL be read-only.
 
+Integrity Verification SHALL NOT modify the Accepted Artifact.
+
+Integrity Verification SHALL NOT perform identity inference.
+
+Integrity Verification SHALL NOT assign Artifact Identity.
+
+⸻
+
+Inputs
+
+Integrity Verification SHALL receive:
+
+* exactly one Accepted Artifact
+
+It SHALL NOT receive:
+
+* Candidate Artifacts
+* raw Observations
+* Workspace state
+* Knowledge
+* Decisions
+* Runtime state
+
+⸻
+
+Outputs
+
+Integrity Verification SHALL produce either:
+
+* successful verification; or
+* verification failure.
+
+Integrity Verification SHALL produce no modified Artifact.
+
+⸻
+
+Responsibilities
+
+Integrity Verification SHALL verify that:
+
+* exactly one ArtifactId exists;
+* the Artifact satisfies IS-0004;
+* every referenced Observation possesses canonical Observation Identity;
+* no Observation has been modified during Artifact Acceptance;
+* the Artifact remains structurally complete;
+* Artifact Acceptance invariants remain satisfied.
+
+⸻
+
+Non-Responsibilities
+
+Integrity Verification SHALL NOT:
+
+* infer identity;
+* assign Artifact Identity;
+* canonicalize representation;
+* modify the Artifact;
+* modify Observations;
+* perform persistence;
+* perform replay.
+
+⸻
+
+Failure
+
+Integrity Verification SHALL fail if any required acceptance invariant is violated.
+
+Failure SHALL terminate the Acceptance Pipeline immediately.
+
+Persistence SHALL NOT execute.
+
+⸻
+
+Invariants
+
+Integrity Verification SHALL:
+
+* remain deterministic;
+* remain read-only;
+* preserve Artifact Identity;
+* preserve Observation Identity;
+* produce no side effects.
+
+⸻
 ⸻
 
 Stage 5 — Persistence
 
-Only Accepted Artifacts MAY be persisted.
+Purpose
 
-Persistence occurs only after successful completion of all preceding stages.
+Persistence requests durable storage of an Accepted Artifact.
+
+Persistence SHALL occur only after successful completion of all preceding
+Artifact Acceptance stages.
+
+Artifact Acceptance owns the decision that an Artifact is eligible for
+persistence.
+
+The Storage subsystem owns the persistence operation itself.
+
+⸻
+
+Inputs
+
+Persistence SHALL receive:
+
+* exactly one Accepted Artifact
+
+⸻
+
+Outputs
+
+Persistence SHALL produce either:
+
+* successful persistence; or
+* persistence failure.
+
+⸻
+
+Responsibilities
+
+Artifact Acceptance SHALL:
+
+* request persistence of exactly one Accepted Artifact;
+* terminate successfully only after persistence succeeds.
+
+Storage SHALL:
+
+* perform durable persistence;
+* preserve Artifact identity;
+* preserve Artifact contents.
+
+⸻
+
+Non-Responsibilities
+
+Artifact Acceptance SHALL NOT:
+
+* choose storage backend;
+* choose serialization format;
+* manage transactions;
+* manage storage implementation.
+
+Those responsibilities belong exclusively to evo-storage.
+
+⸻
+
+Failure
+
+If persistence fails:
+
+* Artifact Acceptance SHALL fail;
+* no partial acceptance SHALL be exposed.
 
 ⸻
 

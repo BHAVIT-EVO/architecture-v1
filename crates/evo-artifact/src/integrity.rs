@@ -15,7 +15,19 @@ use crate::errors::IntegrityError;
 ///
 /// Returns `Ok(())` if the Artifact satisfies all acceptance invariants, or an
 /// [`IntegrityError`] if any invariant is violated.
-pub fn verify(_artifact: &Artifact) -> Result<(), IntegrityError> {
+pub fn verify(artifact: &Artifact) -> Result<(), IntegrityError> {
+    // // The frozen architecture intentionally exposes only the Artifact itself
+    // during Stage 4. Therefore this implementation verifies only invariants
+    // that are observable from the current Artifact representation.
+    // Additional integrity checks should only be added when new invariants
+    // become part of the frozen specifications.
+
+    if artifact.id().as_str().trim().is_empty() {
+        return Err(IntegrityError::VerificationFailed(
+            "artifact must contain exactly one non-empty artifact identity".into(),
+        ));
+    }
+
     Ok(())
 }
 

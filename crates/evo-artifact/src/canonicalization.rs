@@ -31,12 +31,14 @@ pub fn canonicalize(
 mod tests {
     use super::*;
 
-    use crate::candidate::CandidateArtifact;
+    use crate::candidate::{test_candidate_with_observations, test_observation};
 
     #[test]
     fn canonicalization_succeeds_for_valid_candidate() {
-        let candidate = CandidateArtifact::new();
-        let result = canonicalize(candidate);
-        assert!(result.is_ok());
+        let observations = vec![test_observation()];
+        let candidate = test_candidate_with_observations(observations.clone());
+        let canonical = canonicalize(candidate).unwrap();
+
+        assert_eq!(canonical.observations(), observations.as_slice());
     }
 }

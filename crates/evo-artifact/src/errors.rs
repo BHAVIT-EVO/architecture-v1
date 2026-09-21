@@ -188,6 +188,8 @@ pub enum ArtifactError {
     IdentityAssignment(IdentityAssignmentError),
     /// Stage 4: Integrity verification failure.
     Integrity(IntegrityError),
+    /// Stage 5: Persistence failure.
+    Persistence(PersistenceError),
 }
 
 impl fmt::Display for ArtifactError {
@@ -205,6 +207,9 @@ impl fmt::Display for ArtifactError {
             ArtifactError::Integrity(err) => {
                 write!(f, "artifact rejected at integrity stage: {}", err)
             }
+            ArtifactError::Persistence(err) => {
+                write!(f, "artifact rejected at persistence stage: {}", err)
+            }
         }
     }
 }
@@ -216,6 +221,7 @@ impl std::error::Error for ArtifactError {
             ArtifactError::Canonicalization(err) => Some(err),
             ArtifactError::IdentityAssignment(err) => Some(err),
             ArtifactError::Integrity(err) => Some(err),
+            ArtifactError::Persistence(err) => Some(err),
         }
     }
 }
@@ -241,6 +247,12 @@ impl From<IdentityAssignmentError> for ArtifactError {
 impl From<IntegrityError> for ArtifactError {
     fn from(err: IntegrityError) -> Self {
         ArtifactError::Integrity(err)
+    }
+}
+
+impl From<PersistenceError> for ArtifactError {
+    fn from(err: PersistenceError) -> Self {
+        ArtifactError::Persistence(err)
     }
 }
 
@@ -358,7 +370,10 @@ mod tests {
     fn identity_assignment_error_converts_from_artifact_id_error() {
         let id_err = ArtifactIdError::Empty;
         let err: IdentityAssignmentError = id_err.into();
-        assert_eq!(err, IdentityAssignmentError::InvalidId(ArtifactIdError::Empty));
+        assert_eq!(
+            err,
+            IdentityAssignmentError::InvalidId(ArtifactIdError::Empty)
+        );
     }
 
     #[test]
@@ -437,8 +452,7 @@ mod tests {
 
     #[test]
     fn artifact_error_identity_assignment_stage_displays_correctly() {
-        let err: ArtifactError =
-            IdentityAssignmentError::InvalidId(ArtifactIdError::Empty).into();
+        let err: ArtifactError = IdentityAssignmentError::InvalidId(ArtifactIdError::Empty).into();
         assert_eq!(
             err.to_string(),
             "artifact rejected at identity assignment stage: artifact identity assignment failed: artifact identifier must not be empty"
@@ -452,6 +466,33 @@ mod tests {
         assert_eq!(
             err.to_string(),
             "artifact rejected at integrity stage: artifact integrity verification failed: invariant broken"
+        );
+    }
+
+    #[test]
+    fn artifact_error_persistence_stage_displays_correctly() {
+        let err: ArtifactError = PersistenceError::WriteFailed("disk full".into()).into();
+        assert_eq!(
+            err.to_string(),
+            "artifact rejected at persistence stage: artifact persistence write failed: disk full"
+        );
+    }
+
+    #[test]
+    fn persistence_error_write_failed_displays_correctly() {
+        let err = PersistenceError::WriteFailed("disk full".into());
+        assert_eq!(
+            err.to_string(),
+            "artifact persistence write failed: disk full"
+        );
+    }
+
+    #[test]
+    fn persistence_error_commit_failed_displays_correctly() {
+        let err = PersistenceError::CommitFailed("sync failed".into());
+        assert_eq!(
+            err.to_string(),
+            "artifact persistence commit failed: sync failed"
         );
     }
 
@@ -485,6 +526,13 @@ mod tests {
         assert_eq!(err, ArtifactError::Integrity(stage_err));
     }
 
+    #[test]
+    fn artifact_error_converts_from_persistence_error() {
+        let stage_err = PersistenceError::WriteFailed("x".into());
+        let err: ArtifactError = stage_err.clone().into();
+        assert_eq!(err, ArtifactError::Persistence(stage_err));
+    }
+
     // ── ArtifactError — std::error::Error ────────────────────────────────────
 
     #[test]
@@ -502,7 +550,9 @@ mod tests {
         takes_error(&ArtifactError::Integrity(
             IntegrityError::VerificationFailed("x".into()),
         ));
-
+        takes_error(&ArtifactError::Persistence(PersistenceError::WriteFailed(
+            "x".into(),
+        )));
     }
 
     #[test]
@@ -520,9 +570,9 @@ mod tests {
         use std::error::Error;
 
         // ArtifactError → IdentityAssignmentError → ArtifactIdError
-        let agg_err = ArtifactError::IdentityAssignment(
-            IdentityAssignmentError::InvalidId(ArtifactIdError::Empty),
-        );
+        let agg_err = ArtifactError::IdentityAssignment(IdentityAssignmentError::InvalidId(
+            ArtifactIdError::Empty,
+        ));
 
         let level_1 = agg_err.source().expect("level 1 source must be present");
         assert_eq!(
@@ -538,9 +588,7 @@ mod tests {
 
     #[test]
     fn artifact_error_clones_correctly() {
-        let err = ArtifactError::Integrity(IntegrityError::VerificationFailed(
-            "clone-test".into(),
-        ));
+        let err = ArtifactError::Integrity(IntegrityError::VerificationFailed("clone-test".into()));
         assert_eq!(err.clone(), err);
     }
 }

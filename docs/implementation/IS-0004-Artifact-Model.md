@@ -88,6 +88,32 @@ A Candidate Artifact SHALL exist only within the Artifact Acceptance Pipeline.
 
 ⸻
 
+Candidate Artifact Structural Validity
+
+A Candidate Artifact SHALL satisfy the following structural invariants before entering Artifact Acceptance.
+
+1. A Candidate Artifact SHALL contain exactly one Identity Hypothesis.
+
+2. A Candidate Artifact SHALL reference one or more canonical Observations.
+
+3. Every referenced Observation SHALL possess canonical Observation Identity.
+
+4. A Candidate Artifact SHALL NOT reference another Candidate Artifact.
+
+5. A Candidate Artifact SHALL NOT reference any Workspace.
+
+6. A Candidate Artifact SHALL NOT reference any Knowledge.
+
+7. A Candidate Artifact SHALL NOT reference any Decision.
+
+8. A Candidate Artifact SHALL NOT possess canonical Artifact Identity.
+
+9. A Candidate Artifact SHALL be immutable throughout the Artifact Acceptance Pipeline.
+
+10. A Candidate Artifact SHALL be discarded after Artifact Acceptance completes, regardless of acceptance outcome.
+
+⸻
+
 External Entity
 
 An External Entity is any object existing outside Evo’s internal computational model that may be referenced by Observations.

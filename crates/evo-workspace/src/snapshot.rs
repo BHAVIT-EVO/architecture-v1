@@ -10,8 +10,8 @@
 //! - W-11: Historical Snapshots SHALL NEVER be modified.
 //! - W-12: Workspace understanding SHALL evolve through replay rather than mutation.
 //!
-//! A `Snapshot` captures the Workspace state — its lifecycle and its
-//! attachment set — at the moment it was committed.
+//! A `Snapshot` captures the Workspace state — its lifecycle and the attachments
+//! active during one sitting of the work — at the moment it was committed.
 //!
 //! Chronological ordering is preserved through the `captured_at` timestamp.
 //! Snapshot History is managed by the `Workspace` type, which enforces
@@ -21,7 +21,7 @@
 //!
 //! This module does NOT define:
 //!
-//! - when Snapshots are created (belongs to a future formation IS);
+//! - when Snapshots are created (that is [`crate::projection`]);
 //! - how Snapshots are persisted;
 //! - how Snapshots are replayed.
 
@@ -37,9 +37,17 @@ use crate::lifecycle::WorkspaceLifecycle;
 /// A `Snapshot` preserves the Workspace lifecycle state and its attachment set
 /// at the moment of commitment (IS-0011 §3, W-9, W-11).
 ///
+/// One Snapshot corresponds to one **sitting** the body of work was going on in,
+/// and holds the Attachments that were active during it. That is what makes the
+/// Snapshot History a record of how the work unfolded — started, interrupted,
+/// returned to — rather than a log of when Evo last recomputed. A Snapshot
+/// therefore describes a *subset* of its Workspace, and the newest one is not
+/// required to match the Workspace as a whole.
+///
 /// `Snapshot` is immutable after construction.
 ///
-///Chronological ordering is established by captured_at.
+/// Chronological ordering is established by `captured_at`, which is always a
+/// witnessed moment.
 ///
 /// # Invariants
 ///
@@ -113,6 +121,7 @@ impl Snapshot {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::attachment::ResourceRole;
     use crate::confidence::ConfidenceScore;
     use evo_artifact::artifact_id::ArtifactId;
 
@@ -120,6 +129,7 @@ mod tests {
         Attachment::new(
             ArtifactId::new("snapshot-test-artifact").unwrap(),
             ConfidenceScore::new(0.7).unwrap(),
+            ResourceRole::Primary,
         )
     }
 
@@ -138,8 +148,7 @@ mod tests {
 
     #[test]
     fn superseded_lifecycle_is_preserved() {
-        let snapshot =
-            Snapshot::new(SystemTime::now(), WorkspaceLifecycle::Superseded, vec![]);
+        let snapshot = Snapshot::new(SystemTime::now(), WorkspaceLifecycle::Superseded, vec![]);
         assert_eq!(snapshot.lifecycle(), &WorkspaceLifecycle::Superseded);
     }
 
@@ -159,10 +168,12 @@ mod tests {
         let a1 = Attachment::new(
             ArtifactId::new("artifact-snap-1").unwrap(),
             ConfidenceScore::new(0.4).unwrap(),
+            ResourceRole::Supporting,
         );
         let a2 = Attachment::new(
             ArtifactId::new("artifact-snap-2").unwrap(),
             ConfidenceScore::new(0.9).unwrap(),
+            ResourceRole::Primary,
         );
         let snapshot = Snapshot::new(
             SystemTime::now(),

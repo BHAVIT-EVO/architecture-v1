@@ -1,0 +1,25 @@
+[package]
+name = "evo-ledger"
+version = "0.1.0"
+edition = "2021"
+description = "Deterministic activity ledger: groups observed events into work intervals using an identity chain, with FTS5 search."
+
+[dependencies]
+rusqlite = { version = "0.32", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+
+[[bin]]
+name = "ledger_probe"
+path = "src/bin/ledger_probe.rs"
+
+[[bin]]
+name = "evo-ledger-engine"
+path = "src/bin/evo-ledger-engine.rs"
+
+[[bin]]
+name = "regression-gate"
+path = "src/bin/regression-gate.rs"
+
+[[bin]]
+name = "surface_dump"
+path = "src/bin/surface_dump.rs"

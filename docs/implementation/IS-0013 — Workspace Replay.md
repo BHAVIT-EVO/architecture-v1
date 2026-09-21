@@ -1,5 +1,52 @@
 IS-0013 — Workspace Replay
 
+Status: Superseded in full by RFC-0014 (Engagement Contract)
+
+⸻
+
+Supersession Record
+
+This specification is superseded **in full**, because the process it replayed is
+superseded (IS-0012). It remains in the repository as a record. Nothing in it is
+normative.
+
+The old process. Replay re-executed the IS-0012 formation contract over
+historical canonical inputs, differing from live formation "only in the source of
+canonical inputs", and regenerated the persisted Workspace understanding.
+
+Why it changed. Two separate paths existed — a live path that mutated persisted
+Workspace state as Observations arrived, and a replay path that rebuilt it from
+history — and they were *intended* to agree. Intent is not a guarantee. Because
+the live path's Snapshots were trigger-fired (Architecture §4, amended) and
+trigger times are not in the log, replay could not reproduce them even in
+principle, so the two paths could not be compared and any divergence between them
+would have been invisible.
+
+This specification also carried the rule that Workspace understanding, once
+formed, was persisted and read back rather than re-derived. That rule is retired:
+it is what allowed a conclusion reached from one observation to outlive all the
+evidence that later contradicted it.
+
+What replaces it. There is no separate replay process, because there is no live
+mutation to replay against. Derivation is a pure function of the canonical
+Observation log, executed on read. Every read-back of state *is* a full
+re-derivation, which makes live/replay divergence structurally impossible rather
+than merely unlikely — there is one computation, not two.
+
+Normative authority: **RFC-0014 (Engagement Contract)**, Requirement 12
+(Determinism and replay equivalence), and Architecture §7 as amended.
+
+Verification: `evo-daemon`'s `evo_doctor` re-derives every body of work from the
+real Observation log and reports consistency; `verify_scenarios` scenarios K
+(restart) and L (replay the observation log) cover persistence and replay
+equivalence.
+
+⸻
+
+The superseded specification follows, unchanged, for the record.
+
+⸻
+
 1. Purpose
 
 This specification defines the deterministic execution of Workspace Formation over historical canonical computational primitives.

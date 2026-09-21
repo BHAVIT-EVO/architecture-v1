@@ -14,7 +14,6 @@
 /// `ConfidenceScore` is bounded to `[0.0, 1.0]`.
 ///
 /// This error is produced only when a value outside that range is supplied.
-
 use std::fmt;
 
 #[derive(Debug, Clone, PartialEq)]

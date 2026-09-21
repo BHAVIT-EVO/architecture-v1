@@ -4,4 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-evo-workspace = { path = "../evo-workspace" }
+evo-engagement = { path = "../evo-engagement" }
+
+[dev-dependencies]
+evo-observation = { path = "../evo-observation" }

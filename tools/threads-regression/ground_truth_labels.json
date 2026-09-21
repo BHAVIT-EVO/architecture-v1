@@ -1,0 +1,1451 @@
+[
+ {
+  "src": "table",
+  "resource": "Terminal",
+  "app": "terminal",
+  "dwell": 19570.0,
+  "events": 39.0,
+  "downloads": 1.0,
+  "label": "Evo"
+ },
+ {
+  "src": "table",
+  "resource": "Visual Studio Code",
+  "app": "visual studio code",
+  "dwell": 6743.0,
+  "events": 152.0,
+  "downloads": 1.0,
+  "label": "Evo"
+ },
+ {
+  "src": "table",
+  "resource": "Claude",
+  "app": "claude",
+  "dwell": 6116.0,
+  "events": 125.0,
+  "downloads": 1.0,
+  "label": "Evo"
+ },
+ {
+  "src": "table",
+  "resource": "ChatGPT (Classic)",
+  "app": "chatgpt (classic)",
+  "dwell": 3261.0,
+  "events": 84.0,
+  "downloads": 1.0,
+  "label": "Evo"
+ },
+ {
+  "src": "table",
+  "resource": "https://www.youtube.com/watch?v=eswW2BoFAUs",
+  "app": "google chrome",
+  "dwell": 3218.0,
+  "events": 57.0,
+  "downloads": 1.0,
+  "label": "leisure"
+ },
+ {
+  "src": "table",
+  "resource": "https://www.youtube.com/watch?v=teILJMaplT4",
+  "app": "google chrome",
+  "dwell": 1590.0,
+  "events": 12.0,
+  "downloads": 1.0,
+  "label": "Free claude/gpt research"
+ },
+ {
+  "src": "table",
+  "resource": "https://vidbox.vc/watch/movie",
+  "app": "google chrome",
+  "dwell": 1286.0,
+  "events": 21.0,
+  "downloads": 1.0,
+  "label": "leisure"
+ },
+ {
+  "src": "table",
+  "resource": "http://127.0.0.1:63801/callback?code=_fedbac221489cccb799099b341cec6e8&state=v84",
+  "app": "safari",
+  "dwell": 1134.0,
+  "events": 7.0,
+  "downloads": 1.0,
+  "label": "Omnirouter/evo"
+ },
+ {
+  "src": "table",
+  "resource": "https://gemini.google.com/app/e721363e8296cbce",
+  "app": "google chrome",
+  "dwell": 683.0,
+  "events": 34.0,
+  "downloads": 1.0,
+  "label": ""
+ },
+ {
+  "src": "table",
+  "resource": "Figma",
+  "app": "figma",
+  "dwell": 668.0,
+  "events": 14.0,
+  "downloads": 1.0,
+  "label": "Demo"
+ },
+ {
+  "src": "table",
+  "resource": "https://www.youtube.com/watch?v=x4FxvP5IGQs",
+  "app": "google chrome",
+  "dwell": 496.0,
+  "events": 35.0,
+  "downloads": 1.0,
+  "label": "Free claude/gpt research"
+ },
+ {
+  "src": "table",
+  "resource": "http://localhost:20128/dashboard/combos",
+  "app": "google chrome",
+  "dwell": 382.0,
+  "events": 19.0,
+  "downloads": 1.0,
+  "label": "Omnirouter/evo"
+ },
+ {
+  "src": "table",
+  "resource": "https://www.youtube.com/watch?v=UvVVATGIm7k",
+  "app": "google chrome",
+  "dwell": 328.0,
+  "events": 11.0,
+  "downloads": 1.0,
+  "label": "Claude Code hacks"
+ },
+ {
+  "src": "table",
+  "resource": "http://localhost:20128/dashboard/combos/15020c58-b774-455a-a9c2-bbf19cc0b7df",
+  "app": "google chrome",
+  "dwell": 255.0,
+  "events": 9.0,
+  "downloads": 1.0,
+  "label": "Omnirouter/evo"
+ },
+ {
+  "src": "table",
+  "resource": "http://localhost:20128/dashboard/providers/huggingchat",
+  "app": "google chrome",
+  "dwell": 250.0,
+  "events": 13.0,
+  "downloads": 1.0,
+  "label": "Omnirouter/evo"
+ },
+ {
+  "src": "table",
+  "resource": "https://www.google.com/search?q=how%20to%20screen%20cast%20mac%20to%20redmi%20tv",
+  "app": "google chrome",
+  "dwell": 234.0,
+  "events": 3.0,
+  "downloads": 1.0,
+  "label": "leisure"
+ },
+ {
+  "src": "table",
+  "resource": "Google Chrome",
+  "app": "google chrome",
+  "dwell": 211.0,
+  "events": 5.0,
+  "downloads": 1.0,
+  "label": ""
+ },
+ {
+  "src": "table",
+  "resource": "Finder",
+  "app": "finder",
+  "dwell": 182.0,
+  "events": 7.0,
+  "downloads": 1.0,
+  "label": ""
+ },
+ {
+  "src": "table",
+  "resource": "https://www.youtube.com/watch?v=HQEm4rBKdec",
+  "app": "google chrome",
+  "dwell": 178.0,
+  "events": 16.0,
+  "downloads": 1.0,
+  "label": "Claude Code hacks"
+ },
+ {
+  "src": "table",
+  "resource": "http://localhost:20128/dashboard/providers",
+  "app": "google chrome",
+  "dwell": 163.0,
+  "events": 11.0,
+  "downloads": 1.0,
+  "label": "Omnirouter/evo"
+ },
+ {
+  "src": "table",
+  "resource": "http://localhost:20128/dashboard/quota",
+  "app": "safari",
+  "dwell": 157.0,
+  "events": 8.0,
+  "downloads": 1.0,
+  "label": "Omnirouter/evo"
+ },
+ {
+  "src": "table",
+  "resource": "http://localhost:20128/dashboard/providers/lmarena",
+  "app": "google chrome",
+  "dwell": 143.0,
+  "events": 7.0,
+  "downloads": 1.0,
+  "label": "Omnirouter/evo"
+ },
+ {
+  "src": "table",
+  "resource": "https://www.google.com/search?q=how%20do%20i%20draw%20something%20on%20mac,%20wh",
+  "app": "google chrome",
+  "dwell": 132.0,
+  "events": 2.0,
+  "downloads": 1.0,
+  "label": "Leisure"
+ },
+ {
+  "src": "table",
+  "resource": "https://www.youtube.com/watch?v=0J0HZrDvbjY&list=RD0J0HZrDvbjY&start_radio=1",
+  "app": "google chrome",
+  "dwell": 131.0,
+  "events": 7.0,
+  "downloads": 1.0,
+  "label": "leisure"
+ },
+ {
+  "src": "table",
+  "resource": "http://localhost:20128/dashboard/providers",
+  "app": "safari",
+  "dwell": 114.0,
+  "events": 11.0,
+  "downloads": 1.0,
+  "label": "Omnirouter/evo"
+ },
+ {
+  "src": "table",
+  "resource": "https://huggingface.co/chat/conversation/6a9a869fc1ae2e6ef84e439f",
+  "app": "google chrome",
+  "dwell": 106.0,
+  "events": 9.0,
+  "downloads": 1.0,
+  "label": "Omnirouter/evo"
+ },
+ {
+  "src": "table",
+  "resource": "http://localhost:20128/dashboard/providers/lmarena",
+  "app": "safari",
+  "dwell": 98.0,
+  "events": 5.0,
+  "downloads": 1.0,
+  "label": "Omnirouter/evo"
+ },
+ {
+  "src": "table",
+  "resource": "https://arena.ai/",
+  "app": "google chrome",
+  "dwell": 95.0,
+  "events": 12.0,
+  "downloads": 1.0,
+  "label": "Omnirouter/evo"
+ },
+ {
+  "src": "table",
+  "resource": "http://localhost:20128/dashboard/providers/qwen-web",
+  "app": "google chrome",
+  "dwell": 94.0,
+  "events": 5.0,
+  "downloads": 1.0,
+  "label": "Omnirouter/evo"
+ },
+ {
+  "src": "table",
+  "resource": "http://localhost:20128/home",
+  "app": "safari",
+  "dwell": 91.0,
+  "events": 12.0,
+  "downloads": 1.0,
+  "label": "Omnirouter/evo"
+ },
+ {
+  "src": "table",
+  "resource": "http://127.0.0.1:24285/dashboard/index.html",
+  "app": "safari",
+  "dwell": 84.0,
+  "events": 7.0,
+  "downloads": 1.0,
+  "label": "Omnirouter/evo"
+ },
+ {
+  "src": "table",
+  "resource": "http://localhost:20128/dashboard/endpoint",
+  "app": "google chrome",
+  "dwell": 81.0,
+  "events": 4.0,
+  "downloads": 1.0,
+  "label": "Omnirouter/evo"
+ },
+ {
+  "src": "table",
+  "resource": "https://arena.ai/",
+  "app": "safari",
+  "dwell": 81.0,
+  "events": 7.0,
+  "downloads": 1.0,
+  "label": "Omnirouter/evo"
+ },
+ {
+  "src": "table",
+  "resource": "https://www.youtube.com/watch?v=ElT7vDLc9JM",
+  "app": "google chrome",
+  "dwell": 80.0,
+  "events": 3.0,
+  "downloads": 1.0,
+  "label": "Omnirouter/evo"
+ },
+ {
+  "src": "table",
+  "resource": "https://www.youtube.com/@EricWTech/videos",
+  "app": "google chrome",
+  "dwell": 75.0,
+  "events": 3.0,
+  "downloads": 1.0,
+  "label": "Omnirouter/evo"
+ },
+ {
+  "src": "table2",
+  "resource": "https://vidbox.vc/watch/movie",
+  "app": "google chrome",
+  "dwell": 47151.0,
+  "events": 107.0,
+  "downloads": 1.0,
+  "label": "Leisure"
+ },
+ {
+  "src": "table2",
+  "resource": "Claude",
+  "app": "claude",
+  "dwell": 6084.0,
+  "events": 117.0,
+  "downloads": 1.0,
+  "label": "evo"
+ },
+ {
+  "src": "table2",
+  "resource": "ChatGPT (Classic)",
+  "app": "chatgpt (classic)",
+  "dwell": 3676.0,
+  "events": 94.0,
+  "downloads": 1.0,
+  "label": "evo"
+ },
+ {
+  "src": "table2",
+  "resource": "WhatsApp",
+  "app": "whatsapp",
+  "dwell": 3128.0,
+  "events": 7.0,
+  "downloads": 1.0,
+  "label": "leisure"
+ },
+ {
+  "src": "table2",
+  "resource": "https://docs.google.com/forms/d/e/1FAIpQLScLvhZyefIQdFZ8ABc5AcpAP4P6DxIAw9kXtc-m",
+  "app": "google chrome",
+  "dwell": 2751.0,
+  "events": 35.0,
+  "downloads": 1.0,
+  "label": "waitlist"
+ },
+ {
+  "src": "table2",
+  "resource": "https://crazy.freeforall.dev/player?id=s2-06",
+  "app": "google chrome",
+  "dwell": 2467.0,
+  "events": 37.0,
+  "downloads": 1.0,
+  "label": "Free claude/gpt"
+ },
+ {
+  "src": "table2",
+  "resource": "Spotify",
+  "app": "spotify",
+  "dwell": 2047.0,
+  "events": 11.0,
+  "downloads": 1.0,
+  "label": "leisure"
+ },
+ {
+  "src": "table2",
+  "resource": "https://web.telegram.org/a/#-1004357363561",
+  "app": "google chrome",
+  "dwell": 810.0,
+  "events": 55.0,
+  "downloads": 1.0,
+  "label": "leisure"
+ },
+ {
+  "src": "table2",
+  "resource": "https://claude.ai/chat/fca23df3-a287-43e4-ab94-adfbc8068736",
+  "app": "google chrome",
+  "dwell": 729.0,
+  "events": 18.0,
+  "downloads": 1.0,
+  "label": "Evo"
+ },
+ {
+  "src": "table2",
+  "resource": "https://web.telegram.org/a/#-1004309554770",
+  "app": "google chrome",
+  "dwell": 590.0,
+  "events": 17.0,
+  "downloads": 1.0,
+  "label": "leisure"
+ },
+ {
+  "src": "table2",
+  "resource": "https://web.telegram.org/a/#-1004449116602",
+  "app": "google chrome",
+  "dwell": 480.0,
+  "events": 77.0,
+  "downloads": 1.0,
+  "label": "leisure"
+ },
+ {
+  "src": "table2",
+  "resource": "https://www.youtube.com/watch?v=LlkcvvGbs9I",
+  "app": "google chrome",
+  "dwell": 418.0,
+  "events": 154.0,
+  "downloads": 1.0,
+  "label": "Github task"
+ },
+ {
+  "src": "table2",
+  "resource": "https://web.telegram.org/a/#-1004389669903",
+  "app": "google chrome",
+  "dwell": 410.0,
+  "events": 7.0,
+  "downloads": 1.0,
+  "label": "leisure"
+ },
+ {
+  "src": "table2",
+  "resource": "http://localhost:4173/",
+  "app": "google chrome",
+  "dwell": 390.0,
+  "events": 19.0,
+  "downloads": 1.0,
+  "label": "evo"
+ },
+ {
+  "src": "table2",
+  "resource": "https://mail.google.com/mail/u/3/#inbox",
+  "app": "google chrome",
+  "dwell": 365.0,
+  "events": 2.0,
+  "downloads": 1.0,
+  "label": "Emails checking"
+ },
+ {
+  "src": "table2",
+  "resource": "https://chatgpt.com/g/g-p-69cbe7237a088191b24cdfa70bb6e6ea/c/6a60fc1c-6cc8-83e8-",
+  "app": "google chrome",
+  "dwell": 312.0,
+  "events": 5.0,
+  "downloads": 1.0,
+  "label": "evo"
+ },
+ {
+  "src": "table2",
+  "resource": "Google Chrome",
+  "app": "google chrome",
+  "dwell": 273.0,
+  "events": 14.0,
+  "downloads": 1.0,
+  "label": ""
+ },
+ {
+  "src": "table2",
+  "resource": "https://gemini.google.com/app/83be318486c632c6",
+  "app": "google chrome",
+  "dwell": 256.0,
+  "events": 6.0,
+  "downloads": 1.0,
+  "label": "Demo video"
+ },
+ {
+  "src": "table2",
+  "resource": "Visual Studio Code",
+  "app": "visual studio code",
+  "dwell": 242.0,
+  "events": 160.0,
+  "downloads": 1.0,
+  "label": "evo"
+ },
+ {
+  "src": "table2",
+  "resource": "https://claude.ai/new",
+  "app": "google chrome",
+  "dwell": 188.0,
+  "events": 6.0,
+  "downloads": 1.0,
+  "label": ""
+ },
+ {
+  "src": "table2",
+  "resource": "Photo Booth",
+  "app": "photo booth",
+  "dwell": 181.0,
+  "events": 17.0,
+  "downloads": 1.0,
+  "label": "leisure"
+ },
+ {
+  "src": "table2",
+  "resource": "https://studio.youtube.com/channel/UCt28bhdsKmTYuKlZwGgr5kQ/videos/upload?theme=",
+  "app": "google chrome",
+  "dwell": 156.0,
+  "events": 7.0,
+  "downloads": 1.0,
+  "label": "Job related"
+ },
+ {
+  "src": "table2",
+  "resource": "https://www.google.com/search?q=how%20to%20make%20figma%20prototype%20completely",
+  "app": "google chrome",
+  "dwell": 143.0,
+  "events": 5.0,
+  "downloads": 1.0,
+  "label": "demo"
+ },
+ {
+  "src": "table2",
+  "resource": "https://www.heyclicky.com/",
+  "app": "google chrome",
+  "dwell": 131.0,
+  "events": 5.0,
+  "downloads": 1.0,
+  "label": "Research"
+ },
+ {
+  "src": "table2",
+  "resource": "https://www.youtube.com/watch?v=eXQQxaS0CCA",
+  "app": "google chrome",
+  "dwell": 124.0,
+  "events": 4.0,
+  "downloads": 1.0,
+  "label": "demo"
+ },
+ {
+  "src": "table2",
+  "resource": "https://www.linkedin.com/in/lalit-gupta-980297/",
+  "app": "google chrome",
+  "dwell": 121.0,
+  "events": 3.0,
+  "downloads": 1.0,
+  "label": "Job related"
+ },
+ {
+  "src": "table2",
+  "resource": "Terminal",
+  "app": "terminal",
+  "dwell": 120.0,
+  "events": 11.0,
+  "downloads": 1.0,
+  "label": "evo"
+ },
+ {
+  "src": "table2",
+  "resource": "https://jobs.ashbyhq.com/aistudio/b4a4f30b-ea11-41c7-bb46-9984165d768b/applicati",
+  "app": "safari",
+  "dwell": 120.0,
+  "events": 3.0,
+  "downloads": 1.0,
+  "label": "Job related"
+ },
+ {
+  "src": "table2",
+  "resource": "https://www.figma.com/design/6vLzdPXnCs5QTG7jMVvWfK/Untitled?node-id=0-1&p=f&t=4",
+  "app": "google chrome",
+  "dwell": 97.0,
+  "events": 3.0,
+  "downloads": 1.0,
+  "label": "demo"
+ },
+ {
+  "src": "table2",
+  "resource": "https://www.mirrormeister.com/support/mac/mirror-mac-on-xiaomi/",
+  "app": "google chrome",
+  "dwell": 81.0,
+  "events": 2.0,
+  "downloads": 1.0,
+  "label": "leisure"
+ },
+ {
+  "src": "table2",
+  "resource": "https://www.youtube.com/watch?v=qeqearWwBpg",
+  "app": "google chrome",
+  "dwell": 78.0,
+  "events": 3.0,
+  "downloads": 1.0,
+  "label": "demo"
+ },
+ {
+  "src": "table2",
+  "resource": "Finder",
+  "app": "finder",
+  "dwell": 75.0,
+  "events": 12.0,
+  "downloads": 1.0,
+  "label": ""
+ },
+ {
+  "src": "table2",
+  "resource": "https://www.linkedin.com/in/devyani-gupta-57644ba8/",
+  "app": "google chrome",
+  "dwell": 65.0,
+  "events": 4.0,
+  "downloads": 1.0,
+  "label": "Job related"
+ },
+ {
+  "src": "table2",
+  "resource": "https://github.com/BHAVIT-EVO?tab=overview&from=2025-12-01&to=2025-12-31",
+  "app": "google chrome",
+  "dwell": 64.0,
+  "events": 4.0,
+  "downloads": 1.0,
+  "label": "Github task"
+ },
+ {
+  "src": "table2",
+  "resource": "Notes",
+  "app": "notes",
+  "dwell": 60.0,
+  "events": 12.0,
+  "downloads": 1.0,
+  "label": "evo"
+ },
+ {
+  "src": "table3",
+  "resource": "Claude",
+  "app": "claude",
+  "dwell": 36276.0,
+  "events": 26.0,
+  "downloads": 1.0,
+  "label": ""
+ },
+ {
+  "src": "table3",
+  "resource": "Terminal",
+  "app": "terminal",
+  "dwell": 7308.0,
+  "events": 38.0,
+  "downloads": 1.0,
+  "label": "evo"
+ },
+ {
+  "src": "table3",
+  "resource": "https://gpt6-astra.net/chat/lbkbmkpmss4ogiv5",
+  "app": "safari",
+  "dwell": 3258.0,
+  "events": 44.0,
+  "downloads": 1.0,
+  "label": "Free claude/gpt search"
+ },
+ {
+  "src": "table3",
+  "resource": "https://www.youtube.com/watch?v=zbIr24Tes7E",
+  "app": "google chrome",
+  "dwell": 3071.0,
+  "events": 58.0,
+  "downloads": 1.0,
+  "label": "leisure"
+ },
+ {
+  "src": "table3",
+  "resource": "Notes",
+  "app": "notes",
+  "dwell": 2892.0,
+  "events": 54.0,
+  "downloads": 1.0,
+  "label": "evo"
+ },
+ {
+  "src": "table3",
+  "resource": "https://vidbox.vc/watch/movie",
+  "app": "google chrome",
+  "dwell": 2829.0,
+  "events": 45.0,
+  "downloads": 1.0,
+  "label": "leisure"
+ },
+ {
+  "src": "table3",
+  "resource": "https://kie.ai/gpt-6-astra",
+  "app": "google chrome",
+  "dwell": 1953.0,
+  "events": 59.0,
+  "downloads": 1.0,
+  "label": "Free claude/gpt search"
+ },
+ {
+  "src": "table3",
+  "resource": "https://www.youtube.com/watch?v=eswW2BoFAUs",
+  "app": "google chrome",
+  "dwell": 1849.0,
+  "events": 15.0,
+  "downloads": 1.0,
+  "label": "Leisure"
+ },
+ {
+  "src": "table3",
+  "resource": "Spotify",
+  "app": "spotify",
+  "dwell": 1384.0,
+  "events": 8.0,
+  "downloads": 1.0,
+  "label": "leisure"
+ },
+ {
+  "src": "table3",
+  "resource": "https://app.pitch.com/app/dashboard/70ca7c74-ba39-46bc-bbd7-2e0450eb7da0/new-pre",
+  "app": "google chrome",
+  "dwell": 1182.0,
+  "events": 1.0,
+  "downloads": 1.0,
+  "label": "Pitch deck"
+ },
+ {
+  "src": "table3",
+  "resource": "https://platform.experientiallabs.ai/playground?model=gpt-6-astra",
+  "app": "safari",
+  "dwell": 1020.0,
+  "events": 22.0,
+  "downloads": 1.0,
+  "label": "Pitch deck"
+ },
+ {
+  "src": "table3",
+  "resource": "https://www.google.com/search?q=hello&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIKCAEQLhixAx",
+  "app": "google chrome",
+  "dwell": 981.0,
+  "events": 6.0,
+  "downloads": 1.0,
+  "label": "Pitch deck"
+ },
+ {
+  "src": "table3",
+  "resource": "https://app.pitch.com/app/presentation/92554a99-fa5b-4039-8554-d7998f329619/4f8e",
+  "app": "google chrome",
+  "dwell": 663.0,
+  "events": 13.0,
+  "downloads": 1.0,
+  "label": "Pitch deck"
+ },
+ {
+  "src": "table3",
+  "resource": "https://www.google.com/search?q=gpt%206%20astra%20free&oq=gpt%206&gs_lcrp=EgZjaH",
+  "app": "google chrome",
+  "dwell": 542.0,
+  "events": 16.0,
+  "downloads": 1.0,
+  "label": "Free claude/gpt search"
+ },
+ {
+  "src": "table3",
+  "resource": "https://vidbox.vc/movie/616",
+  "app": "google chrome",
+  "dwell": 379.0,
+  "events": 3.0,
+  "downloads": 1.0,
+  "label": "leisure"
+ },
+ {
+  "src": "table3",
+  "resource": "https://claude.ai/chat/fca23df3-a287-43e4-ab94-adfbc8068736",
+  "app": "google chrome",
+  "dwell": 377.0,
+  "events": 8.0,
+  "downloads": 1.0,
+  "label": "pitch deck"
+ },
+ {
+  "src": "table3",
+  "resource": "https://developer.puter.com/ai/openai/gpt-6-astra/",
+  "app": "google chrome",
+  "dwell": 298.0,
+  "events": 11.0,
+  "downloads": 1.0,
+  "label": "Free claude/gpt search"
+ },
+ {
+  "src": "table3",
+  "resource": "https://kie.ai/gpt-6-astra",
+  "app": "safari",
+  "dwell": 285.0,
+  "events": 3.0,
+  "downloads": 1.0,
+  "label": "Free claude/gpt search"
+ },
+ {
+  "src": "table3",
+  "resource": "https://www.google.com/search?q=hello&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIKCAEQLhixAx",
+  "app": "google chrome",
+  "dwell": 255.0,
+  "events": 6.0,
+  "downloads": 1.0,
+  "label": "pitch deck"
+ },
+ {
+  "src": "table3",
+  "resource": "https://chatgpt.com/g/g-p-69cbe7237a088191b24cdfa70bb6e6ea/c/6a60fc1c-6cc8-83e8-",
+  "app": "google chrome",
+  "dwell": 207.0,
+  "events": 17.0,
+  "downloads": 1.0,
+  "label": "pitch deck"
+ },
+ {
+  "src": "table3",
+  "resource": "https://app.pitch.com/app/presentation/92554a99-fa5b-4039-8554-d7998f329619/d144",
+  "app": "google chrome",
+  "dwell": 200.0,
+  "events": 4.0,
+  "downloads": 1.0,
+  "label": "pitch deck"
+ },
+ {
+  "src": "table3",
+  "resource": "https://app.pitch.com/app/presentation/92554a99-fa5b-4039-8554-d7998f329619/9478",
+  "app": "google chrome",
+  "dwell": 192.0,
+  "events": 4.0,
+  "downloads": 1.0,
+  "label": "pitch deck"
+ },
+ {
+  "src": "table3",
+  "resource": "https://www.google.com/search?q=hello&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIKCAEQLhixAx",
+  "app": "google chrome",
+  "dwell": 192.0,
+  "events": 4.0,
+  "downloads": 1.0,
+  "label": "pitch deck"
+ },
+ {
+  "src": "table3",
+  "resource": "https://www.google.com/search?q=hello&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIKCAEQLhixAx",
+  "app": "google chrome",
+  "dwell": 166.0,
+  "events": 6.0,
+  "downloads": 1.0,
+  "label": "pitch deck"
+ },
+ {
+  "src": "table3",
+  "resource": "https://platform.experientiallabs.ai/models/gpt-6-astra",
+  "app": "safari",
+  "dwell": 151.0,
+  "events": 5.0,
+  "downloads": 1.0,
+  "label": "pitch deck"
+ },
+ {
+  "src": "table3",
+  "resource": "https://www.google.com/search?q=hello&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIKCAEQLhixAx",
+  "app": "google chrome",
+  "dwell": 131.0,
+  "events": 3.0,
+  "downloads": 1.0,
+  "label": "pitch deck"
+ },
+ {
+  "src": "table3",
+  "resource": "https://platform.experientiallabs.ai/signin?next=/overview",
+  "app": "safari",
+  "dwell": 128.0,
+  "events": 3.0,
+  "downloads": 1.0,
+  "label": "pitch deck"
+ },
+ {
+  "src": "table3",
+  "resource": "https://www.google.com/search?q=hello&oq=hello&gs_lcrp=EgZjaHJvbWUqBggAEEUYOzIGC",
+  "app": "google chrome",
+  "dwell": 126.0,
+  "events": 1.0,
+  "downloads": 1.0,
+  "label": "pitch deck"
+ },
+ {
+  "src": "table3",
+  "resource": "https://www.google.com/search?q=hello&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIKCAEQLhixAx",
+  "app": "google chrome",
+  "dwell": 124.0,
+  "events": 3.0,
+  "downloads": 1.0,
+  "label": "pitch deck"
+ },
+ {
+  "src": "table3",
+  "resource": "https://app.pitch.com/app/presentation/eb4e57c1-4ea2-484b-b0c3-70d7e62b3da2/850a",
+  "app": "google chrome",
+  "dwell": 123.0,
+  "events": 3.0,
+  "downloads": 1.0,
+  "label": "pitch deck"
+ },
+ {
+  "src": "table3",
+  "resource": "Pages",
+  "app": "pages",
+  "dwell": 120.0,
+  "events": 3.0,
+  "downloads": 1.0,
+  "label": "pitch deck"
+ },
+ {
+  "src": "table3",
+  "resource": "Google Chrome",
+  "app": "google chrome",
+  "dwell": 117.0,
+  "events": 3.0,
+  "downloads": 1.0,
+  "label": ""
+ },
+ {
+  "src": "table3",
+  "resource": "https://app.pitch.com/app/presentation/92554a99-fa5b-4039-8554-d7998f329619/d144",
+  "app": "google chrome",
+  "dwell": 101.0,
+  "events": 4.0,
+  "downloads": 1.0,
+  "label": "pitch deck"
+ },
+ {
+  "src": "table3",
+  "resource": "https://app.pitch.com/app/presentation/92554a99-fa5b-4039-8554-d7998f329619/d144",
+  "app": "google chrome",
+  "dwell": 99.0,
+  "events": 6.0,
+  "downloads": 1.0,
+  "label": "pitch deck"
+ },
+ {
+  "src": "table3",
+  "resource": "https://platform.experientiallabs.ai/docs/setup-prompts",
+  "app": "safari",
+  "dwell": 98.0,
+  "events": 3.0,
+  "downloads": 1.0,
+  "label": "pitch deck"
+ },
+ {
+  "src": "table4",
+  "resource": "https://app.pitch.com/app/presentation/92554a99-fa5b-4039-8554-d7998f329619/9478",
+  "app": "google chrome",
+  "dwell": 33096.0,
+  "events": 33.0,
+  "downloads": 1.0,
+  "label": "Pitch deck"
+ },
+ {
+  "src": "table4",
+  "resource": "https://framer.com/projects/waitlist-template-copy--mjkw3dlVcNf5JWzPBC2A-1wDmz?i",
+  "app": "google chrome",
+  "dwell": 5883.0,
+  "events": 13.0,
+  "downloads": 1.0,
+  "label": "Waitlist"
+ },
+ {
+  "src": "table4",
+  "resource": "https://framer.com/projects/waitlist-template-copy--mjkw3dlVcNf5JWzPBC2A-1wDmz?i",
+  "app": "google chrome",
+  "dwell": 5667.0,
+  "events": 207.0,
+  "downloads": 1.0,
+  "label": "Waitlist"
+ },
+ {
+  "src": "table4",
+  "resource": "Claude",
+  "app": "claude",
+  "dwell": 4802.0,
+  "events": 108.0,
+  "downloads": 1.0,
+  "label": "Probably, demo vide which a html file"
+ },
+ {
+  "src": "table4",
+  "resource": "https://www.youtube.com/watch?v=eswW2BoFAUs",
+  "app": "google chrome",
+  "dwell": 2468.0,
+  "events": 44.0,
+  "downloads": 1.0,
+  "label": "Leisure"
+ },
+ {
+  "src": "table4",
+  "resource": "https://www.canva.com/design/DAHUgTU2i5g/Ce8-WgARPTfPG9eLVo8dfw/edit",
+  "app": "google chrome",
+  "dwell": 2046.0,
+  "events": 78.0,
+  "downloads": 1.0,
+  "label": "Pitch deck"
+ },
+ {
+  "src": "table4",
+  "resource": "https://gemini.google.com/app/7dc2c3a76d22c509",
+  "app": "google chrome",
+  "dwell": 1952.0,
+  "events": 25.0,
+  "downloads": 1.0,
+  "label": "Demo"
+ },
+ {
+  "src": "table4",
+  "resource": "https://app.pitch.com/app/player/92554a99-fa5b-4039-8554-d7998f329619/94784ea0-9",
+  "app": "google chrome",
+  "dwell": 1949.0,
+  "events": 9.0,
+  "downloads": 1.0,
+  "label": "pitch deck"
+ },
+ {
+  "src": "table4",
+  "resource": "https://framer.com/projects/waitlist-template-copy--mjkw3dlVcNf5JWzPBC2A-1wDmz?i",
+  "app": "google chrome",
+  "dwell": 1897.0,
+  "events": 44.0,
+  "downloads": 1.0,
+  "label": "Waitlist"
+ },
+ {
+  "src": "table4",
+  "resource": "https://gemini.google.com/app/68bd8e3c0cdf10b5",
+  "app": "google chrome",
+  "dwell": 1790.0,
+  "events": 76.0,
+  "downloads": 1.0,
+  "label": "Demo"
+ },
+ {
+  "src": "table4",
+  "resource": "https://framer.com/projects/waitlist-template-copy--mjkw3dlVcNf5JWzPBC2A-1wDmz?i",
+  "app": "google chrome",
+  "dwell": 1540.0,
+  "events": 74.0,
+  "downloads": 1.0,
+  "label": "Waitlist"
+ },
+ {
+  "src": "table4",
+  "resource": "Safari",
+  "app": "safari",
+  "dwell": 1456.0,
+  "events": 66.0,
+  "downloads": 1.0,
+  "label": "Idk, probably checking something"
+ },
+ {
+  "src": "table4",
+  "resource": "https://app.loops.so/add-domain",
+  "app": "google chrome",
+  "dwell": 1195.0,
+  "events": 5.0,
+  "downloads": 1.0,
+  "label": "Waitlist"
+ },
+ {
+  "src": "table4",
+  "resource": "https://www.youtube.com/",
+  "app": "google chrome",
+  "dwell": 952.0,
+  "events": 3.0,
+  "downloads": 1.0,
+  "label": "Leisure"
+ },
+ {
+  "src": "table4",
+  "resource": "QuickTime Player",
+  "app": "quicktime player",
+  "dwell": 786.0,
+  "events": 13.0,
+  "downloads": 1.0,
+  "label": "Checking something g related to demo video"
+ },
+ {
+  "src": "table4",
+  "resource": "https://chatgpt.com/g/g-p-69cbe7237a088191b24cdfa70bb6e6ea/c/6a60fc1c-6cc8-83e8-",
+  "app": "google chrome",
+  "dwell": 700.0,
+  "events": 46.0,
+  "downloads": 1.0,
+  "label": "Demo"
+ },
+ {
+  "src": "table4",
+  "resource": "https://www.youtube.com/watch?v=g9mh_iQVolw",
+  "app": "google chrome",
+  "dwell": 538.0,
+  "events": 11.0,
+  "downloads": 1.0,
+  "label": "Waitlist"
+ },
+ {
+  "src": "table4",
+  "resource": "Google Chrome",
+  "app": "google chrome",
+  "dwell": 532.0,
+  "events": 28.0,
+  "downloads": 1.0,
+  "label": ""
+ },
+ {
+  "src": "table4",
+  "resource": "https://app.pitch.com/app/presentation/92554a99-fa5b-4039-8554-d7998f329619/9478",
+  "app": "google chrome",
+  "dwell": 521.0,
+  "events": 12.0,
+  "downloads": 1.0,
+  "label": "pitch deck"
+ },
+ {
+  "src": "table4",
+  "resource": "https://framer.com/projects/waitlist-template-copy--mjkw3dlVcNf5JWzPBC2A-1wDmz?i",
+  "app": "google chrome",
+  "dwell": 458.0,
+  "events": 13.0,
+  "downloads": 1.0,
+  "label": "Waitlist"
+ },
+ {
+  "src": "table4",
+  "resource": "https://studio.youtube.com/channel/UCt28bhdsKmTYuKlZwGgr5kQ/videos/upload?theme=",
+  "app": "google chrome",
+  "dwell": 311.0,
+  "events": 11.0,
+  "downloads": 1.0,
+  "label": "pitch deck"
+ },
+ {
+  "src": "table4",
+  "resource": "https://www.google.com/search?q=total%20mac%20users%20in%20the%20world&gs_lcrp=E",
+  "app": "google chrome",
+  "dwell": 280.0,
+  "events": 8.0,
+  "downloads": 1.0,
+  "label": "Pitch deck"
+ },
+ {
+  "src": "table4",
+  "resource": "https://framer.com/projects/waitlist-template-copy--mjkw3dlVcNf5JWzPBC2A-1wDmz?i",
+  "app": "google chrome",
+  "dwell": 265.0,
+  "events": 8.0,
+  "downloads": 1.0,
+  "label": "Waitlist"
+ },
+ {
+  "src": "table4",
+  "resource": "Desktop",
+  "app": "finder",
+  "dwell": 247.0,
+  "events": 33.0,
+  "downloads": 1.0,
+  "label": ""
+ },
+ {
+  "src": "table4",
+  "resource": "https://app.pitch.com/app/presentation/92554a99-fa5b-4039-8554-d7998f329619/9478",
+  "app": "google chrome",
+  "dwell": 195.0,
+  "events": 7.0,
+  "downloads": 1.0,
+  "label": "Pitchdeck"
+ },
+ {
+  "src": "table4",
+  "resource": "https://app.pitch.com/app/presentation/92554a99-fa5b-4039-8554-d7998f329619/9478",
+  "app": "google chrome",
+  "dwell": 195.0,
+  "events": 11.0,
+  "downloads": 1.0,
+  "label": "Pitch deck"
+ },
+ {
+  "src": "table4",
+  "resource": "https://www.design.com/maker/logo/isometric-block-letter-e-129054?text=evo&layou",
+  "app": "google chrome",
+  "dwell": 186.0,
+  "events": 4.0,
+  "downloads": 1.0,
+  "label": "Waitlist"
+ },
+ {
+  "src": "table4",
+  "resource": "Antigravity IDE",
+  "app": "antigravity ide",
+  "dwell": 181.0,
+  "events": 53.0,
+  "downloads": 1.0,
+  "label": "Demo video"
+ },
+ {
+  "src": "table4",
+  "resource": "Preview",
+  "app": "preview",
+  "dwell": 181.0,
+  "events": 54.0,
+  "downloads": 1.0,
+  "label": ""
+ },
+ {
+  "src": "table4",
+  "resource": "https://www.google.com/search?q=hello&sca_esv=93ff1b1dd9fb5a2f&sxsrf=APpeQnsTPEf",
+  "app": "google chrome",
+  "dwell": 178.0,
+  "events": 6.0,
+  "downloads": 1.0,
+  "label": "Pitch deck"
+ },
+ {
+  "src": "table4",
+  "resource": "https://framer.com/projects/waitlist-template-copy--mjkw3dlVcNf5JWzPBC2A-1wDmz?i",
+  "app": "google chrome",
+  "dwell": 176.0,
+  "events": 9.0,
+  "downloads": 1.0,
+  "label": "waitlist"
+ },
+ {
+  "src": "table4",
+  "resource": "https://app.pitch.com/app/presentation/92554a99-fa5b-4039-8554-d7998f329619/9478",
+  "app": "google chrome",
+  "dwell": 168.0,
+  "events": 5.0,
+  "downloads": 1.0,
+  "label": "Pitch deck"
+ },
+ {
+  "src": "table4",
+  "resource": "https://framer.com/projects/waitlist-template-copy--mjkw3dlVcNf5JWzPBC2A-1wDmz?i",
+  "app": "google chrome",
+  "dwell": 163.0,
+  "events": 7.0,
+  "downloads": 1.0,
+  "label": "waitlist"
+ },
+ {
+  "src": "table4",
+  "resource": "https://claude.ai/chat/fca23df3-a287-43e4-ab94-adfbc8068736",
+  "app": "google chrome",
+  "dwell": 153.0,
+  "events": 14.0,
+  "downloads": 1.0,
+  "label": "Demo video"
+ },
+ {
+  "src": "table4",
+  "resource": "https://www.google.com/search?q=how%20to%20create%20a%20waitlist%20for%20an%20ap",
+  "app": "google chrome",
+  "dwell": 149.0,
+  "events": 4.0,
+  "downloads": 1.0,
+  "label": "waitlist"
+ },
+ {
+  "src": "table5",
+  "resource": "https://framer.com/projects/waitlist-template-copy--mjkw3dlVcNf5JWzPBC2A-1wDmz?i",
+  "app": "google chrome",
+  "dwell": 52849.0,
+  "events": 66.0,
+  "downloads": 1.0,
+  "label": "waitlist"
+ },
+ {
+  "src": "table5",
+  "resource": "https://kie.ai/gpt-6-astra",
+  "app": "google chrome",
+  "dwell": 1819.0,
+  "events": 67.0,
+  "downloads": 1.0,
+  "label": "Demo"
+ },
+ {
+  "src": "table5",
+  "resource": "ZCode",
+  "app": "zcode",
+  "dwell": 1571.0,
+  "events": 64.0,
+  "downloads": 1.0,
+  "label": "Evo"
+ },
+ {
+  "src": "table5",
+  "resource": "Notes",
+  "app": "notes",
+  "dwell": 726.0,
+  "events": 33.0,
+  "downloads": 1.0,
+  "label": "Evo"
+ },
+ {
+  "src": "table5",
+  "resource": "https://arena.ai/agent/01a08066-ea85-7fa0-a41c-76485063ce3c",
+  "app": "google chrome",
+  "dwell": 663.0,
+  "events": 29.0,
+  "downloads": 1.0,
+  "label": "Evo"
+ },
+ {
+  "src": "table5",
+  "resource": "https://chatgpt.com/g/g-p-69cbe7237a088191b24cdfa70bb6e6ea/c/6a60fc1c-6cc8-83e8-",
+  "app": "google chrome",
+  "dwell": 410.0,
+  "events": 38.0,
+  "downloads": 1.0,
+  "label": "Evo"
+ },
+ {
+  "src": "table5",
+  "resource": "https://freemodels.pro/chat/6l5k5u1mtsgmpyi",
+  "app": "google chrome",
+  "dwell": 403.0,
+  "events": 13.0,
+  "downloads": 1.0,
+  "label": "evo"
+ },
+ {
+  "src": "table5",
+  "resource": "ChatGPT (Classic)",
+  "app": "chatgpt (classic)",
+  "dwell": 362.0,
+  "events": 13.0,
+  "downloads": 1.0,
+  "label": "Evo"
+ },
+ {
+  "src": "table5",
+  "resource": "https://codecraftapi.com/dashboard/playground",
+  "app": "google chrome",
+  "dwell": 206.0,
+  "events": 8.0,
+  "downloads": 1.0,
+  "label": "Free claude/gpt"
+ },
+ {
+  "src": "table5",
+  "resource": "https://www.easemate.ai/webapp/chat?from=ai-chat",
+  "app": "safari",
+  "dwell": 205.0,
+  "events": 6.0,
+  "downloads": 1.0,
+  "label": "Free claude/gpt"
+ },
+ {
+  "src": "table5",
+  "resource": "https://hix.ai/home/cmtsjqb8r0086peyyf92o25wv",
+  "app": "safari",
+  "dwell": 196.0,
+  "events": 6.0,
+  "downloads": 1.0,
+  "label": "evo"
+ },
+ {
+  "src": "table5",
+  "resource": "https://claude.ai/chat/fca23df3-a287-43e4-ab94-adfbc8068736",
+  "app": "google chrome",
+  "dwell": 184.0,
+  "events": 15.0,
+  "downloads": 1.0,
+  "label": "evo"
+ },
+ {
+  "src": "table5",
+  "resource": "https://www.google.com/search?q=test%20gpt%206%20astra%20for%20fre&oq=test%20gpt",
+  "app": "google chrome",
+  "dwell": 118.0,
+  "events": 12.0,
+  "downloads": 1.0,
+  "label": "Random"
+ },
+ {
+  "src": "table5",
+  "resource": "https://www.youtube.com/watch?v=oGDVM-5sIbE",
+  "app": "google chrome",
+  "dwell": 102.0,
+  "events": 8.0,
+  "downloads": 1.0,
+  "label": "Free claude/gpt"
+ },
+ {
+  "src": "table5",
+  "resource": "Google Chrome",
+  "app": "google chrome",
+  "dwell": 89.0,
+  "events": 16.0,
+  "downloads": 1.0,
+  "label": ""
+ },
+ {
+  "src": "table5",
+  "resource": "https://codecraftapi.com/dashboard/get-started",
+  "app": "google chrome",
+  "dwell": 84.0,
+  "events": 3.0,
+  "downloads": 1.0,
+  "label": "Free claude/gpt"
+ },
+ {
+  "src": "table5",
+  "resource": "https://accounts.google.com/signin/oauth/v3/consent?as=S389702726:17888585948795",
+  "app": "google chrome",
+  "dwell": 83.0,
+  "events": 3.0,
+  "downloads": 1.0,
+  "label": "Signing in"
+ },
+ {
+  "src": "table5",
+  "resource": "https://ai-sdk.dev/playground/anthropic:claude-fable-5-1,azure:gpt-6-astra",
+  "app": "google chrome",
+  "dwell": 83.0,
+  "events": 3.0,
+  "downloads": 1.0,
+  "label": "evo"
+ },
+ {
+  "src": "table5",
+  "resource": "https://developer.puter.com/ai/openai/gpt-6-astra/",
+  "app": "google chrome",
+  "dwell": 70.0,
+  "events": 4.0,
+  "downloads": 1.0,
+  "label": "evo"
+ },
+ {
+  "src": "table5",
+  "resource": "https://ai-sdk.dev/playground/s/lVVLNMZVzUux",
+  "app": "google chrome",
+  "dwell": 63.0,
+  "events": 4.0,
+  "downloads": 1.0,
+  "label": "evo"
+ },
+ {
+  "src": "table5",
+  "resource": "https://felo.ai/en/search/PaWjeJdgNgwz4nK6oYDhp9",
+  "app": "google chrome",
+  "dwell": 60.0,
+  "events": 12.0,
+  "downloads": 1.0,
+  "label": "evo"
+ }
+]

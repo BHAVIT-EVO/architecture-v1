@@ -13,6 +13,18 @@ pub enum StorageError {
 
     /// No concrete backend has been configured for this boundary.
     BackendNotConfigured,
+
+    /// Canonical storage-root preparation or migration failed. The legacy
+    /// source was left intact; nothing was partially installed.
+    Migration { source: String },
+
+    /// Tooling that fabricates Observations asked for a writable root while
+    /// pointed at the canonical one, where the person's real history lives.
+    ///
+    /// Refused rather than filtered. Fabricated Observations travel the same
+    /// acceptance path as real ones and are indistinguishable once written, so
+    /// the only reliable isolation is to never write them there at all.
+    FabricationAgainstCanonicalRoot,
 }
 
 impl fmt::Display for StorageError {
@@ -24,6 +36,14 @@ impl fmt::Display for StorageError {
             StorageError::BackendNotConfigured => {
                 write!(f, "storage backend is not configured")
             }
+            StorageError::Migration { source } => {
+                write!(f, "storage root migration failed: {source}")
+            }
+            StorageError::FabricationAgainstCanonicalRoot => write!(
+                f,
+                "refusing to fabricate Observations against the canonical storage root; \
+                 set EVO_STORAGE_ROOT to a scratch directory first"
+            ),
         }
     }
 }
@@ -55,7 +75,10 @@ mod tests {
             StorageError::BackendNotConfigured,
             StorageError::BackendNotConfigured
         );
-        assert_ne!(StorageError::EmptyRecord, StorageError::BackendNotConfigured);
+        assert_ne!(
+            StorageError::EmptyRecord,
+            StorageError::BackendNotConfigured
+        );
     }
 
     #[test]
@@ -64,5 +87,18 @@ mod tests {
 
         takes_error(&StorageError::EmptyRecord);
         takes_error(&StorageError::BackendNotConfigured);
+        takes_error(&StorageError::Migration {
+            source: "copy failed".to_string(),
+        });
+    }
+
+    #[test]
+    fn migration_error_has_human_readable_message() {
+        let message = StorageError::Migration {
+            source: "copy observation.log: broken pipe".to_string(),
+        }
+        .to_string();
+        assert!(message.contains("migration failed"));
+        assert!(message.contains("observation.log"));
     }
 }

@@ -138,6 +138,119 @@ The concrete representation is implementation-defined.
 The Observation Schema Identifier references an Observation Schema defined by IS-0003.
 The Observation Schema composes canonical Observation Language concepts defined by IS-0002.
 
+# 5A. Provenance
+
+Every Candidate Observation SHALL contain exactly one Provenance record.
+
+Provenance records the origin and temporal circumstances under which Evo witnessed the Evidence.
+
+Provenance describes the observation event itself.
+
+Provenance SHALL NOT contain semantic interpretation of the Evidence.
+
+Provenance SHALL NOT contain inferred user intent, task membership, workspace membership, artifact identity, importance, confidence, or explanation.
+
+## 5A.1 Provenance Components
+
+Every Provenance record SHALL contain:
+
+- Observation Source
+- Observation Time
+- Observation Context
+
+The concrete representation of these components is implementation-defined unless otherwise specified by this specification.
+
+### Observation Source
+
+Observation Source identifies the trusted capture origin through which Evo witnessed the Evidence.
+
+Observation Source SHALL identify the capture channel sufficiently to establish provenance.
+
+Observation Source SHALL NOT assert semantic meaning about the Evidence.
+
+Observation Source SHALL NOT be used to classify or rank the Evidence.
+
+### Observation Time
+
+Observation Time records when Evo witnessed the Evidence.
+
+Observation Time SHALL provide a stable temporal position for the Observation.
+
+Observation Time SHALL be preserved without modification after acceptance.
+
+The representation of Observation Time SHALL provide sufficient precision to preserve the ordering required by the Observation Contract.
+
+The Observation system SHALL NOT treat Observation Time as evidence of user intent or activity duration.
+
+### Observation Context
+
+Observation Context records directly observed circumstances necessary to understand the provenance of the Evidence at the time it was witnessed.
+
+Observation Context SHALL contain only directly observed information available through the trusted observation channel.
+
+Observation Context SHALL NOT contain interpretation, inferred state, confidence, classification, or explanation.
+
+Observation Context MAY be empty when the trusted observation channel provides no additional directly observed context beyond Observation Source and Observation Time.
+
+## 5A.2 Provenance and Observation Schema
+
+Provenance SHALL identify the observation circumstances independently of the Observation Schema.
+
+The Observation Schema Identifier remains a separate required component of the Candidate Observation.
+
+Provenance SHALL NOT redefine, extend, or replace the Observation Schema.
+
+## 5A.3 Provenance Immutability
+
+Once an Observation is accepted:
+
+- Provenance SHALL never change.
+- Observation Source SHALL never change.
+- Observation Time SHALL never change.
+- Observation Context SHALL never change.
+
+Any later information about an Observation SHALL be represented by additional Observations or derived computation.
+
+## 5A.4 Provenance Preservation
+
+The Observation Acceptance Pipeline SHALL preserve Provenance exactly as supplied by the Candidate Observation, except for representation canonicalization that does not alter its witnessed content.
+
+Canonicalization SHALL NOT:
+
+- add inferred provenance;
+- remove provenance;
+- reinterpret provenance;
+- replace the Observation Source;
+- replace the Observation Time;
+- replace the Observation Context.
+
+## 5A.5 Provenance Independence
+
+Provenance SHALL remain meaningful independently of:
+
+- Artifact identity;
+- Workspace membership;
+- Knowledge;
+- Retrieval;
+- Restoration;
+- any other derived computation.
+
+No derived computation may modify Provenance.
+
+## 5A.6 Provenance Failure
+
+A Candidate Observation SHALL be rejected if required Provenance is absent or structurally invalid.
+
+A Candidate Observation SHALL NOT be repaired by inventing, estimating, or inferring missing Provenance.
+
+## 5A.7 Privacy
+
+Provenance SHALL contain no raw high-fidelity capture.
+
+Provenance SHALL not retain screenshots, screen recordings, or equivalent visual ground truth.
+
+All Provenance processing SHALL remain subject to Evo's local-first and privacy constraints.
+
 ---
 
 # 6. Outputs

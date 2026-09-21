@@ -1,0 +1,9 @@
+[package]
+name = "evo-threads"
+version = "0.1.0"
+edition = "2021"
+description = "Deterministic local work-thread inference engine: reconstructs bodies of work from a stream of computer-usage events."
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
