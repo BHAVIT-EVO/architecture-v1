@@ -1,0 +1,11 @@
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/.claude/CLAUDE.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/.claude/skills/graphify/SKILL.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/.claude/skills/graphify/references/add-watch.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/.claude/skills/graphify/references/exports.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/.claude/skills/graphify/references/extraction-spec.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/.claude/skills/graphify/references/github-and-merge.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/.claude/skills/graphify/references/hooks.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/.claude/skills/graphify/references/query.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/.claude/skills/graphify/references/transcribe.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/.claude/skills/graphify/references/update.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/.serena/project.yml

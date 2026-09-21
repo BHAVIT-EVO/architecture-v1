@@ -1,0 +1,15 @@
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/rfcs/RFC-0001-observation-contract.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/rfcs/RFC-0002-artifact-identity-contract.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/rfcs/RFC-0003-workspace-formation-contract.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/rfcs/RFC-0004-interpretation-evolution.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/rfcs/RFC-0005-historical-understanding.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/rfcs/RFC-0006-restoration-contract.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/rfcs/RFC-0007-retrieval-contract.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/rfcs/RFC-0008-knowledge-contract.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/rfcs/RFC-0009-learning-contract.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/rfcs/RFC-0010-work-continuity-contract.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/rfcs/RFC-0011-continuation-evidence-contract.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/rfcs/RFC-0012-canonical-co-membership-evidence.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/rfcs/RFC-0013-continuation-surface-declaration.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/rfcs/RFC-0014-engagement-contract.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/standards/RFC-0000-rfc-system.md

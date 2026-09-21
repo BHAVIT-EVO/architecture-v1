@@ -25,6 +25,7 @@
 //! It represents understanding, not interface state (IS-0014 §5).
 
 use evo_artifact::artifact_id::ArtifactId;
+use evo_observation::observed_state::ObservedState;
 use evo_workspace::WorkspaceId;
 
 // ── ResumePoint ───────────────────────────────────────────────────────────────
@@ -44,7 +45,8 @@ use evo_workspace::WorkspaceId;
 /// # Non-Responsibilities
 ///
 /// - Does **not** prescribe operating-system actions.
-/// - Does **not** reference interface state.
+/// - Carries only optional interface state directly witnessed on the exact
+///   occurrence selected as the stopping point.
 /// - Does **not** reference raw Observations.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ResumePoint {
@@ -53,6 +55,11 @@ pub struct ResumePoint {
 
     /// The canonical Artifact representing the cognitive entry point (RSP-3).
     artifact_id: ArtifactId,
+
+    /// Generic local interface state witnessed on the selected stopping
+    /// occurrence. Absence means the state was not observable; it is never
+    /// filled from an older occurrence or inferred from the Artifact identity.
+    observed_state: Option<ObservedState>,
 }
 
 impl ResumePoint {
@@ -72,6 +79,21 @@ impl ResumePoint {
         Self {
             workspace_id,
             artifact_id,
+            observed_state: None,
+        }
+    }
+
+    /// Constructs a Resume Point with optional state directly witnessed on the
+    /// exact occurrence that established this stopping point.
+    pub fn new_with_observed_state(
+        workspace_id: WorkspaceId,
+        artifact_id: ArtifactId,
+        observed_state: Option<ObservedState>,
+    ) -> Self {
+        Self {
+            workspace_id,
+            artifact_id,
+            observed_state,
         }
     }
 
@@ -83,6 +105,11 @@ impl ResumePoint {
     /// Returns the canonical Artifact representing the cognitive entry point (RSP-3).
     pub fn artifact_id(&self) -> &ArtifactId {
         &self.artifact_id
+    }
+
+    /// Returns generic state directly witnessed where the work stopped.
+    pub fn observed_state(&self) -> Option<&ObservedState> {
+        self.observed_state.as_ref()
     }
 }
 
@@ -108,6 +135,18 @@ mod tests {
 
         assert_eq!(rp.workspace_id(), &wid);
         assert_eq!(rp.artifact_id(), &aid);
+        assert_eq!(rp.observed_state(), None);
+    }
+
+    #[test]
+    fn directly_witnessed_state_is_preserved() {
+        let state = ObservedState::new().with_insertion_line(37);
+        let rp = ResumePoint::new_with_observed_state(
+            workspace_id(),
+            artifact_id(),
+            Some(state.clone()),
+        );
+        assert_eq!(rp.observed_state(), Some(&state));
     }
 
     #[test]
@@ -128,14 +167,8 @@ mod tests {
     #[test]
     fn different_artifacts_are_not_equal() {
         let wid = workspace_id();
-        let a = ResumePoint::new(
-            wid.clone(),
-            ArtifactId::new("artifact-rp-a").unwrap(),
-        );
-        let b = ResumePoint::new(
-            wid,
-            ArtifactId::new("artifact-rp-b").unwrap(),
-        );
+        let a = ResumePoint::new(wid.clone(), ArtifactId::new("artifact-rp-a").unwrap());
+        let b = ResumePoint::new(wid, ArtifactId::new("artifact-rp-b").unwrap());
         assert_ne!(a, b);
     }
 

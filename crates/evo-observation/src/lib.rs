@@ -1,11 +1,13 @@
 pub mod accept;
 pub mod candidate;
-pub mod canonicalization;
+pub(crate) mod canonicalization;
 pub mod errors;
 pub mod evidence;
-pub mod integrity;
+pub(crate) mod integrity;
 pub mod observation;
 pub mod observation_id;
+pub mod observation_language;
 pub mod observation_schema;
+pub mod observed_state;
 pub mod provenance;
-pub mod validation;
+pub(crate) mod validation;

@@ -1,6 +1,6 @@
 IS-0016 — Historical Understanding Model
 
-Status: Proposed
+Status: frozen
 
 Version: 1.0
 
@@ -11,7 +11,7 @@ Depends On
 * Architecture
 * RFC-0005
 * IS-0011 (Workspace)
-* IS-0014 (Restoration)
+* IS-0018 — Committed Understanding
 
 ⸻
 
@@ -71,7 +71,7 @@ A HistoricalUnderstanding SHALL consist of exactly:
 
 HistoryId
 WorkspaceId
-RestorationPlan
+CommittedUnderstanding
 
 Nothing else belongs to the canonical object.
 
@@ -79,7 +79,7 @@ Nothing else belongs to the canonical object.
 
 Why only these?
 
-The RestorationPlan already represents the complete understanding required to continue work.
+The CommittedUnderstanding already represents the complete understanding required to continue work.
 
 It already contains:
 
@@ -92,7 +92,7 @@ RFC-0005 never says Historical Understanding stores a second copy of understandi
 
 It stores the committed understanding.
 
-The committed understanding is already represented by RestorationPlan.
+The committed understanding is already represented by CommittedUnderstanding.
 
 Duplicating those fields would violate the Architecture’s preference for single canonical representations.
 
@@ -132,15 +132,15 @@ Workspace remains the canonical interpretation.
 
 ⸻
 
-7. Restoration Plan
+7. CommittedUnderstanding
 
-HistoricalUnderstanding SHALL own exactly one immutable RestorationPlan.
+HistoricalUnderstanding SHALL own exactly one immutable CommittedUnderstanding as defined by IS-0018.
 
-That RestorationPlan SHALL be frozen permanently.
+That CommittedUnderstanding SHALL be frozen permanently.
 
 HistoricalUnderstanding SHALL NEVER modify it.
 
-Replay SHALL construct a completely new HistoricalUnderstanding rather than replacing the RestorationPlan.
+Replay SHALL construct a completely new HistoricalUnderstanding rather than replacing the CommittedUnderstanding.
 
 ⸻
 
@@ -152,7 +152,7 @@ HistoryId
 
 WorkspaceId
 
-RestorationPlan
+CommittedUnderstanding
 
 shall all be immutable.
 
@@ -168,7 +168,7 @@ Replay SHALL create
 
 Current Workspace
 ↓
-New RestorationPlan
+New CommittedUnderstanding
 ↓
 New HistoricalUnderstanding
 
@@ -202,7 +202,7 @@ WorkspaceId
 
 and owns only
 
-RestorationPlan.
+CommittedUnderstanding.
 
 ⸻
 
@@ -228,13 +228,13 @@ Every HistoricalUnderstanding references exactly one WorkspaceId.
 
 H-4
 
-HistoricalUnderstanding owns exactly one RestorationPlan.
+HistoricalUnderstanding owns exactly one CommittedUnderstanding.
 
 ⸻
 
 H-5
 
-RestorationPlan is immutable after construction.
+CommittedUnderstanding is immutable after construction.
 
 ⸻
 
@@ -282,14 +282,14 @@ HistoricalUnderstanding never owns Knowledge.
 
 H-13
 
-HistoricalUnderstanding never duplicates RestorationPlan components.
+HistoricalUnderstanding SHALL NEVER duplicate CommittedUnderstanding components.
 
 ⸻
 
 H-14
 
-HistoricalUnderstanding SHALL preserve the RestorationPlan exactly as committed. 
-It SHALL NEVER modify, replace, or partially reconstruct that RestorationPlan after construction.
+HistoricalUnderstanding SHALL preserve the CommittedUnderstanding exactly as committed. 
+It SHALL NEVER modify, replace, or partially reconstruct that CommittedUnderstanding after construction.
 
 ⸻
 
@@ -312,11 +312,11 @@ impl HistoricalUnderstanding {
     pub fn new(
         id: HistoryId,
         workspace_id: WorkspaceId,
-        restoration_plan: RestorationPlan,
+        committed_understanding: CommittedUnderstanding,
     ) -> Self;
     pub fn id(&self) -> &HistoryId;
     pub fn workspace_id(&self) -> &WorkspaceId;
-    pub fn restoration_plan(&self) -> &RestorationPlan;
+    pub fn committed_understanding(&self) -> &CommittedUnderstanding;
 }
 
 No setters.
@@ -361,8 +361,8 @@ This mirrors the approach taken in earlier IS documents: do not invent errors wh
 
 The crate depends only on:
 
+IS-0018 — Committed Understanding
 evo-workspace
-evo-restoration
 
 No dependency on
 

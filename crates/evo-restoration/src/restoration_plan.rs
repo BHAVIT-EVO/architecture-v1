@@ -22,7 +22,12 @@
 //! - one `ResumePoint`;
 //! - one `ContextChain`;
 //! - zero or more `Blocker` values;
-//! - one `NextStep`.
+//! - one `NextStep`;
+//! - one `ContinuationSurface` (RFC-0013, IS-0019 extension): the Artifacts
+//!   of this Workspace that the user declared their work continues across.
+//!   It is derived state (the per-Workspace intersection of the Current
+//!   Continuation Surface), never canonical state, and it never gates
+//!   completeness.
 //!
 //! Construction enforces workspace consistency across all components:
 //!
@@ -39,6 +44,7 @@
 //! - Does **not** modify Workspace understanding (RP-3).
 //! - Does **not** modify Observations or Artifact Identity (RM-2, RM-3).
 
+use evo_artifact::artifact_id::ArtifactId;
 use evo_workspace::WorkspaceId;
 
 use crate::blocker::Blocker;
@@ -87,6 +93,13 @@ pub struct RestorationPlan {
 
     /// The immediate continuation action following the Resume Point.
     next_step: NextStep,
+
+    /// The derived Continuation Surface of this Workspace (RFC-0013): the
+    /// Artifacts of the Workspace referenced by the Current Continuation
+    /// Surface, in canonical order. Empty when no valid declaration exists or
+    /// when no declared member belongs to this Workspace. Never gates
+    /// completeness (RFC-0013 Gating Invariants).
+    continuation_surface: Vec<ArtifactId>,
 }
 
 impl RestorationPlan {
@@ -111,6 +124,36 @@ impl RestorationPlan {
         blockers: Vec<Blocker>,
         next_step: NextStep,
     ) -> Result<Self, RestorationError> {
+        Self::new_with_continuation_surface(
+            workspace_id,
+            resume_point,
+            context_chain,
+            blockers,
+            next_step,
+            Vec::new(),
+        )
+    }
+
+    /// Constructs an immutable `RestorationPlan` carrying a derived
+    /// Continuation Surface (RFC-0013).
+    ///
+    /// `continuation_surface` is the per-Workspace intersection of the
+    /// Current Continuation Surface: the Artifacts of this Workspace the user
+    /// declared their work continues across, in canonical order. It is
+    /// derived state, never canonical state, and it never gates completeness
+    /// (RFC-0013 Gating Invariants).
+    ///
+    /// # Errors
+    ///
+    /// Same workspace-consistency errors as [`Self::new`].
+    pub fn new_with_continuation_surface(
+        workspace_id: WorkspaceId,
+        resume_point: ResumePoint,
+        context_chain: ContextChain,
+        blockers: Vec<Blocker>,
+        next_step: NextStep,
+        continuation_surface: Vec<ArtifactId>,
+    ) -> Result<Self, RestorationError> {
         if resume_point.workspace_id() != &workspace_id {
             return Err(RestorationError::ResumePointWorkspaceMismatch {
                 plan_workspace: workspace_id,
@@ -131,6 +174,7 @@ impl RestorationPlan {
             context_chain,
             blockers,
             next_step,
+            continuation_surface,
         })
     }
 
@@ -161,6 +205,14 @@ impl RestorationPlan {
         &self.next_step
     }
 
+    /// Returns the derived Continuation Surface of this Workspace (RFC-0013):
+    /// the Artifacts of the Workspace the user declared their work continues
+    /// across, in canonical order. Empty when no valid declaration exists or
+    /// when no declared member belongs to this Workspace.
+    pub fn continuation_surface(&self) -> &[ArtifactId] {
+        &self.continuation_surface
+    }
+
     /// Returns `true` if this plan has no blockers.
     ///
     /// A plan with no blockers indicates that continuation may proceed
@@ -187,13 +239,11 @@ mod tests {
 
     fn valid_plan(wid: WorkspaceId) -> RestorationPlan {
         let resume_point = ResumePoint::new(wid.clone(), artifact_id("rp-test-artifact"));
-        let context_chain = ContextChain::new(vec![
-            artifact_id("cc-test-1"),
-            artifact_id("cc-test-2"),
-        ])
-        .unwrap();
+        let context_chain =
+            ContextChain::new(vec![artifact_id("cc-test-1"), artifact_id("cc-test-2")]).unwrap();
         let blockers = vec![Blocker::new("failing test in evo-workspace").unwrap()];
-        let next_step = NextStep::new(wid.clone(), "continue implementing snapshot construction").unwrap();
+        let next_step =
+            NextStep::new(wid.clone(), "continue implementing snapshot construction").unwrap();
 
         RestorationPlan::new(wid, resume_point, context_chain, blockers, next_step).unwrap()
     }

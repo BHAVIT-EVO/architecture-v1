@@ -1,0 +1,18 @@
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/implementation/IS-0015 — Knowledge Model.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/implementation/IS-0016 — Historical Understanding Model.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/implementation/IS-0017 — Historical Commitment.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/implementation/IS-0018 — Committed Understanding.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/implementation/IS-0019 — Restoration Model.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/implementation/IS-0020-Collector.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/implementation/IS-0021 — Restoration Derivation.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/product/PRODUCT.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/rfcs/RFC-0001-observation-contract.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/rfcs/RFC-0002-artifact-identity-contract.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/rfcs/RFC-0003-workspace-formation-contract.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/rfcs/RFC-0004-interpretation-evolution.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/rfcs/RFC-0005-historical-understanding.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/rfcs/RFC-0006-restoration-contract.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/rfcs/RFC-0007-retrieval-contract.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/rfcs/RFC-0008-knowledge-contract.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/rfcs/RFC-0009-learning-contract.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/rfcs/RFC-0010-work-continuity-contract.md

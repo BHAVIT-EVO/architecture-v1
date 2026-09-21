@@ -70,13 +70,15 @@ mod tests {
     use std::time::SystemTime;
 
     // Helper to generate valid components for testing
-    fn create_test_components(schema_name: &str) -> (ObservationSchema, Provenance, Evidence) {
-        let schema = ObservationSchema::new(schema_name, 1).unwrap();
+    fn create_test_components() -> (ObservationSchema, Provenance, Evidence) {
+        let schema = ObservationSchema::window_focus_gained_v1();
 
         let source = ObservationSource::new("test_source").unwrap();
         let provenance = Provenance::new(source, SystemTime::now(), HashMap::new());
 
-        let fact = ObservedFact::new("key", FactValue::Boolean(true)).unwrap();
+        let fact =
+            ObservedFact::new("WindowFocusGained", FactValue::Text("editor-window".into()))
+                .unwrap();
         let evidence = Evidence::new(vec![fact]);
 
         (schema, provenance, evidence)
@@ -85,7 +87,7 @@ mod tests {
     #[test]
     fn accept_pipeline_succeeds_for_valid_candidate() {
         // Arrange
-        let (schema, provenance, evidence) = create_test_components("test_schema");
+        let (schema, provenance, evidence) = create_test_components();
         let candidate =
             CandidateObservation::new(schema.clone(), provenance.clone(), evidence.clone());
 
@@ -108,10 +110,10 @@ mod tests {
     #[test]
     fn accept_pipeline_fails_validation_for_mismatched_schema() {
         // Arrange
-        let (candidate_schema, provenance, evidence) = create_test_components("candidate_schema");
+        let (candidate_schema, provenance, evidence) = create_test_components();
         let candidate = CandidateObservation::new(candidate_schema.clone(), provenance, evidence);
 
-        let registered_schema = ObservationSchema::new("registered_schema", 1).unwrap();
+        let registered_schema = ObservationSchema::file_saved_v1();
 
         // Act
         let result = accept(candidate, &registered_schema);
