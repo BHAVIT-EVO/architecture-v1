@@ -1,9 +1,0 @@
-/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/design/UI-IMPLEMENTATION-0003.md
-/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/design/UI-REVIEW-0001.md
-/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/design/UI-VALIDATION-0001.md
-/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/foundation/ARCHITECTURAL_LAWS.md
-/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/foundation/COGNITIVE_MODEL.md
-/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/foundation/canonicalization.md
-/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/foundation/engineering-principles.md
-/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/foundation/glossary.md
-/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/foundation/observation-model.md
