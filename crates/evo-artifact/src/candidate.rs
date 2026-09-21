@@ -12,11 +12,43 @@
 //! # Internal Representation
 //!
 //! The internal representation of a Candidate Artifact is intentionally
-//! unspecified by IS-0004. All fields are private. No accessors are exposed.
-//! This file is the designated integration point for future field additions
-//! when the governing specification is written.
+//! unspecified by IS-0004. The current implementation stores one private
+//! Identity Hypothesis payload so Stage 1 validation can enforce the amended
+//! structural invariants without exposing any new public API surface.
+
+#[cfg(test)]
+use evo_observation::evidence::{Evidence, FactValue, ObservedFact};
+use evo_observation::observation::Observation;
+#[cfg(test)]
+use evo_observation::observation_id::ObservationId;
+#[cfg(test)]
+use evo_observation::observation_schema::ObservationSchema;
+#[cfg(test)]
+use evo_observation::provenance::{ObservationSource, Provenance};
+
+#[cfg(test)]
+use std::collections::HashMap;
+#[cfg(test)]
+use std::str::FromStr;
+#[cfg(test)]
+use std::time::SystemTime;
 
 // ── CandidateArtifact ─────────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, PartialEq)]
+struct IdentityHypothesis {
+    observations: Vec<Observation>,
+}
+
+impl IdentityHypothesis {
+    fn new(observations: Vec<Observation>) -> Self {
+        Self { observations }
+    }
+
+    fn observations(&self) -> &[Observation] {
+        &self.observations
+    }
+}
 
 /// The transient computational state representing one Identity Hypothesis
 /// awaiting Artifact Acceptance (IS-0004).
@@ -51,11 +83,9 @@
 /// [`Artifact`]: crate::artifact::Artifact
 /// [`ArtifactId`]: crate::artifact_id::ArtifactId
 #[derive(Debug)]
-pub struct CandidateArtifact;
-    // Internal representation is intentionally unspecified by IS-0004.
-    // This field is a zero-sized private marker. Its sole purpose is to
-    // prevent external construction of this struct and to make the privacy
-    // of the representation explicit. It carries no semantic content.
+pub(crate) struct CandidateArtifact {
+    hypothesis: IdentityHypothesis,
+}
 
 impl CandidateArtifact {
     /// Constructs a `CandidateArtifact` representing one Identity Hypothesis
@@ -65,9 +95,69 @@ impl CandidateArtifact {
     ///
     /// The Acceptance Pipeline enforces these invariants through Validation
     /// (IS-0005 Stage 1) before any subsequent stage executes.
-    pub fn new() -> Self {
-        Self
+    pub(crate) fn new() -> Self {
+        Self {
+            hypothesis: IdentityHypothesis::new(vec![]),
+        }
     }
+
+    pub(crate) fn observations(&self) -> &[Observation] {
+        self.hypothesis.observations()
+    }
+
+    pub(crate) fn new_with_observations(observations: Vec<Observation>) -> Self {
+        Self {
+            hypothesis: IdentityHypothesis::new(observations),
+        }
+    }
+}
+
+#[cfg(test)]
+pub(crate) fn test_observation() -> Observation {
+    test_observation_with_subject("fixture", SystemTime::UNIX_EPOCH)
+}
+
+#[cfg(test)]
+pub(crate) fn test_observation_with_subject(subject: &str, observed_at: SystemTime) -> Observation {
+    let id = ObservationId::from_str("123e4567-e89b-12d3-a456-426614174000").unwrap();
+    let schema = ObservationSchema::window_focus_gained_v1();
+    let source = ObservationSource::new("artifact_engine_fixture").unwrap();
+    let provenance = Provenance::new(source, observed_at, HashMap::new());
+    let fact = ObservedFact::new(
+        schema.canonical_fact_name().unwrap(),
+        FactValue::Text(subject.into()),
+    )
+    .unwrap();
+    let evidence = Evidence::new(vec![fact]);
+
+    Observation::new(id, schema, provenance, evidence)
+}
+
+#[cfg(test)]
+pub(crate) fn test_observation_with_identity(
+    id: &str,
+    subject: &str,
+    observed_at: SystemTime,
+) -> Observation {
+    let id = ObservationId::from_str(id).unwrap();
+    let schema = ObservationSchema::window_focus_gained_v1();
+    let source = ObservationSource::new("artifact_engine_fixture").unwrap();
+    let provenance = Provenance::new(source, observed_at, HashMap::new());
+    let fact = ObservedFact::new(
+        schema.canonical_fact_name().unwrap(),
+        FactValue::Text(subject.into()),
+    )
+    .unwrap();
+    let evidence = Evidence::new(vec![fact]);
+
+    Observation::new(id, schema, provenance, evidence)
+}
+
+#[cfg(test)]
+pub(crate) fn test_candidate_with_observations(
+    observations: Vec<Observation>,
+) -> CandidateArtifact {
+    CandidateArtifact::new_with_observations(observations)
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -102,5 +192,11 @@ mod tests {
         // If this test compiles without accessing any field,
         // the internal representation is fully encapsulated.
         let _candidate = CandidateArtifact::new();
+    }
+
+    #[test]
+    fn test_helper_constructs_populated_candidate() {
+        let candidate = test_candidate_with_observations(vec![test_observation()]);
+        assert_eq!(candidate.observations().len(), 1);
     }
 }

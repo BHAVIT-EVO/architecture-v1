@@ -2,7 +2,9 @@
 
 Status: Accepted
 
-Version: 1.0
+Version: 2.0
+
+Amended By: RFC-0014 (Engagement Contract) — see Amendment Record
 
 Depends On:
 
@@ -14,6 +16,132 @@ Depends On:
 - RFC-0000
 - RFC-0001
 - RFC-0002
+- RFC-0014
+
+---
+
+# Amendment Record
+
+## v2.0 — Requirement 1, Requirement 2, and Non-Goals
+
+Three rules in v1.0 forbade behaviour the product requires. Each is recorded
+below with the old rule, why it prevented Evo from working, and the rule that
+replaces it. Nothing is removed silently; the superseded wording is quoted in
+full.
+
+### Amendment 1 — Requirement 2 no longer forbids temporal proximity
+
+**Old rule (v1.0, Requirement 2).**
+
+> "Workspace Formation MUST NOT explain topical similarity, application
+> similarity, temporal proximity, file organization, or any other isolated
+> observational feature."
+
+**Why it prevented the product from working.** The prohibition conflated two
+different things under one word. *Proximity as a sufficient condition* — "these
+were seen near each other, therefore they are one Workspace" — is genuinely
+wrong and remains forbidden. But *temporal structure as evidence* is the
+strongest signal available that heterogeneous resources belong to one body of
+work, and frequently the only one. A document called `assignment.md`, a terminal,
+and a browser page about a library share no vocabulary, no directory, no
+repository, and no application; the sole witnessed fact that relates them is
+that a person moved between them, repeatedly, in one sitting. Forbidding
+temporal reading therefore left nothing with which to relate anything, and the
+only surviving basis for a Workspace was a property of one resource in
+isolation — which is exactly the per-resource rule that made Home a list of
+resources.
+
+**New rule.** Temporal relationships between Acts ARE admissible evidence of
+work continuity, subject to two bounds: proximity alone MUST NOT constitute a
+body of work, and presence MUST NOT be inferred across an interval too long to
+be one continuous stretch of attending. Normative statement: RFC-0014
+Requirement 4.
+
+The v1.0 prohibitions on topical similarity, application similarity, and file
+organization *as sufficient conditions* are retained and strengthened: RFC-0014
+Requirement 3 additionally forbids consulting application identity at all.
+
+### Amendment 2 — Requirement 2's repository clause is withdrawn
+
+**Old rule (v1.0, Requirement 2, final paragraph).**
+
+> "Repository co-membership evidence, as defined by RFC-0012, is a relational
+> continuity signal and MAY contribute evidence of Workspace continuity; it
+> SHALL NEVER define Workspace identity alone."
+
+**Why it prevented the product from working.** It elevated one Git-specific
+relationship to named status in the formation contract. Most work is not in a
+repository — browser and PDF and terminal, spreadsheet and notes, drawing and
+folder — so a contract that names repository membership and nothing else makes
+every non-Git body of work second-class. It also over-groups precisely where
+separation matters most: two unrelated activities in one repository share the
+signal completely.
+
+**New rule.** Shared containment is one structural relationship among several,
+carrying no privileged weight and no dependence on Git. RFC-0012 is superseded
+in full by RFC-0014; see RFC-0014 "Architectural Consequences".
+
+### Amendment 3 — Non-Goals no longer excludes importance and restoration order
+
+**Old rule (v1.0, Non-Goals).**
+
+> "Workspace Formation is not responsible for: … determining restoration order;
+> determining importance; determining relevance …"
+
+**Why it prevented the product from working.** Restoration must be selective:
+opening all sixteen resources of a body of work hands the person back the exact
+reload cost the product exists to remove. Selectivity requires knowing which
+members matter to resuming — that is, importance. With importance excluded from
+formation and no other layer holding the evidence, the only available selection
+rule was "all members", and restoration opened everything.
+
+**New rule.** Formation determines each participant's **role**, which is its
+importance *to resuming* — distinct from strength of membership, and separately
+derived. Normative statement: RFC-0014 Requirement 8. Restoration consumes roles
+rather than computing importance itself (RFC-0014 Requirement 10), so the
+separation of concerns the old Non-Goal protected is preserved: formation states
+importance, restoration acts on it.
+
+Still excluded, unchanged: determining user goals, project ownership, task
+completion, and predicting future work.
+
+### Amendment 4 — Requirement 1's evidence basis is widened
+
+**Old rule (v1.0, Requirement 1).**
+
+> "Every Workspace MUST be derived exclusively from Artifact histories."
+
+**Why it prevented the product from working.** Read strictly, it admits only the
+per-Artifact history as evidence and so excludes the relational and temporal
+evidence a body of work is made of. It is also narrower than the invariant it
+was protecting, which is that nothing may be invented — not that Artifact
+history is the only permitted shape of derived evidence.
+
+**New rule.** Every Workspace MUST be derived exclusively from the canonical
+Observation history, through derived intermediate representations (Acts,
+Episodes, the Attention Ledger, Engagements) that are themselves pure functions
+of it. No Workspace may rest on anything not traceable to a canonical
+Observation. The invariant is unchanged in force; only the permitted shape of
+derived evidence is widened.
+
+### Reconciliation of dependent documents
+
+- **RFC-0012** — superseded in full (Status header updated).
+- **Architecture** §3, §4, §5, §6, §7, §9, §12 — amended; see the Amendment
+  Record in `ARCHITECTURE.md`.
+- **IS-0011, IS-0012, IS-0013** — amended; see each document's Amendment
+  Record.
+- **RFC-0013** — unaffected: declaration remains ground truth (RFC-0014
+  Requirement 11).
+
+### Implementation contracts and tests
+
+Implemented by `evo-engagement` (Acts, Episodes, attention, affinity, grouping,
+roles, naming), `evo-workspace::projection` (Engagement → Workspace), and
+`evo-daemon::understanding`. Behavioural coverage for each amended rule lives in
+the adversarial scenario suite (`evo-daemon`'s `verify_scenarios` example,
+scenarios A–O) and in the unit tests of the modules named above; Amendment 1 is
+covered by scenarios E, F, and G, Amendment 3 by scenarios I and J.
 
 ---
 
@@ -98,9 +226,14 @@ Those responsibilities belong to later specifications.
 
 ## Requirement 1 — Derived Explanation
 
-Every Workspace MUST be derived exclusively from Artifact histories.
+Every Workspace MUST be derived exclusively from the canonical Observation
+history, through derived intermediate representations that are themselves pure
+functions of that history.
 
-A Workspace MUST NOT exist independently of supporting Artifact evidence.
+A Workspace MUST NOT exist independently of supporting canonical evidence.
+
+Nothing in a Workspace may rest on anything not traceable to a canonical
+Observation. (Amended in v2.0 — Amendment 4.)
 
 ---
 
@@ -108,11 +241,19 @@ A Workspace MUST NOT exist independently of supporting Artifact evidence.
 
 Workspace Formation MUST explain continuity of evolving work.
 
-Workspace Formation MUST NOT explain topical similarity, application similarity, temporal proximity, file organization, or any other isolated observational feature.
+Workspace Formation MUST NOT treat topical similarity, application similarity,
+temporal proximity, file organization, or any other single observational feature
+as *sufficient* to establish a Workspace.
 
 Similarity may contribute evidence.
 
 Similarity MUST NEVER define Workspace identity.
+
+Temporal relationships between Acts ARE admissible evidence of continuity,
+bounded as RFC-0014 Requirement 4 defines: proximity alone establishes nothing,
+and presence is never inferred across silence. (Amended in v2.0 — Amendment 1.)
+
+Application identity MUST NOT be consulted at all (RFC-0014 Requirement 3).
 
 ---
 
@@ -196,7 +337,7 @@ They MUST NOT define Workspace identity.
 
 Every compliant Workspace guarantees:
 
-- derivation from Artifact histories;
+- derivation from the canonical Observation history;
 - explanatory rather than container semantics;
 - provisional identity;
 - historical continuity;
@@ -245,14 +386,16 @@ Workspace Formation is not responsible for:
 - determining user goals;
 - determining project ownership;
 - determining task completion;
-- determining restoration order;
-- determining importance;
-- determining relevance;
 - predicting future work.
+
+Workspace Formation DOES determine each participant's role — its importance to
+resuming — which Restoration consumes rather than recomputes. (Amended in
+v2.0 — Amendment 3; normative statement in RFC-0014 Requirements 8 and 10.)
 
 Workspace Formation answers only one computational question:
 
-"Which Artifact histories are best explained as the evolution of one coherent body of work?"
+"Which resources are best explained as the evolution of one coherent body of
+work, and how much does each matter to resuming it?"
 
 ---
 

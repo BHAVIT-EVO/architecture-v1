@@ -5,4 +5,9 @@ edition = "2024"
 
 [dependencies]
 evo-artifact = { path = "../evo-artifact" }
+evo-engagement = { path = "../evo-engagement" }
+evo-observation = { path = "../evo-observation" }
 uuid = { version = "1", features = ["v4"] }
+
+[dev-dependencies]
+evo-storage = { path = "../evo-storage" }

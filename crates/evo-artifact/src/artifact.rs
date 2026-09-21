@@ -34,7 +34,6 @@ pub struct Artifact {
 }
 
 impl Artifact {
-    
     /// Returns the stable computational reference for this Artifact.
     pub fn id(&self) -> &ArtifactId {
         &self.id

@@ -1,0 +1,18 @@
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/foundation/engineering-principles.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/foundation/glossary.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/foundation/observation-model.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/implementation/IMPLEMENTATION_PLAYBOOK.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/implementation/IS-0001-Observation.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/implementation/IS-0002 — Observation Language.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/implementation/IS-0003 — Observation Schemas.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/implementation/IS-0004-Artifact-Model.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/implementation/IS-0005-Artifact-Lifecycle.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/implementation/IS-0006 — Identity Hypothesis.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/implementation/IS-0007 — Artifact Identity Lifecycle.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/implementation/IS-0008 — Artifact Replay.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/implementation/IS-0009 Artifact Engine.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/implementation/IS-0010 — Identity Derivation Contract.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/implementation/IS-0011 — Workspace Model.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/implementation/IS-0012 — Workspace Formation.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/implementation/IS-0013 — Workspace Replay.md
+/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/docs/implementation/IS-0014 — Confidence Score.md

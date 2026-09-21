@@ -59,9 +59,7 @@ impl Blocker {
     ///
     /// - The description is preserved exactly as supplied.
     /// - Immutable after construction.
-    pub fn new(
-        description: impl Into<String>,
-    ) -> Result<Self, RestorationError> {
+    pub fn new(description: impl Into<String>) -> Result<Self, RestorationError> {
         Ok(Self {
             description: description.into(),
         })

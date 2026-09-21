@@ -1,0 +1,16 @@
+[package]
+name = "evo-daemon"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+evo-artifact = { path = "../evo-artifact" }
+evo-capture = { path = "../evo-capture" }
+evo-engagement = { path = "../evo-engagement" }
+evo-execution = { path = "../evo-execution" }
+evo-observation = { path = "../evo-observation" }
+evo-restoration = { path = "../evo-restoration" }
+evo-retrieval = { path = "../evo-retrieval" }
+evo-storage = { path = "../evo-storage" }
+evo-threads = { path = "../evo-threads" }
+evo-workspace = { path = "../evo-workspace" }

@@ -190,7 +190,7 @@ mod tests {
     #[test]
     fn id_is_immutable_after_construction() {
         let id = ArtifactId::new("immutable-test").unwrap();
-        
+
         // Ensure there is no mutable accessor
         let reference: &str = id.as_str();
         assert_eq!(reference, "immutable-test");

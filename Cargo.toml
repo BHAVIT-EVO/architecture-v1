@@ -3,12 +3,16 @@ resolver = "2"
 
 members = [
     "crates/evo-observation",
+    "crates/evo-capture",
     "crates/evo-artifact",
+    "crates/evo-engagement",
+    "crates/evo-threads",
+    "crates/evo-ledger",
     "crates/evo-workspace",
-    "crates/evo-replay",
     "crates/evo-restoration",
-    "crates/evo-knowledge",
-    "crates/evo-history",
+    "crates/evo-execution",
     "crates/evo-retrieval",
-    "crates/evo-storage"
+    "crates/evo-storage",
+    "crates/evo-daemon",
+    "crates/evo-desktop"
 ]

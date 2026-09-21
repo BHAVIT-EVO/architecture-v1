@@ -1,0 +1,2108 @@
+{
+  ".claude/settings.json": {
+    "mtime": 1788501541.20242,
+    "seen": 1788519568.53088,
+    "ast_hash": "dbe039a15c5c2eb60e34dccc1af0cbb5",
+    "semantic_hash": "dbe039a15c5c2eb60e34dccc1af0cbb5"
+  },
+  ".claude/settings.local.json": {
+    "mtime": 1788609396.5248508,
+    "seen": 1788948510.061613,
+    "ast_hash": "462ac90abd535913a8ec45c9ba57026d",
+    "semantic_hash": ""
+  },
+  "crates/evo-api/Cargo.toml": {
+    "mtime": 1785856980.1403484,
+    "seen": 1788519568.530887,
+    "ast_hash": "65b8063accff202e51adfe649fc4ed88",
+    "semantic_hash": "65b8063accff202e51adfe649fc4ed88"
+  },
+  "crates/evo-api/src/api.rs": {
+    "mtime": 1786016599.584373,
+    "seen": 1788519568.5308878,
+    "ast_hash": "21a64e762620692c2cf9cb485e0482df",
+    "semantic_hash": "21a64e762620692c2cf9cb485e0482df"
+  },
+  "crates/evo-api/src/errors.rs": {
+    "mtime": 1786016599.584955,
+    "seen": 1788519568.530889,
+    "ast_hash": "a434deb199deac632d63b74c7cf35d69",
+    "semantic_hash": "a434deb199deac632d63b74c7cf35d69"
+  },
+  "crates/evo-api/src/lib.rs": {
+    "mtime": 1786016599.5851598,
+    "seen": 1788519568.530889,
+    "ast_hash": "99042b0b1c45bf22de8563f9f70f5820",
+    "semantic_hash": "99042b0b1c45bf22de8563f9f70f5820"
+  },
+  "crates/evo-api/src/reference.rs": {
+    "mtime": 1785856980.1403582,
+    "seen": 1788519568.53089,
+    "ast_hash": "0a1f8e08a2446dca34642bf31c8c3204",
+    "semantic_hash": "0a1f8e08a2446dca34642bf31c8c3204"
+  },
+  "crates/evo-api/src/responses.rs": {
+    "mtime": 1786016599.5857437,
+    "seen": 1788519568.530891,
+    "ast_hash": "1fa0927f9029f83d7f04a98e3fa4ef58",
+    "semantic_hash": "1fa0927f9029f83d7f04a98e3fa4ef58"
+  },
+  "crates/evo-artifact/Cargo.toml": {
+    "mtime": 1786025233.2599375,
+    "seen": 1788519568.530891,
+    "ast_hash": "2245979b842455e36569b83e101e9ed3",
+    "semantic_hash": "2245979b842455e36569b83e101e9ed3"
+  },
+  "crates/evo-artifact/src/accept.rs": {
+    "mtime": 1786451351.7375252,
+    "seen": 1788519568.5308921,
+    "ast_hash": "4bae1806193baca2a2f74f99327114f6",
+    "semantic_hash": "4bae1806193baca2a2f74f99327114f6"
+  },
+  "crates/evo-artifact/src/artifact.rs": {
+    "mtime": 1786016599.5904338,
+    "seen": 1788519568.530893,
+    "ast_hash": "3c1429f8e9c2076b9824f7d0ccbf87e3",
+    "semantic_hash": "3c1429f8e9c2076b9824f7d0ccbf87e3"
+  },
+  "crates/evo-artifact/src/artifact_id.rs": {
+    "mtime": 1786016599.59114,
+    "seen": 1788519568.530893,
+    "ast_hash": "81d0287385ea0dc5af2ca56dd4c15104",
+    "semantic_hash": "81d0287385ea0dc5af2ca56dd4c15104"
+  },
+  "crates/evo-artifact/src/candidate.rs": {
+    "mtime": 1786353252.166546,
+    "seen": 1788519568.530894,
+    "ast_hash": "45e44ea096e8c261073098f69dfd8570",
+    "semantic_hash": "45e44ea096e8c261073098f69dfd8570"
+  },
+  "crates/evo-artifact/src/canonicalization.rs": {
+    "mtime": 1785953309.57071,
+    "seen": 1788519568.530895,
+    "ast_hash": "0e488a176433e25db4751a38393f1b99",
+    "semantic_hash": "0e488a176433e25db4751a38393f1b99"
+  },
+  "crates/evo-artifact/src/errors.rs": {
+    "mtime": 1786016599.5934289,
+    "seen": 1788519568.530895,
+    "ast_hash": "f2d46438084e74422fa03b0d4e0f2227",
+    "semantic_hash": "f2d46438084e74422fa03b0d4e0f2227"
+  },
+  "crates/evo-artifact/src/identity_assignment.rs": {
+    "mtime": 1786475507.5071185,
+    "seen": 1788519568.530896,
+    "ast_hash": "bafc3f4ff8f867cf72e80aacdc85cd84",
+    "semantic_hash": "bafc3f4ff8f867cf72e80aacdc85cd84"
+  },
+  "crates/evo-artifact/src/integrity.rs": {
+    "mtime": 1785955200.0111613,
+    "seen": 1788519568.530897,
+    "ast_hash": "3298e2e0327ac8217e59d04dff233535",
+    "semantic_hash": "3298e2e0327ac8217e59d04dff233535"
+  },
+  "crates/evo-artifact/src/lib.rs": {
+    "mtime": 1786475492.693751,
+    "seen": 1788519568.5308979,
+    "ast_hash": "32c0bb68b06bf3420310662cff26a1b4",
+    "semantic_hash": "32c0bb68b06bf3420310662cff26a1b4"
+  },
+  "crates/evo-artifact/src/persistence.rs": {
+    "mtime": 1785955666.674179,
+    "seen": 1788519568.5308979,
+    "ast_hash": "a7e914ea9933e136196a900d16a231f6",
+    "semantic_hash": "a7e914ea9933e136196a900d16a231f6"
+  },
+  "crates/evo-artifact/src/validation.rs": {
+    "mtime": 1786353046.1518192,
+    "seen": 1788519568.530899,
+    "ast_hash": "1577a0c497823eaa43751d8dfcdae1d7",
+    "semantic_hash": "1577a0c497823eaa43751d8dfcdae1d7"
+  },
+  "crates/evo-capture/Cargo.toml": {
+    "mtime": 1786035876.779326,
+    "seen": 1788519568.5309,
+    "ast_hash": "18cfea066af019e6d67afcc4712fe5ab",
+    "semantic_hash": "18cfea066af019e6d67afcc4712fe5ab"
+  },
+  "crates/evo-capture/examples/macos_activation_demo.rs": {
+    "mtime": 1786612394.0263462,
+    "seen": 1788519568.5309,
+    "ast_hash": "76d1cb73a84fd8cbfe93ac3c6878952a",
+    "semantic_hash": "76d1cb73a84fd8cbfe93ac3c6878952a"
+  },
+  "crates/evo-capture/examples/probe_delivery.rs": {
+    "mtime": 1787490078.6327345,
+    "seen": 1788519568.530901,
+    "ast_hash": "224f5a7314bb736cf879489740606819",
+    "semantic_hash": "224f5a7314bb736cf879489740606819"
+  },
+  "crates/evo-capture/examples/probe_fsevents.rs": {
+    "mtime": 1786539851.029236,
+    "seen": 1788519568.530902,
+    "ast_hash": "e532740f9107d732cffccc0de7a07a76",
+    "semantic_hash": "e532740f9107d732cffccc0de7a07a76"
+  },
+  "crates/evo-capture/examples/probe_sources.rs": {
+    "mtime": 1786612394.0259943,
+    "seen": 1788519568.530902,
+    "ast_hash": "a825ede5ffa3230a06b5eb8c3d022a61",
+    "semantic_hash": "a825ede5ffa3230a06b5eb8c3d022a61"
+  },
+  "crates/evo-capture/examples/probe_url.rs": {
+    "mtime": 1786537414.494307,
+    "seen": 1788519568.530903,
+    "ast_hash": "1cb4b3b9459e37dc1363f2b97a46ee34",
+    "semantic_hash": "1cb4b3b9459e37dc1363f2b97a46ee34"
+  },
+  "crates/evo-capture/examples/probe_url2.rs": {
+    "mtime": 1786539864.859254,
+    "seen": 1788519568.530904,
+    "ast_hash": "9ac9f2aebdd18f63fe4488b725ae991a",
+    "semantic_hash": "9ac9f2aebdd18f63fe4488b725ae991a"
+  },
+  "crates/evo-capture/src/adapters/macos.rs": {
+    "mtime": 1788947380.2116148,
+    "seen": 1788948510.062081,
+    "ast_hash": "395f33e7c16f04d1abf287c8588efcba",
+    "semantic_hash": ""
+  },
+  "crates/evo-capture/src/adapters/mod.rs": {
+    "mtime": 1786035877.3133748,
+    "seen": 1788519568.530905,
+    "ast_hash": "de9d0ac8f836fbf7422e02a2aba832c0",
+    "semantic_hash": "de9d0ac8f836fbf7422e02a2aba832c0"
+  },
+  "crates/evo-capture/src/collector.rs": {
+    "mtime": 1788947445.157876,
+    "seen": 1788948510.062103,
+    "ast_hash": "52bde86a0076b1d10474d5baf4de1382",
+    "semantic_hash": ""
+  },
+  "crates/evo-capture/src/engine.rs": {
+    "mtime": 1788527529.2877662,
+    "seen": 1788948510.062104,
+    "ast_hash": "3cc4d2d913273a523d01a167812f9bc1",
+    "semantic_hash": ""
+  },
+  "crates/evo-capture/src/lib.rs": {
+    "mtime": 1788947175.4675677,
+    "seen": 1788948510.0621052,
+    "ast_hash": "bb5706c9620581e4206103d0972a18c8",
+    "semantic_hash": ""
+  },
+  "crates/evo-capture/src/macos_event_source.rs": {
+    "mtime": 1787841578.421614,
+    "seen": 1788519568.530907,
+    "ast_hash": "8d56859d0f79767eb01f97efb0fffab4",
+    "semantic_hash": "8d56859d0f79767eb01f97efb0fffab4"
+  },
+  "crates/evo-capture/src/macos_fsevents.rs": {
+    "mtime": 1786730190.886577,
+    "seen": 1788519568.5309079,
+    "ast_hash": "b05a6c4cafaa1b7d74391924e0ad31a0",
+    "semantic_hash": "b05a6c4cafaa1b7d74391924e0ad31a0"
+  },
+  "crates/evo-capture/src/macos_url_poller.rs": {
+    "mtime": 1786616686.7460854,
+    "seen": 1788519568.5309079,
+    "ast_hash": "aa7fa2705adb2cc3bf0b7d72a9c73e8c",
+    "semantic_hash": "aa7fa2705adb2cc3bf0b7d72a9c73e8c"
+  },
+  "crates/evo-capture/src/raw_event.rs": {
+    "mtime": 1787833591.2349432,
+    "seen": 1788519568.5309088,
+    "ast_hash": "8d321416cd0ce65c310f6f1300cc2b5d",
+    "semantic_hash": "8d321416cd0ce65c310f6f1300cc2b5d"
+  },
+  "crates/evo-capture/src/repo_identity.rs": {
+    "mtime": 1786632489.0672877,
+    "seen": 1788519568.53091,
+    "ast_hash": "85c547fe571421c30890a88e10fd3499",
+    "semantic_hash": "85c547fe571421c30890a88e10fd3499"
+  },
+  "crates/evo-capture/tests/macos_event_source.rs": {
+    "mtime": 1786612394.025394,
+    "seen": 1788519568.53091,
+    "ast_hash": "89c630d65eb9c042bd729f8bc85fec53",
+    "semantic_hash": "89c630d65eb9c042bd729f8bc85fec53"
+  },
+  "crates/evo-daemon/Cargo.toml": {
+    "mtime": 1788952058.2700443,
+    "seen": 1788956543.8321521,
+    "ast_hash": "ebd068ed1405893e64bb1aecf1709a78",
+    "semantic_hash": ""
+  },
+  "crates/evo-daemon/examples/audit_work_model.rs": {
+    "mtime": 1787670156.2944744,
+    "seen": 1788519568.530911,
+    "ast_hash": "a5cad00c28e37b37e6f461de6d59f6e5",
+    "semantic_hash": "a5cad00c28e37b37e6f461de6d59f6e5"
+  },
+  "crates/evo-daemon/examples/bench_reload.rs": {
+    "mtime": 1787491398.1495814,
+    "seen": 1788519568.530912,
+    "ast_hash": "02fbde83142a83df964507eee63aa4a7",
+    "semantic_hash": "02fbde83142a83df964507eee63aa4a7"
+  },
+  "crates/evo-daemon/examples/designate.rs": {
+    "mtime": 1786986874.316133,
+    "seen": 1788519568.530912,
+    "ast_hash": "c4c51cbe078873a755ed248f4e63314a",
+    "semantic_hash": "c4c51cbe078873a755ed248f4e63314a"
+  },
+  "crates/evo-daemon/examples/diagnose_real_history.rs": {
+    "mtime": 1787670206.6453419,
+    "seen": 1788519568.530913,
+    "ast_hash": "41ac48127d5cd87d277f2e8f97bee642",
+    "semantic_hash": "41ac48127d5cd87d277f2e8f97bee642"
+  },
+  "crates/evo-daemon/examples/drive_pipeline.rs": {
+    "mtime": 1787834534.1995378,
+    "seen": 1788519568.530914,
+    "ast_hash": "72bee8401fdbc9373997a22801369daa",
+    "semantic_hash": "72bee8401fdbc9373997a22801369daa"
+  },
+  "crates/evo-daemon/examples/evo_doctor.rs": {
+    "mtime": 1787425219.5680325,
+    "seen": 1788519568.530914,
+    "ast_hash": "1e37b880c3d6807a8c45bec28bd63ba0",
+    "semantic_hash": "1e37b880c3d6807a8c45bec28bd63ba0"
+  },
+  "crates/evo-daemon/examples/explain_clusters.rs": {
+    "mtime": 1787673564.9308925,
+    "seen": 1788519568.530915,
+    "ast_hash": "353688f9e8ad1aeb6817d63ee14ddcfb",
+    "semantic_hash": "353688f9e8ad1aeb6817d63ee14ddcfb"
+  },
+  "crates/evo-daemon/examples/explain_clusters_ab.rs": {
+    "mtime": 1787676815.8923624,
+    "seen": 1788519568.530915,
+    "ast_hash": "499f39d60301818ef1903e37af005aa1",
+    "semantic_hash": "499f39d60301818ef1903e37af005aa1"
+  },
+  "crates/evo-daemon/examples/explain_standing.rs": {
+    "mtime": 1787735659.8553624,
+    "seen": 1788519568.5309162,
+    "ast_hash": "c94121d6c2a813d98a6c1f8e304300da",
+    "semantic_hash": "c94121d6c2a813d98a6c1f8e304300da"
+  },
+  "crates/evo-daemon/examples/inspect_activity_contexts.rs": {
+    "mtime": 1787759253.8004587,
+    "seen": 1788519568.5309172,
+    "ast_hash": "2fc2f7a8a96dc41502218f7450409f98",
+    "semantic_hash": "2fc2f7a8a96dc41502218f7450409f98"
+  },
+  "crates/evo-daemon/examples/probe_attribution.rs": {
+    "mtime": 1787495183.5076385,
+    "seen": 1788519568.5309172,
+    "ast_hash": "a8b19ff80e19b7ed3eaf24f29b95c39d",
+    "semantic_hash": "a8b19ff80e19b7ed3eaf24f29b95c39d"
+  },
+  "crates/evo-daemon/examples/probe_cohesion.rs": {
+    "mtime": 1787721925.2239447,
+    "seen": 1788519568.530918,
+    "ast_hash": "2595c55b225c02b9d6b44f159e2e6022",
+    "semantic_hash": "2595c55b225c02b9d6b44f159e2e6022"
+  },
+  "crates/evo-daemon/examples/probe_runtime.rs": {
+    "mtime": 1786539798.427012,
+    "seen": 1788519568.530918,
+    "ast_hash": "38bdf09ba317d3050789562acdeba116",
+    "semantic_hash": "38bdf09ba317d3050789562acdeba116"
+  },
+  "crates/evo-daemon/examples/probe_selectivity.rs": {
+    "mtime": 1787721595.095802,
+    "seen": 1788519568.5309188,
+    "ast_hash": "b807c42fc8bd625e29044f244cbe7ddd",
+    "semantic_hash": "b807c42fc8bd625e29044f244cbe7ddd"
+  },
+  "crates/evo-daemon/examples/replay_real_history.rs": {
+    "mtime": 1787670116.7389672,
+    "seen": 1788519568.53092,
+    "ast_hash": "30e192463730acc6dba5abad7014706e",
+    "semantic_hash": "30e192463730acc6dba5abad7014706e"
+  },
+  "crates/evo-daemon/examples/verify_collectors.rs": {
+    "mtime": 1787471658.217352,
+    "seen": 1788519568.53092,
+    "ast_hash": "5ddbf3e23d3df6ebefca7c803e64567d",
+    "semantic_hash": "5ddbf3e23d3df6ebefca7c803e64567d"
+  },
+  "crates/evo-daemon/examples/verify_continuation_surface.rs": {
+    "mtime": 1787462428.3196495,
+    "seen": 1788519568.530921,
+    "ast_hash": "f33d31707a0f80eb293700964cb47113",
+    "semantic_hash": "f33d31707a0f80eb293700964cb47113"
+  },
+  "crates/evo-daemon/examples/verify_scenarios.rs": {
+    "mtime": 1787834534.2051206,
+    "seen": 1788519568.530921,
+    "ast_hash": "a4ced77201a9b2429c77b68d0cdf698e",
+    "semantic_hash": "a4ced77201a9b2429c77b68d0cdf698e"
+  },
+  "crates/evo-daemon/examples/verify_store.rs": {
+    "mtime": 1787424575.1778462,
+    "seen": 1788519568.530922,
+    "ast_hash": "26cd5a5d9e97c7afff633049b993e427",
+    "semantic_hash": "26cd5a5d9e97c7afff633049b993e427"
+  },
+  "crates/evo-daemon/src/builder.rs": {
+    "mtime": 1785859483.1755078,
+    "seen": 1788519568.530923,
+    "ast_hash": "3b596b2be1058c28e9001f1bfadda98f",
+    "semantic_hash": "3b596b2be1058c28e9001f1bfadda98f"
+  },
+  "crates/evo-daemon/src/cache.rs": {
+    "mtime": 1788156740.612252,
+    "seen": 1788519568.530923,
+    "ast_hash": "bf2f3d36e2c37a567b00ce3bb799089b",
+    "semantic_hash": "bf2f3d36e2c37a567b00ce3bb799089b"
+  },
+  "crates/evo-daemon/src/continuation.rs": {
+    "mtime": 1786716782.9205585,
+    "seen": 1788519568.530924,
+    "ast_hash": "bb94068c9d6f666570ae4766f5ebf289",
+    "semantic_hash": "bb94068c9d6f666570ae4766f5ebf289"
+  },
+  "crates/evo-daemon/src/daemon.rs": {
+    "mtime": 1786361175.1797533,
+    "seen": 1788519568.530924,
+    "ast_hash": "464653ba001e8c69ec0fe6747807cd4e",
+    "semantic_hash": "464653ba001e8c69ec0fe6747807cd4e"
+  },
+  "crates/evo-daemon/src/daemon_lock.rs": {
+    "mtime": 1786615218.292249,
+    "seen": 1788519568.530925,
+    "ast_hash": "2be86c70f53f8d1f7f63895a615df32b",
+    "semantic_hash": "2be86c70f53f8d1f7f63895a615df32b"
+  },
+  "crates/evo-daemon/src/daemon_status.rs": {
+    "mtime": 1786616978.639714,
+    "seen": 1788519568.530926,
+    "ast_hash": "c5de1a8e010cd2d3e9db7d140a5ed3ed",
+    "semantic_hash": "c5de1a8e010cd2d3e9db7d140a5ed3ed"
+  },
+  "crates/evo-daemon/src/designation.rs": {
+    "mtime": 1786547804.4693415,
+    "seen": 1788519568.530926,
+    "ast_hash": "6bc1240a174fce3c1f556bfb5e8b9836",
+    "semantic_hash": "6bc1240a174fce3c1f556bfb5e8b9836"
+  },
+  "crates/evo-daemon/src/errors.rs": {
+    "mtime": 1786547515.0396767,
+    "seen": 1788519568.5309272,
+    "ast_hash": "a11cede095b7ee4211290478a29ae0b6",
+    "semantic_hash": "a11cede095b7ee4211290478a29ae0b6"
+  },
+  "crates/evo-daemon/src/grouping.rs": {
+    "mtime": 1786631318.5808828,
+    "seen": 1788519568.5309272,
+    "ast_hash": "6e43a0a2f3e84043632e8ba84fdbf768",
+    "semantic_hash": "6e43a0a2f3e84043632e8ba84fdbf768"
+  },
+  "crates/evo-daemon/src/lib.rs": {
+    "mtime": 1788952058.269212,
+    "seen": 1788956543.832642,
+    "ast_hash": "2032c17f07d1a5625f0167f87c159342",
+    "semantic_hash": ""
+  },
+  "crates/evo-daemon/src/main.rs": {
+    "mtime": 1786986748.0082357,
+    "seen": 1788519568.5309281,
+    "ast_hash": "3c220e7992e8c4681af3a46d287ed826",
+    "semantic_hash": "3c220e7992e8c4681af3a46d287ed826"
+  },
+  "crates/evo-daemon/src/persistence.rs": {
+    "mtime": 1788952047.4061165,
+    "seen": 1788956543.83266,
+    "ast_hash": "feac2da62e095dc9dac0ac6caad25d5d",
+    "semantic_hash": ""
+  },
+  "crates/evo-daemon/src/runtime.rs": {
+    "mtime": 1787834818.977067,
+    "seen": 1788519568.5309298,
+    "ast_hash": "f91cb26597458fedb9ba2cab19ca07ec",
+    "semantic_hash": "f91cb26597458fedb9ba2cab19ca07ec"
+  },
+  "crates/evo-daemon/src/ui.rs": {
+    "mtime": 1787418286.5630221,
+    "seen": 1788519568.5309298,
+    "ast_hash": "45f991f89753303e84003b5f19e3b8cb",
+    "semantic_hash": "45f991f89753303e84003b5f19e3b8cb"
+  },
+  "crates/evo-daemon/src/understanding.rs": {
+    "mtime": 1787841682.0551217,
+    "seen": 1788519568.530931,
+    "ast_hash": "db65d4da376425f96c3783e2549cc5eb",
+    "semantic_hash": "db65d4da376425f96c3783e2549cc5eb"
+  },
+  "crates/evo-daemon/src/workspace_replay.rs": {
+    "mtime": 1787834534.1953108,
+    "seen": 1788519568.530931,
+    "ast_hash": "f448f6ee15f019fbfc30cac548733901",
+    "semantic_hash": "f448f6ee15f019fbfc30cac548733901"
+  },
+  "crates/evo-desktop/Cargo.toml": {
+    "mtime": 1788953117.7226775,
+    "seen": 1788956543.832732,
+    "ast_hash": "2142a55450fdf6a40d5c7b50b5e47aa9",
+    "semantic_hash": ""
+  },
+  "crates/evo-desktop/examples/qa_capture.rs": {
+    "mtime": 1788078462.393262,
+    "seen": 1788519568.530933,
+    "ast_hash": "c5783192bd8329f70cbe4d5dcb32ddc6",
+    "semantic_hash": "c5783192bd8329f70cbe4d5dcb32ddc6"
+  },
+  "crates/evo-desktop/examples/qa_layout.rs": {
+    "mtime": 1788078476.9476464,
+    "seen": 1788519568.530933,
+    "ast_hash": "b28cb6a17fdcc56028987daf0c045b7a",
+    "semantic_hash": "b28cb6a17fdcc56028987daf0c045b7a"
+  },
+  "crates/evo-desktop/examples/session_audit.rs": {
+    "mtime": 1787729831.8915281,
+    "seen": 1788519568.530934,
+    "ast_hash": "7b3fcc6cb39276b0f5482654c09446b7",
+    "semantic_hash": "7b3fcc6cb39276b0f5482654c09446b7"
+  },
+  "crates/evo-desktop/examples/verify_live_capture.rs": {
+    "mtime": 1787834534.2021935,
+    "seen": 1788519568.530934,
+    "ast_hash": "14bcd1d7fba8309a5ee18082f078c698",
+    "semantic_hash": "14bcd1d7fba8309a5ee18082f078c698"
+  },
+  "crates/evo-desktop/examples/verify_preflight.rs": {
+    "mtime": 1787834534.2016747,
+    "seen": 1788519568.530935,
+    "ast_hash": "d23429b0f732b46c262c4a57334e85ed",
+    "semantic_hash": "d23429b0f732b46c262c4a57334e85ed"
+  },
+  "crates/evo-desktop/examples/verify_real_capture.rs": {
+    "mtime": 1787729107.091212,
+    "seen": 1788519568.530936,
+    "ast_hash": "4cb4d686fb18d351120c8509f7030899",
+    "semantic_hash": "4cb4d686fb18d351120c8509f7030899"
+  },
+  "crates/evo-desktop/examples/verify_resume.rs": {
+    "mtime": 1787834534.202959,
+    "seen": 1788519568.530936,
+    "ast_hash": "d6d8b13a12f86cd40db096a5f7b186e4",
+    "semantic_hash": "d6d8b13a12f86cd40db096a5f7b186e4"
+  },
+  "crates/evo-desktop/examples/verify_selective_restoration.rs": {
+    "mtime": 1787834534.200322,
+    "seen": 1788519568.5309372,
+    "ast_hash": "f576cb64f40947bb268d3812b6a97ecc",
+    "semantic_hash": "f576cb64f40947bb268d3812b6a97ecc"
+  },
+  "crates/evo-desktop/examples/verify_workspace_ui.rs": {
+    "mtime": 1787834534.2035532,
+    "seen": 1788519568.5309372,
+    "ast_hash": "cfeffb809dec29c85b186e36d6be8673",
+    "semantic_hash": "cfeffb809dec29c85b186e36d6be8673"
+  },
+  "crates/evo-desktop/src/app.rs": {
+    "mtime": 1788953236.8411865,
+    "seen": 1788956543.832892,
+    "ast_hash": "8946ffb929f541cf61f7e982f4dd0b8e",
+    "semantic_hash": ""
+  },
+  "crates/evo-desktop/src/daemon.rs": {
+    "mtime": 1786615227.5049143,
+    "seen": 1788519568.5309389,
+    "ast_hash": "f7162c98b6e46c32b65546367e17871a",
+    "semantic_hash": "f7162c98b6e46c32b65546367e17871a"
+  },
+  "crates/evo-desktop/src/detail.rs": {
+    "mtime": 1788156618.1823835,
+    "seen": 1788519568.5309389,
+    "ast_hash": "6037b60646b4a4ea89e91b383bf61849",
+    "semantic_hash": "6037b60646b4a4ea89e91b383bf61849"
+  },
+  "crates/evo-desktop/src/home.rs": {
+    "mtime": 1788953215.3301473,
+    "seen": 1788956543.832927,
+    "ast_hash": "d2c9fa69bcaef39ce1ec8f93d7bebb2f",
+    "semantic_hash": ""
+  },
+  "crates/evo-desktop/src/lib.rs": {
+    "mtime": 1786952988.7526937,
+    "seen": 1788519568.5309398,
+    "ast_hash": "df89ea609d1898da34bd84d3e6003652",
+    "semantic_hash": "df89ea609d1898da34bd84d3e6003652"
+  },
+  "crates/evo-desktop/src/main.rs": {
+    "mtime": 1786953751.7234263,
+    "seen": 1788519568.530941,
+    "ast_hash": "e474dfb58d87906f0b31114c2d0e3fa7",
+    "semantic_hash": "e474dfb58d87906f0b31114c2d0e3fa7"
+  },
+  "crates/evo-desktop/src/shell.rs": {
+    "mtime": 1786952607.7785854,
+    "seen": 1788519568.530942,
+    "ast_hash": "d67132a04016d3eed163214081204c88",
+    "semantic_hash": "d67132a04016d3eed163214081204c88"
+  },
+  "crates/evo-desktop/src/state.rs": {
+    "mtime": 1788098828.6361527,
+    "seen": 1788519568.530942,
+    "ast_hash": "367d7f9bcb03282404cfa8b89a9f4f5b",
+    "semantic_hash": "367d7f9bcb03282404cfa8b89a9f4f5b"
+  },
+  "crates/evo-desktop/src/theme.rs": {
+    "mtime": 1786955281.8377504,
+    "seen": 1788519568.530943,
+    "ast_hash": "f337744c321bc973f7545116360e234b",
+    "semantic_hash": "f337744c321bc973f7545116360e234b"
+  },
+  "crates/evo-desktop/src/ui.rs": {
+    "mtime": 1786962711.895641,
+    "seen": 1788519568.530944,
+    "ast_hash": "e06ee743c6eec98c6d5d852b56d61a65",
+    "semantic_hash": "e06ee743c6eec98c6d5d852b56d61a65"
+  },
+  "crates/evo-engagement/Cargo.toml": {
+    "mtime": 1787325431.6988826,
+    "seen": 1788519568.530944,
+    "ast_hash": "afa226b0d11f180b7f0657c64397e689",
+    "semantic_hash": "afa226b0d11f180b7f0657c64397e689"
+  },
+  "crates/evo-engagement/examples/bench_derivation.rs": {
+    "mtime": 1787491133.8113377,
+    "seen": 1788519568.530945,
+    "ast_hash": "95ce7fe59708e501b93228af67e66e1d",
+    "semantic_hash": "95ce7fe59708e501b93228af67e66e1d"
+  },
+  "crates/evo-engagement/src/affinity.rs": {
+    "mtime": 1788527548.4463096,
+    "seen": 1788948510.063242,
+    "ast_hash": "259de1b1d4454d02684ffa79747ccbc7",
+    "semantic_hash": ""
+  },
+  "crates/evo-engagement/src/declarations.rs": {
+    "mtime": 1787426801.8090076,
+    "seen": 1788519568.530946,
+    "ast_hash": "fac5fd1f7b0937ff6e6f1dd6f4badc46",
+    "semantic_hash": "fac5fd1f7b0937ff6e6f1dd6f4badc46"
+  },
+  "crates/evo-engagement/src/engagement.rs": {
+    "mtime": 1787818832.6848867,
+    "seen": 1788519568.530947,
+    "ast_hash": "c480417500d8dbdacafe9dfc1ffcb857",
+    "semantic_hash": "c480417500d8dbdacafe9dfc1ffcb857"
+  },
+  "crates/evo-engagement/src/episode.rs": {
+    "mtime": 1787463209.610182,
+    "seen": 1788519568.530947,
+    "ast_hash": "b53b7f7dab28404dbf288c5a7e9d614f",
+    "semantic_hash": "b53b7f7dab28404dbf288c5a7e9d614f"
+  },
+  "crates/evo-engagement/src/hypothesis.rs": {
+    "mtime": 1787818832.6820533,
+    "seen": 1788519568.5309482,
+    "ast_hash": "39cd02ef06c1c8745241e704654c9d3d",
+    "semantic_hash": "39cd02ef06c1c8745241e704654c9d3d"
+  },
+  "crates/evo-engagement/src/identity.rs": {
+    "mtime": 1787554293.1877182,
+    "seen": 1788519568.5309482,
+    "ast_hash": "83dad2a41534fabf517878163fffbfdf",
+    "semantic_hash": "83dad2a41534fabf517878163fffbfdf"
+  },
+  "crates/evo-engagement/src/lib.rs": {
+    "mtime": 1788953479.4557314,
+    "seen": 1788956543.8331761,
+    "ast_hash": "5254b7201ba4dece4a78d662725a5a96",
+    "semantic_hash": ""
+  },
+  "crates/evo-engagement/src/params.rs": {
+    "mtime": 1787735451.6852207,
+    "seen": 1788519568.530949,
+    "ast_hash": "c967d060976a5f29de2ec406d50b86f6",
+    "semantic_hash": "c967d060976a5f29de2ec406d50b86f6"
+  },
+  "crates/evo-engagement/src/resource.rs": {
+    "mtime": 1787671090.9868965,
+    "seen": 1788519568.5309498,
+    "ast_hash": "e669d162d7f446f2e627048abc013000",
+    "semantic_hash": "e669d162d7f446f2e627048abc013000"
+  },
+  "crates/evo-execution/Cargo.toml": {
+    "mtime": 1786720815.3576498,
+    "seen": 1788519568.530951,
+    "ast_hash": "094b77477083dc47c45ae4fe18e0ae9f",
+    "semantic_hash": "094b77477083dc47c45ae4fe18e0ae9f"
+  },
+  "crates/evo-execution/examples/focus_window.rs": {
+    "mtime": 1786725665.5869298,
+    "seen": 1788519568.530951,
+    "ast_hash": "d99363363a844598bff737cc02895096",
+    "semantic_hash": "d99363363a844598bff737cc02895096"
+  },
+  "crates/evo-execution/examples/probe_windows.rs": {
+    "mtime": 1786527155.4972131,
+    "seen": 1788519568.530952,
+    "ast_hash": "349bd61073672a659d8b4c9836fec7ae",
+    "semantic_hash": "349bd61073672a659d8b4c9836fec7ae"
+  },
+  "crates/evo-execution/examples/verify_execution.rs": {
+    "mtime": 1787473280.2789748,
+    "seen": 1788519568.530952,
+    "ast_hash": "25d7179c778557afa3ede0ce64184113",
+    "semantic_hash": "25d7179c778557afa3ede0ce64184113"
+  },
+  "crates/evo-execution/src/binding.rs": {
+    "mtime": 1788092741.0981903,
+    "seen": 1788519568.530953,
+    "ast_hash": "f2430ca368184fdac37ba9145bc4cad7",
+    "semantic_hash": "f2430ca368184fdac37ba9145bc4cad7"
+  },
+  "crates/evo-execution/src/engine.rs": {
+    "mtime": 1788098759.9675012,
+    "seen": 1788519568.530954,
+    "ast_hash": "370b4ce9452d942c13a5b84bf5280d3c",
+    "semantic_hash": "370b4ce9452d942c13a5b84bf5280d3c"
+  },
+  "crates/evo-execution/src/lib.rs": {
+    "mtime": 1788080506.421269,
+    "seen": 1788519568.530954,
+    "ast_hash": "5a528c1a8ac7b76a36fe67d10ecc7b2d",
+    "semantic_hash": "5a528c1a8ac7b76a36fe67d10ecc7b2d"
+  },
+  "crates/evo-execution/src/locator.rs": {
+    "mtime": 1786526635.662079,
+    "seen": 1788519568.530955,
+    "ast_hash": "4443c8fe1706dd1dbe5379b8e7fe495b",
+    "semantic_hash": "4443c8fe1706dd1dbe5379b8e7fe495b"
+  },
+  "crates/evo-execution/src/macos.rs": {
+    "mtime": 1788091931.6483843,
+    "seen": 1788519568.530955,
+    "ast_hash": "03fc07b3bf72a3c57110c6c0d0842e60",
+    "semantic_hash": "03fc07b3bf72a3c57110c6c0d0842e60"
+  },
+  "crates/evo-execution/src/preflight.rs": {
+    "mtime": 1788103019.8118873,
+    "seen": 1788519568.530956,
+    "ast_hash": "90c6d0bdbf661a35d19dc92a138b5d5a",
+    "semantic_hash": "90c6d0bdbf661a35d19dc92a138b5d5a"
+  },
+  "crates/evo-execution/src/resource.rs": {
+    "mtime": 1786720749.001516,
+    "seen": 1788519568.530957,
+    "ast_hash": "1115eb3bd12d43100423195484c274c2",
+    "semantic_hash": "1115eb3bd12d43100423195484c274c2"
+  },
+  "crates/evo-execution/src/selection.rs": {
+    "mtime": 1788103175.3163285,
+    "seen": 1788519568.530957,
+    "ast_hash": "a5b4d1cc28d5d4121edc631ff7d74225",
+    "semantic_hash": "a5b4d1cc28d5d4121edc631ff7d74225"
+  },
+  "crates/evo-execution/tests/continue_door.rs": {
+    "mtime": 1788092768.6227927,
+    "seen": 1788519568.5309582,
+    "ast_hash": "ecddbb1884ea1deb3c15a1d611621f6d",
+    "semantic_hash": "ecddbb1884ea1deb3c15a1d611621f6d"
+  },
+  "crates/evo-history/Cargo.toml": {
+    "mtime": 1785764447.063402,
+    "seen": 1788519568.5309582,
+    "ast_hash": "18eb13d5eb53daf72a30d7c36cbd4be9",
+    "semantic_hash": "18eb13d5eb53daf72a30d7c36cbd4be9"
+  },
+  "crates/evo-history/src/commitment_eligibility.rs": {
+    "mtime": 1786016599.5470026,
+    "seen": 1788519568.5309591,
+    "ast_hash": "55050492e06594f892a46575df0726d7",
+    "semantic_hash": "55050492e06594f892a46575df0726d7"
+  },
+  "crates/evo-history/src/committed_understanding.rs": {
+    "mtime": 1786016599.5483012,
+    "seen": 1788519568.5309598,
+    "ast_hash": "994a6ef8ca77b5cddc940ccc0f90ac49",
+    "semantic_hash": "994a6ef8ca77b5cddc940ccc0f90ac49"
+  },
+  "crates/evo-history/src/errors.rs": {
+    "mtime": 1786016599.5485997,
+    "seen": 1788519568.5309598,
+    "ast_hash": "2c567102c6aa8718f056bbc95702c3fc",
+    "semantic_hash": "2c567102c6aa8718f056bbc95702c3fc"
+  },
+  "crates/evo-history/src/historical_commitment.rs": {
+    "mtime": 1786016599.5494728,
+    "seen": 1788519568.5309608,
+    "ast_hash": "e01453c2ecad37a880fa9f483049873d",
+    "semantic_hash": "e01453c2ecad37a880fa9f483049873d"
+  },
+  "crates/evo-history/src/historical_construction.rs": {
+    "mtime": 1786016599.549643,
+    "seen": 1788519568.5309608,
+    "ast_hash": "1b86af476345f485c7cd967a6906c648",
+    "semantic_hash": "1b86af476345f485c7cd967a6906c648"
+  },
+  "crates/evo-history/src/historical_integrity.rs": {
+    "mtime": 1786016599.5499768,
+    "seen": 1788519568.530962,
+    "ast_hash": "4ef8022b6d8ce9ef000b4ee7f7752710",
+    "semantic_hash": "4ef8022b6d8ce9ef000b4ee7f7752710"
+  },
+  "crates/evo-history/src/historical_understanding.rs": {
+    "mtime": 1786359458.9975824,
+    "seen": 1788519568.530962,
+    "ast_hash": "622463921db80622393a801829eef9c4",
+    "semantic_hash": "622463921db80622393a801829eef9c4"
+  },
+  "crates/evo-history/src/history_id.rs": {
+    "mtime": 1786016599.551651,
+    "seen": 1788519568.530963,
+    "ast_hash": "a0f40f8ece33e1271c6a1c14cc036f0b",
+    "semantic_hash": "a0f40f8ece33e1271c6a1c14cc036f0b"
+  },
+  "crates/evo-history/src/history_identity_assignment.rs": {
+    "mtime": 1786016599.5524404,
+    "seen": 1788519568.530964,
+    "ast_hash": "7c55c98fc755ff710a3cefc74b539648",
+    "semantic_hash": "7c55c98fc755ff710a3cefc74b539648"
+  },
+  "crates/evo-history/src/lib.rs": {
+    "mtime": 1786016599.5529668,
+    "seen": 1788519568.530964,
+    "ast_hash": "e3227c94828acb7c1aeebaa71ea60e58",
+    "semantic_hash": "e3227c94828acb7c1aeebaa71ea60e58"
+  },
+  "crates/evo-knowledge/Cargo.toml": {
+    "mtime": 1785753795.767363,
+    "seen": 1788519568.530965,
+    "ast_hash": "af55054508a4145c97c9f2276ac2e87f",
+    "semantic_hash": "af55054508a4145c97c9f2276ac2e87f"
+  },
+  "crates/evo-knowledge/src/constraint.rs": {
+    "mtime": 1786016599.5556142,
+    "seen": 1788519568.530965,
+    "ast_hash": "f21e7f82de82ff6a7eaca6db80277ea1",
+    "semantic_hash": "f21e7f82de82ff6a7eaca6db80277ea1"
+  },
+  "crates/evo-knowledge/src/errors.rs": {
+    "mtime": 1786016599.5564473,
+    "seen": 1788519568.530966,
+    "ast_hash": "782e3be3d7c53499c17f34feee77eb9f",
+    "semantic_hash": "782e3be3d7c53499c17f34feee77eb9f"
+  },
+  "crates/evo-knowledge/src/knowledge.rs": {
+    "mtime": 1786017071.825816,
+    "seen": 1788519568.530967,
+    "ast_hash": "89ede88431b086e70280f41f6ab87a9d",
+    "semantic_hash": "89ede88431b086e70280f41f6ab87a9d"
+  },
+  "crates/evo-knowledge/src/knowledge_id.rs": {
+    "mtime": 1786016599.557913,
+    "seen": 1788519568.530967,
+    "ast_hash": "7977d624e6e39bf1e5cd61aae3fafaff",
+    "semantic_hash": "7977d624e6e39bf1e5cd61aae3fafaff"
+  },
+  "crates/evo-knowledge/src/lib.rs": {
+    "mtime": 1786016599.5582802,
+    "seen": 1788519568.530968,
+    "ast_hash": "ce710a2424cc686fe8c953b5878b5254",
+    "semantic_hash": "ce710a2424cc686fe8c953b5878b5254"
+  },
+  "crates/evo-knowledge/src/revision_state.rs": {
+    "mtime": 1786016599.5587335,
+    "seen": 1788519568.530968,
+    "ast_hash": "f032a82c39896b1c531ad95a19f44d28",
+    "semantic_hash": "f032a82c39896b1c531ad95a19f44d28"
+  },
+  "crates/evo-knowledge/src/supporting_evidence.rs": {
+    "mtime": 1786016599.5595062,
+    "seen": 1788519568.5309691,
+    "ast_hash": "c8b8e46716f3843b719f405c026819f2",
+    "semantic_hash": "c8b8e46716f3843b719f405c026819f2"
+  },
+  "crates/evo-observation/Cargo.toml": {
+    "mtime": 1785522539.6195796,
+    "seen": 1788519568.5309691,
+    "ast_hash": "8937cc96534febc933888620a59b809b",
+    "semantic_hash": "8937cc96534febc933888620a59b809b"
+  },
+  "crates/evo-observation/src/accept.rs": {
+    "mtime": 1786167049.195228,
+    "seen": 1788519568.53097,
+    "ast_hash": "ab6c5c79fb1cfc7a305af5766c331ef7",
+    "semantic_hash": "ab6c5c79fb1cfc7a305af5766c331ef7"
+  },
+  "crates/evo-observation/src/candidate.rs": {
+    "mtime": 1785522539.6206613,
+    "seen": 1788519568.53097,
+    "ast_hash": "5a50e762abf7217588f99b8acbbfdd0d",
+    "semantic_hash": "5a50e762abf7217588f99b8acbbfdd0d"
+  },
+  "crates/evo-observation/src/canonicalization.rs": {
+    "mtime": 1785522539.6211143,
+    "seen": 1788519568.5309708,
+    "ast_hash": "ea85f6f0fea24ecafa807412f00a0fb2",
+    "semantic_hash": "ea85f6f0fea24ecafa807412f00a0fb2"
+  },
+  "crates/evo-observation/src/errors.rs": {
+    "mtime": 1785522539.622189,
+    "seen": 1788519568.530972,
+    "ast_hash": "c4428cadc2c61bb36d458da3beb256f4",
+    "semantic_hash": "c4428cadc2c61bb36d458da3beb256f4"
+  },
+  "crates/evo-observation/src/evidence.rs": {
+    "mtime": 1785522539.6226726,
+    "seen": 1788519568.530972,
+    "ast_hash": "d82b37bb44272249e14f16e2862399ac",
+    "semantic_hash": "d82b37bb44272249e14f16e2862399ac"
+  },
+  "crates/evo-observation/src/integrity.rs": {
+    "mtime": 1785522539.623493,
+    "seen": 1788519568.530973,
+    "ast_hash": "adde7b842ad13b414c94fb8b069b018a",
+    "semantic_hash": "adde7b842ad13b414c94fb8b069b018a"
+  },
+  "crates/evo-observation/src/lib.rs": {
+    "mtime": 1787833540.2467546,
+    "seen": 1788519568.530973,
+    "ast_hash": "46028aebcffcd7f35124ae0f20b4c355",
+    "semantic_hash": "46028aebcffcd7f35124ae0f20b4c355"
+  },
+  "crates/evo-observation/src/observation.rs": {
+    "mtime": 1785522539.6242301,
+    "seen": 1788519568.530974,
+    "ast_hash": "d0275a318750dedf48147b07dc8643e6",
+    "semantic_hash": "d0275a318750dedf48147b07dc8643e6"
+  },
+  "crates/evo-observation/src/observation_id.rs": {
+    "mtime": 1785522539.624861,
+    "seen": 1788519568.5309749,
+    "ast_hash": "6b1aeb42a1f1fc47229355b5c66352ab",
+    "semantic_hash": "6b1aeb42a1f1fc47229355b5c66352ab"
+  },
+  "crates/evo-observation/src/observation_language.rs": {
+    "mtime": 1788946440.4579618,
+    "seen": 1788948510.064119,
+    "ast_hash": "7950998fc0c0828f94d4898687c966b7",
+    "semantic_hash": ""
+  },
+  "crates/evo-observation/src/observation_schema.rs": {
+    "mtime": 1788946839.854531,
+    "seen": 1788948510.064119,
+    "ast_hash": "dbb5e9d4924808c5ed41e49f929d773b",
+    "semantic_hash": ""
+  },
+  "crates/evo-observation/src/observed_state.rs": {
+    "mtime": 1787833540.2452657,
+    "seen": 1788519568.530976,
+    "ast_hash": "c25b77a437ec2de51d62181c5f208614",
+    "semantic_hash": "c25b77a437ec2de51d62181c5f208614"
+  },
+  "crates/evo-observation/src/provenance.rs": {
+    "mtime": 1788528991.9215624,
+    "seen": 1788948510.064138,
+    "ast_hash": "359bb813812e92447176e2d183b7e978",
+    "semantic_hash": ""
+  },
+  "crates/evo-observation/src/tests/errors.rs": {
+    "mtime": 1785522450.7430649,
+    "seen": 1788519568.530977,
+    "ast_hash": "44ac7dadcb1b3a1d29fba8029fbee590",
+    "semantic_hash": "44ac7dadcb1b3a1d29fba8029fbee590"
+  },
+  "crates/evo-observation/src/validation.rs": {
+    "mtime": 1788946684.7265797,
+    "seen": 1788948510.064159,
+    "ast_hash": "64bfad89f92a97691199148b01c9d2ba",
+    "semantic_hash": ""
+  },
+  "crates/evo-replay/Cargo.toml": {
+    "mtime": 1785735618.539666,
+    "seen": 1788519568.5309792,
+    "ast_hash": "83eb5f8a62b5be230df2c7011020a4f6",
+    "semantic_hash": "83eb5f8a62b5be230df2c7011020a4f6"
+  },
+  "crates/evo-replay/src/corpus.rs": {
+    "mtime": 1786016599.6086276,
+    "seen": 1788519568.5309792,
+    "ast_hash": "3cb2080205a72c818e4d09676139046a",
+    "semantic_hash": "3cb2080205a72c818e4d09676139046a"
+  },
+  "crates/evo-replay/src/lib.rs": {
+    "mtime": 1786016599.6090152,
+    "seen": 1788519568.53098,
+    "ast_hash": "a632dee71bdfe20d43a5aa9482e18cc1",
+    "semantic_hash": "a632dee71bdfe20d43a5aa9482e18cc1"
+  },
+  "crates/evo-replay/src/replay.rs": {
+    "mtime": 1787413773.028159,
+    "seen": 1788519568.530981,
+    "ast_hash": "86e644c376758f79fc6e21b8263fe824",
+    "semantic_hash": "86e644c376758f79fc6e21b8263fe824"
+  },
+  "crates/evo-restoration/Cargo.toml": {
+    "mtime": 1787834082.1913435,
+    "seen": 1788519568.530981,
+    "ast_hash": "73824a74253c5c9e00add41b90ffc84a",
+    "semantic_hash": "73824a74253c5c9e00add41b90ffc84a"
+  },
+  "crates/evo-restoration/src/blocker.rs": {
+    "mtime": 1786016599.6121438,
+    "seen": 1788519568.5309818,
+    "ast_hash": "d12be0fa5da28faaacb176ad8a1346f1",
+    "semantic_hash": "d12be0fa5da28faaacb176ad8a1346f1"
+  },
+  "crates/evo-restoration/src/context_chain.rs": {
+    "mtime": 1786016599.6126132,
+    "seen": 1788519568.5309818,
+    "ast_hash": "55605562ab25a8aaef4e525be7cff0c4",
+    "semantic_hash": "55605562ab25a8aaef4e525be7cff0c4"
+  },
+  "crates/evo-restoration/src/derivation.rs": {
+    "mtime": 1787841213.1783226,
+    "seen": 1788519568.530983,
+    "ast_hash": "a0e7a41fb467daa5efedea444aac704c",
+    "semantic_hash": "a0e7a41fb467daa5efedea444aac704c"
+  },
+  "crates/evo-restoration/src/errors.rs": {
+    "mtime": 1786454736.1666667,
+    "seen": 1788519568.530983,
+    "ast_hash": "594ec4495a8bb2390d6ca5ba190566de",
+    "semantic_hash": "594ec4495a8bb2390d6ca5ba190566de"
+  },
+  "crates/evo-restoration/src/execution.rs": {
+    "mtime": 1787413422.1980896,
+    "seen": 1788519568.530984,
+    "ast_hash": "55159e6ab2eef11b6905cd118a7e14ef",
+    "semantic_hash": "55159e6ab2eef11b6905cd118a7e14ef"
+  },
+  "crates/evo-restoration/src/lib.rs": {
+    "mtime": 1786467717.466029,
+    "seen": 1788519568.5309849,
+    "ast_hash": "942793a28fa74f40584b24a857c1b6de",
+    "semantic_hash": "942793a28fa74f40584b24a857c1b6de"
+  },
+  "crates/evo-restoration/src/next_step.rs": {
+    "mtime": 1786016599.6135218,
+    "seen": 1788519568.5309849,
+    "ast_hash": "47d83cd4ad2a1359b776f47c8aa906ee",
+    "semantic_hash": "47d83cd4ad2a1359b776f47c8aa906ee"
+  },
+  "crates/evo-restoration/src/restoration_plan.rs": {
+    "mtime": 1786716580.1746652,
+    "seen": 1788519568.530986,
+    "ast_hash": "8b1d5cde93c5ecafb5c9408f99f031b3",
+    "semantic_hash": "8b1d5cde93c5ecafb5c9408f99f031b3"
+  },
+  "crates/evo-restoration/src/resume_point.rs": {
+    "mtime": 1787834100.8953502,
+    "seen": 1788519568.530987,
+    "ast_hash": "0712281c58c24b601d64bcaa3a7c2933",
+    "semantic_hash": "0712281c58c24b601d64bcaa3a7c2933"
+  },
+  "crates/evo-retrieval/Cargo.toml": {
+    "mtime": 1787671253.5724866,
+    "seen": 1788519568.530987,
+    "ast_hash": "fa13dc708f1682f9ffa2183e8f8b5098",
+    "semantic_hash": "fa13dc708f1682f9ffa2183e8f8b5098"
+  },
+  "crates/evo-retrieval/src/lib.rs": {
+    "mtime": 1787815276.097786,
+    "seen": 1788519568.530988,
+    "ast_hash": "4769fc932e7da051995c959a44b5a877",
+    "semantic_hash": "4769fc932e7da051995c959a44b5a877"
+  },
+  "crates/evo-retrieval/src/retrieval.rs": {
+    "mtime": 1787815276.0971916,
+    "seen": 1788519568.530988,
+    "ast_hash": "2bcb3c0181dd2b0c212e435d0717ada5",
+    "semantic_hash": "2bcb3c0181dd2b0c212e435d0717ada5"
+  },
+  "crates/evo-storage/Cargo.toml": {
+    "mtime": 1785778525.3778,
+    "seen": 1788519568.5309892,
+    "ast_hash": "7b39308c0dea56aea8b32f4d26403cd6",
+    "semantic_hash": "7b39308c0dea56aea8b32f4d26403cd6"
+  },
+  "crates/evo-storage/src/errors.rs": {
+    "mtime": 1787335072.764564,
+    "seen": 1788519568.5309892,
+    "ast_hash": "322f256b2cb2908695b8f5128a1bb2d0",
+    "semantic_hash": "322f256b2cb2908695b8f5128a1bb2d0"
+  },
+  "crates/evo-storage/src/lib.rs": {
+    "mtime": 1787335847.4931846,
+    "seen": 1788519568.5309901,
+    "ast_hash": "1e0f290fc7a41bb6132c5aa2d2c6b440",
+    "semantic_hash": "1e0f290fc7a41bb6132c5aa2d2c6b440"
+  },
+  "crates/evo-storage/src/root.rs": {
+    "mtime": 1787336067.736985,
+    "seen": 1788519568.530991,
+    "ast_hash": "c4c324a45f601793e92aae316b699f35",
+    "semantic_hash": "c4c324a45f601793e92aae316b699f35"
+  },
+  "crates/evo-storage/src/storage.rs": {
+    "mtime": 1787562691.8790734,
+    "seen": 1788519568.530991,
+    "ast_hash": "ead7682cc5c2f838646d688779f51ee3",
+    "semantic_hash": "ead7682cc5c2f838646d688779f51ee3"
+  },
+  "crates/evo-workspace/Cargo.toml": {
+    "mtime": 1787394028.772431,
+    "seen": 1788519568.530992,
+    "ast_hash": "01e2a981cf095d9739c105d4c9c1b608",
+    "semantic_hash": "01e2a981cf095d9739c105d4c9c1b608"
+  },
+  "crates/evo-workspace/src/attachment.rs": {
+    "mtime": 1787413668.992055,
+    "seen": 1788519568.530993,
+    "ast_hash": "2d9d65cb4d50b0412b0ac56bf497df72",
+    "semantic_hash": "2d9d65cb4d50b0412b0ac56bf497df72"
+  },
+  "crates/evo-workspace/src/confidence.rs": {
+    "mtime": 1785691453.9354007,
+    "seen": 1788519568.530993,
+    "ast_hash": "a38f00486a0bf5cc1583541762c72e80",
+    "semantic_hash": "a38f00486a0bf5cc1583541762c72e80"
+  },
+  "crates/evo-workspace/src/deterministic.rs": {
+    "mtime": 1787412859.205709,
+    "seen": 1788519568.530994,
+    "ast_hash": "0835caaf22053560976592e567370a34",
+    "semantic_hash": "0835caaf22053560976592e567370a34"
+  },
+  "crates/evo-workspace/src/errors.rs": {
+    "mtime": 1786016599.624046,
+    "seen": 1788519568.530995,
+    "ast_hash": "68f0079f9a0dcb1b6f51d114a83ce1a5",
+    "semantic_hash": "68f0079f9a0dcb1b6f51d114a83ce1a5"
+  },
+  "crates/evo-workspace/src/lib.rs": {
+    "mtime": 1787466186.1839747,
+    "seen": 1788519568.530995,
+    "ast_hash": "8ff6a0d98de40ba5fdfb2207ba3b0e99",
+    "semantic_hash": "8ff6a0d98de40ba5fdfb2207ba3b0e99"
+  },
+  "crates/evo-workspace/src/lifecycle.rs": {
+    "mtime": 1785686081.4079423,
+    "seen": 1788519568.530996,
+    "ast_hash": "f12ee422267113a70bc92e2be4dbf11b",
+    "semantic_hash": "f12ee422267113a70bc92e2be4dbf11b"
+  },
+  "crates/evo-workspace/src/projection.rs": {
+    "mtime": 1787814540.1257439,
+    "seen": 1788519568.530997,
+    "ast_hash": "417d3b93ed07f40479b6db8eaf945f31",
+    "semantic_hash": "417d3b93ed07f40479b6db8eaf945f31"
+  },
+  "crates/evo-workspace/src/snapshot.rs": {
+    "mtime": 1787413602.853189,
+    "seen": 1788519568.530997,
+    "ast_hash": "731538fa457d497f6619e731929dc92d",
+    "semantic_hash": "731538fa457d497f6619e731929dc92d"
+  },
+  "crates/evo-workspace/src/workspace.rs": {
+    "mtime": 1787585344.8818636,
+    "seen": 1788519568.530998,
+    "ast_hash": "7dadfd4ae2ed970854692692e327f3c8",
+    "semantic_hash": "7dadfd4ae2ed970854692692e327f3c8"
+  },
+  "crates/evo-workspace/src/workspace_id.rs": {
+    "mtime": 1787814298.8669608,
+    "seen": 1788519568.530998,
+    "ast_hash": "237972a5c381bbe56f0bdbbf8c35eafe",
+    "semantic_hash": "237972a5c381bbe56f0bdbbf8c35eafe"
+  },
+  "generate_research_pdf.py": {
+    "mtime": 1788177469.275339,
+    "seen": 1788519568.530999,
+    "ast_hash": "43d64d9b2cf40633fd063e110d1b696f",
+    "semantic_hash": "43d64d9b2cf40633fd063e110d1b696f"
+  },
+  "scripts/build-app.sh": {
+    "mtime": 1786475954.9891353,
+    "seen": 1788519568.530999,
+    "ast_hash": "e272c9d6e3f4277bb013a813ddf13157",
+    "semantic_hash": "e272c9d6e3f4277bb013a813ddf13157"
+  },
+  "scripts/verify-live-capture.sh": {
+    "mtime": 1786608353.3731654,
+    "seen": 1788519568.5310001,
+    "ast_hash": "c9ce4fa7b74b743c130156cfc2ff0eab",
+    "semantic_hash": "c9ce4fa7b74b743c130156cfc2ff0eab"
+  },
+  "tools/audit_desktop_calls.py": {
+    "mtime": 1786954528.6821737,
+    "seen": 1788519568.531001,
+    "ast_hash": "020bad5611a23d508234f1b52bbb325d",
+    "semantic_hash": "020bad5611a23d508234f1b52bbb325d"
+  },
+  "tools/decode_evo_logs.py": {
+    "mtime": 1787507260.9920146,
+    "seen": 1788519568.531001,
+    "ast_hash": "816e87911fea2656cef5c63f97d839ed",
+    "semantic_hash": "816e87911fea2656cef5c63f97d839ed"
+  },
+  "tools/rgba_to_png.py": {
+    "mtime": 1786959259.3359625,
+    "seen": 1788519568.531002,
+    "ast_hash": "62cbbdf303916142d90df18c118eb2d6",
+    "semantic_hash": "62cbbdf303916142d90df18c118eb2d6"
+  },
+  ".serena/project.yml": {
+    "mtime": 1788433433.5187223,
+    "seen": 1788501233.381162,
+    "ast_hash": "d068fa8df8ee0931841b249bf6e0fa6f",
+    "semantic_hash": ""
+  },
+  "CLAUDE.md": {
+    "mtime": 1788500930.152342,
+    "seen": 1788519568.531003,
+    "ast_hash": "ba226a35c22002da7b8d723ad755242d",
+    "semantic_hash": "ba226a35c22002da7b8d723ad755242d"
+  },
+  "EVO_DECK_BUILD_PROMPT.md": {
+    "mtime": 1788265765.1081192,
+    "seen": 1788519568.531004,
+    "ast_hash": "d32816d36539e1ac289821795a98a4a9",
+    "semantic_hash": "d32816d36539e1ac289821795a98a4a9"
+  },
+  "EVO_DECK_FINAL_PROMPT.md": {
+    "mtime": 1788330822.4763925,
+    "seen": 1788501233.3811631,
+    "ast_hash": "d280b1c2b7bd0ef36378dbba6e977dcd",
+    "semantic_hash": ""
+  },
+  "EVO_EVIDENCE_RECONCILIATION.md": {
+    "mtime": 1788265727.9529905,
+    "seen": 1788519568.531004,
+    "ast_hash": "505533144efe0bc21a9b8031633c3ef7",
+    "semantic_hash": "505533144efe0bc21a9b8031633c3ef7"
+  },
+  "EVO_INVESTOR_RESEARCH_FOUNDATION.md": {
+    "mtime": 1788261748.4622946,
+    "seen": 1788519568.531005,
+    "ast_hash": "b11be87b7e6644a5be2bd09a4796cc7e",
+    "semantic_hash": "b11be87b7e6644a5be2bd09a4796cc7e"
+  },
+  "EVO_PERPLEXITY_RESEARCH_PROMPTS.md": {
+    "mtime": 1788244380.7743976,
+    "seen": 1788501233.381165,
+    "ast_hash": "e04cde5285d7732fdf4a34694d814699",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1785251149.8715384,
+    "seen": 1788519568.5310059,
+    "ast_hash": "cdad4a6b0c1a950c5098f13743fa1592",
+    "semantic_hash": "cdad4a6b0c1a950c5098f13743fa1592"
+  },
+  "docs/RECONSTRUCTION-REPORT.md": {
+    "mtime": 1787505201.126353,
+    "seen": 1788519568.5310059,
+    "ast_hash": "0a3f27152b34bb9d4e5f76bbdd95f411",
+    "semantic_hash": "0a3f27152b34bb9d4e5f76bbdd95f411"
+  },
+  "docs/architecture/ARCHITECTURE.md": {
+    "mtime": 1787491834.3523388,
+    "seen": 1788519568.531007,
+    "ast_hash": "a4ba73fbde60a3bf81404cb43a435f11",
+    "semantic_hash": "a4ba73fbde60a3bf81404cb43a435f11"
+  },
+  "docs/architecture/WORK-MODEL.md": {
+    "mtime": 1787819659.4689927,
+    "seen": 1788519568.531008,
+    "ast_hash": "fe83c34be076d788a925e973b7c916bb",
+    "semantic_hash": "fe83c34be076d788a925e973b7c916bb"
+  },
+  "docs/audit/ARCH-GAP-0001.md": {
+    "mtime": 1786995481.9227023,
+    "seen": 1788519568.531008,
+    "ast_hash": "e6d699d58c5db2077200ebf357986514",
+    "semantic_hash": "e6d699d58c5db2077200ebf357986514"
+  },
+  "docs/audit/BE-AUDIT-0001.md": {
+    "mtime": 1786979294.3832252,
+    "seen": 1788519568.531009,
+    "ast_hash": "fb0960c988d5ffb5f5c5980625115040",
+    "semantic_hash": "fb0960c988d5ffb5f5c5980625115040"
+  },
+  "docs/audit/BE-TRACE-0001.md": {
+    "mtime": 1786983705.1050024,
+    "seen": 1788519568.531009,
+    "ast_hash": "c7cd38ece47dc97964dbeacf0d3778a6",
+    "semantic_hash": "c7cd38ece47dc97964dbeacf0d3778a6"
+  },
+  "docs/audit/DIAGNOSIS-0001-why-evo-does-not-understand-work.md": {
+    "mtime": 1787549928.487704,
+    "seen": 1788519568.5310102,
+    "ast_hash": "c92e3ad53b9e91de72a2fab978d8fc7c",
+    "semantic_hash": "c92e3ad53b9e91de72a2fab978d8fc7c"
+  },
+  "docs/audit/PHASE0-0001-product-truth-architecture-reset.md": {
+    "mtime": 1787649142.1582258,
+    "seen": 1788519568.5310102,
+    "ast_hash": "9558b93df9cb327b10fc8ce33e2f2563",
+    "semantic_hash": "9558b93df9cb327b10fc8ce33e2f2563"
+  },
+  "docs/behavioral-traces/TRACE-0001-Continue-My-Work.md": {
+    "mtime": 1785251149.8719726,
+    "seen": 1788519568.531011,
+    "ast_hash": "aa165696b707a44a8694b593a4864939",
+    "semantic_hash": "aa165696b707a44a8694b593a4864939"
+  },
+  "docs/constitution/CONSTITUTION.md": {
+    "mtime": 1785251149.8729181,
+    "seen": 1788519568.531012,
+    "ast_hash": "e8d78885d849e4fdc1ff9dd9dbc81ee1",
+    "semantic_hash": "e8d78885d849e4fdc1ff9dd9dbc81ee1"
+  },
+  "docs/design/ARCH-PROP-0001-workspace-origination.md": {
+    "mtime": 1787475591.0959876,
+    "seen": 1788519568.531012,
+    "ast_hash": "8b0662103734258f400591da912b01eb",
+    "semantic_hash": "8b0662103734258f400591da912b01eb"
+  },
+  "docs/design/UI-IA-0002.md": {
+    "mtime": 1786887637.7605228,
+    "seen": 1788519568.531013,
+    "ast_hash": "14181c99c2fdccc7869228e841bdb59b",
+    "semantic_hash": "14181c99c2fdccc7869228e841bdb59b"
+  },
+  "docs/design/UI-IMPLEMENTATION-0003.md": {
+    "mtime": 1786955511.333253,
+    "seen": 1788519568.531013,
+    "ast_hash": "e9605c910bef93c201be7bfd8660cc26",
+    "semantic_hash": "e9605c910bef93c201be7bfd8660cc26"
+  },
+  "docs/design/UI-REVIEW-0001.md": {
+    "mtime": 1786887965.7398343,
+    "seen": 1788519568.531014,
+    "ast_hash": "6e25eb74161553bed1e167f93a81ffc5",
+    "semantic_hash": "6e25eb74161553bed1e167f93a81ffc5"
+  },
+  "docs/design/UI-VALIDATION-0001.md": {
+    "mtime": 1786908370.628733,
+    "seen": 1788519568.531015,
+    "ast_hash": "5e0d9be368a1350b8d7057eff3b2c843",
+    "semantic_hash": "5e0d9be368a1350b8d7057eff3b2c843"
+  },
+  "docs/foundation/ARCHITECTURAL_LAWS.md": {
+    "mtime": 1785251149.8721092,
+    "seen": 1788519568.531015,
+    "ast_hash": "0f9fd68b2c0c91415dd0ad4aed3f2f84",
+    "semantic_hash": "0f9fd68b2c0c91415dd0ad4aed3f2f84"
+  },
+  "docs/foundation/COGNITIVE_MODEL.md": {
+    "mtime": 1785251149.8724434,
+    "seen": 1788519568.5310159,
+    "ast_hash": "40f32b3f024d716116eaeb4f95e21d6c",
+    "semantic_hash": "40f32b3f024d716116eaeb4f95e21d6c"
+  },
+  "docs/foundation/canonicalization.md": {
+    "mtime": 1785316434.2762043,
+    "seen": 1788501233.381174,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "docs/foundation/engineering-principles.md": {
+    "mtime": 1785316442.4675307,
+    "seen": 1788519568.5310159,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "docs/foundation/glossary.md": {
+    "mtime": 1785339239.754238,
+    "seen": 1788519568.531017,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "docs/foundation/observation-model.md": {
+    "mtime": 1785338804.435908,
+    "seen": 1788519568.531017,
+    "ast_hash": "5722d7b54f54381848125dc34ddf7dea",
+    "semantic_hash": "5722d7b54f54381848125dc34ddf7dea"
+  },
+  "docs/implementation/IMPLEMENTATION_PLAYBOOK.md": {
+    "mtime": 1785522539.6267898,
+    "seen": 1788519568.531018,
+    "ast_hash": "17acf25fa0c07affea1698de4105acdf",
+    "semantic_hash": "17acf25fa0c07affea1698de4105acdf"
+  },
+  "docs/implementation/IS-0001-Observation.md": {
+    "mtime": 1786107766.8514483,
+    "seen": 1788519568.531019,
+    "ast_hash": "ad212aa74e5d4679a89d1118b6a130c0",
+    "semantic_hash": "ad212aa74e5d4679a89d1118b6a130c0"
+  },
+  "docs/implementation/IS-0002 \u2014 Observation Language.md": {
+    "mtime": 1786717219.8507094,
+    "seen": 1788519568.53102,
+    "ast_hash": "a9ad9c8fd6b5e069f21b708b691fd28c",
+    "semantic_hash": "a9ad9c8fd6b5e069f21b708b691fd28c"
+  },
+  "docs/implementation/IS-0003 \u2014 Observation Schemas.md": {
+    "mtime": 1786717226.754249,
+    "seen": 1788519568.531021,
+    "ast_hash": "2dc4f530743a5b660b527c1252d16d3d",
+    "semantic_hash": "2dc4f530743a5b660b527c1252d16d3d"
+  },
+  "docs/implementation/IS-0004-Artifact-Model.md": {
+    "mtime": 1785948744.0644996,
+    "seen": 1788519568.531021,
+    "ast_hash": "6d76d17178ce00935a6f00c4b7d97b2b",
+    "semantic_hash": "6d76d17178ce00935a6f00c4b7d97b2b"
+  },
+  "docs/implementation/IS-0005-Artifact-Lifecycle.md": {
+    "mtime": 1785955440.8435392,
+    "seen": 1788519568.531022,
+    "ast_hash": "7be9eb494908d920e4004c4bfeffe098",
+    "semantic_hash": "7be9eb494908d920e4004c4bfeffe098"
+  },
+  "docs/implementation/IS-0006 \u2014 Identity Hypothesis.md": {
+    "mtime": 1785952261.171377,
+    "seen": 1788519568.531023,
+    "ast_hash": "cad02aad33ee8258d6fa3a357b9dc26c",
+    "semantic_hash": "cad02aad33ee8258d6fa3a357b9dc26c"
+  },
+  "docs/implementation/IS-0007 \u2014 Artifact Identity Lifecycle.md": {
+    "mtime": 1785667528.1226919,
+    "seen": 1788519568.531023,
+    "ast_hash": "97b403ba51545408158a626570bce39e",
+    "semantic_hash": "97b403ba51545408158a626570bce39e"
+  },
+  "docs/implementation/IS-0008 \u2014 Artifact Replay.md": {
+    "mtime": 1785667512.9360042,
+    "seen": 1788519568.531024,
+    "ast_hash": "b963d6b493d4835be0c970a8d20ddd13",
+    "semantic_hash": "b963d6b493d4835be0c970a8d20ddd13"
+  },
+  "docs/implementation/IS-0009 Artifact Engine.md": {
+    "mtime": 1785667498.3233929,
+    "seen": 1788519568.531025,
+    "ast_hash": "e4e85634d0f6eda084157b65cf4ec8a7",
+    "semantic_hash": "e4e85634d0f6eda084157b65cf4ec8a7"
+  },
+  "docs/implementation/IS-0010 \u2014 Identity Derivation Contract.md": {
+    "mtime": 1785674045.4951348,
+    "seen": 1788519568.531026,
+    "ast_hash": "cdb12568277e2d3f4fe85bf2b6aa72ec",
+    "semantic_hash": "cdb12568277e2d3f4fe85bf2b6aa72ec"
+  },
+  "docs/implementation/IS-0011 \u2014 Workspace Model.md": {
+    "mtime": 1787475289.8214462,
+    "seen": 1788519568.531026,
+    "ast_hash": "b2771bf731b05be5c0b62013724645be",
+    "semantic_hash": "b2771bf731b05be5c0b62013724645be"
+  },
+  "docs/implementation/IS-0012 \u2014 Workspace Formation.md": {
+    "mtime": 1787475316.806132,
+    "seen": 1788519568.5310268,
+    "ast_hash": "c1a72e8def843f82542ae4c7710b346f",
+    "semantic_hash": "c1a72e8def843f82542ae4c7710b346f"
+  },
+  "docs/implementation/IS-0013 \u2014 Workspace Replay.md": {
+    "mtime": 1787475341.3602827,
+    "seen": 1788519568.531028,
+    "ast_hash": "85fc3e645ba2fe714c3ee85c3857b5e3",
+    "semantic_hash": "85fc3e645ba2fe714c3ee85c3857b5e3"
+  },
+  "docs/implementation/IS-0014 \u2014 Confidence Score.md": {
+    "mtime": 1787476059.2645056,
+    "seen": 1788519568.531028,
+    "ast_hash": "93b4bc6931a95da51403d48e96f8f867",
+    "semantic_hash": "93b4bc6931a95da51403d48e96f8f867"
+  },
+  "docs/implementation/IS-0015 \u2014 Knowledge Model.md": {
+    "mtime": 1786016290.3862653,
+    "seen": 1788501233.381184,
+    "ast_hash": "5a99acbfbdee73c48b73f09bf835a31c",
+    "semantic_hash": ""
+  },
+  "docs/implementation/IS-0016 \u2014 Historical Understanding Model.md": {
+    "mtime": 1786011648.884565,
+    "seen": 1788501233.381185,
+    "ast_hash": "8a4c7d22e97adec5f4181b8c833ff80c",
+    "semantic_hash": ""
+  },
+  "docs/implementation/IS-0017 \u2014 Historical Commitment.md": {
+    "mtime": 1786011793.60217,
+    "seen": 1788501233.381186,
+    "ast_hash": "21470cc4997c0508852626c936c57156",
+    "semantic_hash": ""
+  },
+  "docs/implementation/IS-0018 \u2014 Committed Understanding.md": {
+    "mtime": 1786011499.601599,
+    "seen": 1788501233.381186,
+    "ast_hash": "475b2238439487c3c2ea9b892d7dd944",
+    "semantic_hash": ""
+  },
+  "docs/implementation/IS-0019 \u2014 Restoration Model.md": {
+    "mtime": 1787475773.956389,
+    "seen": 1788501233.381187,
+    "ast_hash": "fe65be1a2a6d338f2971a62ce2dd5ac2",
+    "semantic_hash": ""
+  },
+  "docs/implementation/IS-0020-Collector.md": {
+    "mtime": 1786167903.8082519,
+    "seen": 1788501233.381187,
+    "ast_hash": "c731a9716ce5feeb840a964711c6e8f5",
+    "semantic_hash": ""
+  },
+  "docs/implementation/IS-0021 \u2014 Restoration Derivation.md": {
+    "mtime": 1787475490.5314379,
+    "seen": 1788501233.3811882,
+    "ast_hash": "5c726c9f8feb3d86e1e7aa4929c82fb0",
+    "semantic_hash": ""
+  },
+  "docs/product/PRODUCT.md": {
+    "mtime": 1785251149.873014,
+    "seen": 1788501233.3811882,
+    "ast_hash": "8094f739bf8140a01e2e3791e2cfd0c0",
+    "semantic_hash": ""
+  },
+  "docs/rfcs/RFC-0001-observation-contract.md": {
+    "mtime": 1785251149.8731446,
+    "seen": 1788519568.531029,
+    "ast_hash": "fcd9b4f242f7343bd5539e97fc84d050",
+    "semantic_hash": "fcd9b4f242f7343bd5539e97fc84d050"
+  },
+  "docs/rfcs/RFC-0002-artifact-identity-contract.md": {
+    "mtime": 1785251149.8732243,
+    "seen": 1788519568.53103,
+    "ast_hash": "d2d7f4e360df39aa5c680188a74bc748",
+    "semantic_hash": "d2d7f4e360df39aa5c680188a74bc748"
+  },
+  "docs/rfcs/RFC-0003-workspace-formation-contract.md": {
+    "mtime": 1787474673.0179641,
+    "seen": 1788519568.53103,
+    "ast_hash": "bc9ef6dd2535805cb36ad95ddca421e5",
+    "semantic_hash": "bc9ef6dd2535805cb36ad95ddca421e5"
+  },
+  "docs/rfcs/RFC-0004-interpretation-evolution.md": {
+    "mtime": 1785251149.8734078,
+    "seen": 1788519568.5310311,
+    "ast_hash": "e67859ff4f85e89d874df25fc5375ee2",
+    "semantic_hash": "e67859ff4f85e89d874df25fc5375ee2"
+  },
+  "docs/rfcs/RFC-0005-historical-understanding.md": {
+    "mtime": 1785251149.8739343,
+    "seen": 1788519568.531032,
+    "ast_hash": "7531510f599c5e40d24d367e2d5a15c8",
+    "semantic_hash": "7531510f599c5e40d24d367e2d5a15c8"
+  },
+  "docs/rfcs/RFC-0006-restoration-contract.md": {
+    "mtime": 1785251149.8740425,
+    "seen": 1788519568.531032,
+    "ast_hash": "073feac618dc9f8b4995cf21ecd13852",
+    "semantic_hash": "073feac618dc9f8b4995cf21ecd13852"
+  },
+  "docs/rfcs/RFC-0007-retrieval-contract.md": {
+    "mtime": 1786016188.568572,
+    "seen": 1788519568.531033,
+    "ast_hash": "601ea0c7c02962a3f363b3577d150f98",
+    "semantic_hash": "601ea0c7c02962a3f363b3577d150f98"
+  },
+  "docs/rfcs/RFC-0008-knowledge-contract.md": {
+    "mtime": 1786016207.3841794,
+    "seen": 1788519568.531033,
+    "ast_hash": "5e1ac2cbe4a182a2f0d835fc8f3ba5fc",
+    "semantic_hash": "5e1ac2cbe4a182a2f0d835fc8f3ba5fc"
+  },
+  "docs/rfcs/RFC-0009-learning-contract.md": {
+    "mtime": 1785251149.874299,
+    "seen": 1788519568.5310342,
+    "ast_hash": "0a54223c8de0d0bb5666c72d96a59600",
+    "semantic_hash": "0a54223c8de0d0bb5666c72d96a59600"
+  },
+  "docs/rfcs/RFC-0010-work-continuity-contract.md": {
+    "mtime": 1787475773.9577215,
+    "seen": 1788519568.5310342,
+    "ast_hash": "38136e8318ab1f599034682972e39d3b",
+    "semantic_hash": "38136e8318ab1f599034682972e39d3b"
+  },
+  "docs/rfcs/RFC-0011-continuation-evidence-contract.md": {
+    "mtime": 1787500133.2499619,
+    "seen": 1788519568.531035,
+    "ast_hash": "a6af88bedc6d2f57b361693c22378932",
+    "semantic_hash": "a6af88bedc6d2f57b361693c22378932"
+  },
+  "docs/rfcs/RFC-0012-canonical-co-membership-evidence.md": {
+    "mtime": 1787474710.4408681,
+    "seen": 1788519568.531036,
+    "ast_hash": "7ce411cdb10db90b29833dbd8af972f4",
+    "semantic_hash": "7ce411cdb10db90b29833dbd8af972f4"
+  },
+  "docs/rfcs/RFC-0013-continuation-surface-declaration.md": {
+    "mtime": 1787500455.2663743,
+    "seen": 1788519568.531036,
+    "ast_hash": "6486fce9f7d26726293a7b036e502608",
+    "semantic_hash": "6486fce9f7d26726293a7b036e502608"
+  },
+  "docs/rfcs/RFC-0014-engagement-contract.md": {
+    "mtime": 1787759168.269745,
+    "seen": 1788519568.5310369,
+    "ast_hash": "925a94ba63102ec80d34c8e760391697",
+    "semantic_hash": "925a94ba63102ec80d34c8e760391697"
+  },
+  "docs/standards/RFC-0000-rfc-system.md": {
+    "mtime": 1785251149.8744133,
+    "seen": 1788519568.5310369,
+    "ast_hash": "3ce4d7dab88bfc72111c9dd1ecc2cc7a",
+    "semantic_hash": "3ce4d7dab88bfc72111c9dd1ecc2cc7a"
+  },
+  "research/01-market-sizing-digest.md": {
+    "mtime": 1788185998.1770878,
+    "seen": 1788519568.531038,
+    "ast_hash": "355f2c66c6072172acc79ed53e4e3a4b",
+    "semantic_hash": "355f2c66c6072172acc79ed53e4e3a4b"
+  },
+  "research/02-problem-evidence-digest.md": {
+    "mtime": 1788186160.6687002,
+    "seen": 1788519568.531039,
+    "ast_hash": "ecce9ca1422dc0c156ad9c9ff2e0ea0b",
+    "semantic_hash": "ecce9ca1422dc0c156ad9c9ff2e0ea0b"
+  },
+  "research/03-funding-landscape-digest.md": {
+    "mtime": 1788185220.042723,
+    "seen": 1788519568.531039,
+    "ast_hash": "ff0f32275c4684af4983901d9695db8a",
+    "semantic_hash": "ff0f32275c4684af4983901d9695db8a"
+  },
+  "research/04-investor-targets-digest.md": {
+    "mtime": 1788185414.7676432,
+    "seen": 1788519568.53104,
+    "ast_hash": "0e4c47124e42c79ef7764a511cd64888",
+    "semantic_hash": "0e4c47124e42c79ef7764a511cd64888"
+  },
+  "research/05-pricing-benchmarks-digest.md": {
+    "mtime": 1788242166.4645212,
+    "seen": 1788519568.53104,
+    "ast_hash": "1c0b3d968c607e18242c7a33d6d0a36b",
+    "semantic_hash": "1c0b3d968c607e18242c7a33d6d0a36b"
+  },
+  "research/06-gtm-playbook-digest.md": {
+    "mtime": 1788242256.3144605,
+    "seen": 1788519568.531041,
+    "ast_hash": "772f859cd58fd1c95adccd18ded22994",
+    "semantic_hash": "772f859cd58fd1c95adccd18ded22994"
+  },
+  "research/07-competitive-landscape-digest.md": {
+    "mtime": 1788186676.784516,
+    "seen": 1788519568.531041,
+    "ast_hash": "2fd09a3c835f39197535d9ece64c14c9",
+    "semantic_hash": "2fd09a3c835f39197535d9ece64c14c9"
+  },
+  "research/08-permissions-legal-digest.md": {
+    "mtime": 1788243007.7359939,
+    "seen": 1788519568.531042,
+    "ast_hash": "4b2ab55e22ecb9f8c27a523e2147c7bc",
+    "semantic_hash": "4b2ab55e22ecb9f8c27a523e2147c7bc"
+  },
+  "research/09-evidence-bar-digest.md": {
+    "mtime": 1788241750.6243212,
+    "seen": 1788519568.531043,
+    "ast_hash": "6fcd6a91de6a4f287650def807b1a371",
+    "semantic_hash": "6fcd6a91de6a4f287650def807b1a371"
+  },
+  "research/10-deck-artifacts-digest.md": {
+    "mtime": 1788186901.3851945,
+    "seen": 1788519568.531043,
+    "ast_hash": "a71d526ca557b6b435fe2e4f0da99837",
+    "semantic_hash": "a71d526ca557b6b435fe2e4f0da99837"
+  },
+  "research/11-category-language-digest.md": {
+    "mtime": 1788243060.478113,
+    "seen": 1788519568.531044,
+    "ast_hash": "fa6c89fd12ad48d12c0d71f9c0ad2e6d",
+    "semantic_hash": "fa6c89fd12ad48d12c0d71f9c0ad2e6d"
+  },
+  "research/12-objections-digest.md": {
+    "mtime": 1788242012.6325624,
+    "seen": 1788519568.531044,
+    "ast_hash": "1e831fd50998eddad6fd8f4b737f4f6d",
+    "semantic_hash": "1e831fd50998eddad6fd8f4b737f4f6d"
+  },
+  "research/13-exit-comps-digest.md": {
+    "mtime": 1788243128.4995203,
+    "seen": 1788519568.5310452,
+    "ast_hash": "3072052c5b066ae2515a1ab99d3c94f5",
+    "semantic_hash": "3072052c5b066ae2515a1ab99d3c94f5"
+  },
+  "Cargo.toml": {
+    "mtime": 1787325432.710762,
+    "seen": 1788519568.5308852,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  ".claude/skills/graphify/SKILL.md": {
+    "mtime": 1788501541.1993918,
+    "seen": 1788519568.531002,
+    "ast_hash": "1656a8a8e4a05bbe69f32cd15de81e87",
+    "semantic_hash": "1656a8a8e4a05bbe69f32cd15de81e87"
+  },
+  ".claude/launch.json": {
+    "mtime": 1788606762.736812,
+    "seen": 1788948510.061565,
+    "ast_hash": "91f66ba868f016a4db19b31f245dd119",
+    "semantic_hash": ""
+  },
+  ".codex/hooks.json": {
+    "mtime": 1788684799.125139,
+    "seen": 1788948510.061614,
+    "ast_hash": "c8e7bbc3071b4d79b4bdc1b70329f02f",
+    "semantic_hash": ""
+  },
+  "crates/evo-capture/src/macos_input_counter.rs": {
+    "mtime": 1788947234.9704044,
+    "seen": 1788948510.062142,
+    "ast_hash": "bbb7cb4bfba1833a7e4de0af08fbac08",
+    "semantic_hash": ""
+  },
+  "crates/evo-threads/Cargo.toml": {
+    "mtime": 1788923332.35779,
+    "seen": 1788948510.064544,
+    "ast_hash": "3825ea4909c14f6b57ece0582b287515",
+    "semantic_hash": ""
+  },
+  "crates/evo-threads/src/assign.rs": {
+    "mtime": 1788925067.9875395,
+    "seen": 1788948510.064545,
+    "ast_hash": "29b5dfe503bbbdbf6eca6568318cb706",
+    "semantic_hash": ""
+  },
+  "crates/evo-threads/src/bin/regression.rs": {
+    "mtime": 1788925409.0766537,
+    "seen": 1788948510.064546,
+    "ast_hash": "f1b0cca1dc8377d27f3d879e53109a36",
+    "semantic_hash": ""
+  },
+  "crates/evo-threads/src/config.rs": {
+    "mtime": 1788923307.4716253,
+    "seen": 1788948510.064547,
+    "ast_hash": "a52a7097bd8466090dbb9d43bbd9d32c",
+    "semantic_hash": ""
+  },
+  "crates/evo-threads/src/continuation.rs": {
+    "mtime": 1788923307.4702923,
+    "seen": 1788948510.064547,
+    "ast_hash": "9961234009427fbd5afe211b5a866cb9",
+    "semantic_hash": ""
+  },
+  "crates/evo-threads/src/episodes.rs": {
+    "mtime": 1788952783.1803403,
+    "seen": 1788956543.834555,
+    "ast_hash": "927aa1f28ea995dcb16ffe85b06fcafe",
+    "semantic_hash": ""
+  },
+  "crates/evo-threads/src/lib.rs": {
+    "mtime": 1788925957.9830723,
+    "seen": 1788948510.064548,
+    "ast_hash": "713dd922de3e9f64860707551fa16130",
+    "semantic_hash": ""
+  },
+  "crates/evo-threads/src/state.rs": {
+    "mtime": 1788925774.9745154,
+    "seen": 1788948510.0645492,
+    "ast_hash": "482d5e962039c526244b631ccae60a60",
+    "semantic_hash": ""
+  },
+  "crates/evo-threads/src/trace.rs": {
+    "mtime": 1788925809.599926,
+    "seen": 1788948510.06455,
+    "ast_hash": "672c7ca14aff87cffe4cdd4bc58485e6",
+    "semantic_hash": ""
+  },
+  "crates/evo-threads/src/types.rs": {
+    "mtime": 1788923307.4706874,
+    "seen": 1788948510.06455,
+    "ast_hash": "c02d2d058767eb18fe65e3a38e7c2159",
+    "semantic_hash": ""
+  },
+  "crates/evo-threads/tests/common/mod.rs": {
+    "mtime": 1788923307.4682877,
+    "seen": 1788948510.0645509,
+    "ast_hash": "98dabad41ef8bd936daa5c3aee5e86aa",
+    "semantic_hash": ""
+  },
+  "crates/evo-threads/tests/fixture_a.rs": {
+    "mtime": 1788923307.469342,
+    "seen": 1788948510.0645509,
+    "ast_hash": "74785de3277e453fdc944ab879e71e0f",
+    "semantic_hash": ""
+  },
+  "crates/evo-threads/tests/fixture_b.rs": {
+    "mtime": 1788926022.3112571,
+    "seen": 1788948510.0645518,
+    "ast_hash": "18e70d5dd2ab5aebbeeb8881b144d8f6",
+    "semantic_hash": ""
+  },
+  "crates/evo-threads/tests/integration_fixes.rs": {
+    "mtime": 1788924113.0517938,
+    "seen": 1788948510.0645518,
+    "ast_hash": "a93fb28d3dcb30fabcaab586c9156404",
+    "semantic_hash": ""
+  },
+  "crates/evo-threads/tests/invariants.rs": {
+    "mtime": 1788926125.1243649,
+    "seen": 1788948510.064553,
+    "ast_hash": "974c00b1e0cbbd54c254ce8860380614",
+    "semantic_hash": ""
+  },
+  "crates/evo-threads/tests/probe_adversarial.rs": {
+    "mtime": 1788923493.134329,
+    "seen": 1788948510.064553,
+    "ast_hash": "f5fda23d0efc6726a8f84dccd4d20dfb",
+    "semantic_hash": ""
+  },
+  "crates/evo-workspace/src/regression_tests.rs": {
+    "mtime": 1788526434.7091765,
+    "seen": 1788948510.064697,
+    "ast_hash": "7be7c1dea2e793bf0a98db76a3691522",
+    "semantic_hash": ""
+  },
+  "tools/threads-regression/export_events.py": {
+    "mtime": 1788948207.0318205,
+    "seen": 1788948510.0648372,
+    "ast_hash": "ec93757a95c831dd674397925bf85a2b",
+    "semantic_hash": ""
+  },
+  "tools/threads-regression/ground_truth_labels.json": {
+    "mtime": 1788925333.3453107,
+    "seen": 1788948510.064838,
+    "ast_hash": "8f9c4854250bebdc4900fe0e9720b87b",
+    "semantic_hash": ""
+  },
+  ".agents/skills/graphify/SKILL.md": {
+    "mtime": 1788684799.123156,
+    "seen": 1788948510.064839,
+    "ast_hash": "164269d72b7f09a21c576b6f0c31401e",
+    "semantic_hash": ""
+  },
+  ".agents/skills/graphify/references/add-watch.md": {
+    "mtime": 1788500714.444521,
+    "seen": 1788948510.064839,
+    "ast_hash": "d59d027fe449f06aa03905a01184e779",
+    "semantic_hash": ""
+  },
+  ".agents/skills/graphify/references/exports.md": {
+    "mtime": 1788500714.444713,
+    "seen": 1788948510.0648398,
+    "ast_hash": "9da2a2152e60a22f07f05fed5158f287",
+    "semantic_hash": ""
+  },
+  ".agents/skills/graphify/references/extraction-spec.md": {
+    "mtime": 1788500714.4735231,
+    "seen": 1788948510.0648398,
+    "ast_hash": "42fef56a01698118f7fd722acdadea34",
+    "semantic_hash": ""
+  },
+  ".agents/skills/graphify/references/github-and-merge.md": {
+    "mtime": 1788500714.4737802,
+    "seen": 1788948510.064841,
+    "ast_hash": "cde13df085e4c492aeb7ba298a996d0d",
+    "semantic_hash": ""
+  },
+  ".agents/skills/graphify/references/hooks.md": {
+    "mtime": 1788500714.473998,
+    "seen": 1788948510.064841,
+    "ast_hash": "3f545db6ce646650bb9de588f5512a27",
+    "semantic_hash": ""
+  },
+  ".agents/skills/graphify/references/query.md": {
+    "mtime": 1788500714.474305,
+    "seen": 1788948510.064842,
+    "ast_hash": "3c46f8ad006874260614ed8657d02307",
+    "semantic_hash": ""
+  },
+  ".agents/skills/graphify/references/transcribe.md": {
+    "mtime": 1788500714.474502,
+    "seen": 1788948510.064843,
+    "ast_hash": "67b6a5fa6c0974e18f60db9f8932fbd8",
+    "semantic_hash": ""
+  },
+  ".agents/skills/graphify/references/update.md": {
+    "mtime": 1788500714.474879,
+    "seen": 1788948510.064843,
+    "ast_hash": "9378bd03d56baaf78bd738ab3848f142",
+    "semantic_hash": ""
+  },
+  ".claude/CLAUDE.md": {
+    "mtime": 1788501541.1997213,
+    "seen": 1788948510.0648441,
+    "ast_hash": "9b31786b637be3c13978bec4c2330752",
+    "semantic_hash": ""
+  },
+  ".claude/skills/graphify/references/add-watch.md": {
+    "mtime": 1788500714.444521,
+    "seen": 1788948510.064864,
+    "ast_hash": "d59d027fe449f06aa03905a01184e779",
+    "semantic_hash": ""
+  },
+  ".claude/skills/graphify/references/exports.md": {
+    "mtime": 1788500714.444713,
+    "seen": 1788948510.064865,
+    "ast_hash": "9da2a2152e60a22f07f05fed5158f287",
+    "semantic_hash": ""
+  },
+  ".claude/skills/graphify/references/extraction-spec.md": {
+    "mtime": 1788500714.4735231,
+    "seen": 1788948510.064865,
+    "ast_hash": "42fef56a01698118f7fd722acdadea34",
+    "semantic_hash": ""
+  },
+  ".claude/skills/graphify/references/github-and-merge.md": {
+    "mtime": 1788500714.4737802,
+    "seen": 1788948510.064866,
+    "ast_hash": "cde13df085e4c492aeb7ba298a996d0d",
+    "semantic_hash": ""
+  },
+  ".claude/skills/graphify/references/hooks.md": {
+    "mtime": 1788500714.473998,
+    "seen": 1788948510.064866,
+    "ast_hash": "3f545db6ce646650bb9de588f5512a27",
+    "semantic_hash": ""
+  },
+  ".claude/skills/graphify/references/query.md": {
+    "mtime": 1788500714.474305,
+    "seen": 1788948510.064867,
+    "ast_hash": "3c46f8ad006874260614ed8657d02307",
+    "semantic_hash": ""
+  },
+  ".claude/skills/graphify/references/transcribe.md": {
+    "mtime": 1788500714.474502,
+    "seen": 1788948510.064867,
+    "ast_hash": "67b6a5fa6c0974e18f60db9f8932fbd8",
+    "semantic_hash": ""
+  },
+  ".claude/skills/graphify/references/update.md": {
+    "mtime": 1788500714.474879,
+    "seen": 1788948510.0648682,
+    "ast_hash": "9378bd03d56baaf78bd738ab3848f142",
+    "semantic_hash": ""
+  },
+  ".serena/memories/memory_maintenance.md": {
+    "mtime": 1788521596.260558,
+    "seen": 1788948510.0648682,
+    "ast_hash": "5a2422d8355cb91f16402415a54e3c66",
+    "semantic_hash": ""
+  },
+  "AGENTS.md": {
+    "mtime": 1788684795.0154793,
+    "seen": 1788948510.064884,
+    "ast_hash": "d2c65f8b43b0aa12057d5da4ae78aa94",
+    "semantic_hash": ""
+  },
+  "DIAGNOSIS.md": {
+    "mtime": 1788524730.3249884,
+    "seen": 1788948510.064898,
+    "ast_hash": "109f07a089ed0dc4aa4ac29b5aa6687f",
+    "semantic_hash": ""
+  },
+  "tools/sqlite-maintenance.md": {
+    "mtime": 1788948148.9863546,
+    "seen": 1788948510.0661929,
+    "ast_hash": "9acbee8253aa9d4ce4077910100161a8",
+    "semantic_hash": ""
+  },
+  "assets/icons/App Store.png": {
+    "mtime": 1788608158.3869462,
+    "seen": 1788948510.0661938,
+    "ast_hash": "6186e238907b06c3786b8bb1c8191a53",
+    "semantic_hash": ""
+  },
+  "assets/icons/Books.png": {
+    "mtime": 1788608158.3882842,
+    "seen": 1788948510.0661938,
+    "ast_hash": "d3c765a78a38cf65aebd44579a3e35b0",
+    "semantic_hash": ""
+  },
+  "assets/icons/Calculator.png": {
+    "mtime": 1788608158.3903477,
+    "seen": 1788948510.066195,
+    "ast_hash": "45480ad77a411c4696e890a0937cd53b",
+    "semantic_hash": ""
+  },
+  "assets/icons/Calendar.png": {
+    "mtime": 1788608158.3921971,
+    "seen": 1788948510.066195,
+    "ast_hash": "80601f295755addbbc9f705dc387ba66",
+    "semantic_hash": ""
+  },
+  "assets/icons/Clock.png": {
+    "mtime": 1788608158.3931465,
+    "seen": 1788948510.066196,
+    "ast_hash": "6780d5102041d7afd025988b048bf5d7",
+    "semantic_hash": ""
+  },
+  "assets/icons/FaceTime.png": {
+    "mtime": 1788608158.394107,
+    "seen": 1788948510.066197,
+    "ast_hash": "fc2ce4e7bd53f8970a0904e360def7f4",
+    "semantic_hash": ""
+  },
+  "assets/icons/Figma.png": {
+    "mtime": 1788608158.3961134,
+    "seen": 1788948510.066197,
+    "ast_hash": "31f9940fddd869f5a0daa30dbc1a07c7",
+    "semantic_hash": ""
+  },
+  "assets/icons/Find My.png": {
+    "mtime": 1788608158.3974128,
+    "seen": 1788948510.066198,
+    "ast_hash": "ba1934cf52bc1b0959172dddfc9f6939",
+    "semantic_hash": ""
+  },
+  "assets/icons/Finder.png": {
+    "mtime": 1788608158.3983638,
+    "seen": 1788948510.066198,
+    "ast_hash": "7daccdf3e9157b59a3c3b9aa4bf9a239",
+    "semantic_hash": ""
+  },
+  "assets/icons/Freeform.png": {
+    "mtime": 1788608158.4003465,
+    "seen": 1788948510.066199,
+    "ast_hash": "5d69073092397675c0973bb2dce829e8",
+    "semantic_hash": ""
+  },
+  "assets/icons/Keynote.png": {
+    "mtime": 1788608158.4009647,
+    "seen": 1788948510.066199,
+    "ast_hash": "f2fb06a4409bc149d748ce24f24673f5",
+    "semantic_hash": ""
+  },
+  "assets/icons/Mail.png": {
+    "mtime": 1788608158.4020348,
+    "seen": 1788948510.0662,
+    "ast_hash": "79f40f2b798df06a9150cd698337f1f3",
+    "semantic_hash": ""
+  },
+  "assets/icons/Messages.png": {
+    "mtime": 1788608158.403535,
+    "seen": 1788948510.0662,
+    "ast_hash": "90a5f4c848362097d7cb093af998cd09",
+    "semantic_hash": ""
+  },
+  "assets/icons/Music.png": {
+    "mtime": 1788608158.4049234,
+    "seen": 1788948510.066201,
+    "ast_hash": "5869bb14cacb23ab32060f28f0af3dfc",
+    "semantic_hash": ""
+  },
+  "assets/icons/Notes.png": {
+    "mtime": 1788608158.4057438,
+    "seen": 1788948510.066201,
+    "ast_hash": "406771c08252b5ca2420522549c3257a",
+    "semantic_hash": ""
+  },
+  "assets/icons/Pages.png": {
+    "mtime": 1788608158.4064424,
+    "seen": 1788948510.0662022,
+    "ast_hash": "a61993f7f075ff5efebbb1aaff06638b",
+    "semantic_hash": ""
+  },
+  "assets/icons/Photo Booth.png": {
+    "mtime": 1788608158.4079082,
+    "seen": 1788948510.0662022,
+    "ast_hash": "0b1da69acbaa1c454d1cea4ba157432f",
+    "semantic_hash": ""
+  },
+  "assets/icons/Photos.png": {
+    "mtime": 1788608158.4096994,
+    "seen": 1788948510.0662029,
+    "ast_hash": "70c415a97403f3ee3e267afd145f6617",
+    "semantic_hash": ""
+  },
+  "assets/icons/Preview.png": {
+    "mtime": 1788608158.4110117,
+    "seen": 1788948510.0662029,
+    "ast_hash": "3c8bbfc0d804f09bb3817755640859ec",
+    "semantic_hash": ""
+  },
+  "assets/icons/Reminders.png": {
+    "mtime": 1788608158.4126177,
+    "seen": 1788948510.0662038,
+    "ast_hash": "d82764eb419e2edb1d0bb27310175b5b",
+    "semantic_hash": ""
+  },
+  "assets/icons/Safari.png": {
+    "mtime": 1788608158.4144838,
+    "seen": 1788948510.0662038,
+    "ast_hash": "1dcce780e861fd27f85b2629d0eb44e0",
+    "semantic_hash": ""
+  },
+  "assets/icons/Settings.png": {
+    "mtime": 1788608158.4156528,
+    "seen": 1788948510.066205,
+    "ast_hash": "00d786bb32dc65ce800f08e6d2c549a7",
+    "semantic_hash": ""
+  },
+  "assets/icons/Shortcuts.png": {
+    "mtime": 1788608158.417061,
+    "seen": 1788948510.066205,
+    "ast_hash": "5d9cd2e579996f386cf7217efdb5e744",
+    "semantic_hash": ""
+  },
+  "assets/icons/Stickies.png": {
+    "mtime": 1788608158.41806,
+    "seen": 1788948510.066206,
+    "ast_hash": "d89996f4f6560cfc38909c0a1b3fe024",
+    "semantic_hash": ""
+  },
+  "assets/icons/TV.png": {
+    "mtime": 1788608158.4189095,
+    "seen": 1788948510.066209,
+    "ast_hash": "d84c6f1e3ad8e340170fe0e98fcad490",
+    "semantic_hash": ""
+  },
+  "assets/icons/Voice Memos.png": {
+    "mtime": 1788608158.419783,
+    "seen": 1788948510.066209,
+    "ast_hash": "c5c3aef7308906c71351daf17ed0160a",
+    "semantic_hash": ""
+  },
+  "assets/icons/Xcode.png": {
+    "mtime": 1788608158.421831,
+    "seen": 1788948510.06621,
+    "ast_hash": "9882a51d6607e7e5bd6d319789b55816",
+    "semantic_hash": ""
+  },
+  "assets/icons/vscode-alt.png": {
+    "mtime": 1788609452.476525,
+    "seen": 1788948510.06621,
+    "ast_hash": "b7c4dc44842f6fa2ab4e7f5ed3e2b43a",
+    "semantic_hash": ""
+  },
+  "assets/icons/vscode-alt.svg": {
+    "mtime": 1788609452.4767,
+    "seen": 1788948510.066211,
+    "ast_hash": "90fd5bfa88e040ae12428477ee74077e",
+    "semantic_hash": ""
+  },
+  "assets/icons/vscode.png": {
+    "mtime": 1788609452.4776895,
+    "seen": 1788948510.066211,
+    "ast_hash": "3919e5b2f737f142a45921320e666382",
+    "semantic_hash": ""
+  },
+  "assets/icons/vscode.svg": {
+    "mtime": 1788609452.4778688,
+    "seen": 1788948510.0662122,
+    "ast_hash": "a80b6238ec4054a6de32d56f097ac656",
+    "semantic_hash": ""
+  },
+  "crates/evo-daemon/examples/threads_probe.rs": {
+    "mtime": 1788952131.6581683,
+    "seen": 1788956543.8324108,
+    "ast_hash": "c196883d81f14482a47770d4a0e9cf88",
+    "semantic_hash": ""
+  },
+  "crates/evo-daemon/src/threads.rs": {
+    "mtime": 1788952793.2265618,
+    "seen": 1788956543.8326778,
+    "ast_hash": "090b27303ce07fda631637b10c0f2540",
+    "semantic_hash": ""
+  }
+}

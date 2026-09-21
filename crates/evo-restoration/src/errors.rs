@@ -5,8 +5,8 @@
 use evo_artifact::artifact_id::ArtifactId;
 use evo_workspace::WorkspaceId;
 
-/// A violation of the Restoration domain invariants (IS-0014).
-#[derive(Debug, Clone, PartialEq)]
+/// A violation of the Restoration domain invariants (IS-0014, IS-0021).
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RestorationError {
     /// A `ContextChain` was constructed with a duplicate `ArtifactId`.
     ///
@@ -29,6 +29,20 @@ pub enum RestorationError {
         plan_workspace: WorkspaceId,
         next_step_workspace: WorkspaceId,
     },
+
+    /// The Snapshot supplied to Restoration Derivation is not part of the
+    /// supplied Workspace's Snapshot History.
+    ///
+    /// Violates IS-0021 §25.7: every derived component SHALL belong to the
+    /// same Workspace.
+    SnapshotNotPartOfWorkspace { workspace_id: WorkspaceId },
+
+    /// An `InsufficientRestoration` outcome was constructed with an invalid
+    /// combination of derived and missing components.
+    ///
+    /// Exactly one of the Resume Point or its missing-evidence record must be
+    /// present (IS-0021 §25.2, §25.8).
+    InvalidInsufficientOutcome { detail: String },
 }
 
 impl std::fmt::Display for RestorationError {
@@ -59,6 +73,16 @@ impl std::fmt::Display for RestorationError {
                     "NextStep workspace {next_step_workspace} does not match \
                      RestorationPlan workspace {plan_workspace} (IS-0014 NS-1)"
                 )
+            }
+            RestorationError::SnapshotNotPartOfWorkspace { workspace_id } => {
+                write!(
+                    f,
+                    "Snapshot is not part of Workspace {workspace_id} Snapshot History \
+                     (IS-0021 §25.7)"
+                )
+            }
+            RestorationError::InvalidInsufficientOutcome { detail } => {
+                write!(f, "invalid insufficient restoration outcome: {detail}")
             }
         }
     }

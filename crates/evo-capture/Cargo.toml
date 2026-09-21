@@ -1,0 +1,8 @@
+[package]
+name = "evo-capture"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+evo-storage = { path = "../evo-storage" }
+evo-observation = { path = "../evo-observation" }

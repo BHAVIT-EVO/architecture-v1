@@ -5,4 +5,5 @@ edition = "2024"
 
 [dependencies]
 evo-artifact = { path = "../evo-artifact" }
+evo-observation = { path = "../evo-observation" }
 evo-workspace = { path = "../evo-workspace" }
