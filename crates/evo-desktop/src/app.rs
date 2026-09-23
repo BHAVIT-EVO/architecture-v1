@@ -326,22 +326,30 @@ impl EvoApp {
 
     /// Snapshots the pod list and active pod id for the bar — a clone, so
     /// the bar never holds the host lock across a paint.
-    fn podbar_pods(&self) -> (Vec<evo_pods::pod::Pod>, Option<u64>) {
+    fn podbar_pods(&self) -> (Vec<evo_pods::pod::Pod>, Option<u64>, Option<crate::podbar::StageStats>) {
         let guard = lock_pods(&self.pods);
         let active_id = guard
             .active
             .as_ref()
             .and_then(|name| guard.pods.iter().find(|pod| &pod.name == name))
             .map(|pod| pod.id.0);
-        (guard.pods.clone(), active_id)
+        let stage_stats = guard.core.lease().map(|lease| {
+            (
+                lease.parked_windows.len(),
+                lease.hidden_apps.len(),
+                lease.unparked_members.len(),
+            )
+        });
+        (guard.pods.clone(), active_id, stage_stats)
     }
 
     /// Paints the Pod Bar overlay above everything and applies the actions
     /// it proposes. Called as the very last thing in `ui` — the bar must
     /// always win the z-order, whatever else is open.
     fn paint_podbar(&mut self, ctx: &egui::Context) {
-        let (pods, active_id) = self.podbar_pods();
-        let actions = crate::podbar::show(ctx, &mut self.podbar, &pods, active_id, 9);
+        let (pods, active_id, stage_stats) = self.podbar_pods();
+        let actions =
+            crate::podbar::show(ctx, &mut self.podbar, &pods, active_id, 9, stage_stats);
         for action in actions {
             match action {
                 crate::podbar::PodBarAction::Command(command) => {

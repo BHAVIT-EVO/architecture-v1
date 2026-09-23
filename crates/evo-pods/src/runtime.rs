@@ -221,9 +221,10 @@ impl PodRuntime {
         self.pods[index].state = PodState::Active;
 
         let note = format!(
-            "Entered \"{}\": {} arranged, {} veiled, {} parked, {} apps hidden.",
+            "Entered \"{}\": {} on stage, {} remembered, {} veiled, {} parked, {} apps hidden.",
             lease.pod,
             lease.moved_windows.len(),
+            lease.unparked_members.len(),
             lease.veils.len(),
             lease.parked_windows.len(),
             lease.hidden_apps.len()
@@ -281,6 +282,9 @@ impl PodRuntime {
                 }
                 LeaseStep::UnparkWindow { pid, window_id } => {
                     let _ = self.surface.unminimize_window(pid, window_id);
+                }
+                LeaseStep::ReparkWindow { pid, window_id } => {
+                    let _ = self.surface.minimize_window(pid, window_id);
                 }
                 LeaseStep::MoveWindowBack { pid, window_id, frame } => {
                     let _ = self.surface.move_window(pid, window_id, frame);
@@ -458,6 +462,13 @@ fn apply_plan(
     veil_alpha: f32,
     lease: &mut PodLease,
 ) {
+    // Resurrect first: the space's own minimized windows come back before
+    // any choreography, because a minimized window cannot be moved.
+    for (pid, window_id) in &plan.unpark_members {
+        if surface.unminimize_window(*pid, *window_id).is_ok() {
+            lease.unparked_members.push((*pid, *window_id));
+        }
+    }
     for home in &plan.arrange {
         if let Some(target) = home.frame {
             if let Some(current) = inventory

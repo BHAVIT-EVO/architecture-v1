@@ -4,16 +4,28 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ContainMode {
     /// Translucent veil over foreign windows — present but demoted.
-    /// Default: nothing disappears, the subtraction reads at a glance.
     Dim,
     /// Minimize foreign windows (IS-0022's park).
     Park,
     /// Hide whole foreign apps (IS-0022's enter). Most subtractive.
     Hide,
+    /// The pod-desktop: each pod IS its own space. Foreign apps with no
+    /// witness in the pod are hidden whole (⌘H's native, clutter-free
+    /// move — the cleanest disappearance macOS grants anyone); apps
+    /// witnessed BOTH inside and outside the pod keep the pod's windows
+    /// staged while their foreign windows minimize singly (the only
+    /// per-window move the platform allows, and the honest one). The
+    /// pod's own minimized windows resurrect onto the stage. Research:
+    /// docs/design/POD-SPACES.md — native hide for whole apps,
+    /// minimize only for split-app windows, nothing moved to a corner.
+    Stage,
 }
 
 impl ContainMode {
-    pub const DEFAULT: ContainMode = ContainMode::Dim;
+    /// The default is the space semantic: entering a pod shows exactly
+    /// that work; leaving returns the desktop precisely (the lease's
+    /// receipts), so nothing is ever lost or technical-feeling.
+    pub const DEFAULT: ContainMode = ContainMode::Stage;
 }
 
 /// Pod budgets and floors. Each value is a limit of what the system may

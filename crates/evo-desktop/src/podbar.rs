@@ -6,6 +6,10 @@
 //! painted only from what the engine witnessed — name, one honest reason
 //! line, position-true stage geometry, and badges the deltas entitle us to.
 //! There is no imagery, no prediction, and no badge the engine didn't earn.
+//!
+//! The surface is opaque and singular: one strip of cards that scrolls
+//! sideways when the day outgrows the screen — never a clipped second row,
+//! never the desktop bleeding through.
 
 use crate::pods::PodCommand;
 use evo_pods::pod::{Pod, PodBadge};
@@ -40,8 +44,15 @@ pub enum PodBarAction {
     Dismiss,
 }
 
+/// What the active pod is currently doing to the rest of the world:
+/// (split-app windows parked, alien apps hidden, own windows remembered).
+/// Painted on the active card, derived from the live lease's receipts.
+pub type StageStats = (usize, usize, usize);
+
 // ─── Palette: the bar is a night surface above whatever day the user was in.
-const BAR_BG: egui::Color32 = egui::Color32::from_rgba_premultiplied(9, 12, 17, 238);
+// Fully opaque by decision: a space switcher must read as its own place,
+// never as a tint on the mess it replaces.
+const BAR_BG: egui::Color32 = egui::Color32::from_rgb(9, 12, 17);
 const BAR_EDGE: egui::Color32 = egui::Color32::from_rgb(54, 64, 76);
 const CARD_BG: egui::Color32 = egui::Color32::from_rgb(16, 21, 28);
 const CARD_ACTIVE_EDGE: egui::Color32 = egui::Color32::from_rgb(120, 168, 255);
@@ -59,6 +70,7 @@ pub fn show(
     pods: &[Pod],
     active_id: Option<u64>,
     max_dial: usize,
+    stage_stats: Option<StageStats>,
 ) -> Vec<PodBarAction> {
     let mut actions = Vec::new();
     if !bar.visible {
@@ -71,17 +83,16 @@ pub fn show(
     }
 
     let screen = ctx.viewport_rect();
-    let columns = pods.len().clamp(1, 4);
-    let rows = pods.len().div_ceil(columns).max(1);
     let card_w = 250.0f32;
     let card_h = 196.0f32;
-    let gap = 14.0f32;
-    let panel_w = 56.0 + columns as f32 * card_w + (columns as f32 - 1.0) * gap;
-    let panel_h = 108.0 + rows as f32 * card_h + (rows as f32 - 1.0) * gap;
-    let panel_size = egui::vec2(
-        panel_w.min(screen.width() * 0.92),
-        panel_h.min(screen.height() * 0.90),
-    );
+    let gap = 10.0f32;
+    let header_h = 58.0f32;
+    let strip_chrome = 18.0f32; // room the scrollbar occupies when it exists
+    // One strip: the width the cards honestly need, capped to the screen.
+    let cards_w = pods.len() as f32 * card_w + pods.len().saturating_sub(1) as f32 * gap;
+    let panel_w = (56.0 + cards_w.max(card_w)).min(screen.width() * 0.92);
+    let panel_h = 28.0 + header_h + card_h + strip_chrome + 16.0;
+    let panel_size = egui::vec2(panel_w, panel_h.min(screen.height() * 0.92));
     let panel_rect = egui::Rect::from_center_size(screen.center(), panel_size);
 
     // ONE area (not two): sibling areas at equal z-order once let the
@@ -100,37 +111,46 @@ pub fn show(
             ui.painter().rect_filled(
                 screen,
                 0.0,
-                egui::Color32::from_rgba_unmultiplied(4, 6, 9, 128),
+                egui::Color32::from_rgba_unmultiplied(4, 6, 9, 150),
             );
 
-            // Panel above it: frame, then every interactive card.
-            ui.painter().rect_filled(panel_rect, 18.0, BAR_BG);
+            // Panel above it: opaque frame, then every interactive card.
+            ui.painter().rect_filled(panel_rect, 16.0, BAR_BG);
             ui.painter().rect_stroke(
                 panel_rect,
-                18.0,
+                16.0,
                 egui::Stroke::new(1.0, BAR_EDGE),
                 egui::StrokeKind::Inside,
             );
             let mut child = ui.new_child(
                 egui::UiBuilder::new()
-                    .max_rect(panel_rect.shrink(28.0))
+                    .max_rect(panel_rect.shrink2(egui::vec2(28.0, 14.0)))
                     .layout(egui::Layout::top_down(egui::Align::Min)),
             );
             child.scope(|ui| {
-                ui.label(
-                    egui::RichText::new("Pod bar")
-                        .size(20.0)
-                        .strong()
-                        .color(TEXT_MAIN),
-                );
-                ui.label(
-                    egui::RichText::new(
-                        "Your works, as themselves. \u{2325}1\u{2013}\u{2325}9 to switch, Esc to close.",
-                    )
-                    .size(11.0)
-                    .color(TEXT_DIM),
-                );
-                ui.add_space(14.0);
+                // One-line chrome: name the instrument, then let the works
+                // carry the weight. (Taller headers once ate a card-row.)
+                egui::Grid::new("evo-podbar-head").num_columns(2).show(ui, |ui| {
+                    ui.label(
+                        egui::RichText::new("Pod bar")
+                            .size(18.0)
+                            .strong()
+                            .color(TEXT_MAIN),
+                    );
+                    ui.with_layout(
+                        egui::Layout::right_to_left(egui::Align::Center),
+                        |ui| {
+                            ui.label(
+                                egui::RichText::new(
+                                    "Each pod is its own space. \u{2325}1\u{2013}\u{2325}9 jump \u{b7} Esc closes \u{b7} when the day outruns the screen, the strip scrolls sideways.",
+                                )
+                                .size(10.5)
+                                .color(TEXT_DIM),
+                            );
+                        },
+                    );
+                });
+                ui.add_space(6.0);
 
                 if pods.is_empty() {
                     ui.label(
@@ -144,35 +164,40 @@ pub fn show(
                 }
 
                 let mut bar_actions: Vec<PodBarAction> = Vec::new();
-                for chunk in pods.chunks(columns) {
-                    ui.horizontal(|ui| {
-                        for pod in chunk {
-                            let index = pods
-                                .iter()
-                                .position(|candidate| candidate.id == pod.id)
-                                .unwrap_or(0);
-                            let card_rect = egui::Rect::from_min_size(
-                                ui.cursor().min,
-                                egui::vec2(card_w, card_h),
-                            );
-                            let clicked = card(
-                                ui,
-                                card_rect,
-                                pod,
-                                index,
-                                active_id == Some(pod.id.0),
-                                index < max_dial,
-                            );
-                            ui.allocate_rect(card_rect, egui::Sense::hover());
-                            if clicked {
-                                bar_actions.push(PodBarAction::Command(PodCommand::Enter(index)));
-                                bar_actions.push(PodBarAction::Dismiss);
+                // The one sideways strip. egui hands vertical wheel input
+                // to a horizontal-only scroll area, so the gesture the
+                // hand already does (wheel / two-finger drag) scrolls it.
+                egui::ScrollArea::horizontal()
+                    .auto_shrink([false, true])
+                    .show(ui, |ui| {
+                        ui.horizontal(|ui| {
+                            ui.spacing_mut().item_spacing.x = gap;
+                            for (index, pod) in pods.iter().enumerate() {
+                                let card_rect = egui::Rect::from_min_size(
+                                    ui.cursor().min,
+                                    egui::vec2(card_w, card_h),
+                                );
+                                let active = active_id == Some(pod.id.0);
+                                let stats =
+                                    if active { stage_stats } else { None };
+                                let clicked = card(
+                                    ui,
+                                    card_rect,
+                                    pod,
+                                    index,
+                                    active,
+                                    index < max_dial,
+                                    stats,
+                                );
+                                ui.allocate_rect(card_rect, egui::Sense::hover());
+                                if clicked {
+                                    bar_actions
+                                        .push(PodBarAction::Command(PodCommand::Enter(index)));
+                                    bar_actions.push(PodBarAction::Dismiss);
+                                }
                             }
-                            ui.add_space(gap);
-                        }
+                        });
                     });
-                    ui.add_space(gap);
-                }
                 actions.extend(bar_actions);
             });
 
@@ -186,7 +211,9 @@ pub fn show(
 
 /// One pod card: color rail, name, the engine's reason line, a position-true
 /// miniature of the pod's stage, up to three witnessed badges, and the ⌥N
-/// hint when one exists. Returns true when the card was clicked.
+/// hint when one exists. When the card is the active stage, the right-top
+/// speaks the containment receipts instead (parked / hidden / remembered).
+/// Returns true when the card was clicked.
 fn card(
     ui: &mut egui::Ui,
     rect: egui::Rect,
@@ -194,6 +221,7 @@ fn card(
     index: usize,
     active: bool,
     dialable: bool,
+    stage_stats: Option<StageStats>,
 ) -> bool {
     let response = ui.interact(rect, egui::Id::new(("evo-podbar-card", pod.id.0)), egui::Sense::click());
     let tint = pod_color(pod);
@@ -256,19 +284,24 @@ fn card(
         cursor_y += 16.0;
     }
 
-    // The dial hint (⌥N) when a hotkey exists for this index.
-    if dialable && index < 9 {
-        let hint = format!("⌥{}", index + 1);
-        let hint_galley = ui.painter().layout_no_wrap(
-            hint,
-            egui::FontId::proportional(11.0),
+    // Right-top corner: the receipts of containment while on stage, else
+    // the dial hint (⌥N) when a hotkey exists for this index.
+    let corner: Option<String> = match stage_stats {
+        Some((parked, hidden, remembered)) => Some(format!(
+            "on stage \u{b7} {parked} parked \u{b7} {hidden} hidden \u{b7} {remembered} remembered"
+        )),
+        None if dialable && index < 9 => Some(format!("\u{2325}{}", index + 1)),
+        None => None,
+    };
+    if let Some(text) = corner {
+        let galley = ui
+            .painter()
+            .layout_no_wrap(text, egui::FontId::proportional(10.0), TEXT_DIM);
+        ui.painter().galley(
+            egui::pos2(rect.max.x - galley.size().x - 10.0, rect.min.y + 12.0),
+            galley,
             TEXT_DIM,
         );
-        let hint_pos = egui::pos2(
-            rect.max.x - hint_galley.size().x - 10.0,
-            rect.min.y + 10.0,
-        );
-        ui.painter().galley(hint_pos, hint_galley, TEXT_DIM);
     }
 
     response.clicked()

@@ -96,6 +96,9 @@ pub struct ActivationPlan {
     pub hide_apps: Vec<i32>,
     /// Pod's own apps that were hidden and must come back.
     pub unhide_apps: Vec<i32>,
+    /// The pod's own windows that are minimized and resurrect onto the
+    /// stage (Stage mode: the space remembers what was in it).
+    pub unpark_members: Vec<(i32, u32)>,
     /// Pod app to make frontmost (hero's owner).
     pub activate: Option<i32>,
 }
@@ -138,7 +141,9 @@ pub fn plan_activation(
     }
 
     // Own windows: arrange per recipe (or raise untouched), ranked so the
-    // hero ends frontmost.
+    // hero ends frontmost. In the space semantic (Stage), the pod's own
+    // minimized windows resurrect onto the stage — a space re-opens with
+    // what was in it, nothing lost.
     let mut own: Vec<Arrangement> = Vec::new();
     for w in windows_all {
         if protected.contains(&w.pid) || w.minimized && mode == ContainMode::Park {
@@ -147,6 +152,9 @@ pub fn plan_activation(
         let m = window_match(w, surfaces);
         if !m.belongs() {
             continue;
+        }
+        if w.minimized && mode == ContainMode::Stage {
+            plan.unpark_members.push((w.pid, w.window_id));
         }
         pod_pid.insert(w.pid);
         let resource = resource_of(w, surfaces);
@@ -192,6 +200,14 @@ pub fn plan_activation(
             }
             ContainMode::Park => plan.park.push((w.pid, w.window_id)),
             ContainMode::Hide => {}
+            // The pod-desktop: only SPLIT apps (witnessed both inside &
+            // outside the pod) park windows one by one; apps with no
+            // witness in the pod are hidden whole below — no Dock
+            // clutter of minimized windows the user never parked.
+            ContainMode::Stage if pod_pid.contains(&w.pid) => {
+                plan.park.push((w.pid, w.window_id))
+            }
+            ContainMode::Stage => {}
         }
     }
 
@@ -200,7 +216,8 @@ pub fn plan_activation(
         if protected.contains(&app.pid) {
             continue;
         }
-        if mode == ContainMode::Hide && app.regular && !app.hidden && !pod_pid.contains(&app.pid) {
+        let hides_foreign = matches!(mode, ContainMode::Hide | ContainMode::Stage);
+        if hides_foreign && app.regular && !app.hidden && !pod_pid.contains(&app.pid) {
             plan.hide_apps.push(app.pid);
         }
         if pod_pid.contains(&app.pid) && app.hidden {
