@@ -6,15 +6,26 @@
 //! painted only from what the engine witnessed — name, one honest reason
 //! line, position-true stage geometry, and badges the deltas entitle us to.
 //! There is no imagery, no prediction, and no badge the engine didn't earn.
+//!
+//! The surface is opaque and singular: one strip of cards that scrolls
+//! sideways when the day outgrows the screen — never a clipped second row,
+//! never the desktop bleeding through.
 
 use crate::pods::PodCommand;
-use evo_pods::pod::{Pod, PodBadge};
+use evo_pods::pod::{Pod, PodBadge, PodResource};
+use evo_pods::surface::PodWindow;
 
 /// The hosted overlay state: visible or not, and which card the pointer is
 /// over (for the pressed/hover tint only — never an invisible mode switch).
 pub struct PodBar {
     pub visible: bool,
     pub hovered: Option<usize>,
+    /// Add-to-Pod picker: which pod index is open for teaching.
+    pub add_for: Option<usize>,
+    /// Draft resource kind: 0 = app, 1 = file, 2 = folder, 3 = URL.
+    pub draft_kind: usize,
+    /// Draft resource value (text field contents).
+    pub draft_text: String,
 }
 
 impl PodBar {
@@ -22,6 +33,9 @@ impl PodBar {
         Self {
             visible: false,
             hovered: None,
+            add_for: None,
+            draft_kind: 0,
+            draft_text: String::new(),
         }
     }
 
@@ -29,6 +43,8 @@ impl PodBar {
         self.visible = !self.visible;
         if !self.visible {
             self.hovered = None;
+            self.add_for = None;
+            self.draft_text.clear();
         }
     }
 }
@@ -38,10 +54,21 @@ impl PodBar {
 pub enum PodBarAction {
     Command(PodCommand),
     Dismiss,
+    /// The card's "+" danced: open the Add-to-Pod picker for this pod.
+    OpenAdd(usize),
+    /// The picker is done; back to the strip (the bar itself stays).
+    CloseAdd,
 }
 
+/// What the active pod is currently doing to the rest of the world:
+/// (split-app windows parked, alien apps hidden, own windows remembered).
+/// Painted on the active card, derived from the live lease's receipts.
+pub type StageStats = (usize, usize, usize);
+
 // ─── Palette: the bar is a night surface above whatever day the user was in.
-const BAR_BG: egui::Color32 = egui::Color32::from_rgba_premultiplied(9, 12, 17, 238);
+// Fully opaque by decision: a space switcher must read as its own place,
+// never as a tint on the mess it replaces.
+const BAR_BG: egui::Color32 = egui::Color32::from_rgb(9, 12, 17);
 const BAR_EDGE: egui::Color32 = egui::Color32::from_rgb(54, 64, 76);
 const CARD_BG: egui::Color32 = egui::Color32::from_rgb(16, 21, 28);
 const CARD_ACTIVE_EDGE: egui::Color32 = egui::Color32::from_rgb(120, 168, 255);
@@ -59,6 +86,8 @@ pub fn show(
     pods: &[Pod],
     active_id: Option<u64>,
     max_dial: usize,
+    stage_stats: Option<StageStats>,
+    open_inventory: &[PodWindow],
 ) -> Vec<PodBarAction> {
     let mut actions = Vec::new();
     if !bar.visible {
@@ -66,22 +95,25 @@ pub fn show(
     }
 
     if ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
-        actions.push(PodBarAction::Dismiss);
+        if bar.add_for.is_some() {
+            actions.push(PodBarAction::CloseAdd);
+        } else {
+            actions.push(PodBarAction::Dismiss);
+        }
         return actions;
     }
 
     let screen = ctx.viewport_rect();
-    let columns = pods.len().clamp(1, 4);
-    let rows = pods.len().div_ceil(columns).max(1);
     let card_w = 250.0f32;
     let card_h = 196.0f32;
-    let gap = 14.0f32;
-    let panel_w = 56.0 + columns as f32 * card_w + (columns as f32 - 1.0) * gap;
-    let panel_h = 108.0 + rows as f32 * card_h + (rows as f32 - 1.0) * gap;
-    let panel_size = egui::vec2(
-        panel_w.min(screen.width() * 0.92),
-        panel_h.min(screen.height() * 0.90),
-    );
+    let gap = 10.0f32;
+    let header_h = 58.0f32;
+    let strip_chrome = 18.0f32; // room the scrollbar occupies when it exists
+    // One strip: the width the cards honestly need, capped to the screen.
+    let cards_w = pods.len() as f32 * card_w + pods.len().saturating_sub(1) as f32 * gap;
+    let panel_w = (56.0 + cards_w.max(card_w)).min(screen.width() * 0.92);
+    let panel_h = 28.0 + header_h + card_h + strip_chrome + 16.0;
+    let panel_size = egui::vec2(panel_w, panel_h.min(screen.height() * 0.92));
     let panel_rect = egui::Rect::from_center_size(screen.center(), panel_size);
 
     // ONE area (not two): sibling areas at equal z-order once let the
@@ -100,37 +132,46 @@ pub fn show(
             ui.painter().rect_filled(
                 screen,
                 0.0,
-                egui::Color32::from_rgba_unmultiplied(4, 6, 9, 128),
+                egui::Color32::from_rgba_unmultiplied(4, 6, 9, 150),
             );
 
-            // Panel above it: frame, then every interactive card.
-            ui.painter().rect_filled(panel_rect, 18.0, BAR_BG);
+            // Panel above it: opaque frame, then every interactive card.
+            ui.painter().rect_filled(panel_rect, 16.0, BAR_BG);
             ui.painter().rect_stroke(
                 panel_rect,
-                18.0,
+                16.0,
                 egui::Stroke::new(1.0, BAR_EDGE),
                 egui::StrokeKind::Inside,
             );
             let mut child = ui.new_child(
                 egui::UiBuilder::new()
-                    .max_rect(panel_rect.shrink(28.0))
+                    .max_rect(panel_rect.shrink2(egui::vec2(28.0, 14.0)))
                     .layout(egui::Layout::top_down(egui::Align::Min)),
             );
             child.scope(|ui| {
-                ui.label(
-                    egui::RichText::new("Pod bar")
-                        .size(20.0)
-                        .strong()
-                        .color(TEXT_MAIN),
-                );
-                ui.label(
-                    egui::RichText::new(
-                        "Your works, as themselves. \u{2325}1\u{2013}\u{2325}9 to switch, Esc to close.",
-                    )
-                    .size(11.0)
-                    .color(TEXT_DIM),
-                );
-                ui.add_space(14.0);
+                // One-line chrome: name the instrument, then let the works
+                // carry the weight. (Taller headers once ate a card-row.)
+                egui::Grid::new("evo-podbar-head").num_columns(2).show(ui, |ui| {
+                    ui.label(
+                        egui::RichText::new("Pod bar")
+                            .size(18.0)
+                            .strong()
+                            .color(TEXT_MAIN),
+                    );
+                    ui.with_layout(
+                        egui::Layout::right_to_left(egui::Align::Center),
+                        |ui| {
+                            ui.label(
+                                egui::RichText::new(
+                                    "Each pod is its own space. \u{2325}1\u{2013}\u{2325}9 jump \u{b7} Esc closes \u{b7} when the day outruns the screen, the strip scrolls sideways.",
+                                )
+                                .size(10.5)
+                                .color(TEXT_DIM),
+                            );
+                        },
+                    );
+                });
+                ui.add_space(6.0);
 
                 if pods.is_empty() {
                     ui.label(
@@ -144,35 +185,46 @@ pub fn show(
                 }
 
                 let mut bar_actions: Vec<PodBarAction> = Vec::new();
-                for chunk in pods.chunks(columns) {
-                    ui.horizontal(|ui| {
-                        for pod in chunk {
-                            let index = pods
-                                .iter()
-                                .position(|candidate| candidate.id == pod.id)
-                                .unwrap_or(0);
-                            let card_rect = egui::Rect::from_min_size(
-                                ui.cursor().min,
-                                egui::vec2(card_w, card_h),
-                            );
-                            let clicked = card(
-                                ui,
-                                card_rect,
-                                pod,
-                                index,
-                                active_id == Some(pod.id.0),
-                                index < max_dial,
-                            );
-                            ui.allocate_rect(card_rect, egui::Sense::hover());
-                            if clicked {
-                                bar_actions.push(PodBarAction::Command(PodCommand::Enter(index)));
-                                bar_actions.push(PodBarAction::Dismiss);
+                // The one sideways strip. egui hands vertical wheel input
+                // to a horizontal-only scroll area, so the gesture the
+                // hand already does (wheel / two-finger drag) scrolls it.
+                egui::ScrollArea::horizontal()
+                    .auto_shrink([false, true])
+                    .show(ui, |ui| {
+                        ui.horizontal(|ui| {
+                            ui.spacing_mut().item_spacing.x = gap;
+                            for (index, pod) in pods.iter().enumerate() {
+                                let card_rect = egui::Rect::from_min_size(
+                                    ui.cursor().min,
+                                    egui::vec2(card_w, card_h),
+                                );
+                                let active = active_id == Some(pod.id.0);
+                                let stats =
+                                    if active { stage_stats } else { None };
+                                let hit = card(
+                                    ui,
+                                    card_rect,
+                                    pod,
+                                    index,
+                                    active,
+                                    index < max_dial,
+                                    stats,
+                                );
+                                ui.allocate_rect(card_rect, egui::Sense::hover());
+                                match hit {
+                                    CardHit::Enter => {
+                                        bar_actions
+                                            .push(PodBarAction::Command(PodCommand::Enter(index)));
+                                        bar_actions.push(PodBarAction::Dismiss);
+                                    }
+                                    CardHit::Add => {
+                                        bar_actions.push(PodBarAction::OpenAdd(index));
+                                    }
+                                    CardHit::None => {}
+                                }
                             }
-                            ui.add_space(gap);
-                        }
+                        });
                     });
-                    ui.add_space(gap);
-                }
                 actions.extend(bar_actions);
             });
 
@@ -181,12 +233,200 @@ pub fn show(
             }
         });
 
+    // The Add-to-Pod picker rides above the strip (Tooltip order: hits go
+    // newest-first, so the picker's buttons eat clicks the strip can't).
+    if let Some(add_index) = bar.add_for {
+        if let Some(pod) = pods.get(add_index) {
+            actions.extend(show_add_picker(ctx, bar, add_index, pod, open_inventory));
+        } else {
+            bar.add_for = None;
+        }
+    }
+
     actions
+}
+
+/// What one card tap meant (the "+" is a separate hit from entering).
+enum CardHit {
+    Enter,
+    Add,
+    None,
+}
+
+/// The Add-to-Pod picker for one pod: claim a witnessed open window, or
+/// teach the pod a named thing it can re-open. Opaque, centered, one at a
+/// time — the bar's entire vocabulary, for one work.
+fn show_add_picker(
+    ctx: &egui::Context,
+    bar: &mut PodBar,
+    add_index: usize,
+    pod: &Pod,
+    open_inventory: &[PodWindow],
+) -> Vec<PodBarAction> {
+    let mut actions: Vec<PodBarAction> = Vec::new();
+    picker_area(ctx, |ui| {
+        let tint = egui::Color32::from_rgb(pod.color.r, pod.color.g, pod.color.b);
+        ui.horizontal(|ui| {
+            ui.label(
+                egui::RichText::new(format!("Add to {}", pod.name))
+                    .size(15.0)
+                    .strong()
+                    .color(TEXT_MAIN),
+            );
+        });
+        ui.colored_label(
+            TEXT_DIM,
+            "Say what belongs to this work. It stays remembered — jump pods and it is here.",
+        );
+        ui.add_space(8.0);
+
+        // What it already knows: one tap re-opens.
+        if !pod.resources.is_empty() {
+            ui.colored_label(TEXT_DIM, "this pod already knows:");
+            ui.horizontal_wrapped(|ui| {
+                for (res_index, resource) in pod.resources.iter().enumerate() {
+                    let label = format!("{} {}", resource.kind_label(), resource.value());
+                    if ui
+                        .add(egui::Button::new(
+                            egui::RichText::new(truncate(&label, 34)).size(10.5).color(TEXT_MAIN),
+                        ))
+                        .on_hover_text("open it now")
+                        .clicked()
+                    {
+                        actions.push(PodBarAction::Command(PodCommand::OpenResource(
+                            add_index, res_index,
+                        )));
+                    }
+                }
+            });
+            ui.add_space(8.0);
+        }
+
+        // Section 1: claim one of the open windows.
+        ui.label(main("An open window on the desktop:"));
+        let list: Vec<&PodWindow> = open_inventory
+            .iter()
+            .filter(|w| !w.title.trim().is_empty() || w.ax_document.is_some())
+            .take(10)
+            .collect();
+        if list.is_empty() {
+            ui.colored_label(
+                TEXT_DIM,
+                "nothing on the desktop to claim (or the screen could not be read — check Accessibility).",
+            );
+        } else {
+            egui::ScrollArea::vertical().max_height(130.0).show(ui, |ui| {
+                for window in &list {
+                    let title = window.title.trim();
+                    let row_text = egui::RichText::new(if title.is_empty() {
+                        "(untitled)".to_string()
+                    } else {
+                        truncate(title, 46)
+                    })
+                    .size(11.5)
+                    .color(TEXT_MAIN);
+                    let response = ui
+                        .selectable_label(false, row_text)
+                        .on_hover_text(format!("{} — say it is this pod's", window.owner));
+                    if response.clicked() {
+                        actions.push(PodBarAction::Command(PodCommand::ClaimWindow(
+                            add_index,
+                            (*window).clone(),
+                        )));
+                        actions.push(PodBarAction::CloseAdd);
+                    }
+                    ui.colored_label(TEXT_DIM, truncate(&window.owner, 40));
+                }
+            });
+        }
+        ui.add_space(10.0);
+
+        // Section 2: anything else this pod should be able to open.
+        ui.label(main("Anything else this pod should be able to open:"));
+        ui.horizontal_wrapped(|ui| {
+            for (kind_index, label) in ["app", "file", "folder", "URL"].iter().enumerate() {
+                if ui
+                    .selectable_label(bar.draft_kind == kind_index, *label)
+                    .clicked()
+                {
+                    bar.draft_kind = kind_index;
+                }
+            }
+        });
+        ui.add(
+            egui::TextEdit::singleline(&mut bar.draft_text)
+                .hint_text(match bar.draft_kind {
+                    0 => "app name, e.g. what the Dock calls it",
+                    1 => "full path, e.g. /Users/you/work/notes.md",
+                    2 => "full path, e.g. /Users/you/work/project",
+                    _ => "https://…",
+                })
+                .desired_width(370.0),
+        );
+        ui.add_space(6.0);
+        ui.horizontal(|ui| {
+            let can_add = !bar.draft_text.trim().is_empty();
+            if ui
+                .add_enabled(can_add, egui::Button::new("Add to this pod"))
+                .clicked()
+            {
+                let value = bar.draft_text.trim().to_string();
+                let resource = match bar.draft_kind {
+                    0 => PodResource::App(value),
+                    1 => PodResource::File(value),
+                    2 => PodResource::Folder(value),
+                    _ => PodResource::Url(value),
+                };
+                actions.push(PodBarAction::Command(PodCommand::AddResource(
+                    add_index, resource,
+                )));
+                bar.draft_text.clear();
+            }
+            if ui.button("Done").clicked() {
+                actions.push(PodBarAction::CloseAdd);
+            }
+        });
+    });
+    actions
+}
+
+fn main(s: &str) -> egui::RichText {
+    egui::RichText::new(s.to_string()).size(11.5).color(TEXT_MAIN)
+}
+
+fn truncate(s: &str, max: usize) -> String {
+    let borrowed: String = s.chars().take(max).collect();
+    if borrowed.chars().count() < s.chars().count() {
+        format!("{borrowed}…")
+    } else {
+        borrowed
+    }
+}
+
+/// The picker's framed area: opaque, centered, on top.
+fn picker_area(ctx: &egui::Context, content: impl FnOnce(&mut egui::Ui)) {
+    egui::Area::new(egui::Id::new("evo-podbar-add"))
+        .order(egui::Order::Tooltip)
+        .anchor(egui::Align2::CENTER_CENTER, egui::vec2(0.0, 0.0))
+        .show(ctx, |ui| {
+            egui::Frame::default()
+                .fill(BAR_BG)
+                .stroke(egui::Stroke::new(1.0, BAR_EDGE))
+                .corner_radius(12.0)
+                .inner_margin(egui::Margin::symmetric(18, 14))
+                .show(ui, |ui| {
+                    ui.set_width(400.0);
+                    content(ui);
+                });
+        });
 }
 
 /// One pod card: color rail, name, the engine's reason line, a position-true
 /// miniature of the pod's stage, up to three witnessed badges, and the ⌥N
-/// hint when one exists. Returns true when the card was clicked.
+/// hint when one exists. When the card is the active stage, the right-top
+/// speaks the containment receipts instead (parked / hidden / remembered).
+/// The "+" at the bottom-right opens Add-to-Pod; the rest of the card
+/// enters the pod.
 fn card(
     ui: &mut egui::Ui,
     rect: egui::Rect,
@@ -194,7 +434,8 @@ fn card(
     index: usize,
     active: bool,
     dialable: bool,
-) -> bool {
+    stage_stats: Option<StageStats>,
+) -> CardHit {
     let response = ui.interact(rect, egui::Id::new(("evo-podbar-card", pod.id.0)), egui::Sense::click());
     let tint = pod_color(pod);
     let lift = if response.hovered() { 0.06 } else { 0.0 };
@@ -256,22 +497,68 @@ fn card(
         cursor_y += 16.0;
     }
 
-    // The dial hint (⌥N) when a hotkey exists for this index.
-    if dialable && index < 9 {
-        let hint = format!("⌥{}", index + 1);
-        let hint_galley = ui.painter().layout_no_wrap(
-            hint,
-            egui::FontId::proportional(11.0),
+    // Right-top corner: the receipts of containment while on stage, else
+    // the dial hint (⌥N) when a hotkey exists for this index.
+    let corner: Option<String> = match stage_stats {
+        Some((parked, hidden, remembered)) => Some(format!(
+            "on stage \u{b7} {parked} parked \u{b7} {hidden} hidden \u{b7} {remembered} remembered"
+        )),
+        None if dialable && index < 9 => Some(format!("\u{2325}{}", index + 1)),
+        None => None,
+    };
+    if let Some(text) = corner {
+        let galley = ui
+            .painter()
+            .layout_no_wrap(text, egui::FontId::proportional(10.0), TEXT_DIM);
+        ui.painter().galley(
+            egui::pos2(rect.max.x - galley.size().x - 10.0, rect.min.y + 12.0),
+            galley,
             TEXT_DIM,
         );
-        let hint_pos = egui::pos2(
-            rect.max.x - hint_galley.size().x - 10.0,
-            rect.min.y + 10.0,
-        );
-        ui.painter().galley(hint_pos, hint_galley, TEXT_DIM);
     }
 
-    response.clicked()
+    // Add-to-Pod: a small "+" at the card's bottom-right. Its hit rect is
+    // registered AFTER the card's, so egui's newest-first ordering means
+    // "+" never becomes an accidental "enter this pod".
+    let plus_rect = egui::Rect::from_min_size(
+        egui::pos2(rect.max.x - 34.0, rect.max.y - 34.0),
+        egui::vec2(26.0, 26.0),
+    );
+    let plus = ui.interact(
+        plus_rect,
+        egui::Id::new(("evo-podbar-add-btn", pod.id.0)),
+        egui::Sense::click(),
+    );
+    let plus_bg = if plus.hovered() {
+        mix(CARD_BG, tint, 0.35)
+    } else {
+        mix(CARD_BG, tint, 0.16)
+    };
+    ui.painter().rect_filled(plus_rect, 8.0, plus_bg);
+    ui.painter().rect_stroke(
+        plus_rect,
+        8.0,
+        egui::Stroke::new(1.0, mix(CARD_BG, tint, 0.6)),
+        egui::StrokeKind::Inside,
+    );
+    let plus_galley = ui.painter().layout_no_wrap(
+        "+".to_string(),
+        egui::FontId::proportional(15.0),
+        TEXT_MAIN,
+    );
+    ui.painter().galley(
+        plus_rect.center() - plus_galley.size() / 2.0 - egui::vec2(0.0, 1.0),
+        plus_galley,
+        TEXT_MAIN,
+    );
+
+    if plus.clicked() {
+        CardHit::Add
+    } else if response.clicked() {
+        CardHit::Enter
+    } else {
+        CardHit::None
+    }
 }
 
 /// The card chip: kind label + the resource basename it concerns.

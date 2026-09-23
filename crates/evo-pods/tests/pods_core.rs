@@ -152,6 +152,66 @@ fn hide_mode_hides_only_foreign_regular_apps() {
     assert_eq!(plan.hide_apps, vec![2]);
 }
 
+#[test]
+fn stage_hides_alien_apps_and_parks_only_split_app_windows() {
+    // The space semantic: an app witnessed both inside and outside the
+    // work loses only its foreign windows (the platform's one per-window
+    // verb); an app with no witness in the work hides whole, so its
+    // windows never pile into the Dock.
+    let surfaces = PodSurfaces {
+        urls: vec!["https://tab.example".into()],
+        documents: vec![],
+        titles: vec![],
+        apps: vec![],
+        resource_apps: Default::default(),
+    };
+    let screen = rt(0.0, 0.0, 1200.0, 800.0);
+    let apps = vec![fake::app(2, "Browser", false), fake::app(3, "Mail", false)];
+    let pod_page = fake::window(2, 40, "Tab", Some("https://tab.example"));
+    let foreign_same_app = fake::window(2, 41, "Other tab", None);
+    let alien = fake::window(3, 50, "Inbox", None);
+    let plan = dim::plan_activation(
+        &surfaces, None, &[pod_page, foreign_same_app, alien], &apps, &[], ContainMode::Stage, Some(&screen));
+    assert_eq!(plan.arrange.len(), 1, "only the witnessed page stages");
+    assert_eq!(plan.park, vec![(2, 41)], "the split app's foreign window parks singly");
+    assert_eq!(plan.hide_apps, vec![3], "the alien app hides whole — no Dock clutter");
+    assert!(plan.veil.is_empty());
+}
+
+#[test]
+fn stage_resurrects_the_pods_own_minimized_windows() {
+    let pod = pod_fixture();
+    let screen = rt(0.0, 0.0, 1200.0, 800.0);
+    let apps = vec![fake::app(1, "Editor", false)];
+    let mut parked_member = fake::window(1, 10, "main.ts", Some("/repo/main.ts"));
+    parked_member.minimized = true;
+    let plan = dim::plan_activation(
+        &pod.surfaces, None, &[parked_member], &apps, &[], ContainMode::Stage, Some(&screen));
+    assert_eq!(plan.unpark_members, vec![(1, 10)], "the space remembers its own parked window");
+    assert_eq!(plan.arrange.len(), 1);
+    assert!(plan.park.is_empty() && plan.hide_apps.is_empty(), "nothing foreign exists here");
+}
+
+#[test]
+fn stage_is_the_default_containment() {
+    assert_eq!(PodConfig::default().contain, ContainMode::Stage);
+}
+
+#[test]
+fn reversal_reparks_members_last_after_frames_restore() {
+    let mut lease = PodLease::new("w", 1);
+    lease.parked_windows.push((2, 20));
+    lease.moved_windows.push((1, 10, rt(1.0, 1.0, 100.0, 100.0)));
+    lease.unparked_members.push((1, 10));
+    let steps = lease.reversal();
+    assert!(matches!(steps[0], LeaseStep::UnparkWindow { pid: 2, .. }));
+    assert!(matches!(steps[1], LeaseStep::MoveWindowBack { pid: 1, .. }));
+    assert!(
+        matches!(steps[steps.len() - 1], LeaseStep::ReparkWindow { pid: 1, window_id: 10 }),
+        "the space's windows return into the space LAST (moves need visibility)"
+    );
+}
+
 // ---- leases -----------------------------------------------------------
 
 #[test]
@@ -268,4 +328,47 @@ fn wrapper_generates_plist_launcher_and_identity_without_app_names() {
     assert!(script.starts_with("#!/bin/sh"));
     assert!(script.contains("/Applications/X.app/Contents/MacOS/x"));
     assert!(script.contains("--user-data-dir=/pods/pod-1"));
+}
+
+// ---- add to pod -----------------------------------------------------------
+
+#[test]
+fn resource_open_spec_is_usr_bin_open_and_never_names_an_app_in_code() {
+    use evo_pods::PodResource;
+    let app = PodResource::App("Editor".into()).open_spec();
+    assert_eq!(app.program, "/usr/bin/open");
+    assert_eq!(app.args, vec!["-a".to_string(), "Editor".to_string()]);
+    let file = PodResource::File("/repo/notes.md".into()).open_spec();
+    assert_eq!(file.args, vec!["/repo/notes.md".to_string()]);
+    let folder = PodResource::Folder("/repo".into()).open_spec();
+    assert_eq!(folder.args, vec!["/repo".to_string()]);
+    let url = PodResource::Url("https://x.test".into()).open_spec();
+    assert_eq!(url.args, vec!["https://x.test".to_string()]);
+}
+
+#[test]
+fn absorb_claim_is_dedupe_safe_and_prefers_document_semantics() {
+    use evo_pods::PodClaim;
+    let mut surfaces = PodSurfaces::default();
+    assert!(surfaces.absorb_claim(&PodClaim::Document("file:///a.ts".into())));
+    assert!(!surfaces.absorb_claim(&PodClaim::Document("file:///a.ts".into())));
+    assert!(surfaces.absorb_claim(&PodClaim::Title("Terminal".into())));
+    assert_eq!(surfaces.documents, vec!["file:///a.ts".to_string()]);
+    assert_eq!(surfaces.titles, vec!["Terminal".to_string()]);
+}
+
+#[test]
+fn addon_store_roundtrips_claims_and_resources() {
+    use evo_pods::pod::addon_store;
+    use evo_pods::{PodClaim, PodResource};
+    let text = addon_store::export(&[(
+        "pod-7".to_string(),
+        vec![PodResource::App("Editor".into()), PodResource::Url("https://x".into())],
+        vec![PodClaim::Document("file:///a.ts".into())],
+    )]);
+    let back = addon_store::import(&text);
+    assert_eq!(back.len(), 1);
+    assert_eq!(back[0].0, 7);
+    assert_eq!(back[0].1.len(), 2, "the two resources survive");
+    assert_eq!(back[0].2, vec![PodClaim::Document("file:///a.ts".to_string())]);
 }

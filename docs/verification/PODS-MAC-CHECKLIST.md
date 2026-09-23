@@ -75,3 +75,43 @@ tail -50 ~/Library/Application\ Support/Evo/logs/evo.log
 - Veil stacking level (dim mode overlays sit at status level; may hover above menus).
 - Hotkey registration order (⌥1–⌥9 ids 2..10, ⌥Space id 11) — first real registration test.
 - `restore_set` URLs feeding the browser; previously `bundle.urls` did not exist (field fixed to `restore_set` during the build — first live hydration test).
+
+## Round 3 — spaces (2026-09-23)
+- [ ] Default containment is Stage: entering a pod makes the desktop show
+      ONLY that work; other apps' windows disappear without piling in the
+      Dock (their apps hide). A Chrome used by two pods keeps the pod's
+      window visible and parks only its alien window.
+- [ ] The pod's own minimized window comes back when entering (note says
+      "N remembered"), and leaving re-parks it (desktop returns exactly).
+- [ ] Pod bar: panel is opaque (no wallpaper bleed-through); with >4 pods
+      the strip scrolls sideways; active card shows the stage receipts.
+
+## Round 4 — Add to Pod + exactly-what-needs-Accessibility (2026-09-23)
+
+### Accessibility: what to tick (and what NOT to)
+Verified against the code's process graph:
+- Evo.app (the bundle you granted: Evo-Evolution.nosync/dist/Evo.app) —
+  CORRECT and sufficient for the installed app. The capture daemon
+  (evo-daemon) ships INSIDE the same bundle (Contents/MacOS/evo-daemon,
+  verified in daemon.rs::daemon_binary_path), so one permission covers
+  both. Nothing else is needed for the installed app.
+- Do NOT add: Screen Recording (nothing reads pixels — capture is AX
+  titles/documents only), Full Disk Access, Input Monitoring.
+- ONLY if you run dev builds from a terminal (`cargo run -p evo-desktop
+  --release`): a dev binary is Terminal's "responsible process", so
+  Terminal.app needs the Accessibility tick instead — or just run the
+  installed Evo.app with the tick it already has.
+- Clean-up: remove any stale "Evo" entries pointing at old paths you no
+  longer run (macOS keys the list per app path; dead entries do nothing
+  but confuse). Keep: the dist/Evo.app one.
+- After granting: quit and relaunch Evo (the TCC cache applies on
+  restart). The PARTIAL banner should flip to full; then arrangement /
+  Stage / claiming actually execute.
+
+### Round-4 verification items
+- [ ] Bar "+": picker opens, live windows listed, claim adds ("Added …"),
+      the claimed window now belongs to the pod's stage on next enter.
+- [ ] Teach an app + a file + a URL; Done; relaunch Evo; re-open bar:
+      chips still there (pod-addons.tsv persisted); tap chip = opens.
+- [ ] Enter the pod: saved resources re-open before staging ("N pod
+      resources re-opened" in the note).
