@@ -105,9 +105,8 @@ impl PodHost {
         self.core.set_pods(self.pods.clone());
         match self.core.switch(index, now_ms) {
             Ok(core_note) => {
-                if !pod.surfaces.urls.is_empty() {
-                    self.wants_browser = true;
-                }
+                // Entering never opens the Pages pane: the web presence is
+                // on demand (the Pages button), not a hijack on entry.
                 self.active = Some(pod.name.clone());
                 Some(format!("{core_note}{restore_note}"))
             }
@@ -178,12 +177,26 @@ impl PodHost {
     /// application is named in code; URLs hydrate the pod's own browser
     /// pane (per-work stores), not a system browser.
     fn restore_work(&self, pod: &Pod) -> String {
+        // Only real apps launch: an "app" that appears among the work's
+        // window titles is a window, not an application (capture with
+        // Accessibility off records titles in the app slot upstream;
+        // re-fusing the two here would recreate the very mis-launch that
+        // polluted the desktop).
+        let title_set: BTreeSet<&str> = pod.surfaces.titles.iter().map(|t| t.trim()).collect();
         let mut seen = BTreeSet::new();
         let mut launched = 0usize;
         let mut failed: Vec<String> = Vec::new();
+        let mut skipped_windows = 0usize;
         for app in &pod.surfaces.apps {
             let app = app.trim();
-            if app.is_empty() || !seen.insert(app.to_lowercase()) {
+            if app.is_empty() {
+                continue;
+            }
+            if title_set.contains(app) {
+                skipped_windows += 1;
+                continue;
+            }
+            if !seen.insert(app.to_lowercase()) {
                 continue;
             }
             match restore::launch_app(app) {
@@ -191,25 +204,47 @@ impl PodHost {
                 Err(err) => failed.push(format!("{app}: {err}")),
             }
         }
-        let targets: Vec<RestoreTarget> = pod
-            .surfaces
-            .documents
-            .iter()
-            .map(|doc| RestoreTarget {
-                resource: doc.clone(),
-                app: pod.surfaces.resource_apps.get(doc).cloned(),
-            })
-            .collect();
-        let outcome = restore::restore(&targets);
+        // Documents that are really window titles are not openable; they
+        // are skipped with the same honesty count, never "opened".
+        let mut doc_targets: Vec<RestoreTarget> = Vec::new();
+        for doc in &pod.surfaces.documents {
+            let doc = doc.trim();
+            if doc.is_empty() {
+                continue;
+            }
+            if title_set.contains(doc) {
+                skipped_windows += 1;
+                continue;
+            }
+            doc_targets.push(RestoreTarget {
+                resource: doc.to_string(),
+                app: pod
+                    .surfaces
+                    .resource_apps
+                    .get(doc)
+                    .map(|app| app.trim().to_string())
+                    .filter(|app| !app.is_empty() && !title_set.contains(app.as_str())),
+            });
+        }
+        let outcome = restore::restore(&doc_targets);
         let mut note = String::new();
         if launched > 0 {
             note.push_str(&format!(" {launched} apps opened."));
         }
-        if !targets.is_empty() {
+        if !doc_targets.is_empty() {
             note.push_str(&format!(" {}", outcome.summary()));
         }
-        for failure in failed {
+        if skipped_windows > 0 {
+            note.push_str(&format!(
+                " {skipped_windows} window-shaped identities skipped (windows are not apps)."
+            ));
+        }
+        let reported = failed.len().min(2);
+        for failure in failed.iter().take(reported) {
             note.push_str(&format!(" [{failure}]"));
+        }
+        if failed.len() > reported {
+            note.push_str(&format!(" [+{} more could not open]", failed.len() - reported));
         }
         note
     }

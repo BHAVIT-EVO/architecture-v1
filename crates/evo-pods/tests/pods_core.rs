@@ -124,6 +124,7 @@ fn window_match_prefers_documents_over_pages_over_titles() {
 #[test]
 fn dim_veils_foreign_and_arranges_own_under_containment() {
     let pod = pod_fixture();
+    let screen = rt(0.0, 0.0, 1200.0, 800.0);
     let apps = vec![
         fake::app(1, "Editor", false),
         fake::app(2, "Mail", false),
@@ -132,7 +133,7 @@ fn dim_veils_foreign_and_arranges_own_under_containment() {
     let hero = fake::window_with_frame(1, 10, "main.ts", Some("/repo/main.ts"), rt(0.0, 0.0, 1000.0, 800.0));
     let foreign = fake::window_with_frame(2, 20, "Inbox", None, rt(0.0, 0.0, 1000.0, 800.0));
     let protected = fake::window_with_frame(3, 30, "Evo Home", None, rt(0.0, 0.0, 1000.0, 800.0));
-    let plan = dim::plan_activation(&pod.surfaces, None, &[hero, foreign, protected], &apps, &[3], ContainMode::Dim);
+    let plan = dim::plan_activation(&pod.surfaces, None, &[hero, foreign, protected], &apps, &[3], ContainMode::Dim, Some(&screen));
     assert_eq!(plan.arrange.len(), 1);
     assert_eq!(plan.veil.len(), 1, "exactly the foreign window veils");
     assert_eq!(plan.veil[0].1, 20);
@@ -142,11 +143,12 @@ fn dim_veils_foreign_and_arranges_own_under_containment() {
 #[test]
 fn hide_mode_hides_only_foreign_regular_apps() {
     let pod = pod_fixture();
+    let screen = rt(0.0, 0.0, 1200.0, 800.0);
     let apps = vec![fake::app(1, "Editor", false), fake::app(2, "Mail", false), fake::app(9, "System", false)];
     let mut system = apps.clone();
     system[2].regular = false;
     let hero = fake::window(1, 10, "main.ts", Some("/repo/main.ts"));
-    let plan = dim::plan_activation(&pod.surfaces, None, &[hero], &system, &[], ContainMode::Hide);
+    let plan = dim::plan_activation(&pod.surfaces, None, &[hero], &system, &[], ContainMode::Hide, Some(&screen));
     assert_eq!(plan.hide_apps, vec![2]);
 }
 

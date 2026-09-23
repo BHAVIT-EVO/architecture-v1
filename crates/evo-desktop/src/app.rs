@@ -506,18 +506,44 @@ impl EvoApp {
                         // the legacy host used to consume: the work's own
                         // witnesses. resource_apps opens each artifact via
                         // its most recent app — never one work-level app.
+                        // Capture with Accessibility off records window
+                        // titles in the app slot upstream (the identity
+                        // fallback chain makes the title globally stable).
+                        // At THIS boundary the two are separated again:
+                        // an identity that appears among the work's window
+                        // titles is a window, never an app to launch or a
+                        // containment app-member. Trimming matters: titles
+                        // carry trailing chrome spacing.
+                        let title_set: std::collections::BTreeSet<String> = w
+                            .titles
+                            .iter()
+                            .map(|title| title.trim().to_string())
+                            .collect();
+                        let member_apps: Vec<String> = w
+                            .apps
+                            .iter()
+                            .map(|app| app.trim().to_string())
+                            .filter(|app| !app.is_empty() && !title_set.contains(app))
+                            .collect();
                         let pod_surfaces = evo_pods::pod::PodSurfaces {
                             urls: w.urls.clone(),
                             documents: w.documents.clone(),
-                            titles: w.titles.clone(),
-                            apps: w.apps.clone(),
+                            titles: w
+                                .titles
+                                .iter()
+                                .map(|title| title.trim().to_string())
+                                .collect(),
+                            apps: member_apps,
                             resource_apps: w
                                 .documents
                                 .iter()
                                 .chain(w.urls.iter())
                                 .filter_map(|resource| {
-                                    w.app_for_resource(resource)
-                                        .map(|app| (resource.clone(), app.to_string()))
+                                    w.app_for_resource(resource).and_then(|app| {
+                                        let app = app.trim().to_string();
+                                        (!app.is_empty() && !title_set.contains(&app))
+                                            .then_some((resource.clone(), app))
+                                    })
                                 })
                                 .collect(),
                         };
@@ -885,10 +911,9 @@ impl eframe::App for EvoApp {
             self.podbar.toggle();
             ctx.request_repaint();
         }
-        if self.podbar.visible {
-            ctx.request_repaint();
-        }
-
+        // While the Pod Bar is open, egui's own input-driven repaints
+        // keep it alive (pointer motion and presses each request a frame);
+        // a continuous repaint loop here once cost 60 fps of churn.
         self.daemon.poll();
         self.engine.poll();
 
@@ -1233,15 +1258,17 @@ impl eframe::App for EvoApp {
                             let pods_guard = lock_pods(&self.pods);
                             pods_guard.active.clone()
                         };
-                        match home::work_section(
-                            ui,
-                            &self.engine_threads,
-                            &mut self.expanded_work,
-                            self.restore_note.as_deref(),
-                            search_query,
-                            &self.merge_proposals,
-                            active_pod.as_deref(),
-                        ) {
+                        match ui::scroll(ui, |ui| {
+                            home::work_section(
+                                ui,
+                                &self.engine_threads,
+                                &mut self.expanded_work,
+                                self.restore_note.as_deref(),
+                                search_query,
+                                &self.merge_proposals,
+                                active_pod.as_deref(),
+                            )
+                        }) {
                             None => {}
                             Some(home::WorkAction::Merge {
                                 subject_a,

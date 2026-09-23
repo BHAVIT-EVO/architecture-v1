@@ -77,51 +77,46 @@ pub fn show(
     let card_h = 196.0f32;
     let gap = 14.0f32;
     let panel_w = 56.0 + columns as f32 * card_w + (columns as f32 - 1.0) * gap;
-    let panel_h = 128.0 + rows as f32 * card_h + (rows as f32 - 1.0) * gap;
+    let panel_h = 108.0 + rows as f32 * card_h + (rows as f32 - 1.0) * gap;
     let panel_size = egui::vec2(
         panel_w.min(screen.width() * 0.92),
         panel_h.min(screen.height() * 0.90),
     );
+    let panel_rect = egui::Rect::from_center_size(screen.center(), panel_size);
 
-    // The backdrop: a dim veil over the whole window. Clicking it is the
-    // same gesture as Escape — leaving the bar.
-    let backdrop_clicked = egui::Area::new(egui::Id::new("evo-podbar-backdrop"))
+    // ONE area (not two): sibling areas at equal z-order once let the
+    // backdrop swallow the panel's clicks. Inside a single area the
+    // backdrop is created FIRST and the panel's widgets LATER, and egui
+    // resolves overlapping hits newest-first — cards click, the dim
+    // around them dismisses.
+    egui::Area::new(egui::Id::new("evo-podbar"))
         .order(egui::Order::Foreground)
         .anchor(egui::Align2::LEFT_TOP, egui::vec2(0.0, 0.0))
         .show(ctx, |ui| {
-            let (_, response) =
+            // Backdrop first: painted dim + one hit surface for the
+            // outside-click dismissal.
+            let (_, backdrop) =
                 ui.allocate_exact_size(screen.size(), egui::Sense::click());
             ui.painter().rect_filled(
                 screen,
                 0.0,
                 egui::Color32::from_rgba_unmultiplied(4, 6, 9, 128),
             );
-            response.clicked()
-        })
-        .inner;
-    if backdrop_clicked {
-        actions.push(PodBarAction::Dismiss);
-        return actions;
-    }
 
-    // The panel itself.
-    egui::Area::new(egui::Id::new("evo-podbar-panel"))
-        .order(egui::Order::Foreground)
-        .anchor(egui::Align2::CENTER_CENTER, egui::vec2(0.0, 0.0))
-        .show(ctx, |ui| {
-            let (rect, _) = ui.allocate_exact_size(panel_size, egui::Sense::hover());
-            ui.painter().rect_filled(rect, 18.0, BAR_BG);
+            // Panel above it: frame, then every interactive card.
+            ui.painter().rect_filled(panel_rect, 18.0, BAR_BG);
             ui.painter().rect_stroke(
-                rect,
+                panel_rect,
                 18.0,
                 egui::Stroke::new(1.0, BAR_EDGE),
                 egui::StrokeKind::Inside,
             );
-
-            let mut child =
-                ui.new_child(egui::UiBuilder::new().max_rect(rect.shrink(28.0)).layout(egui::Layout::top_down(egui::Align::Min)));
+            let mut child = ui.new_child(
+                egui::UiBuilder::new()
+                    .max_rect(panel_rect.shrink(28.0))
+                    .layout(egui::Layout::top_down(egui::Align::Min)),
+            );
             child.scope(|ui| {
-                // Header: what this is, and how to drive it by hand.
                 ui.label(
                     egui::RichText::new("Pod bar")
                         .size(20.0)
@@ -129,9 +124,11 @@ pub fn show(
                         .color(TEXT_MAIN),
                 );
                 ui.label(
-                    egui::RichText::new("Your works, as themselves. ⌥1–⌥9 to switch, Esc to close.")
-                        .size(11.0)
-                        .color(TEXT_DIM),
+                    egui::RichText::new(
+                        "Your works, as themselves. \u{2325}1\u{2013}\u{2325}9 to switch, Esc to close.",
+                    )
+                    .size(11.0)
+                    .color(TEXT_DIM),
                 );
                 ui.add_space(14.0);
 
@@ -146,6 +143,7 @@ pub fn show(
                     return;
                 }
 
+                let mut bar_actions: Vec<PodBarAction> = Vec::new();
                 for chunk in pods.chunks(columns) {
                     ui.horizontal(|ui| {
                         for pod in chunk {
@@ -157,19 +155,30 @@ pub fn show(
                                 ui.cursor().min,
                                 egui::vec2(card_w, card_h),
                             );
-                            let clicked =
-                                card(ui, card_rect, pod, index, active_id == Some(pod.id.0), index < max_dial);
+                            let clicked = card(
+                                ui,
+                                card_rect,
+                                pod,
+                                index,
+                                active_id == Some(pod.id.0),
+                                index < max_dial,
+                            );
                             ui.allocate_rect(card_rect, egui::Sense::hover());
                             if clicked {
-                                actions.push(PodBarAction::Command(PodCommand::Enter(index)));
-                                actions.push(PodBarAction::Dismiss);
+                                bar_actions.push(PodBarAction::Command(PodCommand::Enter(index)));
+                                bar_actions.push(PodBarAction::Dismiss);
                             }
                             ui.add_space(gap);
                         }
                     });
                     ui.add_space(gap);
                 }
+                actions.extend(bar_actions);
             });
+
+            if backdrop.clicked() {
+                actions.push(PodBarAction::Dismiss);
+            }
         });
 
     actions
