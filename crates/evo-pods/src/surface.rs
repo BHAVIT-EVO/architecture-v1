@@ -119,4 +119,10 @@ pub trait PodSurface {
     /// Executes a shell command (instance launches, codesign). Detached:
     /// does not wait.
     fn run(&mut self, cmd: CommandSpec) -> Result<(), String>;
+
+    /// Test/diagnostic hook: a surface may expose its recent verb log.
+    /// Real surfaces have nothing to report; fakes return their record.
+    fn debug_log(&self) -> Vec<String> {
+        Vec::new()
+    }
 }

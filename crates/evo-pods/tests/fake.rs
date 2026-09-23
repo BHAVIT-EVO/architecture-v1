@@ -159,4 +159,7 @@ impl PodSurface for FakeSurface {
         self.log.push(format!("run:{}", cmd.program));
         Ok(())
     }
+    fn debug_log(&self) -> Vec<String> {
+        self.log.clone()
+    }
 }

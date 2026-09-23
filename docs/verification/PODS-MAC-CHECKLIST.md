@@ -13,6 +13,16 @@ git fetch origin && git checkout pods && git log --oneline -1
 open target/release/bundle/osx/Evo.app   # or the script's own launch instruction
 ```
 
+## 0.5. Permission FIRST (mandatory for the pod legs)
+
+Arrange/contain are AX operations — macOS denies them silently without it.
+(Also: every dev rebuild revokes a previous grant — ad-hoc signing changes
+the binary's identity.)
+
+- [ ] Yellow **PARTIAL** banner gone? If visible: Open System Settings →
+      Accessibility → enable Evo → click **Check again**.
+- [ ] No PARTIAL banner before proceeding below.
+
 ## 1. Baseline Home (30 s)
 
 - [ ] Evo opens to Home; work cards listed as before.
@@ -21,9 +31,16 @@ open target/release/bundle/osx/Evo.app   # or the script's own launch instructio
 ## 2. Enter / Leave pod (2 min)
 
 - [ ] Click **Enter this pod** on a work that has 2+ witnessed apps open.
-- [ ] Non-members hide; members stay/raise. The restore note appears (apps opened, documents restored or honestly reported).
-- [ ] If the work has witnessed URLs: the in-Evo browser panel opens with its own tabs (logins isolated per work — sign in to a site in one pod's panel, check it's NOT signed in in another pod's panel).
-- [ ] Click **Leave pod** (menu bar or Home): the full desktop comes back, browser panel hibernates.
+- [ ] **Windows tile onto the stage**: hero window takes the wide-left area,
+      satellites stack at right; foreign windows dim/park per containment
+      mode. The note says "N arranged" (N > 0) — not zeros.
+- [ ] Restore note is clean: no "Unable to find application named '<page
+      title>'" lines; at most "[2 real failures … +N more]" style honesty.
+- [ ] **No web pages open inside Evo** on entry (round-2 change).
+- [ ] With a pod active, Home strip reads `● In: <name…> · Leave pod · Pages
+      · ⌘⇧E cycles pods`. Click **Pages** → the in-Evo pane opens on demand
+      (logins isolated per work). Leave pod → pane hibernates.
+- [ ] Home now scrolls when content overflows (mouse wheel / trackpad).
 
 ## 3. Presence (2 min)
 
@@ -45,6 +62,13 @@ tail -50 ~/Library/Application\ Support/Evo/logs/evo.log
 - [ ] Log tail pasted.
 - [ ] Screenshot of the Pod Bar open.
 - [ ] Screenshot of menu-bar menu.
+
+## Round-2 regressions to look for
+
+- [ ] Pod bar responds on first click (single-area input fix).
+- [ ] No perceivable lag while the bar is open (repaint loop removed).
+- [ ] "0 arranged / 0 veiled / 0 parked" notes acceptable ONLY if the pod
+      genuinely had no matching windows.
 
 ## Known sandbox-unverifiable items (accept/reject on this machine)
 
