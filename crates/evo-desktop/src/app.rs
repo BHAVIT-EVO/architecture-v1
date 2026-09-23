@@ -273,6 +273,12 @@ impl EvoApp {
         let pods: crate::pods::SharedPods = std::sync::Arc::new(std::sync::Mutex::new(
             crate::pods::PodHost::new(),
         ));
+        // Add-to-Pod persistence: the addon ledger lives with the rest of
+        // the storage root; what a person teaches a pod survives restarts
+        // and engine refreshes alike.
+        if let Ok(mut guard) = pods.lock() {
+            guard.set_addons_path(storage_root.join("pod-addons.tsv"));
+        }
         let pod_presence = crate::presence::PodPresence::new(pods.clone(), cc.egui_ctx.clone());
         let podbar = crate::podbar::PodBar::new();
         let mut app = Self {
@@ -348,8 +354,23 @@ impl EvoApp {
     /// always win the z-order, whatever else is open.
     fn paint_podbar(&mut self, ctx: &egui::Context) {
         let (pods, active_id, stage_stats) = self.podbar_pods();
-        let actions =
-            crate::podbar::show(ctx, &mut self.podbar, &pods, active_id, 9, stage_stats);
+        // The Add-to-Pod picker lists the live desktop only while it is
+        // open — a per-frame AX enumeration for a hidden picker would be
+        // spend for nothing.
+        let open_inventory = if self.podbar.add_for.is_some() {
+            lock_pods(&self.pods).open_windows()
+        } else {
+            Vec::new()
+        };
+        let actions = crate::podbar::show(
+            ctx,
+            &mut self.podbar,
+            &pods,
+            active_id,
+            9,
+            stage_stats,
+            &open_inventory,
+        );
         for action in actions {
             match action {
                 crate::podbar::PodBarAction::Command(command) => {
@@ -359,8 +380,17 @@ impl EvoApp {
                         self.restore_note = Some(note);
                     }
                 }
+                crate::podbar::PodBarAction::OpenAdd(index) => {
+                    self.podbar.add_for = Some(index);
+                    self.podbar.draft_text.clear();
+                }
+                crate::podbar::PodBarAction::CloseAdd => {
+                    self.podbar.add_for = None;
+                    self.podbar.draft_text.clear();
+                }
                 crate::podbar::PodBarAction::Dismiss => {
                     self.podbar.visible = false;
+                    self.podbar.add_for = None;
                 }
             }
         }
@@ -561,8 +591,12 @@ impl EvoApp {
                         // with the Phase-1 read-path unification — W2 in
                         // the repo assessment).
                         let pod_id = pod_id_of(&name);
-                        let pod = evo_pods::pod::Pod {
+                                                let pod = evo_pods::pod::Pod {
                             id: evo_pods::pod::PodId(pod_id),
+                            // Add-to-Pod memory attaches at runtime via the
+                            // addon ledger; this projection reports none.
+                            resources: vec![],
+                            claims: vec![],
                             name: name.clone(),
                             color: evo_pods::pod::PodColor::from_thread(pod_id),
                             reason: bundle.resume_reason.clone(),

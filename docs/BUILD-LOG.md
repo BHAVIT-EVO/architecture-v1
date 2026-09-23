@@ -164,3 +164,32 @@ test; the Dim-mode tests now name their mode); full workspace suite green
 (EXIT=0). Sandbox build notes: target and TMPDIR must live off the /tmp
 tmpfs (993M) — linker/OOM + "storage backend is not configured" failures
 were disk-full artifacts, not code regressions.
+
+## Pods round 4 — Add to Pod (2026-09-23)
+
+User directive: build D2 ("Add to Pod"), then ship for merge on the Mac.
+Accessibility question answered (see checklist round-4 section).
+
+Shipped:
+- Core (evo-pods): PodResource (App/File/Folder/Url, open via /usr/bin/open
+  spec, never a named app), PodClaim (Document/Title), PodSurfaces::
+  absorb_claim (dedupe-safe), pod::addon_store (line-based export/import).
+- Runtime: open_windows inventory, claim_window / add_resource /
+  open_resource, addon ledger (BTreeMap pod_id -> resources+claims),
+  apply_addons after every set_pods refresh — claims never un-own.
+- Host (evo-desktop): PodCommand::ClaimWindow/AddResource/OpenResource;
+  PodHost addons persistence at <storage_root>/pod-addons.tsv (load on
+  startup, write-through on mutation); entering a pod re-opens its saved
+  resources BEFORE the Stage choreography.
+- Bar: "+" affordance on each card opens the Add-to-Pod picker — claim an
+  open window from the live AX inventory list, or teach an app/file/
+  folder/URL (kind pill + text field); existing resources render as
+  one-tap-open chips. Esc closes picker first, then the bar.
+- Tests: 3 core (spec builders, absorb_claim dedupe, addon_store
+  roundtrip) + 2 runtime end-to-end (claim survives refresh + restart
+  via export/import; add dedupe + run:/usr/bin/open). evo-pods 38/38;
+  full workspace suite green (exit 0).
+
+Distribution note: GitHub push from the sandbox is credential-less
+(public fetch works, push does not). Shipped as refreshed git bundle
+(evo-pods-branch.bundle = branch tip) for merge on the Mac.
