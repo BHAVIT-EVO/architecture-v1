@@ -91,10 +91,13 @@ tail -50 ~/Library/Application\ Support/Evo/logs/evo.log
 ### Accessibility: what to tick (and what NOT to)
 Verified against the code's process graph:
 - Evo.app (the bundle you granted: Evo-Evolution.nosync/dist/Evo.app) —
-  CORRECT and sufficient for the installed app. The capture daemon
-  (evo-daemon) ships INSIDE the same bundle (Contents/MacOS/evo-daemon,
-  verified in daemon.rs::daemon_binary_path), so one permission covers
-  both. Nothing else is needed for the installed app.
+  CORRECT for the app itself. The capture daemon (evo-daemon) ships INSIDE
+  the same bundle (Contents/MacOS/evo-daemon, verified in
+  daemon.rs::daemon_binary_path). TCC normally attributes the helper to
+  the app — BUT for unsigned / ad-hoc builds (a local dist build IS one)
+  macOS lists `evo-daemon` as its OWN Accessibility entry; tick it as well.
+  If the banner still says "Accessibility permission is required", that
+  entry is the prime suspect.
 - Do NOT add: Screen Recording (nothing reads pixels — capture is AX
   titles/documents only), Full Disk Access, Input Monitoring.
 - ONLY if you run dev builds from a terminal (`cargo run -p evo-desktop
@@ -115,3 +118,18 @@ Verified against the code's process graph:
       chips still there (pod-addons.tsv persisted); tap chip = opens.
 - [ ] Enter the pod: saved resources re-open before staging ("N pod
       resources re-opened" in the note).
+
+### Observed on hardware (2026-09-23): banner persists after ticking Evo.app
+Deterministic fix sequence (TCC is stateful; the checkbox alone is not the story):
+1. Quit Evo completely. Kill leftovers: `pkill -f evo-daemon` (a daemon
+   started BEFORE the grant keeps its stale trust state).
+2. System Settings → Privacy & Security → Accessibility: grant BOTH
+   `Evo.app` AND `evo-daemon` if macOS lists the helper (unsigned builds
+   are listed separately by TCC — codesign identity is what it keys on).
+3. Run the exact dist/Evo.app you ticked (right-click → Open). Never
+   launch the same build from Terminal for testing AX behavior: Terminal
+   becomes the TCC-responsible process and the app's own tick no longer
+   covers the run.
+4. Still partial: `sudo tccutil reset Accessibility` (log out or restart
+   after), relaunch, answer the prompts fresh. This wipes TCC's stale
+   cache for ALL accessibility entries — entries re-add on next prompt.
