@@ -7,7 +7,7 @@
 //! came for:
 //!
 //! * **Identity** sits in the environment, unhoused. A body of work is not a
-//!   card; it is the room you are standing in.
+//!   card; it is the pod you are standing in.
 //! * **The hero** — one raised surface — carries the answer and the action:
 //!   the Resume Point, the Next Step, the plan, and `Continue`. The action
 //!   lives beside what it affects instead of in a pinned bar at the bottom of
@@ -360,7 +360,7 @@ fn identity(ui: &mut egui::Ui, canon: &Canonical<'_>) {
 
     // The doorway: the workspace's derived name IS the Place identity.
     // "Body of work" is Evo's internal classification; the user sees
-    // the name of their work as the room they are standing in.
+    // the name of their work as the pod they are standing in.
     ui::eyebrow(ui, &card.title);
     ui::label(ui, Role::Headline, "Continue this work", theme::TEXT);
     ui::gap(ui, theme::S3);

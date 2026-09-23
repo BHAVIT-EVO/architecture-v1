@@ -1,10 +1,20 @@
 //! Probe: does the real FSEvents watcher deliver events for a write under the
 //! checkout's `target/` directory in this environment?
-use evo_capture::macos_fsevents::FSEventsWatcher;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
-use std::time::{Duration, Instant};
 
+#[cfg(target_os = "macos")]
+mod platform_ref {
+    #![allow(unused_imports, dead_code)]
+    use evo_capture::macos_fsevents::FSEventsWatcher;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::Arc;
+    use std::time::{Duration, Instant};
+}
+
+#[cfg(target_os = "macos")]
+use platform_ref::*;
+
+
+#[cfg(target_os = "macos")]
 fn main() {
     let count = Arc::new(AtomicUsize::new(0));
     let seen = count.clone();
@@ -39,4 +49,10 @@ fn main() {
     let _ = std::fs::remove_dir_all(&dir);
     println!("SIGNALS DELIVERED: {n}");
     std::process::exit(if n > 0 { 0 } else { 1 });
+}
+
+/// Off-macOS this target does not exist: it exercises macOS APIs directly.
+#[cfg(not(target_os = "macos"))]
+fn main() {
+    eprintln!("probe_delivery is a macOS diagnostic target; nothing to do on this platform.");
 }

@@ -8,17 +8,27 @@
 //! Usage: `evo-input-counter` (runs until killed; requires Input Monitoring
 //! permission, requested on first run).
 
-use evo_capture::adapters::macos::{MacOSAdapter, MacOSSignal};
-use evo_capture::macos_input_counter::{MacOSInputCounter, SubjectResolver};
-use evo_capture::raw_event::RawEvent;
-use evo_observation::accept::accept;
-use evo_observation::observation::Observation;
-use evo_observation::provenance::ObservationSource;
-use evo_storage::{Storage, StorageObjectKind};
 
-use std::sync::{Arc, Mutex};
-use std::time::SystemTime;
+#[cfg(target_os = "macos")]
+mod platform_ref {
+    #![allow(unused_imports, dead_code)]
+    use evo_capture::adapters::macos::{MacOSAdapter, MacOSSignal};
+    use evo_capture::macos_input_counter::{MacOSInputCounter, SubjectResolver};
+    use evo_capture::raw_event::RawEvent;
+    use evo_observation::accept::accept;
+    use evo_observation::observation::Observation;
+    use evo_observation::provenance::ObservationSource;
+    use evo_storage::{Storage, StorageObjectKind};
 
+    use std::sync::{Arc, Mutex};
+    use std::time::SystemTime;
+}
+
+#[cfg(target_os = "macos")]
+use platform_ref::*;
+
+
+#[cfg(target_os = "macos")]
 fn main() {
     println!("EVO-INPUT-COUNTER starting");
 
@@ -150,6 +160,7 @@ fn main() {
 /// correctly-typed value line. The input counter cannot depend on
 /// evo-daemon (circular), so this is a careful mirror — the integration
 /// tests catch drift.
+#[cfg(target_os = "macos")]
 fn encode_observation(observation: &Observation) -> String {
     fn hex(bytes: &[u8]) -> String {
         bytes.iter().map(|b| format!("{b:02x}")).collect()
@@ -207,4 +218,10 @@ fn encode_observation(observation: &Observation) -> String {
         }
     }
     record
+}
+
+/// Off-macOS this target does not exist: it exercises macOS APIs directly.
+#[cfg(not(target_os = "macos"))]
+fn main() {
+    eprintln!("evo-input-counter is a macOS diagnostic target; nothing to do on this platform.");
 }

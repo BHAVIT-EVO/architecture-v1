@@ -187,6 +187,7 @@ impl Runtime {
             },
         ) {
             Ok(source) => Some(source),
+            #[cfg(target_os = "macos")]
             Err(evo_capture::MacOSEventSourceError::AccessibilityPermissionRequired) => None,
             Err(err) => return Err(DaemonError::Capture(err)),
         };

@@ -1,4 +1,4 @@
-//! Stage 3 of Rooms: the work's web pages live inside Evo.
+//! Stage 3 of Pods: the work's web pages live inside Evo.
 //!
 //! Containment (Stage 1) cleared the desktop; the browser world (Stage 2)
 //! gave each work its own login-jar in the person's browser. The remaining
@@ -17,7 +17,7 @@
 //!   view, positioned every frame over the rect egui allocated — the
 //!   native view consumes mouse and keyboard over that rect, so the web
 //!   is simply *part of* Evo's window;
-//! * **hibernation** is honest: closing the panel or leaving the room
+//! * **hibernation** is honest: closing the panel or leaving the pod
 //!   releases every pane, and a released WKWebView takes its WebContent
 //!   process with it — the RAM cost of a work's web presence is paid only
 //!   while the person is looking at it. The data store on disk is
