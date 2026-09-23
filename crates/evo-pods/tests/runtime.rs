@@ -271,3 +271,66 @@ fn stage_enter_resurrects_members_parks_split_windows_hides_aliens_then_leave_re
         "reversal order: unhide -> restore -> repark-member last: {log:?}"
     );
 }
+
+
+#[test]
+fn claim_window_merges_evidence_and_survives_an_engine_refresh() {
+    // Add-to-Pod round: the person points at a still-open window; its
+    // document lands in the pod's evidence (so the next enter treats the
+    // window as theirs) — and an engine refresh must never un-own it,
+    // because the claim lives in the addon ledger too.
+    let mut surface = FakeSurface::base();
+    surface.apps = vec![app(1, "Editor", false)];
+    surface.windows = vec![window(1, 10, "inbox.md", Some("/repo/inbox.md"))];
+    let mut rt = runtime_with(surface);
+    rt.set_pods(vec![pod_fixture()]);
+
+    let win = rt.open_windows()[0].clone();
+    let note = rt.claim_window(0, &win).unwrap();
+    assert!(note.contains("Added"), "{note}");
+    assert!(rt.pods()[0]
+        .surfaces
+        .documents
+        .contains(&"/repo/inbox.md".to_string()));
+
+    // Engine refresh wipes the pod projection; the claim re-attaches.
+    rt.set_pods(vec![pod_fixture()]);
+    assert!(rt.pods()[0]
+        .surfaces
+        .documents
+        .contains(&"/repo/inbox.md".to_string()),
+        "refresh must not un-own the claim");
+
+    // Export/import hand the ledger across a restart.
+    let text = rt.export_addons();
+    let mut rt2 = runtime_with(FakeSurface::base());
+    rt2.import_addons(&text);
+    rt2.set_pods(vec![pod_fixture()]);
+    assert!(rt2.pods()[0]
+        .surfaces
+        .documents
+        .contains(&"/repo/inbox.md".to_string()));
+}
+
+#[test]
+fn add_resource_dedupes_and_open_runs_usr_bin_open() {
+    use evo_pods::PodResource;
+    let surface = FakeSurface::base();
+    let mut rt = runtime_with(surface);
+    rt.set_pods(vec![pod_fixture()]);
+
+    let note = rt
+        .add_resource(0, PodResource::App("Notes".into()))
+        .unwrap();
+    assert!(note.contains("Saved"), "{note}");
+    let again = rt
+        .add_resource(0, PodResource::App("Notes".into()))
+        .unwrap();
+    assert!(again.contains("already"), "{again}");
+    assert_eq!(rt.pods()[0].resources.len(), 1);
+
+    let open_note = rt.open_resource(0, 0).unwrap();
+    assert!(open_note.contains("Opened"), "{open_note}");
+    let log = rt.surface_log();
+    assert!(log.contains(&"run:/usr/bin/open".to_string()), "{log:?}");
+}

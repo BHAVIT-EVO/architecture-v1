@@ -23,7 +23,9 @@ pub use evo_pods::runtime::{Note, PodError, PodRuntime};
 /// `Open` is about the window, not the pod: the host ignores it and the
 /// presence layer shows the window. `ToggleBar` the app handles
 /// (bar state paints with frames).
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// `Eq` is deliberately not derived: `ClaimWindow` carries a live window
+/// snapshot (f64 frames), and identity was never the point of a command.
+#[derive(Debug, Clone, PartialEq)]
 pub enum PodCommand {
     /// Enter/switch to pod at index.
     Enter(usize),
@@ -35,6 +37,12 @@ pub enum PodCommand {
     Open,
     /// Toggle the Pod Bar overlay (⌥Space; app handles it at frame time).
     ToggleBar,
+    /// Add-to-Pod: claim a live, still-open window's evidence into the pod.
+    ClaimWindow(usize, evo_pods::surface::PodWindow),
+    /// Add-to-Pod: save an app/file/folder/URL so the pod can re-open it.
+    AddResource(usize, evo_pods::pod::PodResource),
+    /// Add-to-Pod: open one saved resource now.
+    OpenResource(usize, usize),
 }
 
 /// The shared pod state handoff.
@@ -56,6 +64,9 @@ pub struct PodHost {
     /// The active pod's display name (menu bar + strip), kept parallel to
     /// the core's lease.
     pub active: Option<String>,
+    /// Where Add-to-Pod claims/resources persist (the addon ledger file
+    /// under the storage root). None in tests = in-memory only.
+    addons_path: Option<std::path::PathBuf>,
 }
 
 impl PodHost {
@@ -74,7 +85,34 @@ impl PodHost {
             wants_browser: false,
             web: crate::websurface::WebSurfaces::new(),
             active: None,
+            addons_path: None,
         }
+    }
+
+    /// Point at the addon ledger and ingest whatever it remembers, so
+    /// Add-to-Pod claims survive restarts and engine refreshes alike.
+    pub fn set_addons_path(&mut self, path: std::path::PathBuf) {
+        if let Ok(text) = std::fs::read_to_string(&path) {
+            self.core.import_addons(&text);
+            self.core.set_pods(self.pods.clone());
+            self.pods = self.core.pods().to_vec();
+        }
+        self.addons_path = Some(path);
+    }
+
+    /// Write the addon ledger. Best-effort by doctrine: the in-memory
+    /// truth already governs the session; the file must not be able to
+    /// make a claim destructive.
+    fn save_addons(&self) {
+        if let Some(path) = &self.addons_path {
+            let _ = std::fs::write(path, self.core.export_addons());
+        }
+    }
+
+    /// Re-fold core truth (claims now show in the bar's evidence) into the
+    /// host-facing projection the menu bar and cards read.
+    fn resync_from_core(&mut self) {
+        self.pods = self.core.pods().to_vec();
     }
 
     /// Display names parallel to the pod list (menu bar).
@@ -103,6 +141,9 @@ impl PodHost {
         let restore_note = self.restore_work(&pod);
         self.web.hibernate();
         self.core.set_pods(self.pods.clone());
+        // Add-to-Pod resources re-open as part of entering the space —
+        // before the choreography, so staged windows land on what's there.
+        let resource_note = self.open_resources(index);
         match self.core.switch(index, now_ms) {
             Ok(core_note) => {
                 // Entering never opens the Pages pane: the web presence is
@@ -150,6 +191,30 @@ impl PodHost {
                 let next = self.next_index();
                 self.enter_at(next, now_ms)
             }
+            PodCommand::ClaimWindow(index, window) => {
+                let note = self
+                    .core
+                    .claim_window(index, &window)
+                    .unwrap_or_else(|err| format!("Could not add the window: {err}"));
+                self.resync_from_core();
+                self.save_addons();
+                Some(note)
+            }
+            PodCommand::AddResource(index, resource) => {
+                let note = self
+                    .core
+                    .add_resource(index, resource)
+                    .unwrap_or_else(|err| format!("Could not save the resource: {err}"));
+                self.resync_from_core();
+                self.save_addons();
+                Some(note)
+            }
+            PodCommand::OpenResource(index, resource_index) => match
+                self.core.open_resource(index, resource_index)
+            {
+                Ok(note) => Some(note),
+                Err(err) => Some(format!("Could not open it: {err}")),
+            },
             PodCommand::Open | PodCommand::ToggleBar => None,
         };
         if let Some(note) = note {
@@ -169,6 +234,51 @@ impl PodHost {
         }
         self.core.set_pods(pods.clone());
         self.pods = pods;
+    }
+
+    /// Live window inventory for the Add-to-Pod picker. Read-only.
+    pub fn open_windows(&mut self) -> Vec<evo_pods::surface::PodWindow> {
+        self.core.open_windows()
+    }
+
+    /// Re-open everything the pod was taught to own ("Add to Pod"
+    /// resources), one add at a time, failures spoken never staged.
+    /// Runs before choreography: staged windows land on what's there.
+    fn open_resources(&mut self, index: usize) -> String {
+        let count = self
+            .core
+            .pods()
+            .get(index)
+            .map(|pod| pod.resources.len())
+            .unwrap_or(0);
+        if count == 0 {
+            return String::new();
+        }
+        let mut opened = 0usize;
+        let mut failed: Vec<String> = Vec::new();
+        for resource_index in 0..count {
+            match self.core.open_resource(index, resource_index) {
+                Ok(note) => {
+                    if note.starts_with("Opened") {
+                        opened += 1;
+                    } else {
+                        failed.push(note);
+                    }
+                }
+                Err(err) => failed.push(format!("{err}")),
+            }
+        }
+        let mut note = String::new();
+        if opened > 0 {
+            note.push_str(&format!(" {opened} pod resources re-opened."));
+        }
+        for failure in failed.iter().take(2) {
+            note.push_str(&format!(" [{failure}]"));
+        }
+        if failed.len() > 2 {
+            note.push_str(&format!(" [+{} more could not open]", failed.len() - 2));
+        }
+        note
     }
 
     /// Restores the work's place, generically: witnessed apps are brought

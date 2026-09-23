@@ -329,3 +329,46 @@ fn wrapper_generates_plist_launcher_and_identity_without_app_names() {
     assert!(script.contains("/Applications/X.app/Contents/MacOS/x"));
     assert!(script.contains("--user-data-dir=/pods/pod-1"));
 }
+
+// ---- add to pod -----------------------------------------------------------
+
+#[test]
+fn resource_open_spec_is_usr_bin_open_and_never_names_an_app_in_code() {
+    use evo_pods::PodResource;
+    let app = PodResource::App("Editor".into()).open_spec();
+    assert_eq!(app.program, "/usr/bin/open");
+    assert_eq!(app.args, vec!["-a".to_string(), "Editor".to_string()]);
+    let file = PodResource::File("/repo/notes.md".into()).open_spec();
+    assert_eq!(file.args, vec!["/repo/notes.md".to_string()]);
+    let folder = PodResource::Folder("/repo".into()).open_spec();
+    assert_eq!(folder.args, vec!["/repo".to_string()]);
+    let url = PodResource::Url("https://x.test".into()).open_spec();
+    assert_eq!(url.args, vec!["https://x.test".to_string()]);
+}
+
+#[test]
+fn absorb_claim_is_dedupe_safe_and_prefers_document_semantics() {
+    use evo_pods::PodClaim;
+    let mut surfaces = PodSurfaces::default();
+    assert!(surfaces.absorb_claim(&PodClaim::Document("file:///a.ts".into())));
+    assert!(!surfaces.absorb_claim(&PodClaim::Document("file:///a.ts".into())));
+    assert!(surfaces.absorb_claim(&PodClaim::Title("Terminal".into())));
+    assert_eq!(surfaces.documents, vec!["file:///a.ts".to_string()]);
+    assert_eq!(surfaces.titles, vec!["Terminal".to_string()]);
+}
+
+#[test]
+fn addon_store_roundtrips_claims_and_resources() {
+    use evo_pods::pod::addon_store;
+    use evo_pods::{PodClaim, PodResource};
+    let text = addon_store::export(&[(
+        "pod-7".to_string(),
+        vec![PodResource::App("Editor".into()), PodResource::Url("https://x".into())],
+        vec![PodClaim::Document("file:///a.ts".into())],
+    )]);
+    let back = addon_store::import(&text);
+    assert_eq!(back.len(), 1);
+    assert_eq!(back[0].0, 7);
+    assert_eq!(back[0].1.len(), 2, "the two resources survive");
+    assert_eq!(back[0].2, vec![PodClaim::Document("file:///a.ts".to_string())]);
+}
