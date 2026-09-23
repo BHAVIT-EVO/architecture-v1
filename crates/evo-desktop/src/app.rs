@@ -168,17 +168,18 @@ pub struct EvoApp {
     /// same observation log the legacy Engagement pipeline reads, with each
     /// thread's resume bundle. Presentation-only; rebuilt on reload.
     engine_threads: Vec<evo_daemon::threads::DisplayThread>,
-    /// The room runtime, shared with the menu-bar presence: containment
-    /// (hide/park/raise), the active room, and the web panes'
-    /// hibernation. Room commands execute on the main thread from wherever they come — the desktop never waits for this
+    /// The pod host, shared with the menu-bar presence: containment
+    /// (hide/park/raise), the active pod, and the web panes'
+    /// hibernation. Pod commands execute on the main thread from wherever they come — the desktop never waits for this
     /// window to paint.
-    rooms: crate::rooms::SharedRooms,
-    /// Whether the room browser panel is open. Only meaningful while a
-    /// room is active.
-    room_browser: bool,
+    pods: crate::pods::SharedPods,
+    /// Whether the pod browser panel is open. Only meaningful while a
+    /// pod is active.
+    pod_browser: bool,
     /// The global hotkey + menu bar controller (keeps its allocations
     /// alive).
-    room_presence: Option<crate::presence::RoomPresence>,
+    pod_presence: Option<crate::presence::PodPresence>,
+    podbar: crate::podbar::PodBar,
     /// The engine's current merge proposals: (subject_a, subject_b,
     /// name_a, name_b, shared sittings). Deterministic co-sitting between
     /// established works, offered to the person — confirming one declares
@@ -207,14 +208,26 @@ pub struct EvoApp {
     last_signature: Option<(String, usize)>,
 }
 
-/// Locks the shared room runtime from a field reference — a free
+/// Locks the shared pod host from a field reference — a free
 /// function so the render closure (which destructures `self` and may only
 /// capture fields, never the whole) can reach it too.
-fn lock_rooms(
-    rooms: &crate::rooms::SharedRooms,
-) -> std::sync::MutexGuard<'_, crate::rooms::RoomRuntime> {
-    rooms
-        .lock()
+/// Stable pod identity for the presentation path: FNV-1a of the pod's
+/// engine name. The same work hashes to the same id across restarts until
+/// the engine-lineage ids land (read-path unification); nothing random,
+/// nothing time-based.
+fn pod_id_of(name: &str) -> u64 {
+    let mut hash: u64 = 0xcbf29ce484222325;
+    for byte in name.as_bytes() {
+        hash ^= u64::from(*byte);
+        hash = hash.wrapping_mul(0x100000001b3);
+    }
+    hash
+}
+
+fn lock_pods(
+    pods: &crate::pods::SharedPods,
+) -> std::sync::MutexGuard<'_, crate::pods::PodHost> {
+    pods.lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
@@ -249,18 +262,19 @@ impl EvoApp {
             storage_root.join("desktop.pid"),
             std::process::id().to_string(),
         );
-        // The menu-bar presence and global hotkey push room commands into
+        // The menu-bar presence and global hotkey push pod commands into
         // the app; the receiver is stored in the struct (the initial
         // placeholder receiver is replaced here). The egui context rides
         // along so every command also wakes the frame loop — a command
-        // The room runtime is shared with the menu-bar presence so room
+        // The pod host is shared with the menu-bar presence so pod
         // commands execute on the main thread from the action itself —
         // the desktop never waits for this window to paint (a hidden
         // window paints nothing).
-        let rooms: crate::rooms::SharedRooms = std::sync::Arc::new(std::sync::Mutex::new(
-            crate::rooms::RoomRuntime::new(),
+        let pods: crate::pods::SharedPods = std::sync::Arc::new(std::sync::Mutex::new(
+            crate::pods::PodHost::new(),
         ));
-        let room_presence = crate::presence::RoomPresence::new(rooms.clone(), cc.egui_ctx.clone());
+        let pod_presence = crate::presence::PodPresence::new(pods.clone(), cc.egui_ctx.clone());
+        let podbar = crate::podbar::PodBar::new();
         let mut app = Self {
             storage_root: storage_root.clone(),
             index,
@@ -292,9 +306,10 @@ impl EvoApp {
             period_filter: state::WorkPeriodFilter::All,
             retrieval_memo: home::Memo::default(),
             engine_threads: Vec::new(),
-            rooms,
-            room_browser: false,
-            room_presence: Some(room_presence),
+            pods,
+            pod_browser: false,
+            pod_presence: Some(pod_presence),
+            podbar,
             merge_proposals: Vec::new(),
             restore_note: None,
             expanded_work: None,
@@ -309,11 +324,38 @@ impl EvoApp {
         app
     }
 
-    /// Locks the shared room runtime. Every caller is the main thread
-    /// (render, logic, and the menu-bar actions), so the lock is
-    /// uncontended by construction.
-    fn rooms(&self) -> std::sync::MutexGuard<'_, crate::rooms::RoomRuntime> {
-        lock_rooms(&self.rooms)
+    /// Snapshots the pod list and active pod id for the bar — a clone, so
+    /// the bar never holds the host lock across a paint.
+    fn podbar_pods(&self) -> (Vec<evo_pods::pod::Pod>, Option<u64>) {
+        let guard = lock_pods(&self.pods);
+        let active_id = guard
+            .active
+            .as_ref()
+            .and_then(|name| guard.pods.iter().find(|pod| &pod.name == name))
+            .map(|pod| pod.id.0);
+        (guard.pods.clone(), active_id)
+    }
+
+    /// Paints the Pod Bar overlay above everything and applies the actions
+    /// it proposes. Called as the very last thing in `ui` — the bar must
+    /// always win the z-order, whatever else is open.
+    fn paint_podbar(&mut self, ctx: &egui::Context) {
+        let (pods, active_id) = self.podbar_pods();
+        let actions = crate::podbar::show(ctx, &mut self.podbar, &pods, active_id, 9);
+        for action in actions {
+            match action {
+                crate::podbar::PodBarAction::Command(command) => {
+                    let mut guard = lock_pods(&self.pods);
+                    guard.execute(command, crate::pods::epoch_ms());
+                    if let Some(note) = guard.pending_note.take() {
+                        self.restore_note = Some(note);
+                    }
+                }
+                crate::podbar::PodBarAction::Dismiss => {
+                    self.podbar.visible = false;
+                }
+            }
+        }
     }
 
     /// Re-reads canonical state by refreshing the derived index (only the
@@ -349,13 +391,13 @@ impl EvoApp {
                 // Each pair carries the work's containment surface so the
                 // two derived lists stay exactly parallel through the
                 // filter and the sort below: the surface at index i is the
-                // room of the thread at index i. Indexing them separately
+                // pod of the thread at index i. Indexing them separately
                 // (as they once were) makes Enter open the wrong work's
-                // room the moment the ledger order differs from the
+                // pod the moment the ledger order differs from the
                 // engagement order.
                 let mut paired: Vec<(
                     evo_daemon::threads::DisplayThread,
-                    evo_execution::room::RoomSurface,
+                    crate::pods::Pod,
                 )> = works
                     .iter()
                     .filter_map(|w| {
@@ -457,20 +499,18 @@ impl EvoApp {
                         // The containment surface built from the same work
                         // record the thread was built from — same evidence,
                         // same index. Its label is the work's display name
-                        // (not the ledger identity) so every room-keyed
-                        // thing — the active-room strip, the menu bar's
+                        // (not the ledger identity) so every pod-keyed
+                        // thing — the active-pod strip, the menu bar's
                         // dot, the parking ledger — speaks one name.
-                        let surface = evo_execution::room::RoomSurface {
-                            work: name.clone(),
+                        // The pod's evidence surface, from the same record
+                        // the legacy host used to consume: the work's own
+                        // witnesses. resource_apps opens each artifact via
+                        // its most recent app — never one work-level app.
+                        let pod_surfaces = evo_pods::pod::PodSurfaces {
                             urls: w.urls.clone(),
                             documents: w.documents.clone(),
                             titles: w.titles.clone(),
                             apps: w.apps.clone(),
-                            // Per-resource witnessed apps: each document
-                            // (and URL) maps to the application it was most
-                            // recently seen in. Restore opens every file
-                            // through its own witnessed app — never one
-                            // work-level app for everything.
                             resource_apps: w
                                 .documents
                                 .iter()
@@ -480,6 +520,38 @@ impl EvoApp {
                                         .map(|app| (resource.clone(), app.to_string()))
                                 })
                                 .collect(),
+                        };
+                        // The pod: same evidence, engine-face. Its id is a
+                        // stable name hash (this presentation path assigns
+                        // no engine thread id; the engine-lineage ids land
+                        // with the Phase-1 read-path unification — W2 in
+                        // the repo assessment).
+                        let pod_id = pod_id_of(&name);
+                        let pod = evo_pods::pod::Pod {
+                            id: evo_pods::pod::PodId(pod_id),
+                            name: name.clone(),
+                            color: evo_pods::pod::PodColor::from_thread(pod_id),
+                            reason: bundle.resume_reason.clone(),
+                            engagement: decayed_engagement,
+                            bundle: bundle.clone(),
+                            surfaces: pod_surfaces,
+                            badges: evo_pods::pod::badges_from_bundle(&bundle),
+                            member_subjects: w
+                                .urls
+                                .iter()
+                                .chain(w.documents.iter())
+                                .chain(w.titles.iter())
+                                .cloned()
+                                .collect(),
+                            // Companions/contested need the engine lineage;
+                            // this path reports none (suggestions stay
+                            // silent rather than guessing).
+                            companions: vec![],
+                            // The production document is the honest identity
+                            // carrier this record can cite for gestures.
+                            strongest_anchor: w.documents.first().cloned(),
+                            contested: vec![],
+                            state: evo_pods::pod::PodState::Inactive,
                         };
                         let narrative = format!(
                             "You spent {} across {} sessions {} this — {}. {}",
@@ -503,8 +575,8 @@ impl EvoApp {
                         // The containment surface built from the same work
                         // record the thread was built from — same evidence,
                         // same index. Its label is the work's display name
-                        // (not the ledger identity) so every room-keyed
-                        // thing — the active-room strip, the menu bar's
+                        // (not the ledger identity) so every pod-keyed
+                        // thing — the active-pod strip, the menu bar's
                         // dot, the parking ledger — speaks one name.
                         // (The surface itself is built above, next to the
                         // thread, from the same work record.)
@@ -550,7 +622,7 @@ impl EvoApp {
                                     .cloned()
                                     .collect(),
                             },
-                            surface,
+                            pod,
                         ))
                     })
                     .collect::<Vec<_>>();
@@ -562,20 +634,19 @@ impl EvoApp {
                         .partial_cmp(&a.0.engagement)
                         .unwrap_or(std::cmp::Ordering::Equal)
                 });
-                let (threads, surfaces): (Vec<_>, Vec<_>) = paired.into_iter().collect();
+                let (threads, pods): (Vec<_>, Vec<_>) = paired
+                    .into_iter()
+                    .collect::<Vec<_>>()
+                    .into_iter()
+                    .unzip();
                 self.engine_threads = threads;
                 // Containment surfaces, parallel to the threads (built from
                 // the same filtered, sorted pairing): the work's own
                 // evidence (apps, pages, documents, titles) is what the
-                // room controller matches live windows against. The names
-                // ride along for the menu bar; a room whose work vanished
+                // pod runtime matches live windows against. The names
+                // ride along for the menu bar; a pod whose work vanished
                 // from the list is left honestly.
-                let names: Vec<String> = self
-                    .engine_threads
-                    .iter()
-                    .map(|thread| thread.name.clone())
-                    .collect();
-                lock_rooms(&self.rooms).set_surfaces(surfaces, names);
+                lock_pods(&self.pods).set_pods(pods);
                 self.merge_proposals = ledger.merge_proposals().unwrap_or_default();
             }
         }
@@ -797,35 +868,45 @@ impl eframe::App for EvoApp {
     fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // The window never dies: closing it hides Evo instead. A menu-bar
         // app whose loop can lose its window is a menu-bar app whose
-        // commands stop being processed; hiding keeps the room presence
+        // commands stop being processed; hiding keeps the pod presence
         // (menu bar, hotkey, containment) alive. The browser panes
         // hibernate with the hidden window — nothing pays RAM while
         // unseen, and "Open Evo" restores the window.
         if ctx.input(|i| i.viewport().close_requested()) {
             ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
             ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
-            lock_rooms(&self.rooms).web.hibernate();
-            self.room_browser = false;
+            lock_pods(&self.pods).web.hibernate();
+            self.pod_browser = false;
+        }
+
+        // The Pod Bar toggle (⌥Space from the menu-bar presence) applies here:
+        // bar visibility is window-level UI state, not pod state.
+        if crate::presence::take_bar_toggle() {
+            self.podbar.toggle();
+            ctx.request_repaint();
+        }
+        if self.podbar.visible {
+            ctx.request_repaint();
         }
 
         self.daemon.poll();
         self.engine.poll();
 
-        // Room commands from the menu bar and hotkey execute directly on
+        // Pod commands from the menu bar and hotkey execute directly on
         // the main thread inside the action itself (see presence.rs) —
         // this window may be hidden and painting nothing. What arrives
         // here is the note they left, shown at the next opportunity.
         {
-            let mut rooms = lock_rooms(&self.rooms);
-            if let Some(note) = rooms.pending_note.take() {
+            let mut pods_guard = lock_pods(&self.pods);
+            if let Some(note) = pods_guard.pending_note.take() {
                 self.restore_note = Some(note);
             }
-            let active = rooms.active.clone();
-            let names = rooms.names.clone();
-            drop(rooms);
-            // Keep the menu bar in sync with the room list.
-            if let Some(presence) = &mut self.room_presence {
-                presence.update_rooms(&names, active);
+            let active = pods_guard.active.clone();
+            let names = pods_guard.names();
+            drop(pods_guard);
+            // Keep the menu bar in sync with the pod list.
+            if let Some(presence) = &mut self.pod_presence {
+                presence.update_pods(&names, active);
             }
         }
         if self.last_reload.elapsed() >= RELOAD_PERIOD {
@@ -1015,43 +1096,43 @@ impl eframe::App for EvoApp {
 
                 match view {
                     state::ShellView::Home => {
-                        // Entering a room with web pages opens them here:
+                        // Entering a pod with web pages opens them here:
                         // the work's web presence lives inside Evo, so the
                         // person never juggles a browser to get back in.
                         // Drained once — hiding the panel stays hidden
-                        // until the next room entry.
+                        // until the next pod entry.
                         {
-                            let mut rooms = lock_rooms(&self.rooms);
-                            if rooms.wants_browser {
-                                rooms.wants_browser = false;
-                                self.room_browser = true;
+                            let mut pods_guard = lock_pods(&self.pods);
+                            if pods_guard.wants_browser {
+                                pods_guard.wants_browser = false;
+                                self.pod_browser = true;
                             }
                         }
-                        // Stage 3: the room browser. While a room is
+                        // Stage 3: the pod browser. While a pod is
                         // active and the panel is open, the work's own
                         // pages render inside this window — no app switch,
                         // no second window to juggle. The panel replaces
-                        // the list: a room occupies the whole surface or
+                        // the list: a pod occupies the whole surface or
                         // none of it.
-                        if self.room_browser {
-                            let mut rooms = lock_rooms(&self.rooms);
-                            if let Some(room) = rooms.active.clone() {
+                        if self.pod_browser {
+                            let mut pods_guard = lock_pods(&self.pods);
+                            if let Some(pod_name) = pods_guard.active.clone() {
                                 // Hydration is idempotent and honest: the
-                                // first open (or a room switch) creates the
+                                // first open (or a pod switch) creates the
                                 // panes; the same work re-opened keeps
                                 // them.
-                                if !rooms.web.is_hydrated_for(&room) {
-                                    let urls: Vec<String> = rooms
-                                        .surfaces
+                                if !pods_guard.web.is_hydrated_for(&pod_name) {
+                                    let urls: Vec<String> = pods_guard
+                                        .pods
                                         .iter()
-                                        .find(|surface| surface.work == room)
-                                        .map(|surface| surface.urls.clone())
+                                        .find(|pod| pod.name == pod_name)
+                                        .map(|pod| pod.bundle.restore_set.clone())
                                         .unwrap_or_default();
-                                    rooms.web.hydrate(&room, &urls);
+                                    pods_guard.web.hydrate(&pod_name, &urls);
                                 }
-                                drop(rooms);
+                                drop(pods_guard);
 
-                                // The room strip: where you are, and the
+                                // The pod strip: where you are, and the
                                 // way back to the list.
                                 egui::Frame::new()
                                     .inner_margin(egui::Margin::symmetric(
@@ -1062,15 +1143,15 @@ impl eframe::App for EvoApp {
                                         ui.set_width(ui.available_width());
                                         ui.horizontal(|ui| {
                                             ui.label("\u{25CF}");
-                                            ui.strong(format!("In: {room}"));
+                                            ui.strong(format!("In: {pod_name}"));
                                             if ui.small_button("Hide browser").clicked() {
                                                 // Hiding is hibernation,
                                                 // not hiding: the panes
                                                 // and their processes
                                                 // leave RAM; the data
                                                 // store stays on disk.
-                                                lock_rooms(&self.rooms).web.hibernate();
-                                                self.room_browser = false;
+                                                lock_pods(&self.pods).web.hibernate();
+                                                self.pod_browser = false;
                                             }
                                             ui.weak("  logins isolated per work");
                                         });
@@ -1082,23 +1163,23 @@ impl eframe::App for EvoApp {
                                 // not become a browser. A work with many
                                 // pages wraps rather than scrolls: every
                                 // page stays reachable.
-                                let mut rooms = lock_rooms(&self.rooms);
+                                let mut pods_guard = lock_pods(&self.pods);
                                 let (can_back, can_forward) =
-                                    (rooms.web.can_go_back(), rooms.web.can_go_forward());
+                                    (pods_guard.web.can_go_back(), pods_guard.web.can_go_forward());
                                 ui.horizontal_wrapped(|ui| {
                                     ui.add_enabled_ui(can_back, |ui| {
                                         if ui.button("\u{2039}").clicked() {
-                                            rooms.web.go_back();
+                                            pods_guard.web.go_back();
                                         }
                                     });
                                     ui.add_enabled_ui(can_forward, |ui| {
                                         if ui.button("\u{203A}").clicked() {
-                                            rooms.web.go_forward();
+                                            pods_guard.web.go_forward();
                                         }
                                     });
                                     ui.separator();
-                                    for index in 0..rooms.web.pane_count() {
-                                        let label: String = rooms
+                                    for index in 0..pods_guard.web.pane_count() {
+                                        let label: String = pods_guard
                                             .web
                                             .tab_label(index)
                                             .chars()
@@ -1106,12 +1187,12 @@ impl eframe::App for EvoApp {
                                             .collect();
                                         if ui
                                             .selectable_label(
-                                                rooms.web.active_index() == index,
+                                                pods_guard.web.active_index() == index,
                                                 label,
                                             )
                                             .clicked()
                                         {
-                                            rooms.web.switch_tab(index);
+                                            pods_guard.web.switch_tab(index);
                                         }
                                     }
                                 });
@@ -1121,7 +1202,7 @@ impl eframe::App for EvoApp {
                                 // and never interacts with it — the native
                                 // web view above it receives every mouse
                                 // and keyboard event over that region.
-                                if rooms.web.pane_count() == 0 {
+                                if pods_guard.web.pane_count() == 0 {
                                     ui::caption(
                                         ui,
                                         "This work has no web pages to host.",
@@ -1130,7 +1211,7 @@ impl eframe::App for EvoApp {
                                     let pane = ui.available_rect_before_wrap();
                                     ui.painter().rect_filled(pane, 4.0, theme::WELL);
                                     ui.allocate_rect(pane, egui::Sense::hover());
-                                    rooms.web.layout_active((
+                                    pods_guard.web.layout_active((
                                         pane.min.x,
                                         pane.min.y,
                                         pane.width(),
@@ -1139,18 +1220,18 @@ impl eframe::App for EvoApp {
                                 }
                                 return;
                             }
-                            // A browser panel without a room cannot exist:
-                            // the room was left while the panel was open.
-                            lock_rooms(&self.rooms).web.hibernate();
-                            self.room_browser = false;
+                            // A browser panel without a pod cannot exist:
+                            // the pod was left while the panel was open.
+                            lock_pods(&self.pods).web.hibernate();
+                            self.pod_browser = false;
                         }
                         // The new engine's work section is the primary surface.
                         // When it has work to show, the legacy pipeline's Home
                         // screen (with its separate heading, search, and list)
                         // is not rendered at all — one clean section, not two.
-                        let active_room = {
-                            let rooms = lock_rooms(&self.rooms);
-                            rooms.active.clone()
+                        let active_pod = {
+                            let pods_guard = lock_pods(&self.pods);
+                            pods_guard.active.clone()
                         };
                         match home::work_section(
                             ui,
@@ -1159,7 +1240,7 @@ impl eframe::App for EvoApp {
                             self.restore_note.as_deref(),
                             search_query,
                             &self.merge_proposals,
-                            active_room.as_deref(),
+                            active_pod.as_deref(),
                         ) {
                             None => {}
                             Some(home::WorkAction::Merge {
@@ -1198,26 +1279,26 @@ impl eframe::App for EvoApp {
                                 }
                             }
                             Some(home::WorkAction::Continue(index)) => {
-                                // Continuing a work IS entering its room:
+                                // Continuing a work IS entering its pod:
                                 // containment hides everything not of this
                                 // work, restoration opens every artifact
                                 // (files through their witnessed apps, the
                                 // work's pages in its own browser panel —
-                                // logins isolated per work), and the room
+                                // logins isolated per work), and the pod
                                 // report says what happened. One path, one
                                 // note; the menu-bar Enter does the same.
                                 if let Some(note) =
-                                    lock_rooms(&self.rooms).enter_at(index)
+                                    lock_pods(&self.pods).enter_at(index, crate::pods::epoch_ms())
                                 {
                                     self.restore_note = Some(note);
                                 }
                             }
                             Some(home::WorkAction::OpenBrowser) => {
-                                // The room browser opens for the active
-                                // room only; hydration happens in the
+                                // The pod browser opens for the active
+                                // pod only; hydration happens in the
                                 // render pass that first shows the panel.
-                                if lock_rooms(&self.rooms).active.is_some() {
-                                    self.room_browser = true;
+                                if lock_pods(&self.pods).active.is_some() {
+                                    self.pod_browser = true;
                                 }
                             }
                             Some(home::WorkAction::Leave) => {
@@ -1225,8 +1306,8 @@ impl eframe::App for EvoApp {
                                 // the work's web panes through the
                                 // runtime — the same path the menu bar
                                 // takes.
-                                if let Some(note) = lock_rooms(&self.rooms).leave() {
-                                    self.room_browser = false;
+                                if let Some(note) = lock_pods(&self.pods).leave() {
+                                    self.pod_browser = false;
                                     self.restore_note = Some(note);
                                 }
                             }
@@ -1339,6 +1420,11 @@ impl eframe::App for EvoApp {
             daemon,
             storage_root.as_path(),
         );
+
+        // The Pod Bar (⌥Space) floats above every other surface. The bar
+        // paints above the settings window too: summoning it must always
+        // work, whatever else is open.
+        self.paint_podbar(ui.ctx());
     }
 }
 

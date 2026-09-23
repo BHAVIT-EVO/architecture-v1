@@ -3,17 +3,32 @@
 //! Usage:
 //!   cargo run -p evo-capture --example probe_fsevents
 
-use std::ffi::c_char;
-use std::os::raw::c_void;
-use std::ptr;
 
+#[cfg(target_os = "macos")]
+mod platform_ref {
+    #![allow(unused_imports, dead_code)]
+    use std::ffi::c_char;
+    use std::os::raw::c_void;
+    use std::ptr;
+}
+
+#[cfg(target_os = "macos")]
+use platform_ref::*;
+
+
+#[cfg(target_os = "macos")]
 type CFTypeRef = *const c_void;
+#[cfg(target_os = "macos")]
 type CFArrayRef = *const c_void;
+#[cfg(target_os = "macos")]
 type CFStringRef = *const c_void;
+#[cfg(target_os = "macos")]
 type FSEventStreamRef = *const c_void;
 
+#[cfg(target_os = "macos")]
 const CFSTRING_ENCODING_UTF8: u32 = 0x0800_0100;
 
+#[cfg(target_os = "macos")]
 type FSEventStreamCallback = extern "C" fn(
     stream_ref: FSEventStreamRef,
     info: *mut c_void,
@@ -23,8 +38,8 @@ type FSEventStreamCallback = extern "C" fn(
     event_ids: *const u64,
 );
 
-#[link(name = "CoreServices", kind = "framework")]
-#[link(name = "CoreFoundation", kind = "framework")]
+#[cfg(target_os = "macos")]
+#[cfg(target_os = "macos")]
 unsafe extern "C" {
     fn FSEventStreamCreate(
         allocator: CFTypeRef,
@@ -52,7 +67,8 @@ unsafe extern "C" {
     fn CFRelease(cf: CFTypeRef);
 }
 
-#[repr(C)]
+#[cfg(target_os = "macos")]
+#[cfg(target_os = "macos")]
 struct FSEventStreamContext {
     version: isize,
     info: *mut c_void,
@@ -61,6 +77,7 @@ struct FSEventStreamContext {
     copy_description: *const c_void,
 }
 
+#[cfg(target_os = "macos")]
 extern "C" fn cb(
     _stream: FSEventStreamRef,
     _info: *mut c_void,
@@ -71,6 +88,7 @@ extern "C" fn cb(
 ) {
 }
 
+#[cfg(target_os = "macos")]
 fn main() {
     let home = std::env::var("HOME").unwrap();
     let c_path = std::ffi::CString::new(home.clone()).unwrap();
@@ -109,4 +127,10 @@ fn main() {
         CFRelease(cf_string);
         println!("probe done");
     }
+}
+
+/// Off-macOS this target does not exist: it exercises macOS APIs directly.
+#[cfg(not(target_os = "macos"))]
+fn main() {
+    eprintln!("probe_fsevents is a macOS diagnostic target; nothing to do on this platform.");
 }
