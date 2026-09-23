@@ -128,3 +128,39 @@ the command and its observed output, never bare assertions.
 ---
 
 ## 2026-09-22 — IS-0023 Pods scaffold (engine crate skeleton; superseded by the 09-23 entry)
+
+## Pods round 3 — one space per pod (2026-09-23)
+
+User report (hardware): with several pods open, all pods' windows shared one
+desktop and became indistinguishable (3 works x 4 windows); the ask was a
+space-per-pod semantic that works for every app, plus a tidy pod bar
+(opaque surface, horizontal scroll for >4 cards).
+
+Research first (docs/design/POD-SPACES.md + root-user steering):
+- native-spaces route (private SkyLight) is feasible with SIP on
+  (native-space-kit evidence) but excludes fullscreen/sticky windows, cannot
+  destroy the active space, and relies on private API — deferred.
+- FlashSpace's design history settles the parking UX: no public API hides a
+  single window; the two per-window options (minimize / move-to-corner) are
+  why they chose whole-app hide/show. We take exactly that lesson.
+- Workspaces.app/Bunch pattern resources-in-a-work named the next feature
+  (Add-to-Pod), specced in POD-SPACES.md §7, not built this round.
+
+Shipped (code):
+- New ContainMode::Stage, now the DEFAULT: entering a pod = its own space.
+  Alien apps hide whole; split apps keep pod windows but park foreign
+  windows singly; the pod's own minimized windows resurrect onto the stage
+  (plan.unpark_members); leave replays ReparkWindow last so the desktop
+  returns exactly (moves happen only while windows are visible).
+- Lease: unparked_members bucket + ReparkWindow step and ordering.
+- Note vocabulary: "N on stage, N remembered, N veiled, N parked, N hidden".
+- Pod bar v2: opaque panel (alpha 238 -> solid), a single sideways strip
+  (egui ScrollArea::horizontal; no clipped second row ever), one-line
+  chrome header, dial hints / live stage receipts on the active card
+  ("on stage · N parked · M hidden · K remembered").
+
+Proof: evo-pods 33/33 (4 new core-stage tests + 1 runtime end-to-end stage
+test; the Dim-mode tests now name their mode); full workspace suite green
+(EXIT=0). Sandbox build notes: target and TMPDIR must live off the /tmp
+tmpfs (993M) — linker/OOM + "storage backend is not configured" failures
+were disk-full artifacts, not code regressions.

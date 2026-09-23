@@ -11,6 +11,10 @@ use crate::surface::Frame;
 pub enum LeaseStep {
     MoveWindowBack { pid: i32, window_id: u32, frame: Frame },
     UnparkWindow { pid: i32, window_id: u32 },
+    /// A pod member we resurrected at entry goes back to minimized so the
+    /// desktop returns EXACTLY as it was (Stage mode's space keeps its
+    /// own windows parked inside it).
+    ReparkWindow { pid: i32, window_id: u32 },
     CloseVeil { handle: u64 },
     RehideApp { pid: i32 },
     UnhideApp { pid: i32 },
@@ -31,6 +35,9 @@ pub struct PodLease {
     pub hidden_apps: Vec<i32>,
     /// Pod apps we un-hid; leaving re-hides them so the desktop returns.
     pub unhidden_apps: Vec<i32>,
+    /// Pod members we pulled out of the Dock onto the stage; leaving
+    /// re-minimizes them so the space appears to keep its windows.
+    pub unparked_members: Vec<(i32, u32)>,
     /// Epoch milliseconds at entry.
     pub entered_at_ms: u64,
 }
@@ -44,13 +51,15 @@ impl PodLease {
             veils: Vec::new(),
             hidden_apps: Vec::new(),
             unhidden_apps: Vec::new(),
+            unparked_members: Vec::new(),
             entered_at_ms,
         }
     }
 
     /// The exact reverse replay. Order: unveil → unhide/re-hide balance →
-    /// unpark → restore moved frames — so the user's eyes return to a
-    /// fully-revealed desktop before any window glides back.
+    /// unpark foreign → restore moved frames → re-park members — moving
+    /// is done while everything is visible (a minimized window cannot be
+    /// repositioned), then the space's windows return into the space.
     pub fn reversal(&self) -> Vec<LeaseStep> {
         let mut steps = Vec::new();
         for handle in self.veils.iter().rev() {
@@ -73,6 +82,12 @@ impl PodLease {
                 pid: *pid,
                 window_id: *window_id,
                 frame: *frame,
+            });
+        }
+        for (pid, window_id) in self.unparked_members.iter().rev() {
+            steps.push(LeaseStep::ReparkWindow {
+                pid: *pid,
+                window_id: *window_id,
             });
         }
         steps
