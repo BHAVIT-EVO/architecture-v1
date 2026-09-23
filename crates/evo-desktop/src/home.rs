@@ -80,11 +80,11 @@ impl Memo {
 /// What the person asked for from a work card.
 pub enum WorkAction {
     /// Continue: restore the work at this engine-thread index and enter
-    /// its room.
+    /// its pod.
     Continue(usize),
-    /// Leave the active room, restoring the desktop exactly as it was.
+    /// Leave the active pod, restoring the desktop exactly as it was.
     Leave,
-    /// Open the room browser: the active work's pages hosted inside
+    /// Open the pod browser: the active work's pages hosted inside
     /// Evo's own window (Stage 3 web surfaces).
     OpenBrowser,
     /// Merge: declare two works one work (a confirmed proposal).
@@ -102,7 +102,7 @@ pub fn work_section(
     restore_note: Option<&str>,
     search_query: &mut String,
     merge_proposals: &[(String, String, String, String, usize)],
-    active_room: Option<&str>,
+    active_pod: Option<&str>,
 ) -> Option<WorkAction> {
     let mut restore_requested = None;
     if works.is_empty() {
@@ -116,22 +116,22 @@ pub fn work_section(
             ui::eyebrow(ui, "Your work");
             ui::display(ui, "Continue where you left off");
 
-            // The active room strip: entering made a place; this is how
+            // The active pod strip: entering made a place; this is how
             // the person leaves it (or notices where they are).
-            if let Some(active) = active_room {
+            if let Some(active) = active_pod {
                 ui::gap(ui, theme::S2);
                 let mut leave_requested = false;
                 let mut browser_requested = false;
                 ui.horizontal(|ui| {
                     ui.label("\u{25CF}");
                     ui.strong(format!("In: {active}"));
-                    if ui.small_button("Leave room").clicked() {
+                    if ui.small_button("Leave pod").clicked() {
                         leave_requested = true;
                     }
                     if ui.small_button("Browser").clicked() {
                         browser_requested = true;
                     }
-                    ui.weak("  \u{2318}\u{21E7}E cycles rooms");
+                    ui.weak("  \u{2318}\u{21E7}E cycles pods");
                 });
                 if leave_requested {
                     restore_requested = Some(WorkAction::Leave);
@@ -301,7 +301,7 @@ fn work_card(
 
             // The primary action
             ui::gap(ui, theme::S3);
-            if ui.button("Enter this room \u{2192}").clicked() {
+            if ui.button("Enter this pod \u{2192}").clicked() {
                 *restore_requested = Some(WorkAction::Continue(index));
             }
 

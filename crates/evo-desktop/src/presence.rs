@@ -1,4 +1,4 @@
-//! Evo's presence outside its window: the menu-bar room switcher and the
+//! Evo's presence outside its window: the menu-bar pod switcher and the
 //! global cycle hotkey.
 //!
 //! Switching between live works must be one action from anywhere (the
@@ -6,10 +6,10 @@
 //! window #10). Two surfaces:
 //!
 //! * a **menu-bar item** (NSStatusItem) listing the works by recency —
-//!   the current room marked, click to enter/switch, Leave, Open Evo;
-//! * a **global hotkey** (⌘⇧E) cycling rooms by recency.
+//!   the current pod marked, click to enter/switch, Leave, Open Evo;
+//! * a **global hotkey** (⌘⇧E) cycling pods by recency.
 //!
-//! Both push [`RoomCommand`]s into a channel the app drains in its logic
+//! Both push [`PodCommand`]s into a channel the app drains in its logic
 //! tick — no UI state is touched from the platform side.
 //!
 //! The menu item actions arrive through a small Objective-C target class
@@ -19,16 +19,16 @@
 //!
 //! Commands do not queue behind the app's frame loop: Evo's window can be
 //! hidden (close hides, never dies), and a hidden window paints no
-//! frames. The actions execute the shared [`RoomRuntime`] synchronously
-//! on the main thread instead — the room is desktop state, and the
+//! frames. The actions execute the shared [`PodHost`] synchronously
+//! on the main thread instead — the pod is desktop state, and the
 //! desktop never waits for a window.
 
-use crate::rooms::{RoomCommand, RoomRuntime, SharedRooms};
+use crate::pods::SharedPods;
 
 #[cfg(target_os = "macos")]
 mod imp {
-    use super::RoomPresence;
-    use crate::rooms::{RoomCommand, RoomRuntime, SharedRooms};
+    use super::PodPresence;
+    use crate::pods::{PodCommand, PodHost, SharedPods};
     use std::os::raw::{c_char, c_void};
     use std::ptr;
     use std::sync::{Arc, Mutex};
@@ -142,28 +142,42 @@ mod imp {
 
     /// NSVariableStatusItemLength = -1.
     const NS_VARIABLE_STATUS_ITEM_LENGTH: f64 = -1.0;
-    /// NSControlStateValueOn = 1 (the checkmark for the active room).
+    /// NSControlStateValueOn = 1 (the checkmark for the active pod).
     const NS_STATE_ON: isize = 1;
 
-    /// Menu item tags: 0..n = enter room n; n+10 = Leave; n+11 = Open.
+    /// Menu item tags: 0..n = enter pod n; n+10 = Leave; n+11 = Open.
     const TAG_LEAVE: isize = 10_000;
     const TAG_OPEN: isize = 10_001;
     const TAG_CYCLE: isize = 10_002;
+    const TAG_BAR: isize = 10_004;
+    /// One-shot flag: ⌥Space asked for the Pod Bar; the app's frame loop
+    /// drains it (it owns egui state).
+    static mut BAR_TOGGLE_REQUESTED: bool = false;
+    /// Drains the toggle request. Called from the app's frame loop.
+    pub fn take_bar_toggle() -> bool {
+        unsafe {
+            let flag = std::ptr::read_volatile(std::ptr::addr_of!(BAR_TOGGLE_REQUESTED));
+            if flag {
+                std::ptr::write_volatile(std::ptr::addr_of_mut!(BAR_TOGGLE_REQUESTED), false);
+            }
+            flag
+        }
+    }
 
-    /// The shared room state the actions execute directly (main thread,
+    /// The shared pod state the actions execute directly (main thread,
     /// synchronous — the desktop never waits for a window to paint).
-    static mut COMMAND_RUNTIME: Option<Arc<Mutex<RoomRuntime>>> = None;
-    /// The egui context: a room transition the app must show (notes,
+    static mut COMMAND_RUNTIME: Option<Arc<Mutex<PodHost>>> = None;
+    /// The egui context: a pod transition the app must show (notes,
     /// strip, menu dot) also wakes its frame loop when it can.
     static mut COMMAND_CONTEXT: Option<egui::Context> = None;
-    static mut MENU_MAX_ROOMS: usize = 0;
+    static mut MENU_MAX_PODS: usize = 0;
 
-    /// Runs a command: the room directly through the shared runtime; the
+    /// Runs a command: the pod directly through the shared runtime; the
     /// window-showing command through AppKit (a hidden window paints no
     /// frames, so viewport commands queued for a frame would never run).
-    fn run_command(command: RoomCommand) {
+    fn run_command(command: PodCommand) {
         unsafe {
-            if let RoomCommand::Open = command {
+            if let PodCommand::Open = command {
                 show_main_window();
                 // Cloned through a reference to the static: a bitwise copy
                 // out of it (read_volatile of Option<Arc<_>>) skips the
@@ -179,13 +193,25 @@ mod imp {
                 }
                 return;
             }
+            if let PodCommand::ToggleBar = command {
+                // The bar paints with egui frames: show the window and set
+                // the request flag the app's loop drains once per frame.
+                show_main_window();
+                std::ptr::write_volatile(std::ptr::addr_of_mut!(BAR_TOGGLE_REQUESTED), true);
+                let context = (*std::ptr::addr_of!(COMMAND_CONTEXT)).clone();
+                if let Some(ctx) = context {
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Visible(true));
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
+                }
+                return;
+            }
             let runtime = (*std::ptr::addr_of!(COMMAND_RUNTIME)).clone();
             if let Some(runtime) = runtime {
                 if let Ok(mut runtime) = runtime.lock() {
                     runtime.execute(command);
                 }
             }
-            // No repaint request from here: the room has already changed
+            // No repaint request from here: the pod has already changed
             // on the desktop, and requesting a repaint from inside the
             // menu tracking session can dispatch an egui frame
             // reentrantly into AppKit's run loop — eframe is not
@@ -198,15 +224,17 @@ mod imp {
     extern "C" fn menu_action(this: Id, _cmd: Sel, sender: Id) {
         unsafe {
             let tag = msg_send_isize(sender, sel(TAG_SEL));
-            let max_rooms = std::ptr::read_volatile(std::ptr::addr_of!(MENU_MAX_ROOMS));
-            let command = if tag >= 0 && (tag as usize) < max_rooms {
-                RoomCommand::Enter(tag as usize)
+            let max_pods = std::ptr::read_volatile(std::ptr::addr_of!(MENU_MAX_PODS));
+            let command = if tag >= 0 && (tag as usize) < max_pods {
+                PodCommand::Enter(tag as usize)
             } else if tag == TAG_LEAVE {
-                RoomCommand::Leave
+                PodCommand::Leave
             } else if tag == TAG_OPEN {
-                RoomCommand::Open
+                PodCommand::Open
             } else if tag == TAG_CYCLE {
-                RoomCommand::Cycle
+                PodCommand::Cycle
+            } else if tag == TAG_BAR {
+                PodCommand::ToggleBar
             } else {
                 return;
             };
@@ -232,8 +260,13 @@ mod imp {
                 ptr::null_mut(),
                 &mut hot_key_id as *mut _ as *mut c_void,
             );
-            if status == NO_ERR && hot_key_id[0] == 1 {
-                run_command(RoomCommand::Cycle);
+            if status == NO_ERR {
+                match hot_key_id[0] {
+                    1 => run_command(PodCommand::Cycle),
+                    2..=10 => run_command(PodCommand::Enter((hot_key_id[0] as usize) - 2)),
+                    11 => run_command(PodCommand::ToggleBar),
+                    _ => {}
+                }
             }
             let _ = user_data;
             NO_ERR
@@ -279,11 +312,11 @@ mod imp {
     }
 
     impl Presence {
-        pub fn new(runtime: SharedRooms, context: egui::Context) -> Option<Self> {
+        pub fn new(runtime: SharedPods, context: egui::Context) -> Option<Self> {
             unsafe {
                 std::ptr::write_volatile(std::ptr::addr_of_mut!(COMMAND_RUNTIME), Some(runtime));
                 std::ptr::write_volatile(std::ptr::addr_of_mut!(COMMAND_CONTEXT), Some(context));
-                std::ptr::write_volatile(std::ptr::addr_of_mut!(MENU_MAX_ROOMS), 0);
+                std::ptr::write_volatile(std::ptr::addr_of_mut!(MENU_MAX_PODS), 0);
 
                 // The action target class.
                 let Some(class) = ensure_target_class() else {
@@ -318,7 +351,7 @@ mod imp {
                     let _ = msg_send_id2(button, sel(SET_TITLE_SEL), ns_string("Evo"));
                 }
 
-                // The menu (items rebuilt in update_rooms).
+                // The menu (items rebuilt in update_pods).
                 let menu: Id = msg_send_id(class_ns_menu() as Id, sel(NEW_SEL));
                 if menu.is_null() {
                     eprintln!("EVO-PRESENCE: NSMenu new null");
@@ -328,7 +361,7 @@ mod imp {
                 // left-click opens it only through NSStatusItem.menu.
                 let _ = msg_send_id2(item, sel(SET_MENU_SEL), menu);
 
-                // The global hotkey: ⌘⇧E cycles rooms.
+                // The global hotkey: ⌘⇧E cycles pods.
                 let mut hot_key: EventHotKeyRef = ptr::null_mut();
                 let status = RegisterEventHotKey(
                     KVK_ANSI_E,
@@ -351,6 +384,30 @@ mod imp {
                         &mut handler,
                     );
                 }
+                // Direct pod hotkeys: ⌥1..⌥9 (ids [2..10]) and the Pod Bar
+                // toggle ⌥Space (id [11]).
+                const OPTION_KEY: u32 = 0x0800;
+                let digit_keycodes: [u32; 9] = [0x12, 0x13, 0x14, 0x15, 0x17, 0x16, 0x1A, 0x1C, 0x19];
+                for (n, keycode) in digit_keycodes.iter().enumerate() {
+                    let mut digit_hot_key: EventHotKeyRef = ptr::null_mut();
+                    let _ = RegisterEventHotKey(
+                        *keycode,
+                        OPTION_KEY,
+                        [(n as u32) + 2, 0],
+                        GetApplicationEventTarget(),
+                        0,
+                        &mut digit_hot_key,
+                    );
+                }
+                let mut bar_hot_key: EventHotKeyRef = ptr::null_mut();
+                let _ = RegisterEventHotKey(
+                    0x31, // kVK_Space
+                    OPTION_KEY,
+                    [11, 0],
+                    GetApplicationEventTarget(),
+                    0,
+                    &mut bar_hot_key,
+                );
 
                 // Raw objc msgSend returns unretained references; AppKit
                 // does NOT own the status item (we do), so an explicit
@@ -368,9 +425,9 @@ mod imp {
             }
         }
 
-        /// Rebuilds the menu: rooms by recency (the active one checked),
+        /// Rebuilds the menu: pods by recency (the active one checked),
         /// Leave, Open. Called from the app's logic tick.
-        pub fn update_rooms(&mut self, rooms: &[String], active: Option<String>) {
+        pub fn update_pods(&mut self, pods: &[String], active: Option<String>) {
             unsafe {
                 // Clear the menu by removing all items.
                 loop {
@@ -380,14 +437,14 @@ mod imp {
                     }
                     let _ = msg_send_isize1(self._menu, sel(REMOVE_ITEM_AT_INDEX_SEL), count - 1);
                 }
-                std::ptr::write_volatile(std::ptr::addr_of_mut!(MENU_MAX_ROOMS), rooms.len());
+                std::ptr::write_volatile(std::ptr::addr_of_mut!(MENU_MAX_PODS), pods.len());
 
                 let mut added_any = false;
-                for (index, room) in rooms.iter().take(8).enumerate() {
-                    let title = if Some(room) == active.as_ref() {
-                        format!("● {room}")
+                for (index, pod_name) in pods.iter().take(8).enumerate() {
+                    let title = if Some(pod_name) == active.as_ref() {
+                        format!("● {pod_name}")
                     } else {
-                        format!("  {room}")
+                        format!("  {pod_name}")
                     };
                     let item = msg_send_id4(
                         self._menu,
@@ -422,9 +479,10 @@ mod imp {
                     }
                 };
                 if active.is_some() {
-                    add_simple("Leave room", TAG_LEAVE);
+                    add_simple("Leave pod", TAG_LEAVE);
                 }
-                add_simple("Next room  ⌘⇧E", TAG_CYCLE);
+                add_simple("Next pod  ⌘⇧E", TAG_CYCLE);
+                add_simple("Pod Bar  ⌥Space", TAG_BAR);
                 add_simple("Open Evo", TAG_OPEN);
             }
         }
@@ -541,27 +599,48 @@ mod imp {
 
 /// The platform presence: menu-bar item + global hotkey. None where
 /// unsupported (non-macOS), reported honestly.
-pub struct RoomPresence {
+pub struct PodPresence {
     #[cfg(target_os = "macos")]
     inner: Option<imp::Presence>,
 }
 
-impl RoomPresence {
-    pub fn new(runtime: SharedRooms, context: egui::Context) -> Self {
-        Self {
-            #[cfg(target_os = "macos")]
-            inner: imp::Presence::new(runtime, context),
-        }
-    }
-
-    pub fn update_rooms(&mut self, rooms: &[String], active: Option<String>) {
+impl PodPresence {
+    pub fn new(runtime: SharedPods, context: egui::Context) -> Self {
         #[cfg(target_os = "macos")]
-        if let Some(inner) = &mut self.inner {
-            inner.update_rooms(rooms, active);
+        {
+            Self {
+                inner: imp::Presence::new(runtime, context),
+            }
         }
         #[cfg(not(target_os = "macos"))]
         {
-            let _ = (rooms, active);
+            let _ = (runtime, context);
+            Self {}
         }
     }
+
+    pub fn update_pods(&mut self, pods: &[String], active: Option<String>) {
+        #[cfg(target_os = "macos")]
+        if let Some(inner) = &mut self.inner {
+            inner.update_pods(pods, active);
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            let _ = (pods, active);
+        }
+    }
+}
+
+/// Reads and clears the ⌥Space Pod-Bar toggle request the hotkey/menubar
+/// action set. A free function at module level so the desktop crate works
+/// off-macOS too (there is never a request there).
+#[cfg(target_os = "macos")]
+pub fn take_bar_toggle() -> bool {
+    imp::take_bar_toggle()
+}
+
+/// Off-macOS: nothing can ever have requested the bar.
+#[cfg(not(target_os = "macos"))]
+pub fn take_bar_toggle() -> bool {
+    false
 }

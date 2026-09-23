@@ -1061,6 +1061,7 @@ dependencies = [
  "evo-execution",
  "evo-ledger",
  "evo-observation",
+ "evo-pods",
  "evo-restoration",
  "evo-storage",
  "evo-threads",
@@ -1097,6 +1098,13 @@ name = "evo-observation"
 version = "0.1.0"
 dependencies = [
  "uuid",
+]
+
+[[package]]
+name = "evo-pods"
+version = "0.1.0"
+dependencies = [
+ "evo-threads",
 ]
 
 [[package]]

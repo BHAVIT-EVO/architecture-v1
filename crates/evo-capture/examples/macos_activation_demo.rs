@@ -1,16 +1,25 @@
-use evo_capture::{CaptureEngine, MacOSEventSource, MacOSAdapter, MacOSSignal};
-use evo_observation::observation_schema::ObservationSchema;
-use evo_observation::provenance::ObservationSource;
-
-use std::cell::RefCell;
-use std::rc::Rc;
 
 #[cfg(target_os = "macos")]
-#[link(name = "CoreFoundation", kind = "framework")]
+mod platform_ref {
+    #![allow(unused_imports, dead_code)]
+    use evo_capture::{CaptureEngine, MacOSEventSource, MacOSAdapter, MacOSSignal};
+    use evo_observation::observation_schema::ObservationSchema;
+    use evo_observation::provenance::ObservationSource;
+
+    use std::cell::RefCell;
+    use std::rc::Rc;
+}
+
+#[cfg(target_os = "macos")]
+use platform_ref::*;
+
+#[cfg(target_os = "macos")]
+#[cfg(target_os = "macos")]
 unsafe extern "C" {
     fn CFRunLoopRun();
 }
 
+#[cfg(target_os = "macos")]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let adapter = MacOSAdapter::new(ObservationSource::new("macos_event_source")?);
     let schema = ObservationSchema::window_focus_gained_v1();
@@ -65,4 +74,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
+}
+
+/// Off-macOS this target does not exist: it exercises macOS APIs directly.
+#[cfg(not(target_os = "macos"))]
+fn main() {
+    eprintln!("macos_activation_demo is a macOS diagnostic target; nothing to do on this platform.");
 }
