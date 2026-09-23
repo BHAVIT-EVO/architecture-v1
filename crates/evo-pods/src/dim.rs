@@ -114,6 +114,10 @@ pub enum PlanError {
 ///   pre-filter; the plan itself won't act on apps it wasn't shown except
 ///   through belonging evidence members).
 /// - `protected` pids are never touched, even hidden=false & foreign.
+/// `screen` is the pod's stage (the main screen's usable frame): recipe
+/// ratios materialize THERE — once, per enter. Materializing a ratio per
+/// window's own rect instead (an earlier mistake) staged windows onto
+/// themselves rather than onto the stage.
 pub fn plan_activation(
     surfaces: &PodSurfaces,
     recipe: Option<&StageRecipe>,
@@ -121,6 +125,7 @@ pub fn plan_activation(
     apps: &[PodApp],
     protected: &[i32],
     mode: ContainMode,
+    screen: Option<&Frame>,
 ) -> ActivationPlan {
     let mut plan = ActivationPlan::default();
 
@@ -145,9 +150,11 @@ pub fn plan_activation(
         }
         pod_pid.insert(w.pid);
         let resource = resource_of(w, surfaces);
-        let frame = recipe.and_then(|r| match &resource {
-            Some(res) => r.frame_for(res, &w.frame).map(|f| fit(f, &w.frame)),
-            None => None,
+        let frame = recipe.and_then(|r| match (&resource, screen) {
+            (Some(res), Some(screen)) if screen.usable() => {
+                r.frame_for(res, screen).map(|f| fit(f, &w.frame))
+            }
+            _ => None,
         });
         own.push(Arrangement {
             pid: w.pid,

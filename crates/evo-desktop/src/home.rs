@@ -117,21 +117,34 @@ pub fn work_section(
             ui::display(ui, "Continue where you left off");
 
             // The active pod strip: entering made a place; this is how
-            // the person leaves it (or notices where they are).
+            // the person leaves it (or notices where they are). The name
+            // can be a long page title; the strip truncates it honestly.
             if let Some(active) = active_pod {
                 ui::gap(ui, theme::S2);
                 let mut leave_requested = false;
                 let mut browser_requested = false;
+                let short: String = {
+                    let mut chars = active.chars();
+                    let head: String = chars.by_ref().take(48).collect();
+                    if chars.next().is_some() {
+                        format!("{head}\u{2026}")
+                    } else {
+                        head
+                    }
+                };
                 ui.horizontal(|ui| {
                     ui.label("\u{25CF}");
-                    ui.strong(format!("In: {active}"));
+                    ui.strong(format!("In: {short}"));
+                    ui.weak("\u{00B7}");
                     if ui.small_button("Leave pod").clicked() {
                         leave_requested = true;
                     }
-                    if ui.small_button("Browser").clicked() {
+                    ui.weak("\u{00B7}");
+                    if ui.small_button("Pages").clicked() {
                         browser_requested = true;
                     }
-                    ui.weak("  \u{2318}\u{21E7}E cycles pods");
+                    ui.weak("\u{00B7}");
+                    ui.weak("\u{2318}\u{21E7}E cycles pods");
                 });
                 if leave_requested {
                     restore_requested = Some(WorkAction::Leave);
