@@ -27,6 +27,7 @@ fn enter_arranges_own_windows_veils_foreign_and_books_a_lease() {
         window_with_frame(900, 99, "Evo Home", None, Frame::new(0.0, 0.0, 200.0, 200.0)),
     ];
     let mut rt = runtime_with(surface);
+    rt.set_mode(ContainMode::Dim); // this test proves the veil vocabulary
     rt.set_pods(vec![pod_fixture()]);
 
     let note = rt.enter(0, 1000).unwrap();
@@ -92,6 +93,7 @@ fn leave_replays_the_veils_removed_and_frames_restored() {
         window_with_frame(2, 20, "Inbox", None, Frame::new(2.0, 2.0, 300.0, 300.0)),
     ];
     let mut rt = runtime_with(surface);
+    rt.set_mode(ContainMode::Dim); // veil reversal is the claim here
     rt.set_pods(vec![pod_fixture()]);
     rt.enter(0, 1).unwrap();
     let note = rt.leave().unwrap();
@@ -219,4 +221,53 @@ fn badges_cover_contested_and_delta_kinds_in_rank_order() {
     let pod = Pod::from_views(&view, &bundle, "n", "r", 1.0, vec![], Default::default());
     let kinds: Vec<BadgeKind> = pod.badges.iter().map(|b| b.kind).collect();
     assert_eq!(kinds, vec![BadgeKind::DownloadReady, BadgeKind::Contested]);
+}
+
+
+#[test]
+fn stage_enter_resurrects_members_parks_split_windows_hides_aliens_then_leave_returns_exactly() {
+    // The pod-desktop claim end to end (default containment is Stage):
+    // the pod's own parked window comes back first, a split app keeps its
+    // pod window but loses its foreign one singly, an alien app hides
+    // whole — and leaving replays the precise inverse, ending with the
+    // space's window going back into the space.
+    let mut surface = FakeSurface::base();
+    surface.apps = vec![app(1, "Editor", false), app(2, "Browser", false), app(3, "Mail", false)];
+    let mut parked_member = window(1, 10, "main.ts", Some("/repo/main.ts"));
+    parked_member.minimized = true;
+    surface.windows = vec![
+        parked_member,
+        window(2, 40, "api", Some("https://docs.example/api")),
+        window(2, 41, "shopping", None),
+        window(3, 50, "Inbox", None),
+    ];
+    let mut rt = runtime_with(surface);
+    rt.set_pods(vec![pod_fixture()]);
+
+    rt.enter(0, 1).unwrap();
+    let lease = rt.lease().unwrap();
+    assert_eq!(lease.unparked_members, vec![(1, 10)]);
+    assert_eq!(lease.parked_windows, vec![(2, 41)]);
+    assert_eq!(lease.hidden_apps, vec![3]);
+    let log = rt.surface_log();
+    assert!(log.contains(&"unpark:1:10".to_string()), "{log:?}");
+    assert!(log.contains(&"park:2:41".to_string()), "{log:?}");
+    assert!(log.contains(&"hide:3".to_string()), "{log:?}");
+    assert!(
+        !log.contains(&"park:3:50".to_string()),
+        "a hidden app's windows never clutter the Dock: {log:?}"
+    );
+
+    let note = rt.leave().unwrap();
+    assert!(note.contains("Left"));
+    let log = rt.surface_log();
+    assert!(log.contains(&"unhide:3".to_string()), "{log:?}");
+    assert!(log.contains(&"unpark:2:41".to_string()), "{log:?}");
+    let repark = log.iter().rposition(|line| line == "park:1:10").expect("repark missing");
+    let unhide = log.iter().rposition(|line| line == "unhide:3").unwrap();
+    let unpark_foreign = log.iter().rposition(|line| line == "unpark:2:41").unwrap();
+    assert!(
+        repark > unpark_foreign && unpark_foreign > unhide,
+        "reversal order: unhide -> restore -> repark-member last: {log:?}"
+    );
 }

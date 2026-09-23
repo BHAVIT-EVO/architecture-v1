@@ -75,3 +75,13 @@ tail -50 ~/Library/Application\ Support/Evo/logs/evo.log
 - Veil stacking level (dim mode overlays sit at status level; may hover above menus).
 - Hotkey registration order (⌥1–⌥9 ids 2..10, ⌥Space id 11) — first real registration test.
 - `restore_set` URLs feeding the browser; previously `bundle.urls` did not exist (field fixed to `restore_set` during the build — first live hydration test).
+
+## Round 3 — spaces (2026-09-23)
+- [ ] Default containment is Stage: entering a pod makes the desktop show
+      ONLY that work; other apps' windows disappear without piling in the
+      Dock (their apps hide). A Chrome used by two pods keeps the pod's
+      window visible and parks only its alien window.
+- [ ] The pod's own minimized window comes back when entering (note says
+      "N remembered"), and leaving re-parks it (desktop returns exactly).
+- [ ] Pod bar: panel is opaque (no wallpaper bleed-through); with >4 pods
+      the strip scrolls sideways; active card shows the stage receipts.

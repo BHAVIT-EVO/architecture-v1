@@ -152,6 +152,66 @@ fn hide_mode_hides_only_foreign_regular_apps() {
     assert_eq!(plan.hide_apps, vec![2]);
 }
 
+#[test]
+fn stage_hides_alien_apps_and_parks_only_split_app_windows() {
+    // The space semantic: an app witnessed both inside and outside the
+    // work loses only its foreign windows (the platform's one per-window
+    // verb); an app with no witness in the work hides whole, so its
+    // windows never pile into the Dock.
+    let surfaces = PodSurfaces {
+        urls: vec!["https://tab.example".into()],
+        documents: vec![],
+        titles: vec![],
+        apps: vec![],
+        resource_apps: Default::default(),
+    };
+    let screen = rt(0.0, 0.0, 1200.0, 800.0);
+    let apps = vec![fake::app(2, "Browser", false), fake::app(3, "Mail", false)];
+    let pod_page = fake::window(2, 40, "Tab", Some("https://tab.example"));
+    let foreign_same_app = fake::window(2, 41, "Other tab", None);
+    let alien = fake::window(3, 50, "Inbox", None);
+    let plan = dim::plan_activation(
+        &surfaces, None, &[pod_page, foreign_same_app, alien], &apps, &[], ContainMode::Stage, Some(&screen));
+    assert_eq!(plan.arrange.len(), 1, "only the witnessed page stages");
+    assert_eq!(plan.park, vec![(2, 41)], "the split app's foreign window parks singly");
+    assert_eq!(plan.hide_apps, vec![3], "the alien app hides whole — no Dock clutter");
+    assert!(plan.veil.is_empty());
+}
+
+#[test]
+fn stage_resurrects_the_pods_own_minimized_windows() {
+    let pod = pod_fixture();
+    let screen = rt(0.0, 0.0, 1200.0, 800.0);
+    let apps = vec![fake::app(1, "Editor", false)];
+    let mut parked_member = fake::window(1, 10, "main.ts", Some("/repo/main.ts"));
+    parked_member.minimized = true;
+    let plan = dim::plan_activation(
+        &pod.surfaces, None, &[parked_member], &apps, &[], ContainMode::Stage, Some(&screen));
+    assert_eq!(plan.unpark_members, vec![(1, 10)], "the space remembers its own parked window");
+    assert_eq!(plan.arrange.len(), 1);
+    assert!(plan.park.is_empty() && plan.hide_apps.is_empty(), "nothing foreign exists here");
+}
+
+#[test]
+fn stage_is_the_default_containment() {
+    assert_eq!(PodConfig::default().contain, ContainMode::Stage);
+}
+
+#[test]
+fn reversal_reparks_members_last_after_frames_restore() {
+    let mut lease = PodLease::new("w", 1);
+    lease.parked_windows.push((2, 20));
+    lease.moved_windows.push((1, 10, rt(1.0, 1.0, 100.0, 100.0)));
+    lease.unparked_members.push((1, 10));
+    let steps = lease.reversal();
+    assert!(matches!(steps[0], LeaseStep::UnparkWindow { pid: 2, .. }));
+    assert!(matches!(steps[1], LeaseStep::MoveWindowBack { pid: 1, .. }));
+    assert!(
+        matches!(steps[steps.len() - 1], LeaseStep::ReparkWindow { pid: 1, window_id: 10 }),
+        "the space's windows return into the space LAST (moves need visibility)"
+    );
+}
+
 // ---- leases -----------------------------------------------------------
 
 #[test]
