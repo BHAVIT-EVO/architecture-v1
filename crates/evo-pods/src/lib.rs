@@ -37,5 +37,5 @@ pub mod surface;
 pub mod wrapper;
 
 pub use config::ContainMode;
-pub use pod::{Pod, PodBadge, PodColor, PodId, PodState, PodSurfaces};
+pub use pod::{Pod, PodBadge, PodClaim, PodColor, PodId, PodResource, PodState, PodSurfaces};
 pub use surface::{CommandSpec, Frame, PodApp, PodSurface, PodWindow};

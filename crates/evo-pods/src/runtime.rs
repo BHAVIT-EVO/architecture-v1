@@ -11,7 +11,7 @@
 use crate::config::{ContainMode, PodConfig};
 use crate::dim::{self, ActivationPlan};
 use crate::lease::{LeaseStep, PodLease};
-use crate::pod::{Pod, PodId, PodState};
+use crate::pod::{Pod, PodClaim, PodId, PodResource, PodState};
 use crate::policy::InstancePolicy;
 use crate::stage::{self, DisplaySignature, StageRecipe};
 use crate::suggest::{self, PodSuggestion};
@@ -75,6 +75,9 @@ pub struct PodRuntime {
     policies: Vec<InstancePolicy>,
     /// Pids never touched (Evo's own processes).
     protected: Vec<i32>,
+    /// Add-to-Pod truth per pod id: claims + resources. Re-applied to
+    /// every engine refresh so nothing the person added ever un-owns.
+    addons: BTreeMap<u64, (Vec<PodResource>, Vec<PodClaim>)>,
 }
 
 impl PodRuntime {
@@ -89,6 +92,7 @@ impl PodRuntime {
             current_signature: None,
             policies: crate::policy::default_policies(),
             protected,
+            addons: BTreeMap::new(),
         }
     }
 
@@ -110,6 +114,7 @@ impl PodRuntime {
     pub fn set_pods(&mut self, pods: Vec<Pod>) {
         let active_id = self.active.and_then(|i| self.pods.get(i).map(|p| p.id));
         self.pods = pods;
+        self.apply_addons();
         self.active = active_id.and_then(|id| self.pods.iter().position(|p| p.id == id));
         if self.active.is_none() && self.lease.is_some() {
             let stale = self.lease.take();
@@ -292,6 +297,163 @@ impl PodRuntime {
             }
         }
         Ok(())
+    }
+
+    // ---- add to pod ----------------------------------------------------
+
+    /// The desktop's live windows of regular apps (the picker's "open
+    /// windows now" inventory). Read-only; arranging is `enter`'s job.
+    pub fn open_windows(&mut self) -> Vec<crate::surface::PodWindow> {
+        self.gather_inventory()
+            .map(|(_, windows, _)| windows)
+            .unwrap_or_default()
+    }
+
+    /// Claim a witnessed, still-open window into a pod: its document if
+    /// the OS reports one, else its title. The merge is dedupe-safe and
+    /// the claim is remembered in the addon ledger so an engine refresh
+    /// never silently un-owns what the person said was the work's.
+    pub fn claim_window(
+        &mut self,
+        pod_index: usize,
+        window: &crate::surface::PodWindow,
+    ) -> Result<Note, PodError> {
+        if pod_index >= self.pods.len() {
+            return Err(PodError::NoSuchPod);
+        }
+        let claim = match (&window.ax_document, window.title.trim()) {
+            (Some(doc), _) if !doc.trim().is_empty() => PodClaim::Document(doc.trim().to_string()),
+            (_, title) if !title.is_empty() => PodClaim::Title(title.to_string()),
+            _ => {
+                return Ok(format!(
+                    "That window exposes nothing to claim (pid {}).",
+                    window.pid
+                ))
+            }
+        };
+        let id = self.pods[pod_index].id;
+        let pod = &mut self.pods[pod_index];
+        if pod.claims.contains(&claim) {
+            return Ok(format!(
+                "Already part of \\\"{}\\\": going nowhere needed.",
+                pod.name
+            ));
+        }
+        pod.claims.push(claim.clone());
+        let changed = pod.surfaces.absorb_claim(&claim);
+        let entry = self.addons.entry(id.0).or_default();
+        if !entry.1.contains(&claim) {
+            entry.1.push(claim.clone());
+        }
+        let name = self.pods[pod_index].name.clone();
+        Ok(if changed {
+            format!(
+                "Added to \\\"{}\\\" — {} is now the work's.",
+                name,
+                claim.subject()
+            )
+        } else {
+            format!("\\\"{}\\\" already knew {}.", name, claim.subject())
+        })
+    }
+
+    /// Save an app/file/folder/URL so the pod can re-open it at entry or
+    /// on demand. Dedupe-safe (same kind + same value = one line).
+    pub fn add_resource(&mut self, pod_index: usize, resource: PodResource) -> Result<Note, PodError> {
+        if pod_index >= self.pods.len() {
+            return Err(PodError::NoSuchPod);
+        }
+        if resource.value().trim().is_empty() {
+            return Ok("Nothing to add — an empty name opens nothing.".to_string());
+        }
+        let id = self.pods[pod_index].id;
+        let pod = &mut self.pods[pod_index];
+        if pod.resources.contains(&resource) {
+            return Ok(format!(
+                "\\\"{}\\\" already has this {}.",
+                pod.name,
+                resource.kind_label()
+            ));
+        }
+        pod.resources.push(resource.clone());
+        let entry = self.addons.entry(id.0).or_default();
+        if !entry.0.contains(&resource) {
+            entry.0.push(resource.clone());
+        }
+        Ok(format!(
+            "Saved to \\\"{}\\\": {} {} — one tap re-opens it.",
+            self.pods[pod_index].name,
+            resource.kind_label(),
+            resource.value()
+        ))
+    }
+
+    /// Open one saved resource now (/usr/bin/open; the OS picks handlers).
+    pub fn open_resource(&mut self, pod_index: usize, resource_index: usize) -> Result<Note, PodError> {
+        let Some(pod) = self.pods.get(pod_index) else {
+            return Err(PodError::NoSuchPod);
+        };
+        let Some(resource) = pod.resources.get(resource_index).cloned() else {
+            return Err(PodError::NoSuchPod);
+        };
+        let name = pod.name.clone();
+        match self.surface.run(resource.open_spec()) {
+            Ok(()) => Ok(format!(
+                "Opened {} for \\\"{}\\\".",
+                resource.value(),
+                name
+            )),
+            Err(err) => Ok(format!("Could not open {}: {err}", resource.value())),
+        }
+    }
+
+    /// User-addon export/import (claims + resources per pod).
+    pub fn export_addons(&self) -> String {
+        let pairs: Vec<(String, Vec<PodResource>, Vec<PodClaim>)> = self
+            .addons
+            .iter()
+            .filter(|(_, (r, c))| !r.is_empty() || !c.is_empty())
+            .map(|(id, (r, c))| (format!("pod-{id}"), r.clone(), c.clone()))
+            .collect();
+        crate::pod::addon_store::export(&pairs)
+    }
+
+    pub fn import_addons(&mut self, text: &str) {
+        for (id, resources, claims) in crate::pod::addon_store::import(text) {
+            let entry = self.addons.entry(id).or_default();
+            for resource in resources {
+                if !entry.0.contains(&resource) {
+                    entry.0.push(resource);
+                }
+            }
+            for claim in claims {
+                if !entry.1.contains(&claim) {
+                    entry.1.push(claim);
+                }
+            }
+        }
+        self.apply_addons();
+    }
+
+    /// Re-attach user-owned claims/resources after an engine refresh.
+    /// Idempotent: surfaces absorb claims dedupe-safe, resources dedupe by
+    /// kind + value.
+    fn apply_addons(&mut self) {
+        for pod in &mut self.pods {
+            if let Some((resources, claims)) = self.addons.get(&pod.id.0).cloned() {
+                for resource in resources {
+                    if !pod.resources.contains(&resource) {
+                        pod.resources.push(resource);
+                    }
+                }
+                for claim in claims {
+                    if !pod.claims.contains(&claim) {
+                        pod.claims.push(claim.clone());
+                    }
+                    pod.surfaces.absorb_claim(&claim);
+                }
+            }
+        }
     }
 
     // ---- learning & gestures ---------------------------------------------
