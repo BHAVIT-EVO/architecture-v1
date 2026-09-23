@@ -1132,7 +1132,38 @@ mod imp {
     pub(super) fn prompt_for_accessibility_permission() {}
 
     pub(super) fn desktop_shell_pid() -> Option<i32> {
-        None
+        // Same contract as the macOS side: env declaration first, then the
+        // storage-root pid file — the reads are platform-neutral.
+        if let Some(pid) = std::env::var("EVO_DESKTOP_PID")
+            .ok()
+            .and_then(|value| value.trim().parse::<i32>().ok())
+            .filter(|pid| *pid > 0)
+        {
+            return Some(pid);
+        }
+        let home = std::env::var("HOME").ok()?;
+        let storage_root = std::path::Path::new(&home)
+            .join("Library/Application Support/evo/storage");
+        pid_from_storage_root(&storage_root)
+    }
+
+    /// The pid-file read, over an explicit storage root (testable without
+    /// the machine's live state); liveness is checked with `kill -0`,
+    /// which is portable, exactly as on the macOS side.
+    pub(crate) fn pid_from_storage_root(storage_root: &std::path::Path) -> Option<i32> {
+        let contents = std::fs::read_to_string(storage_root.join("desktop.pid")).ok()?;
+        contents
+            .trim()
+            .parse::<i32>()
+            .ok()
+            .filter(|pid| *pid > 0)
+            .filter(|pid| {
+                std::process::Command::new("kill")
+                    .args(["-0", &pid.to_string()])
+                    .status()
+                    .map(|status| status.success())
+                    .unwrap_or(false)
+            })
     }
 
     pub struct MacOSEventSource;

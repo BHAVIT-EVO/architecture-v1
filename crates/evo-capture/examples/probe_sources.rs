@@ -5,10 +5,20 @@
 //! Usage:
 //!   cargo run -p evo-capture --example probe_sources
 
-use evo_capture::{FSEventsWatcher, MacOSEventSource, MacOSSignal, MacOSURLPoller};
-use std::sync::mpsc::channel;
-use std::time::Duration;
 
+#[cfg(target_os = "macos")]
+mod platform_ref {
+    #![allow(unused_imports, dead_code)]
+    use evo_capture::{FSEventsWatcher, MacOSEventSource, MacOSSignal, MacOSURLPoller};
+    use std::sync::mpsc::channel;
+    use std::time::Duration;
+}
+
+#[cfg(target_os = "macos")]
+use platform_ref::*;
+
+
+#[cfg(target_os = "macos")]
 fn main() {
     let (signal_sender, signal_receiver) = channel::<MacOSSignal>();
 
@@ -69,4 +79,10 @@ fn main() {
     println!("waiting for worker");
     let _ = worker.join();
     println!("probe done");
+}
+
+/// Off-macOS this target does not exist: it exercises macOS APIs directly.
+#[cfg(not(target_os = "macos"))]
+fn main() {
+    eprintln!("probe_sources is a macOS diagnostic target; nothing to do on this platform.");
 }

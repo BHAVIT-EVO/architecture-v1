@@ -59,8 +59,6 @@ pub mod macos;
 pub mod preflight;
 pub mod resource;
 pub mod restore;
-pub mod room;
-pub mod room_macos;
 pub mod selection;
 
 pub use binding::{

@@ -471,6 +471,7 @@ mod tests {
     /// permission error; with it, the full lifecycle must be clean. Either
     /// way, this test proves the tap never crashes the process.
     #[test]
+    #[cfg(target_os = "macos")]
     fn counter_lifecycle_is_clean_on_a_plain_thread() {
         use std::sync::mpsc;
         let (tx, rx) = mpsc::channel();

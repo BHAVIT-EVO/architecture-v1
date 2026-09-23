@@ -9,15 +9,3 @@ evo-artifact = { path = "../evo-artifact" }
 evo-ledger = { path = "../evo-ledger" }
 evo-restoration = { path = "../evo-restoration" }
 evo-workspace = { path = "../evo-workspace" }
-
-[[bin]]
-name = "room_probe"
-path = "src/bin/room_probe.rs"
-
-[[bin]]
-name = "room_roundtrip"
-path = "src/bin/room_roundtrip.rs"
-
-[[bin]]
-name = "room_trace"
-path = "src/bin/room_trace.rs"

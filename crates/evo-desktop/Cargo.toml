@@ -13,6 +13,7 @@ evo-threads = { path = "../evo-threads" }
 evo-ledger = { path = "../evo-ledger" }
 evo-engagement = { path = "../evo-engagement" }
 evo-execution = { path = "../evo-execution" }
+evo-pods = { path = "../evo-pods" }
 evo-restoration = { path = "../evo-restoration" }
 evo-storage = { path = "../evo-storage" }
 evo-workspace = { path = "../evo-workspace" }

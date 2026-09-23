@@ -5,38 +5,57 @@
 //! Usage:
 //!   cargo run -p evo-capture --example probe_url
 
-use std::ffi::c_char;
-use std::os::raw::c_void;
-use std::ptr;
 
+#[cfg(target_os = "macos")]
+mod platform_ref {
+    #![allow(unused_imports, dead_code)]
+    use std::ffi::c_char;
+    use std::os::raw::c_void;
+    use std::ptr;
+}
+
+#[cfg(target_os = "macos")]
+use platform_ref::*;
+
+
+#[cfg(target_os = "macos")]
 type Bool = i8;
+#[cfg(target_os = "macos")]
 type Id = *mut Object;
+#[cfg(target_os = "macos")]
 type Class = *mut objc_class;
+#[cfg(target_os = "macos")]
 type Sel = *mut c_void;
+#[cfg(target_os = "macos")]
 type CFTypeRef = *const c_void;
+#[cfg(target_os = "macos")]
 type CFArrayRef = *const c_void;
+#[cfg(target_os = "macos")]
 type CFStringRef = *const c_void;
+#[cfg(target_os = "macos")]
 type AXUIElementRef = *const c_void;
+#[cfg(target_os = "macos")]
 type AXError = i32;
 
+#[cfg(target_os = "macos")]
 const AX_SUCCESS: AXError = 0;
+#[cfg(target_os = "macos")]
 const CFSTRING_ENCODING_UTF8: u32 = 0x0800_0100;
 
-#[repr(C)]
+#[cfg(target_os = "macos")]
+#[cfg(target_os = "macos")]
 struct Object {
     _priv: [u8; 0],
 }
 
-#[repr(C)]
+#[cfg(target_os = "macos")]
+#[cfg(target_os = "macos")]
 struct objc_class {
     _priv: [u8; 0],
 }
 
-#[link(name = "objc")]
-#[link(name = "Foundation", kind = "framework")]
-#[link(name = "AppKit", kind = "framework")]
-#[link(name = "ApplicationServices", kind = "framework")]
-#[link(name = "CoreFoundation", kind = "framework")]
+#[cfg(target_os = "macos")]
+#[cfg(target_os = "macos")]
 unsafe extern "C" {
     fn objc_getClass(name: *const c_char) -> Class;
     fn objc_msgSend();
@@ -65,19 +84,29 @@ unsafe extern "C" {
     fn CFRelease(cf: CFTypeRef);
 }
 
+#[cfg(target_os = "macos")]
 const AX_FOCUSED_WINDOW: &[u8] = b"AXFocusedWindow\0";
+#[cfg(target_os = "macos")]
 const AX_CHILDREN: &[u8] = b"AXChildren\0";
+#[cfg(target_os = "macos")]
 const AX_CONTENTS: &[u8] = b"AXContents\0";
+#[cfg(target_os = "macos")]
 const AX_ROLE: &[u8] = b"AXRole\0";
+#[cfg(target_os = "macos")]
 const AX_URL: &[u8] = b"AXURL\0";
+#[cfg(target_os = "macos")]
 const AX_TITLE: &[u8] = b"AXTitle\0";
+#[cfg(target_os = "macos")]
 const AX_WEB_AREA_ROLE: &[u8] = b"AXWebArea\0";
+#[cfg(target_os = "macos")]
 const AX_GROUP_ROLE: &[u8] = b"AXGroup\0";
 
+#[cfg(target_os = "macos")]
 fn make_attr(name: &'static [u8]) -> CFStringRef {
     unsafe { CFStringCreateWithCString(ptr::null(), name.as_ptr() as *const c_char, CFSTRING_ENCODING_UTF8) }
 }
 
+#[cfg(target_os = "macos")]
 fn attr(name: &'static [u8]) -> CFStringRef {
     match name {
         AX_FOCUSED_WINDOW => static_attr(AX_FOCUSED_WINDOW),
@@ -90,6 +119,7 @@ fn attr(name: &'static [u8]) -> CFStringRef {
     }
 }
 
+#[cfg(target_os = "macos")]
 fn static_attr(name: &'static [u8]) -> CFStringRef {
     static mut CACHE: [usize; 6] = [0; 6];
     let index = match name {
@@ -115,6 +145,7 @@ fn static_attr(name: &'static [u8]) -> CFStringRef {
     }
 }
 
+#[cfg(target_os = "macos")]
 unsafe fn cf_to_string(value: CFStringRef) -> Option<String> {
     if value.is_null() {
         return None;
@@ -141,6 +172,7 @@ unsafe fn cf_to_string(value: CFStringRef) -> Option<String> {
     String::from_utf8(buffer[..end].to_vec()).ok()
 }
 
+#[cfg(target_os = "macos")]
 unsafe fn copy_string(element: AXUIElementRef, name: &'static [u8]) -> Option<String> {
     let mut value: CFTypeRef = ptr::null();
     if AXUIElementCopyAttributeValue(element, attr(name), &mut value) != AX_SUCCESS
@@ -153,6 +185,7 @@ unsafe fn copy_string(element: AXUIElementRef, name: &'static [u8]) -> Option<St
     text
 }
 
+#[cfg(target_os = "macos")]
 unsafe fn print_element(element: AXUIElementRef, depth: usize) -> bool {
     let role = copy_string(element, AX_ROLE).unwrap_or_default();
     let url = copy_string(element, AX_URL);
@@ -162,6 +195,7 @@ unsafe fn print_element(element: AXUIElementRef, depth: usize) -> bool {
     url.is_some() && url.as_deref() != Some(title.as_str()) && url.as_deref().unwrap_or("").starts_with("http")
 }
 
+#[cfg(target_os = "macos")]
 unsafe fn walk(element: AXUIElementRef, depth: usize) -> bool {
     if print_element(element, depth) {
         return true;
@@ -221,18 +255,21 @@ unsafe fn walk(element: AXUIElementRef, depth: usize) -> bool {
     false
 }
 
+#[cfg(target_os = "macos")]
 unsafe fn msg_send_id(receiver: Id, selector: Sel) -> Id {
     let raw = objc_msgSend as *const ();
     let function: extern "C" fn(Id, Sel) -> Id = std::mem::transmute(raw);
     function(receiver, selector)
 }
 
+#[cfg(target_os = "macos")]
 unsafe fn msg_send_i32(receiver: Id, selector: Sel) -> i32 {
     let raw = objc_msgSend as *const ();
     let function: extern "C" fn(Id, Sel) -> i32 = std::mem::transmute(raw);
     function(receiver, selector)
 }
 
+#[cfg(target_os = "macos")]
 fn frontmost_pid() -> Option<i32> {
     unsafe {
         let workspace = msg_send_id(
@@ -256,6 +293,7 @@ fn frontmost_pid() -> Option<i32> {
     }
 }
 
+#[cfg(target_os = "macos")]
 fn main() {
     unsafe {
         let Some(pid) = frontmost_pid() else {
@@ -282,4 +320,10 @@ fn main() {
         CFRelease(window_value);
         CFRelease(app);
     }
+}
+
+/// Off-macOS this target does not exist: it exercises macOS APIs directly.
+#[cfg(not(target_os = "macos"))]
+fn main() {
+    eprintln!("probe_url is a macOS diagnostic target; nothing to do on this platform.");
 }
