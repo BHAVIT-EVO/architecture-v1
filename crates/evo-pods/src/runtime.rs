@@ -135,6 +135,12 @@ impl PodRuntime {
         self.policies = policies;
     }
 
+    /// Diagnostics: the surface's own verb log, when it keeps one (fake
+    /// surfaces in tests do; the live macOS surface keeps nothing).
+    pub fn surface_log(&self) -> Vec<String> {
+        self.surface.debug_log()
+    }
+
     pub fn recipe(&self, pod_id: PodId) -> Option<&StageRecipe> {
         self.recipes.get(&pod_id.0)
     }
@@ -200,6 +206,9 @@ impl PodRuntime {
             &apps,
             &self.protected,
             self.config.contain,
+            // The stage is the main screen's usable frame; the surface
+            // contract returns screens main-first.
+            screens.first(),
         );
         let name = pod.name.clone();
         let id = pod.id;

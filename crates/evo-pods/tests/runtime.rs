@@ -40,6 +40,33 @@ fn enter_arranges_own_windows_veils_foreign_and_books_a_lease() {
 }
 
 #[test]
+fn recipe_frames_materialize_on_the_screen_not_the_window_rect() {
+    // Regression: recipe ratios must scale against the STAGE (the main
+    // screen's usable frame), never against each window's own rect —
+    // otherwise "entering" merely reshapes windows onto themselves.
+    let mut surface = FakeSurface::base(); // screen: (0,0,1000,800)
+    surface.apps = vec![app(1, "Editor", false)];
+    surface.windows = vec![window_with_frame(
+        1,
+        10,
+        "main.ts",
+        Some("/repo/main.ts"),
+        Frame::new(500.0, 400.0, 80.0, 60.0),
+    )];
+    let mut rt = runtime_with(surface);
+    rt.set_pods(vec![pod_fixture()]);
+    rt.enter(0, 1).unwrap();
+
+    // Hero default ratio (0.03, 0.06, 0.58, 0.62) over (0,0,1000,800)
+    // lands at (30, 48) — a corner far from the window's own (500, 400).
+    let log = rt.surface_log();
+    assert!(
+        log.iter().any(|line| line.starts_with("mv:1:10:30:48")),
+        "hero must stage at (30,48) on the screen; log was {log:?}"
+    );
+}
+
+#[test]
 fn double_enter_refuses_switch_then_enter_leaves_no_stale_state() {
     let mut surface = FakeSurface::base();
     surface.apps = vec![app(1, "Editor", false)];
