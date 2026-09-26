@@ -208,7 +208,14 @@ mod imp {
             let runtime = (*std::ptr::addr_of!(COMMAND_RUNTIME)).clone();
             if let Some(runtime) = runtime {
                 if let Ok(mut runtime) = runtime.lock() {
-                    runtime.execute(command);
+                    // Generate a current millisecond timestamp
+                    let now_ms = std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap_or(std::time::Duration::from_secs(0))
+                        .as_millis() as u64;
+
+                    // Pass both the command and the timestamp
+                    runtime.execute(command, now_ms);
                 }
             }
             // No repaint request from here: the pod has already changed
