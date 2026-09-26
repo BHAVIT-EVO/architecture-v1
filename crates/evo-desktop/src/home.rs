@@ -651,8 +651,9 @@ pub fn permission_required(ui: &mut egui::Ui, detail: Option<&str>, open_setting
         ui::caption(
             ui,
             detail.unwrap_or(
-                "Grant Accessibility in System Settings so Evo can observe \
-                 which window you are working in.",
+                "Open System Settings → Privacy & Security → Accessibility. \
+                 Find Evo in the list and turn it ON. Then click 'Check again' \
+                 below (or restart Evo) — the dialog alone does not grant it.",
             ),
         );
         ui::gap(ui, theme::S3);
