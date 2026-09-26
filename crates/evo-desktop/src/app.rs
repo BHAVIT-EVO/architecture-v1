@@ -1404,8 +1404,33 @@ impl eframe::App for EvoApp {
                                     });
                                 }
                                 DaemonStatus::PartialCapture { detail } => {
-                                    home::permission_required(ui, Some(detail), || {
-                                        crate::daemon::open_accessibility_settings()
+                                    // Degraded capture: file saves, URLs and commits
+                                    // work, but window-focus needs Accessibility.
+                                    // When no evidence exists yet, say so honestly
+                                    // rather than repeating the permission prompt
+                                    // (D-05: empty state for degraded must explain
+                                    // the cause, not hide it).
+                                    ui::raised(ui, |ui_inner| {
+                                        ui_inner.set_width(ui_inner.available_width());
+                                        ui_inner.eyebrow(ui_inner, "Capture partial");
+                                        ui_inner.display(
+                                            ui_inner,
+                                            "File saves, URLs and commits are recorded. \
+                                             Window focus needs Accessibility.",
+                                        );
+                                        ui_inner.gap(ui_inner, theme::S2);
+                                        ui_inner.caption(
+                                            ui_inner,
+                                            &format!("{detail}\nGrant Accessibility in System Settings, then click Check again.",),
+                                        );
+                                        ui_inner.gap(ui_inner, theme::S3);
+                                        if ui_inner.button("Open System Settings").clicked() {
+                                            crate::daemon::open_accessibility_settings();
+                                        }
+                                        ui_inner.gap(ui_inner, theme::S1);
+                                        if ui_inner.button("Check again").clicked() {
+                                            self.daemon.restart();
+                                        }
                                     });
                                 }
                                 other => {
