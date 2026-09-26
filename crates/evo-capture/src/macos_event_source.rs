@@ -407,9 +407,9 @@ pub(crate) mod imp {
         }
 
         unsafe fn bind_frontmost_application(&self) -> Result<(), MacOSEventSourceError> {
-            let pid = frontmost_application_pid()?;
+            let pid = unsafe { frontmost_application_pid()? };
             if let Some(pid) = pid {
-                let holder = &mut *self.callback;
+                let holder = unsafe { &mut *self.callback };
                 holder.attach_to_pid(pid)?;
             }
             Ok(())

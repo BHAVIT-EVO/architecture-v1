@@ -1412,22 +1412,18 @@ impl eframe::App for EvoApp {
                                     // the cause, not hide it).
                                     ui::raised(ui, |ui_inner| {
                                         ui_inner.set_width(ui_inner.available_width());
-                                        ui_inner.eyebrow(ui_inner, "Capture partial");
-                                        ui_inner.display(
-                                            ui_inner,
-                                            "File saves, URLs and commits are recorded. \
-                                             Window focus needs Accessibility.",
-                                        );
-                                        ui_inner.gap(ui_inner, theme::S2);
+                                        ui_inner.eyebrow("Capture partial");
+                                        ui_inner.display("File saves, URLs and commits are recorded. Window focus needs Accessibility.");
+                                        ui_inner.gap( theme::S2);
                                         ui_inner.caption(
                                             ui_inner,
                                             &format!("{detail}\nGrant Accessibility in System Settings, then click Check again.",),
                                         );
-                                        ui_inner.gap(ui_inner, theme::S3);
+                                        ui_inner.gap( theme::S3);
                                         if ui_inner.button("Open System Settings").clicked() {
                                             crate::daemon::open_accessibility_settings();
                                         }
-                                        ui_inner.gap(ui_inner, theme::S1);
+                                        ui_inner.gap( theme::S1);
                                         if ui_inner.button("Check again").clicked() {
                                             self.daemon.restart();
                                         }
