@@ -26,6 +26,7 @@
 pub mod config;
 pub mod dim;
 pub mod gesture;
+pub mod layout;
 pub mod lease;
 pub mod macos;
 pub mod pod;
@@ -37,5 +38,9 @@ pub mod surface;
 pub mod wrapper;
 
 pub use config::ContainMode;
+pub use layout::{
+    Layout, LayoutEngine, LayoutId, LayoutNode, LayoutShape, Plan, Placement, Region, Slot,
+    WindowRef,
+};
 pub use pod::{Pod, PodBadge, PodClaim, PodColor, PodId, PodResource, PodState, PodSurfaces};
 pub use surface::{CommandSpec, Frame, PodApp, PodSurface, PodWindow};

@@ -1105,6 +1105,8 @@ name = "evo-pods"
 version = "0.1.0"
 dependencies = [
  "evo-threads",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
