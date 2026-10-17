@@ -11,7 +11,7 @@ require.
 - **Project:** Setpiece — <https://github.com/ChiFungHillmanChan/setpiece>
 - **Licence:** MIT
 - **Used by:** `crates/evo-pods/src/layout.rs` (the unified work-space layout
-  core)
+  core) and `crates/evo-pods/src/reveal.rs` (the reveal choreography)
 
 Setpiece's `Sources/SceneCore/Layout` is the source of the model Evo's layout
 core adapts: normalized `Slot` rects resolved inside a display's usable frame
@@ -22,6 +22,13 @@ tree with the `kind` / `ratio` / `first` / `second` JSON shape
 built-in presets (`PresetSeeds`). Evo's version is a re-expression in Rust
 with its own region model; the names and structure are kept so a person who
 knows Setpiece can read it.
+
+The reveal timing model is adapted from Setpiece's `AnimationRunner` /
+`FrameInterpolator`: a per-window duration scaled by `sqrt(distance / 600pt)`
+and clamped to 70–140 %, the linear / cubic ease-out / damped
+`1 − e^(−6t)·cos(8t)` easing set, and the rule that seven or more windows are
+placed instantly. Evo's reachable thresholds and stagger values are its own
+tokens; the timing grammar is Setpiece's.
 
 The MIT terms that cover that work:
 
