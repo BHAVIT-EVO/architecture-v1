@@ -31,6 +31,7 @@ pub mod lease;
 pub mod macos;
 pub mod pod;
 pub mod policy;
+pub mod reveal;
 pub mod runtime;
 pub mod stage;
 pub mod suggest;
@@ -43,4 +44,5 @@ pub use layout::{
     WindowRef,
 };
 pub use pod::{Pod, PodBadge, PodClaim, PodColor, PodId, PodResource, PodState, PodSurfaces};
+pub use reveal::{Curve, Reveal, RevealEngine, RevealOptions, RevealStep};
 pub use surface::{CommandSpec, Frame, PodApp, PodSurface, PodWindow};
