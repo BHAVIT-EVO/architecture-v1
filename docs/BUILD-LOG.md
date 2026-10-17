@@ -193,3 +193,48 @@ Shipped:
 Distribution note: GitHub push from the sandbox is credential-less
 (public fetch works, push does not). Shipped as refreshed git bundle
 (evo-pods-branch.bundle = branch tip) for merge on the Mac.
+
+## Pods round 5 — the unified work space (2026-10-17)
+
+Plan A3 (Setpiece brain, part 3 of 3 for the arrangement path). A1 shipped the
+geometry (`layout.rs`), A2 the choreography (`reveal.rs`); this round ships the
+*choice* and wires it into entering a work.
+
+Shipped:
+- Core (evo-pods, `arrange.rs`): `auto_layout` (the smallest seed that holds
+  every window: Full → Halves → Thirds → Quads → HeroRails); `ArrangeMemory`
+  (the person's pick, per-layout regions, learned slot frames per layout);
+  `arrange()` (the layout + its resolved slots + the planning pass, with the
+  Dock-moved alternate geometry); `choices()` (the preset picker's rows:
+  slots, which is selected, whether the work fits); `store` (versioned text,
+  `evo-pod-arrangements-v1`, one line per fact — the same doctrine as
+  `recipe_store`); `learn_drag` measures a dragged frame *inside the layout's
+  region* and quantizes it to the store's precision, so what memory holds and
+  what the ledger writes are the same number.
+- Containment: new `ContainMode::Tile`, now the DEFAULT — entering a work
+  arranges that work's windows and touches nothing else (no veils, no parked
+  or hidden foreign windows, no focus stealing). Dim / Park / Hide / Stage
+  stay available as opt-in modes; their tests now name their mode.
+- Runtime: the tile path plans members by the work's own evidence
+  (`dim::window_match`), resurrects the work's own minimized windows first,
+  books every move into the lease, minimizes what the layout cannot hold, and
+  notes "N windows tiled as <layout>, M minimized, nothing else touched".
+  New verbs: `layout_choices`, `set_layout` (re-tiles an active work
+  immediately, still reversible), `clear_layout`, `learn_drag`,
+  `arrangement`, `export_arrangements` / `import_arrangements`.
+- Host build fix: `presence.rs` called `PodHost::execute(command)` without the
+  `now_ms` the signature has taken since the lease work — the desktop crate
+  did not compile at all before this line.
+
+Proof: `cargo test -p evo-pods` → 85/85 (12 arrangement, 18 layout, 23 core,
+13 reveal, 19 runtime; the 5 new runtime tests prove tile-enter touches
+nothing foreign, overflow minimizes and leaving restores every frame and
+window, the picker re-tiles an active work reversibly, and learn-from-drag
+survives the ledger byte for byte). `cargo check -p evo-desktop` clean.
+`cargo test --workspace` cannot compile at this revision: `evo-capture`'s
+`probe_*` examples/bins are broken independently of this change (the local
+`a1-layout-core` branch repairs them by moving them to `attic/`).
+
+Next (not shipped here): the pod bar's picker and drag-to-learn gestures call
+`layout_choices` / `set_layout` / `learn_drag`; the arrangement ledger needs
+the same write-through file as `pod-addons.tsv`.

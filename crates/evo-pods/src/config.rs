@@ -19,13 +19,19 @@ pub enum ContainMode {
     /// docs/design/POD-SPACES.md — native hide for whole apps,
     /// minimize only for split-app windows, nothing moved to a corner.
     Stage,
+    /// Containment off: the work's windows take the arrangement's slots
+    /// (see [`crate::arrange`]) and whatever the layout cannot hold
+    /// minimizes. Nothing foreign is veiled, parked, or hidden — the rest
+    /// of the desktop is touched by nothing, and leaving restores every
+    /// moved window exactly.
+    Tile,
 }
 
 impl ContainMode {
-    /// The default is the space semantic: entering a pod shows exactly
-    /// that work; leaving returns the desktop precisely (the lease's
-    /// receipts), so nothing is ever lost or technical-feeling.
-    pub const DEFAULT: ContainMode = ContainMode::Stage;
+    /// The default is tiling: entering a work arranges that work and leaves
+    /// the rest of the desktop alone. The subtractive modes (Dim/Park/Hide/
+    /// Stage) stay available for anyone who wants the desktop to step back.
+    pub const DEFAULT: ContainMode = ContainMode::Tile;
 }
 
 /// Pod budgets and floors. Each value is a limit of what the system may

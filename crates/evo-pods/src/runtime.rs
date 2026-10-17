@@ -8,8 +8,10 @@
 //! engine (daemon), recipes are learnings of user gestures, and leases are
 //! receipts. Everything else is the platform's.
 
+use crate::arrange::{self, ArrangeMemory, Choice};
 use crate::config::{ContainMode, PodConfig};
 use crate::dim::{self, ActivationPlan};
+use crate::layout::{Layout, LayoutId, WindowRef};
 use crate::lease::{LeaseStep, PodLease};
 use crate::pod::{Pod, PodClaim, PodId, PodResource, PodState};
 use crate::policy::InstancePolicy;
@@ -78,6 +80,9 @@ pub struct PodRuntime {
     /// Add-to-Pod truth per pod id: claims + resources. Re-applied to
     /// every engine refresh so nothing the person added ever un-owns.
     addons: BTreeMap<u64, (Vec<PodResource>, Vec<PodClaim>)>,
+    /// Arrangement learnings per pod id: the layout pick, the region it
+    /// owns, and the slot frames the person dragged.
+    arrangements: BTreeMap<u64, ArrangeMemory>,
 }
 
 impl PodRuntime {
@@ -93,6 +98,7 @@ impl PodRuntime {
             policies: crate::policy::default_policies(),
             protected,
             addons: BTreeMap::new(),
+            arrangements: BTreeMap::new(),
         }
     }
 
@@ -192,7 +198,7 @@ impl PodRuntime {
         let (apps, windows, screens) = self.gather_inventory()?;
         let signature = self.display_signature(&screens);
 
-        let pod = &self.pods[index];
+        let pod = self.pods[index].clone();
         let recipe = {
             let previous = self.recipes.get(&pod.id.0);
             stage::derive_recipe(
@@ -204,36 +210,76 @@ impl PodRuntime {
                 previous,
             )
         };
-        let plan = dim::plan_activation(
-            &pod.surfaces,
-            if recipe.roles.is_empty() { None } else { Some(&recipe) },
-            &windows,
-            &apps,
-            &self.protected,
-            self.config.contain,
-            // The stage is the main screen's usable frame; the surface
-            // contract returns screens main-first.
-            screens.first(),
-        );
+        // Containment off (Tile): the work's windows take the arrangement's
+        // slots and nothing foreign is touched. The subtractive modes keep
+        // their own planner.
+        let tiled = (self.config.contain == ContainMode::Tile).then(|| {
+            let memory = self
+                .arrangements
+                .get(&pod.id.0)
+                .cloned()
+                .unwrap_or_default();
+            tile_plan(
+                &pod,
+                &windows,
+                &apps,
+                screens.first(),
+                &memory,
+                &self.protected,
+            )
+        });
+        let plan = match &tiled {
+            Some((plan, _)) => plan.clone(),
+            None => dim::plan_activation(
+                &pod.surfaces,
+                if recipe.roles.is_empty() {
+                    None
+                } else {
+                    Some(&recipe)
+                },
+                &windows,
+                &apps,
+                &self.protected,
+                self.config.contain,
+                // The stage is the main screen's usable frame; the surface
+                // contract returns screens main-first.
+                screens.first(),
+            ),
+        };
         let name = pod.name.clone();
         let id = pod.id;
 
         let mut lease = PodLease::new(name.clone(), now_ms);
-        apply_plan(&mut *self.surface, &plan, &windows, self.config.veil_alpha, &mut lease);
+        apply_plan(
+            &mut *self.surface,
+            &plan,
+            &windows,
+            self.config.veil_alpha,
+            &mut lease,
+        );
 
         self.recipes.insert(id.0, recipe);
         self.active = Some(index);
         self.pods[index].state = PodState::Active;
 
-        let note = format!(
-            "Entered \"{}\": {} on stage, {} remembered, {} veiled, {} parked, {} apps hidden.",
-            lease.pod,
-            lease.moved_windows.len(),
-            lease.unparked_members.len(),
-            lease.veils.len(),
-            lease.parked_windows.len(),
-            lease.hidden_apps.len()
-        );
+        let note = match &tiled {
+            Some((_, layout)) => format!(
+                "Entered \"{}\": {} windows tiled as {}, {} minimized, nothing else touched.",
+                lease.pod,
+                lease.moved_windows.len(),
+                layout.name,
+                lease.parked_windows.len()
+            ),
+            None => format!(
+                "Entered \"{}\": {} on stage, {} remembered, {} veiled, {} parked, {} apps hidden.",
+                lease.pod,
+                lease.moved_windows.len(),
+                lease.unparked_members.len(),
+                lease.veils.len(),
+                lease.parked_windows.len(),
+                lease.hidden_apps.len()
+            ),
+        };
         self.lease = Some(lease);
         Ok(note)
     }
@@ -468,6 +514,191 @@ impl PodRuntime {
         }
     }
 
+    /// The preset picker's rows for a work: every seed with its slot count,
+    /// which one the work would use now, and whether its live windows fit.
+    pub fn layout_choices(&mut self, pod_index: usize) -> Result<Vec<Choice>, PodError> {
+        let Some(pod) = self.pods.get(pod_index).cloned() else {
+            return Err(PodError::NoSuchPod);
+        };
+        let (apps, windows, _screens) = self.gather_inventory()?;
+        let count = member_windows(&pod, &windows, &apps, &self.protected).len();
+        let memory = self
+            .arrangements
+            .get(&pod.id.0)
+            .cloned()
+            .unwrap_or_default();
+        Ok(arrange::choices(&memory, count))
+    }
+
+    /// The person picked a preset: this work opens into `layout` from now on.
+    /// Picking a layout is never destructive: every move the re-tile makes is
+    /// booked into the lease, so leaving still restores the desktop exactly.
+    pub fn set_layout(&mut self, pod_index: usize, layout: LayoutId) -> Result<Note, PodError> {
+        let Some(pod) = self.pods.get(pod_index).cloned() else {
+            return Err(PodError::NoSuchPod);
+        };
+        self.arrangements
+            .entry(pod.id.0)
+            .or_default()
+            .choose(layout);
+        let mut moved = 0usize;
+        if self.active == Some(pod_index) && self.config.contain == ContainMode::Tile {
+            moved = self.retile(&pod)?;
+        }
+        Ok(if moved > 0 {
+            format!(
+                "\"{}\" now opens into {} — {moved} windows re-tiled.",
+                pod.name,
+                layout.name()
+            )
+        } else {
+            format!("\"{}\" now opens into {}.", pod.name, layout.name())
+        })
+    }
+
+    /// Back to the automatic choice (the smallest seed that holds the work's
+    /// windows), re-tiling if the work is active.
+    pub fn clear_layout(&mut self, pod_index: usize) -> Result<Note, PodError> {
+        let Some(pod) = self.pods.get(pod_index).cloned() else {
+            return Err(PodError::NoSuchPod);
+        };
+        self.arrangements
+            .entry(pod.id.0)
+            .or_default()
+            .clear_choice();
+        let mut moved = 0usize;
+        if self.active == Some(pod_index) && self.config.contain == ContainMode::Tile {
+            moved = self.retile(&pod)?;
+        }
+        Ok(if moved > 0 {
+            format!(
+                "\"{}\" arranges itself by its windows again — {moved} re-tiled.",
+                pod.name
+            )
+        } else {
+            format!("\"{}\" arranges itself by its windows again.", pod.name)
+        })
+    }
+
+    /// Re-tiles the active work into its current arrangement, booking every
+    /// move and minimization into the live lease. Returns how many windows
+    /// actually moved.
+    fn retile(&mut self, pod: &Pod) -> Result<usize, PodError> {
+        let (apps, windows, screens) = self.gather_inventory()?;
+        let memory = self
+            .arrangements
+            .get(&pod.id.0)
+            .cloned()
+            .unwrap_or_default();
+        let (plan, _layout) = tile_plan(
+            pod,
+            &windows,
+            &apps,
+            screens.first(),
+            &memory,
+            &self.protected,
+        );
+        let mut moved = 0usize;
+        let Self {
+            surface, lease, ..
+        } = self;
+        let Some(lease) = lease.as_mut() else {
+            return Ok(0);
+        };
+        for home in &plan.arrange {
+            let Some(target) = home.frame else { continue };
+            if let Some(current) = windows
+                .iter()
+                .find(|w| w.pid == home.pid && w.window_id == home.window_id)
+                .map(|w| w.frame)
+            {
+                lease.moved_windows.push((home.pid, home.window_id, current));
+            }
+            if surface.move_window(home.pid, home.window_id, target).is_ok() {
+                moved += 1;
+            }
+            let _ = surface.raise_window(home.pid, home.window_id);
+        }
+        for (pid, window_id) in &plan.park {
+            if surface.minimize_window(*pid, *window_id).is_ok() {
+                lease.parked_windows.push((*pid, *window_id));
+            }
+        }
+        Ok(moved)
+    }
+
+    /// Learn-from-drag: a window of this work was moved by the person. The
+    /// slot it landed nearest keeps that geometry for this work's layout, so
+    /// tomorrow's arrangement is the one they showed it.
+    pub fn learn_drag(&mut self, pod_id: PodId, dragged: Frame) -> Result<Note, PodError> {
+        let Some(pod) = self.pods.iter().find(|p| p.id == pod_id).cloned() else {
+            return Err(PodError::NoSuchPod);
+        };
+        let (apps, windows, screens) = self.gather_inventory()?;
+        let Some(screen) = screens.first().copied().filter(Frame::usable) else {
+            return Ok("Nothing learned: no usable display to measure against.".to_string());
+        };
+        let count = member_windows(&pod, &windows, &apps, &self.protected).len();
+        let memory = self.arrangements.entry(pod.id.0).or_default();
+        let layout = memory.layout_for(count);
+        Ok(match memory.learn_drag(&layout, &screen, &dragged) {
+            Some(slot) => format!(
+                "\"{}\" learned slot {} of {} — it opens this way next time.",
+                pod.name,
+                slot + 1,
+                layout.name
+            ),
+            None => format!(
+                "Nothing learned: the drag landed on no slot of {}.",
+                layout.name
+            ),
+        })
+    }
+
+    /// The arrangement memory of one work (the picker's state, the learned
+    /// slot frames).
+    pub fn arrangement(&self, pod_id: PodId) -> Option<&ArrangeMemory> {
+        self.arrangements.get(&pod_id.0)
+    }
+
+    /// Export/import of arrangement learnings — the same textual, versioned
+    /// doctrine as recipe learnings.
+    pub fn export_arrangements(&self) -> String {
+        let entries: Vec<(String, ArrangeMemory)> = self
+            .arrangements
+            .iter()
+            .filter(|(_, memory)| **memory != ArrangeMemory::default())
+            .map(|(id, memory)| (format!("pod-{id}"), memory.clone()))
+            .collect();
+        arrange::store::export(&entries)
+    }
+
+    pub fn import_arrangements(&mut self, text: &str) {
+        for (label, memory) in arrange::store::import(text) {
+            let Some(id) = label
+                .strip_prefix("pod-")
+                .and_then(|s| s.parse::<u64>().ok())
+            else {
+                continue;
+            };
+            match self.arrangements.entry(id) {
+                std::collections::btree_map::Entry::Occupied(mut entry) => {
+                    let existing = entry.get_mut();
+                    if memory.chosen.is_some() {
+                        existing.chosen = memory.chosen;
+                    }
+                    existing.regions.extend(memory.regions);
+                    for (layout, slots) in memory.overrides {
+                        existing.overrides.entry(layout).or_default().extend(slots);
+                    }
+                }
+                std::collections::btree_map::Entry::Vacant(entry) => {
+                    entry.insert(memory);
+                }
+            }
+        }
+    }
+
     /// Suggestion for a focused loose subject (silence below the floor /
     /// when contested).
     pub fn suggest_for(&self, subject: &str) -> Option<PodSuggestion> {
@@ -611,6 +842,84 @@ impl PodRuntime {
             }
         }
     }
+}
+
+/// The work's own live windows, in the order the surface reported them — the
+/// planner's z-order (frontmost first is the surface's to promise).
+/// Membership is the work's own evidence, never an app list: a protected pid
+/// (Evo itself) or a non-regular owner is never a work window.
+fn member_windows(
+    pod: &Pod,
+    windows: &[crate::surface::PodWindow],
+    apps: &[PodApp],
+    protected: &[i32],
+) -> Vec<crate::surface::PodWindow> {
+    windows
+        .iter()
+        .filter(|window| {
+            if protected.contains(&window.pid) {
+                return false;
+            }
+            let regular = apps
+                .iter()
+                .find(|app| app.pid == window.pid)
+                .map(|app| app.regular)
+                .unwrap_or(true);
+            regular && dim::window_match(window, &pod.surfaces).belongs()
+        })
+        .cloned()
+        .collect()
+}
+
+/// The tile arrangement: the work's windows into the work's layout, and what
+/// the layout cannot hold minimized (never hidden, never veiled). An unusable
+/// display yields an empty plan — a decision made against no screen is no
+/// decision at all.
+fn tile_plan(
+    pod: &Pod,
+    windows: &[crate::surface::PodWindow],
+    apps: &[PodApp],
+    screen: Option<&Frame>,
+    memory: &ArrangeMemory,
+    protected: &[i32],
+) -> (ActivationPlan, Layout) {
+    let members = member_windows(pod, windows, apps, protected);
+    let refs: Vec<WindowRef> = members
+        .iter()
+        .map(|window| WindowRef {
+            pid: window.pid,
+            window_id: window.window_id,
+            frame: window.frame,
+        })
+        .collect();
+    let Some(screen) = screen.copied().filter(Frame::usable) else {
+        return (ActivationPlan::default(), memory.layout_for(refs.len()));
+    };
+    let arrangement = arrange::arrange(&refs, memory, &screen, &[]);
+    let mut plan = ActivationPlan::default();
+    // A minimized window cannot be moved, so the work's own minimized windows
+    // come back before the choreography — the space remembers what was in it.
+    for window in &members {
+        if window.minimized {
+            plan.unpark_members.push((window.pid, window.window_id));
+        }
+    }
+    for placement in &arrangement.plan.placements {
+        plan.arrange.push(dim::Arrangement {
+            pid: placement.pid,
+            window_id: placement.window_id,
+            frame: Some(placement.frame),
+            resource: None,
+            raise_rank: 0,
+        });
+    }
+    plan.park = arrangement
+        .plan
+        .to_minimize
+        .iter()
+        .map(|window| (window.pid, window.window_id))
+        .collect();
+    (plan, arrangement.layout)
 }
 
 /// Applies an activation, booking receipts into the lease as it goes.

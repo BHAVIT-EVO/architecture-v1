@@ -193,8 +193,18 @@ fn stage_resurrects_the_pods_own_minimized_windows() {
 }
 
 #[test]
-fn stage_is_the_default_containment() {
-    assert_eq!(PodConfig::default().contain, ContainMode::Stage);
+fn tiling_is_the_default_containment() {
+    // The unified work space: entering a work arranges that work and leaves
+    // the rest of the desktop alone. The subtractive modes stay available.
+    assert_eq!(PodConfig::default().contain, ContainMode::Tile);
+    for mode in [
+        ContainMode::Dim,
+        ContainMode::Park,
+        ContainMode::Hide,
+        ContainMode::Stage,
+    ] {
+        assert_ne!(mode, PodConfig::default().contain);
+    }
 }
 
 #[test]
