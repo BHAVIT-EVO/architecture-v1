@@ -207,8 +207,9 @@ mod imp {
             }
             let runtime = (*std::ptr::addr_of!(COMMAND_RUNTIME)).clone();
             if let Some(runtime) = runtime {
+                let now_ms = crate::pods::epoch_ms();
                 if let Ok(mut runtime) = runtime.lock() {
-                    runtime.execute(command);
+                    runtime.execute(command, now_ms);
                 }
             }
             // No repaint request from here: the pod has already changed
