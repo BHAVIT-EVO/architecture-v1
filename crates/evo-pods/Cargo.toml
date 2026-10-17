@@ -6,3 +6,7 @@ description = "Evo Pods — works as first-class desktop objects: identity, stag
 
 [dependencies]
 evo-threads = { path = "../evo-threads" }
+serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+serde_json = "1"
