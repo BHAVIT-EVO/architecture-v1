@@ -60,9 +60,10 @@ pub const MIN_REGION_FRACTION: f64 = 0.25;
 /// a non-finite fraction resolves at its documented default. The primary
 /// region is resolved per display, so shrinking a screen never smears a
 /// layout off it.
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
 pub enum Region {
     /// The whole usable frame.
+    #[default]
     Full,
     /// The left band: `fraction` of the usable width, full height.
     Left(f64),
@@ -74,12 +75,6 @@ pub enum Region {
     Top,
     /// The bottom band: full width, [`DEFAULT_BAND`] of the usable height.
     Bottom,
-}
-
-impl Default for Region {
-    fn default() -> Self {
-        Region::Full
-    }
 }
 
 impl Region {
@@ -766,10 +761,10 @@ impl Plan {
 pub struct LayoutEngine;
 
 impl LayoutEngine {
-    /// Plan `windows` (z-order, frontmost first) into `slots`.
+    /// Plan `windows_in_z_order` (frontmost first) into `slots`.
     ///
     /// * **Sticky pass.** A window whose current frame already matches a free
-    ///   slot (within [`STICKY_TOLERANCE`]) keeps that slot. `alternating`
+    ///   slot (within [`STICKY_TOLERANCE`]) keeps that slot. `alternating_frames`
     ///   carries each slot's *alternate* geometry — the same slot resolved on
     ///   another tiling frame (the Dock moved, Stage Manager ran) — indexed by
     ///   slot; a window matching one is preserved too. A short slice is fine:
@@ -777,17 +772,21 @@ impl LayoutEngine {
     /// * **Fill pass.** Remaining windows, still in z-order, take the lowest
     ///   free slot indices.
     /// * **Overflow.** Anything left is reported for minimization.
-    pub fn plan(windows: &[WindowRef], slots: &[Frame], alternating: &[Frame]) -> Plan {
+    pub fn plan(
+        windows_in_z_order: &[WindowRef],
+        slots: &[Frame],
+        alternating_frames: &[Frame],
+    ) -> Plan {
         let mut taken: Vec<bool> = vec![false; slots.len()];
-        let mut assigned: Vec<Option<usize>> = vec![None; windows.len()];
+        let mut assigned: Vec<Option<usize>> = vec![None; windows_in_z_order.len()];
 
-        for (index, window) in windows.iter().enumerate() {
-            if let Some(slot) = first_free_slot(slots, alternating, &taken, &window.frame) {
+        for (index, window) in windows_in_z_order.iter().enumerate() {
+            if let Some(slot) = first_free_slot(slots, alternating_frames, &taken, &window.frame) {
                 taken[slot] = true;
                 assigned[index] = Some(slot);
             }
         }
-        for (index, _window) in windows.iter().enumerate() {
+        for (index, _window) in windows_in_z_order.iter().enumerate() {
             if assigned[index].is_some() {
                 continue;
             }
@@ -799,7 +798,7 @@ impl LayoutEngine {
 
         let mut plan = Plan::default();
         let mut leftover: Vec<WindowRef> = Vec::new();
-        for (index, window) in windows.iter().enumerate() {
+        for (index, window) in windows_in_z_order.iter().enumerate() {
             match assigned[index] {
                 Some(slot_index) => plan.placements.push(Placement {
                     slot: slot_index,
@@ -858,7 +857,7 @@ fn first_free_slot(
             !taken[*index]
                 && alternating
                     .get(*index)
-                    .is_some_and(|alternate| matching(alternate))
+                    .is_some_and(matching)
         })
     })
 }
