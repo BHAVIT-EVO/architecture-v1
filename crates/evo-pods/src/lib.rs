@@ -23,6 +23,7 @@
 //! 5. **The pod bar is a view of the engine.** Pods re-derive from
 //!    [`evo_threads`] views; the runtime itself keeps no grouping truth.
 
+pub mod arrange;
 pub mod config;
 pub mod dim;
 pub mod gesture;
@@ -38,6 +39,7 @@ pub mod suggest;
 pub mod surface;
 pub mod wrapper;
 
+pub use arrange::{arrange as arrange_windows, auto_layout, ArrangeMemory, Arrangement, Choice};
 pub use config::ContainMode;
 pub use layout::{
     Layout, LayoutEngine, LayoutId, LayoutNode, LayoutShape, Plan, Placement, Region, Slot,

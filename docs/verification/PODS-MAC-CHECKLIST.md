@@ -77,10 +77,10 @@ tail -50 ~/Library/Application\ Support/Evo/logs/evo.log
 - `restore_set` URLs feeding the browser; previously `bundle.urls` did not exist (field fixed to `restore_set` during the build — first live hydration test).
 
 ## Round 3 — spaces (2026-09-23)
-- [ ] Default containment is Stage: entering a pod makes the desktop show
-      ONLY that work; other apps' windows disappear without piling in the
-      Dock (their apps hide). A Chrome used by two pods keeps the pod's
-      window visible and parks only its alien window.
+- [ ] Stage containment (now opt-in, not the default): entering a pod makes
+      the desktop show ONLY that work; other apps' windows disappear without
+      piling in the Dock (their apps hide). A Chrome used by two pods keeps
+      the pod's window visible and parks only its alien window.
 - [ ] The pod's own minimized window comes back when entering (note says
       "N remembered"), and leaving re-parks it (desktop returns exactly).
 - [ ] Pod bar: panel is opaque (no wallpaper bleed-through); with >4 pods
@@ -115,3 +115,23 @@ Verified against the code's process graph:
       chips still there (pod-addons.tsv persisted); tap chip = opens.
 - [ ] Enter the pod: saved resources re-open before staging ("N pod
       resources re-opened" in the note).
+
+## Round 5 — the unified work space (2026-10-17)
+
+Default containment is now **Tile**: entering a work arranges that work and
+leaves everything else exactly as it was.
+
+- [ ] Enter a work with two windows: they tile into two columns (note says
+      "N windows tiled as Halves, 0 minimized, nothing else touched"), and no
+      other window moves, veils, minimizes, or hides.
+- [ ] The work's own minimized window comes back and takes a slot; leaving
+      puts every frame back exactly and re-minimizes it.
+- [ ] Enter a work with more windows than its layout holds (claim windows with
+      Add-to-Pod first): the backmost ones minimize — nothing disappears, and
+      leaving brings them back.
+- [ ] Quit and relaunch with a work active: the desktop returns as it was
+      (the lease is per-session; the arrangement ledger is the thing that
+      persists).
+- [ ] Not yet in the UI: the preset picker and drag-to-learn. The runtime
+      verbs (`layout_choices`, `set_layout`, `learn_drag`) are tested; the
+      bar's picker ships next.

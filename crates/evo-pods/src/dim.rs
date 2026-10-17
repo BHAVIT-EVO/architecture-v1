@@ -208,6 +208,10 @@ pub fn plan_activation(
                 plan.park.push((w.pid, w.window_id))
             }
             ContainMode::Stage => {}
+            // Containment off: nothing foreign is touched. The work's own
+            // windows are arranged by [`crate::arrange`], which the runtime
+            // runs instead of this function in Tile mode.
+            ContainMode::Tile => {}
         }
     }
 
