@@ -1,0 +1,55 @@
+evidence_id: ev_e4f33b48bd08b84a03ab24eb8aed1eef8751d72c26e5b5a73335ea0132c89237
+subject:
+  name: Granola
+  digest:
+    sha256: b4e6fa80db73025dc49a8059e13937344dc91261ed88d57626ef94512d822bf7
+  format: mach-o
+  architecture: arm64
+  local_path: /Applications/Granola.app/Contents/MacOS/Granola
+provider:
+  id: native-macos
+  name: macOS native inspection utilities
+  version: null
+predicate_type: rea.analysis
+operation: list_architectures
+parameters:
+raw_result:
+  provenance[1]:
+    - tool: lipo
+      command[3]: /Library/Developer/CommandLineTools/usr/bin/lipo,"-detailed_info",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 751c4a4636efc5f4015999dc7d41be6e2552b39f8949d6eb971e958fccf0e386
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 432
+      stderr_bytes: 0
+normalized_result:
+  architectures:
+    items[2]{name,cpu_type,cpu_subtype,file_offset,size,alignment}:
+      x86_64,CPU_TYPE_X86_64,CPU_SUBTYPE_X86_64_ALL,16384,33360,16384
+      arm64,CPU_TYPE_ARM64,CPU_SUBTYPE_ARM64_ALL,65536,53792,16384
+    total: 2
+    exhaustive: true
+    limitations: []
+  provenance[1]:
+    - tool: lipo
+      command[3]: /Library/Developer/CommandLineTools/usr/bin/lipo,"-detailed_info",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 751c4a4636efc5f4015999dc7d41be6e2552b39f8949d6eb971e958fccf0e386
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 432
+      stderr_bytes: 0
+  limitations: []
+confidence: observed
+authority: shipped-artifact
+environment: null
+limitations: []
+locations[2]{kind,start,end}:
+  file-offset-range,16384,49744
+  file-offset-range,65536,119328
+evidence_links: []

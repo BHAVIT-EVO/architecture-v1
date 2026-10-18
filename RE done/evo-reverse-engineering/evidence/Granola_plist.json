@@ -1,0 +1,139 @@
+evidence_id: ev_dc0808a279058338d18d3e48ce1fcecfa1bb7c0fa3ffa2fe37e47bbed451c0e7
+subject:
+  name: Granola
+  digest:
+    sha256: b4e6fa80db73025dc49a8059e13937344dc91261ed88d57626ef94512d822bf7
+  format: mach-o
+  architecture: arm64
+  local_path: /Applications/Granola.app/Contents/MacOS/Granola
+provider:
+  id: native-macos
+  name: macOS native inspection utilities
+  version: null
+predicate_type: rea.analysis
+operation: inspect_plist
+parameters:
+  relative_path: Contents/Info.plist
+raw_result:
+  provenance[2]:
+    - tool: file
+      command[3]: /usr/bin/file,"-b",$PLIST
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: a4ba66d26a9cfdc70637c78cdacef920f94147f6aa45ccc73858e493589ef94d
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 48
+      stderr_bytes: 0
+    - tool: plutil
+      command[7]: /usr/bin/plutil,"-convert",json,"-o","-","--",$PLIST
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 9d2296746d4519a8094738e7570972d44791793a072767b8bcbf0ea82af90358
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 2692
+      stderr_bytes: 0
+normalized_result:
+  format: xml
+  value:
+    DTCompiler: com.apple.compilers.llvm.clang.1_0
+    CFBundleURLTypes[1]:
+      - CFBundleTypeRole: Editor
+        CFBundleURLName: granola
+        CFBundleURLSchemes[1]: granola
+    CFBundleInfoDictionaryVersion: "6.0"
+    NSContactsUsageDescription: Granola can access your contacts to make it easier to dial phone numbers
+    NSAudioCaptureUsageDescription: "During your meetings, Granola transcribes your system audio output"
+    CFBundleIconFile: icon.icns
+    CFBundleName: Granola
+    DTSDKName: macosx15.5
+    NSSupportsAutomaticGraphicsSwitching: true
+    NSBluetoothAlwaysUsageDescription: This app needs access to Bluetooth
+    NSPrincipalClass: AtomApplication
+    LSApplicationCategoryType: public.app-category.developer-tools
+    CFBundleDisplayName: Granola
+    NSHighResolutionCapable: true
+    NSRequiresAquaSystemAppearance: false
+    DTSDKBuild: 24F74
+    NSCameraUsageDescription: Granola uses your camera to show a watermark in meetings
+    CFBundleShortVersionString: 7.645.2
+    CFBundlePackageType: APPL
+    NSBluetoothPeripheralUsageDescription: This app needs access to Bluetooth
+    DTXcodeBuild: 16F6
+    NSPrefersDisplaySafeAreaCompatibilityMode: false
+    CFBundleVersion: 7.645.2
+    NSMainNibFile: MainMenu
+    NSMicrophoneUsageDescription: "During your meetings, Granola transcribes your microphone"
+    CFBundleIdentifier: com.granola.app
+    LSEnvironment:
+      MallocNanoZone: "0"
+    ElectronAsarIntegrity:
+      "Resources/app.asar":
+        hash: 73557f47194226e4409a2e5515c32365df74accc4d329045a3f15094a3c9ef45
+        algorithm: SHA256
+    DTXcode: "1640"
+    CFBundleIconName: Icon
+    NSQuitAlwaysKeepsWindows: false
+    NSCalendarsUsageDescription: Granola uses your calendar to show upcoming meetings
+    NSAppTransportSecurity:
+      NSExceptionDomains:
+        "127.0.0.1":
+          NSTemporaryExceptionAllowsInsecureHTTPLoads: true
+          NSTemporaryExceptionRequiresForwardSecrecy: false
+          NSIncludesSubdomains: false
+          NSTemporaryExceptionMinimumTLSVersion: "1.0"
+          NSTemporaryExceptionAllowsInsecureHTTPSLoads: false
+        localhost:
+          NSTemporaryExceptionAllowsInsecureHTTPLoads: true
+          NSTemporaryExceptionRequiresForwardSecrecy: false
+          NSIncludesSubdomains: false
+          NSTemporaryExceptionMinimumTLSVersion: "1.0"
+          NSTemporaryExceptionAllowsInsecureHTTPSLoads: false
+      NSAllowsArbitraryLoads: false
+      NSAllowsLocalNetworking: true
+    CFBundleExecutable: Granola
+    GranolaManagedUpdateHandshakeVersion: 1
+    LSMinimumSystemVersion: "13.0"
+    NSScreenCaptureUsageDescription: "During your meetings, Granola uses screen capture to transcribe system audio"
+    NSDockTilePlugIn: DockTile.docktileplugin
+    NSSystemExtensionUsageDescription: Granola uses a system extension to provide a virtual camera for meetings
+    NSHumanReadableCopyright: Copyright © 2026 Granola
+  bundle:
+    identifier: com.granola.app
+    executable: Granola
+    name: Granola
+    version: 7.645.2
+    short_version: 7.645.2
+  source_path: /Applications/Granola.app/Contents/Info.plist
+  provenance[2]:
+    - tool: file
+      command[3]: /usr/bin/file,"-b",$PLIST
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: a4ba66d26a9cfdc70637c78cdacef920f94147f6aa45ccc73858e493589ef94d
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 48
+      stderr_bytes: 0
+    - tool: plutil
+      command[7]: /usr/bin/plutil,"-convert",json,"-o","-","--",$PLIST
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 9d2296746d4519a8094738e7570972d44791793a072767b8bcbf0ea82af90358
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 2692
+      stderr_bytes: 0
+  limitations: []
+confidence: observed
+authority: shipped-artifact
+environment: null
+limitations: []
+locations[1]{kind,path}:
+  artifact-path,/Applications/Granola.app/Contents/Info.plist
+evidence_links: []

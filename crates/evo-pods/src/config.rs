@@ -3,6 +3,9 @@
 /// How entering a pod treats windows that provably do not belong to it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ContainMode {
+    /// Restore and arrange the work's own windows without changing unrelated
+    /// applications already on the desktop.
+    Open,
     /// Translucent veil over foreign windows — present but demoted.
     Dim,
     /// Minimize foreign windows (IS-0022's park).
@@ -43,7 +46,7 @@ pub struct PodConfig {
     /// focused foreign window may be offered to a pod. Two minutes of a
     /// work's memory, never less.
     pub suggest_min_weight_ms: f64,
-    /// >= 40 % of the active screen region -> hero when nothing is learned
+    /// At least 40 % of the active screen region -> hero when nothing is learned
     /// yet; the bar shows footprints, so a heroless pod still renders.
     pub max_hotkeys: usize,
 }

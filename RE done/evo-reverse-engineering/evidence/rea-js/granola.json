@@ -1,0 +1,16 @@
+{
+  "error": "JavaScript application analysis failed",
+  "code": "artifact_integrity_mismatch",
+  "category": "integrity_mismatch",
+  "message": "Artifact is invalid or has changed. Get a fresh copy and try again.",
+  "retryable": false,
+  "remediation": {
+    "action": "Artifact is invalid or has changed. Get a fresh copy and try again."
+  },
+  "details": {
+    "logical_path": "node_modules/@napi-rs/xattr-darwin-arm64/xattr.darwin-arm64.node",
+    "declared_sha256": "6d88dfe45f99dc70cd84d9139f54f84d2bd8f794b6a4dc3f04d0ebb51d5cdb7b",
+    "calculated_sha256": "0952e69c47a2924126cf8ba547a0daa4f2a21cffbfdb9dd6a3211efbdfc3afd6",
+    "unpacked": true
+  }
+}

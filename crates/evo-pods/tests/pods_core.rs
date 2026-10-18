@@ -9,11 +9,11 @@ use evo_pods::config::{ContainMode, PodConfig};
 use evo_pods::dim::{self, WindowMatch};
 use evo_pods::gesture::{self, PodGesture};
 use evo_pods::lease::{LeaseStep, PodLease};
+use evo_pods::pod::{BadgeKind, PodColor, PodSurfaces, badges_from_bundle};
 use evo_pods::policy;
-use evo_pods::pod::{badges_from_bundle, BadgeKind, PodColor, PodSurfaces};
 use evo_pods::stage::{self, DisplaySignature, Role};
-use evo_pods::surface::Frame;
 use evo_pods::suggest;
+use evo_pods::surface::Frame;
 use evo_pods::wrapper;
 use evo_threads::{Delta, ResumeBundle};
 use fake::pod_fixture;
@@ -40,8 +40,12 @@ fn badges_come_only_from_engine_deltas() {
         resume_reason: "test".into(),
         restore_set: vec![],
         open_deltas: vec![
-            Delta::UnsavedEdits { resource: "a.rs".into() },
-            Delta::DownloadedNotYetUsed { path: "x.zip".into() },
+            Delta::UnsavedEdits {
+                resource: "a.rs".into(),
+            },
+            Delta::DownloadedNotYetUsed {
+                path: "x.zip".into(),
+            },
         ],
     };
     let badges = badges_from_bundle(&bundle);
@@ -55,9 +59,19 @@ fn badges_come_only_from_engine_deltas() {
 #[test]
 fn roles_follow_resume_order_hero_first() {
     let pod = pod_fixture();
-    let recipe = stage::derive_recipe(&pod.bundle, &pod.companions, DisplaySignature("s".into()), 3, 4, None);
+    let recipe = stage::derive_recipe(
+        &pod.bundle,
+        &pod.companions,
+        DisplaySignature("s".into()),
+        3,
+        4,
+        None,
+    );
     assert_eq!(recipe.roles.get("file:///repo/main.ts"), Some(&Role::Hero));
-    assert_eq!(recipe.roles.get("https://docs.example/api"), Some(&Role::Satellite(0)));
+    assert_eq!(
+        recipe.roles.get("https://docs.example/api"),
+        Some(&Role::Satellite(0))
+    );
     assert_eq!(recipe.roles.get("ref-notes.md"), Some(&Role::Rail(0)));
 }
 
@@ -65,14 +79,25 @@ fn roles_follow_resume_order_hero_first() {
 fn placements_survive_more_controversial_rederive() {
     let mut recipe = stage::StageRecipe::new(DisplaySignature("s".into()));
     recipe.roles.insert("x".into(), Role::Hero);
-    recipe.learn("x", &rt(10.0, 10.0, 500.0, 400.0), &rt(0.0, 0.0, 1000.0, 800.0));
+    recipe.learn(
+        "x",
+        &rt(10.0, 10.0, 500.0, 400.0),
+        &rt(0.0, 0.0, 1000.0, 800.0),
+    );
     let bundle = ResumeBundle {
         resume_point: "x".into(),
         resume_reason: "r".into(),
         restore_set: vec!["y".into()],
         open_deltas: vec![],
     };
-    let re = stage::derive_recipe(&bundle, &[], DisplaySignature("s2".into()), 3, 4, Some(&recipe));
+    let re = stage::derive_recipe(
+        &bundle,
+        &[],
+        DisplaySignature("s2".into()),
+        3,
+        4,
+        Some(&recipe),
+    );
     // Resource kept across a signature change: learned placement survives.
     assert!(re.placements.contains_key("x"));
     // ...but frame_for must never be consulted against the wrong signature.
@@ -92,7 +117,15 @@ fn frame_math_roundtrips_through_fractions() {
 fn recipe_store_roundtrips_with_pod_names() {
     let mut recipe = stage::StageRecipe::new(DisplaySignature("sig".into()));
     recipe.roles.insert("r".into(), Role::Hero);
-    recipe.placements.insert("r".into(), stage::RatioRect { x: 0.1, y: 0.1, w: 0.5, h: 0.5 });
+    recipe.placements.insert(
+        "r".into(),
+        stage::RatioRect {
+            x: 0.1,
+            y: 0.1,
+            w: 0.5,
+            h: 0.5,
+        },
+    );
     let text = stage::recipe_store::export(&[("pod-7".to_string(), recipe)]);
     let back = stage::recipe_store::import(&text);
     assert_eq!(back.len(), 1);
@@ -112,7 +145,10 @@ fn window_match_prefers_documents_over_pages_over_titles() {
         resource_apps: Default::default(),
     };
     let doc_win = fake::window(1, 10, "anything", Some("/repo/main.ts"));
-    assert_eq!(dim::window_match(&doc_win, &surfaces), WindowMatch::Document);
+    assert_eq!(
+        dim::window_match(&doc_win, &surfaces),
+        WindowMatch::Document
+    );
     let page_win = fake::window(1, 11, "Tab", Some("https://tab.example"));
     assert_eq!(dim::window_match(&page_win, &surfaces), WindowMatch::Page);
     let title_win = fake::window(1, 12, "Terminal", None);
@@ -130,10 +166,24 @@ fn dim_veils_foreign_and_arranges_own_under_containment() {
         fake::app(2, "Mail", false),
         fake::app(3, "Evo", false),
     ];
-    let hero = fake::window_with_frame(1, 10, "main.ts", Some("/repo/main.ts"), rt(0.0, 0.0, 1000.0, 800.0));
+    let hero = fake::window_with_frame(
+        1,
+        10,
+        "main.ts",
+        Some("/repo/main.ts"),
+        rt(0.0, 0.0, 1000.0, 800.0),
+    );
     let foreign = fake::window_with_frame(2, 20, "Inbox", None, rt(0.0, 0.0, 1000.0, 800.0));
     let protected = fake::window_with_frame(3, 30, "Evo Home", None, rt(0.0, 0.0, 1000.0, 800.0));
-    let plan = dim::plan_activation(&pod.surfaces, None, &[hero, foreign, protected], &apps, &[3], ContainMode::Dim, Some(&screen));
+    let plan = dim::plan_activation(
+        &pod.surfaces,
+        None,
+        &[hero, foreign, protected],
+        &apps,
+        &[3],
+        ContainMode::Dim,
+        Some(&screen),
+    );
     assert_eq!(plan.arrange.len(), 1);
     assert_eq!(plan.veil.len(), 1, "exactly the foreign window veils");
     assert_eq!(plan.veil[0].1, 20);
@@ -144,11 +194,23 @@ fn dim_veils_foreign_and_arranges_own_under_containment() {
 fn hide_mode_hides_only_foreign_regular_apps() {
     let pod = pod_fixture();
     let screen = rt(0.0, 0.0, 1200.0, 800.0);
-    let apps = vec![fake::app(1, "Editor", false), fake::app(2, "Mail", false), fake::app(9, "System", false)];
+    let apps = vec![
+        fake::app(1, "Editor", false),
+        fake::app(2, "Mail", false),
+        fake::app(9, "System", false),
+    ];
     let mut system = apps.clone();
     system[2].regular = false;
     let hero = fake::window(1, 10, "main.ts", Some("/repo/main.ts"));
-    let plan = dim::plan_activation(&pod.surfaces, None, &[hero], &system, &[], ContainMode::Hide, Some(&screen));
+    let plan = dim::plan_activation(
+        &pod.surfaces,
+        None,
+        &[hero],
+        &system,
+        &[],
+        ContainMode::Hide,
+        Some(&screen),
+    );
     assert_eq!(plan.hide_apps, vec![2]);
 }
 
@@ -171,10 +233,25 @@ fn stage_hides_alien_apps_and_parks_only_split_app_windows() {
     let foreign_same_app = fake::window(2, 41, "Other tab", None);
     let alien = fake::window(3, 50, "Inbox", None);
     let plan = dim::plan_activation(
-        &surfaces, None, &[pod_page, foreign_same_app, alien], &apps, &[], ContainMode::Stage, Some(&screen));
+        &surfaces,
+        None,
+        &[pod_page, foreign_same_app, alien],
+        &apps,
+        &[],
+        ContainMode::Stage,
+        Some(&screen),
+    );
     assert_eq!(plan.arrange.len(), 1, "only the witnessed page stages");
-    assert_eq!(plan.park, vec![(2, 41)], "the split app's foreign window parks singly");
-    assert_eq!(plan.hide_apps, vec![3], "the alien app hides whole — no Dock clutter");
+    assert_eq!(
+        plan.park,
+        vec![(2, 41)],
+        "the split app's foreign window parks singly"
+    );
+    assert_eq!(
+        plan.hide_apps,
+        vec![3],
+        "the alien app hides whole — no Dock clutter"
+    );
     assert!(plan.veil.is_empty());
 }
 
@@ -186,10 +263,24 @@ fn stage_resurrects_the_pods_own_minimized_windows() {
     let mut parked_member = fake::window(1, 10, "main.ts", Some("/repo/main.ts"));
     parked_member.minimized = true;
     let plan = dim::plan_activation(
-        &pod.surfaces, None, &[parked_member], &apps, &[], ContainMode::Stage, Some(&screen));
-    assert_eq!(plan.unpark_members, vec![(1, 10)], "the space remembers its own parked window");
+        &pod.surfaces,
+        None,
+        &[parked_member],
+        &apps,
+        &[],
+        ContainMode::Stage,
+        Some(&screen),
+    );
+    assert_eq!(
+        plan.unpark_members,
+        vec![(1, 10)],
+        "the space remembers its own parked window"
+    );
     assert_eq!(plan.arrange.len(), 1);
-    assert!(plan.park.is_empty() && plan.hide_apps.is_empty(), "nothing foreign exists here");
+    assert!(
+        plan.park.is_empty() && plan.hide_apps.is_empty(),
+        "nothing foreign exists here"
+    );
 }
 
 #[test]
@@ -201,13 +292,21 @@ fn stage_is_the_default_containment() {
 fn reversal_reparks_members_last_after_frames_restore() {
     let mut lease = PodLease::new("w", 1);
     lease.parked_windows.push((2, 20));
-    lease.moved_windows.push((1, 10, rt(1.0, 1.0, 100.0, 100.0)));
+    lease
+        .moved_windows
+        .push((1, 10, rt(1.0, 1.0, 100.0, 100.0)));
     lease.unparked_members.push((1, 10));
     let steps = lease.reversal();
     assert!(matches!(steps[0], LeaseStep::UnparkWindow { pid: 2, .. }));
     assert!(matches!(steps[1], LeaseStep::MoveWindowBack { pid: 1, .. }));
     assert!(
-        matches!(steps[steps.len() - 1], LeaseStep::ReparkWindow { pid: 1, window_id: 10 }),
+        matches!(
+            steps[steps.len() - 1],
+            LeaseStep::ReparkWindow {
+                pid: 1,
+                window_id: 10
+            }
+        ),
         "the space's windows return into the space LAST (moves need visibility)"
     );
 }
@@ -217,7 +316,9 @@ fn reversal_reparks_members_last_after_frames_restore() {
 #[test]
 fn lease_reversal_is_exact_inverse_order() {
     let mut lease = PodLease::new("w", 1);
-    lease.moved_windows.push((1, 10, rt(1.0, 1.0, 100.0, 100.0)));
+    lease
+        .moved_windows
+        .push((1, 10, rt(1.0, 1.0, 100.0, 100.0)));
     lease.parked_windows.push((2, 20));
     lease.veils.push(7);
     lease.hidden_apps.push(5);
@@ -307,9 +408,15 @@ fn policies_parse_and_never_ship_by_default() {
     assert_eq!(policies.len(), 1);
     assert_eq!(
         policies[0].launch_args("/pods/pod-1"),
-        vec!["--user-data-dir=/pods/pod-1", "--extensions-dir=/pods/pod-1"]
+        vec![
+            "--user-data-dir=/pods/pod-1",
+            "--extensions-dir=/pods/pod-1"
+        ]
     );
-    assert!(policy::default_policies().is_empty(), "no product knowledge ships in code");
+    assert!(
+        policy::default_policies().is_empty(),
+        "no product knowledge ships in code"
+    );
     assert!(policy::parse_policies("bogus line").is_err());
 }
 
@@ -363,12 +470,18 @@ fn addon_store_roundtrips_claims_and_resources() {
     use evo_pods::{PodClaim, PodResource};
     let text = addon_store::export(&[(
         "pod-7".to_string(),
-        vec![PodResource::App("Editor".into()), PodResource::Url("https://x".into())],
+        vec![
+            PodResource::App("Editor".into()),
+            PodResource::Url("https://x".into()),
+        ],
         vec![PodClaim::Document("file:///a.ts".into())],
     )]);
     let back = addon_store::import(&text);
     assert_eq!(back.len(), 1);
     assert_eq!(back[0].0, 7);
     assert_eq!(back[0].1.len(), 2, "the two resources survive");
-    assert_eq!(back[0].2, vec![PodClaim::Document("file:///a.ts".to_string())]);
+    assert_eq!(
+        back[0].2,
+        vec![PodClaim::Document("file:///a.ts".to_string())]
+    );
 }

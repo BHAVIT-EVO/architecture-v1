@@ -36,10 +36,10 @@ the binary's identity.)
       mode. The note says "N arranged" (N > 0) — not zeros.
 - [ ] Restore note is clean: no "Unable to find application named '<page
       title>'" lines; at most "[2 real failures … +N more]" style honesty.
-- [ ] **No web pages open inside Evo** on entry (round-2 change).
-- [ ] With a pod active, Home strip reads `● In: <name…> · Leave pod · Pages
-      · ⌘⇧E cycles pods`. Click **Pages** → the in-Evo pane opens on demand
-      (logins isolated per work). Leave pod → pane hibernates.
+- [ ] URLs in the work's restore set open through the normal macOS handler;
+      no web page is rendered inside Evo and no **Pages** control is shown.
+- [ ] With a pod active, Home strip reads `● In: <name…> · Eject · ⌘⇧E
+      cycles pods`. Leaving the pod restores the prior desktop lease.
 - [ ] Home now scrolls when content overflows (mouse wheel / trackpad).
 
 ## 3. Presence (2 min)

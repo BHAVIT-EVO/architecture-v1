@@ -667,10 +667,10 @@ where
 {
     let start = Instant::now();
     loop {
-        if let Ok(index) = CanonicalIndex::new(root.to_path_buf()) {
-            if pred(&index) {
-                return Some(index);
-            }
+        if let Ok(index) = CanonicalIndex::new(root.to_path_buf())
+            && pred(&index)
+        {
+            return Some(index);
         }
         if start.elapsed() > timeout {
             return None;

@@ -40,9 +40,15 @@ fn main() {
     let graph = reconstruction.graph();
 
     println!("================================================================");
-    println!("EVO — COHESION PROBE  (new rule, {} threads)", set.engagements().len());
+    println!(
+        "EVO — COHESION PROBE  (new rule, {} threads)",
+        set.engagements().len()
+    );
     println!("root: {}", root.display());
-    println!("floor {:.2}   density = fraction of member-pairs above floor", params.affinity_floor);
+    println!(
+        "floor {:.2}   density = fraction of member-pairs above floor",
+        params.affinity_floor
+    );
     println!("================================================================");
     println!();
     println!("  memb seed  dens  mean  stand  title");
@@ -90,8 +96,16 @@ fn main() {
                 }
             }
         }
-        let density = if pairs > 0 { linked as f64 / pairs as f64 } else { 0.0 };
-        let mean_affinity = if pairs > 0 { affinity_sum / pairs as f64 } else { 0.0 };
+        let density = if pairs > 0 {
+            linked as f64 / pairs as f64
+        } else {
+            0.0
+        };
+        let mean_affinity = if pairs > 0 {
+            affinity_sum / pairs as f64
+        } else {
+            0.0
+        };
 
         // Hub fraction: of the non-seed members, how many cohere ONLY with a seed
         // and with no other member — i.e., pure spokes of a star.

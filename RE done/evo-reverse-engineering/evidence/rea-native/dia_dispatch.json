@@ -1,0 +1,18 @@
+{
+  "error": "Analysis failed",
+  "code": "execution_failure",
+  "category": "execution_failure",
+  "message": "Analysis could not complete. Retry once; if it continues, run `rea doctor`.",
+  "retryable": false,
+  "remediation": {
+    "action": "Analysis could not complete. Retry once; if it continues, run `rea doctor`."
+  },
+  "details": {
+    "provider_id": "native-macos",
+    "operation": "inspect_native_dispatch_metadata",
+    "diagnostics": {
+      "target_path": "/Applications/Dia.app/Contents/MacOS/Dia",
+      "reason": "Apple metadata target must be a regular file no larger than 64 MiB"
+    }
+  }
+}

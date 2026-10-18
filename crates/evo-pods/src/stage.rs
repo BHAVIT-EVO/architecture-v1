@@ -107,7 +107,7 @@ impl Role {
                 const CAP: f64 = 4.0;
                 let i = (i as f64).min(CAP - 1.0);
                 RatioRect {
-                    x: LEFT + (WIDTH / CAP) * (i as f64),
+                    x: LEFT + (WIDTH / CAP) * i,
                     y: 0.72,
                     w: (WIDTH / CAP) - 0.008,
                     h: 0.22,
@@ -180,16 +180,9 @@ pub fn derive_recipe(
 ) -> StageRecipe {
     let mut recipe = StageRecipe::new(signature.clone());
     if !bundle.resume_point.is_empty() {
-        recipe
-            .roles
-            .insert(bundle.resume_point.clone(), Role::Hero);
+        recipe.roles.insert(bundle.resume_point.clone(), Role::Hero);
     }
-    for (idx, resource) in bundle
-        .restore_set
-        .iter()
-        .enumerate()
-        .take(satellite_cap)
-    {
+    for (idx, resource) in bundle.restore_set.iter().enumerate().take(satellite_cap) {
         if *resource != bundle.resume_point {
             recipe
                 .roles
@@ -204,7 +197,10 @@ pub fn derive_recipe(
         .collect();
     companions.sort_by(|a, b| b.1.total_cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
     for (idx, (resource, _)) in companions.into_iter().enumerate().take(rail_cap) {
-        recipe.roles.entry(resource).or_insert(Role::Rail(idx as u8));
+        recipe
+            .roles
+            .entry(resource)
+            .or_insert(Role::Rail(idx as u8));
     }
 
     // Legacy learning: same resource, same role family -> keep placement.
@@ -254,16 +250,29 @@ pub mod recipe_store {
             if cols.len() != 7 {
                 continue;
             }
-            let Ok(x) = cols[3].parse::<f64>() else { continue };
-            let Ok(y) = cols[4].parse::<f64>() else { continue };
-            let Ok(w) = cols[5].parse::<f64>() else { continue };
-            let Ok(h) = cols[6].parse::<f64>() else { continue };
+            let Ok(x) = cols[3].parse::<f64>() else {
+                continue;
+            };
+            let Ok(y) = cols[4].parse::<f64>() else {
+                continue;
+            };
+            let Ok(w) = cols[5].parse::<f64>() else {
+                continue;
+            };
+            let Ok(h) = cols[6].parse::<f64>() else {
+                continue;
+            };
             let recipe = by_key
                 .entry((cols[0].to_string(), cols[1].to_string()))
                 .or_insert_with(|| StageRecipe::new(DisplaySignature(cols[1].to_string())));
             recipe.placements.insert(
                 cols[2].to_string(),
-                RatioRect { x: x.max(0.0), y: y.max(0.0), w: w.clamp(0.0, 1.0), h: h.clamp(0.0, 1.0) },
+                RatioRect {
+                    x: x.max(0.0),
+                    y: y.max(0.0),
+                    w: w.clamp(0.0, 1.0),
+                    h: h.clamp(0.0, 1.0),
+                },
             );
         }
         by_key.into_iter().map(|((pod, _), r)| (pod, r)).collect()

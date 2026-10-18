@@ -27,11 +27,14 @@
 //! a different body of work resets it, because it belonged to the previous one.
 
 use crate::daemon::{DaemonManager, DaemonStatus};
+use crate::pod_bar_drag;
 use crate::state::{self, DisplayState};
-use crate::ui;
-use crate::{detail, home, shell, theme};
+use crate::ui::{self, Control};
+use crate::{detail, dock, home, rack, shell, theme};
 
 use evo_daemon::cache::CanonicalIndex;
+use evo_daemon::persistence::load_persisted_observations;
+use evo_daemon::threads::{app_names_for_threads, resource_apps_for_threads};
 use evo_engagement::Standing;
 use evo_execution::{
     ExecutionReport, Locator, PreflightOutcome, RestorationSelection, preflight_selection,
@@ -39,6 +42,7 @@ use evo_execution::{
 use evo_restoration::DerivationOutcome;
 use evo_workspace::workspace::Workspace;
 use evo_workspace::workspace_id::WorkspaceId;
+use std::sync::mpsc;
 
 use std::collections::{BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
@@ -60,6 +64,10 @@ pub const CONTINUE_DWELL: Duration = Duration::from_millis(650);
 /// The Evo desktop shell state.
 pub struct EvoApp {
     storage_root: PathBuf,
+    /// Click/swipe actions from the notch surface thread (carousel
+    /// Restore/Close chips, drags, open-rack). `Some` only under the
+    /// evo-notch feature when the surface spawned; the receiver going
+    /// away frees the surface's channel.
     /// The derived canonical index over the storage logs, refreshed
     /// incrementally on every reload so repeated reloads do not re-parse the
     /// full history. A fresh index built from the logs produces identical
@@ -128,6 +136,16 @@ pub struct EvoApp {
     /// by the domain Restoration Execution boundary. Cleared by the user, or
     /// by opening different work — never by a reload.
     execution_result: Option<ExecutionReport>,
+    /// Desktop windows present before the current work was opened. The
+    /// unified workspace arranger uses this boundary to tile only windows
+    /// belonging to the newly restored work.
+    workspace_before: Option<crate::unified_workspace::WorkspaceSnapshot>,
+    /// Deadline for polling native windows after a restore. macOS accepts an
+    /// open request before the target app has created its AX windows.
+    workspace_arrangement_deadline: Option<Instant>,
+    /// User-selected tiling preset. Automatic mode remains the default and
+    /// picks a Setpiece-style preset from the number of restored windows.
+    workspace_layout_preference: Option<evo_pods::layout::LayoutId>,
     /// Where the Continue action is in its lifecycle for the open body of
     /// work. User-authored transient: entering `Preparing` is the user
     /// committing to restore, so it is cleared by navigation like every other
@@ -152,47 +170,63 @@ pub struct EvoApp {
     /// (RFC-0012 WorkGrouped), as reported by the daemon, together with
     /// whether it was accepted.
     grouping_status: Option<(String, bool)>,
-    /// The user's presentation-only retrieval query over remembered work.
-    /// Filtering by it never changes canonical state or ordering semantics.
+    /// Whether the rack's stack row is expanded. Transient presentation
+    /// only (DESIGN.md: the stack is one click away, visibly).
+    stack_open: bool,
+    /// The merge proposal currently armed for confirmation, if any. The
+    /// desktop's own arming step: a first press only arms; Confirm alone
+    /// declares. Disarmed by Decline, a click elsewhere, or a proposal list
+    /// that shrank (rack.rs owns those rules; this only carries the state).
+    merge_armed: Option<usize>,
+    /// Explicit, user-selected work IDs. Co-sitting ledger proposals are not
+    /// evidence that two intentions are the same.
+    group_source: Option<u64>,
+    group_target: Option<u64>,
+    group_confirm: bool,
+    /// The work currently being renamed (RFC-0014): the engine thread id of
+    /// the card whose Rename… control was pressed, plus the draft text.
+    /// Transient presentation; submitted through the daemon's canonical
+    /// naming channel and cleared on submit or cancel.
+    rename_thread: Option<u64>,
+    rename_draft: String,
+    /// The rack's search text, owned by the shell like the stack's open
+    /// state. A non-empty query narrows the deck to matching works (the
+    /// person's own names first, RFC-0014 read-back).
     search_query: String,
-    /// The user's presentation-only resource-kind filter over remembered work
-    /// (presentation state only; never continuation evidence).
-    kind_filter: state::WorkKindFilter,
-    /// The user's presentation-only time filter over remembered work, judged
-    /// by the factual canonical latest witness instant.
-    period_filter: state::WorkPeriodFilter,
-    /// Memoized retrieval material per remembered Workspace, rebuilt only when
-    /// the canonical boundary changed.
-    retrieval_memo: home::Memo,
     /// The new-engine view: work threads derived by `evo-threads` from the
     /// same observation log the legacy Engagement pipeline reads, with each
     /// thread's resume bundle. Presentation-only; rebuilt on reload.
     engine_threads: Vec<evo_daemon::threads::DisplayThread>,
     /// The pod host, shared with the menu-bar presence: containment
-    /// (hide/park/raise), the active pod, and the web panes'
-    /// hibernation. Pod commands execute on the main thread from wherever they come — the desktop never waits for this
+    /// (hide/park/raise) and the active pod. Pod commands execute on the main
+    /// thread from wherever they come — the desktop never waits for this
     /// window to paint.
     pods: crate::pods::SharedPods,
-    /// Whether the pod browser panel is open. Only meaningful while a
-    /// pod is active.
-    pod_browser: bool,
     /// The global hotkey + menu bar controller (keeps its allocations
     /// alive).
     pod_presence: Option<crate::presence::PodPresence>,
-    podbar: crate::podbar::PodBar,
     /// The engine's current merge proposals: (subject_a, subject_b,
     /// name_a, name_b, shared sittings). Deterministic co-sitting between
     /// established works, offered to the person — confirming one declares
     /// the pair same-work through the daemon.
-    merge_proposals: Vec<(String, String, String, String, usize)>,
     /// The honest account of the last restore, shown with the threads it
     /// came from: what opened, what was raised, what could not be opened.
     restore_note: Option<String>,
-    /// Which work card is expanded (showing its detail view).
-    expanded_work: Option<usize>,
+    /// Effect-free scoped picker plus one daemon RESOURCE worker. Never enters pods.
+    scoped_restore: crate::scoped_restore::ScopedRestore,
     /// Receiver for background engine computation results.
     /// The engine rebuilds on a dedicated thread; results arrive here.
-    engine_receiver: Option<std::sync::mpsc::Receiver<Vec<evo_daemon::threads::DisplayThread>>>,
+    engine_receiver:
+        Option<std::sync::mpsc::Receiver<Result<Vec<evo_daemon::threads::DisplayThread>, String>>>,
+    engine_error: Option<String>,
+    /// Whether an engine-threads rebuild is currently running on the worker
+    /// thread. One rebuild at a time; cleared when its result is drained.
+    engine_rebuild_in_flight: bool,
+    /// A pending capture-daemon restart, requested by the capture-partial
+    /// banner's "Check again" action. Consumed on the next `logic` pass —
+    /// the same deferred-execution pattern as `continue_phase`, because the
+    /// banner closure cannot also borrow `self.daemon`.
+    daemon_restart_requested: bool,
     /// The first-run gate: `Some(step)` (1–3) while it is in progress, `None`
     /// once the user has entered the product. Persisted as a marker file
     /// outside canonical storage, so Evo never writes a presentation fact into
@@ -206,29 +240,196 @@ pub struct EvoApp {
     status: Option<String>,
     last_reload: Instant,
     last_signature: Option<(String, usize)>,
+    /// Voice events from the mic/wake/transcription thread ("Hey Evo").
+    /// `None` when the voice-audio feature is off or the thread failed to
+    /// start. The thread exits when this receiver is dropped.
+    voice_events: Option<std::sync::mpsc::Receiver<evo_voice::VoiceEvent>>,
+    /// The floating ambiguity panel: shown when a voice trigger resolves
+    /// to multiple similar candidates. Numbered rows; the user picks by
+    /// voice ordinal, click, or number key.
+    voice_panel: crate::voice::AmbiguityPanel,
+    /// A transient voice outcome message ("Resumed …", "Couldn't find …")
+    /// with the time it was set, so it fades after a few seconds.
+    voice_toast: Option<(String, Instant)>,
+    /// The notch surface's action channel: drags and chip clicks.
+    notch_actions: Option<mpsc::Receiver<crate::notch_window::SurfaceAction>>,
 }
 
 /// Locks the shared pod host from a field reference — a free
 /// function so the render closure (which destructures `self` and may only
 /// capture fields, never the whole) can reach it too.
-/// Stable pod identity for the presentation path: FNV-1a of the pod's
-/// engine name. The same work hashes to the same id across restarts until
-/// the engine-lineage ids land (read-path unification); nothing random,
-/// nothing time-based.
-fn pod_id_of(name: &str) -> u64 {
-    let mut hash: u64 = 0xcbf29ce484222325;
-    for byte in name.as_bytes() {
-        hash ^= u64::from(*byte);
-        hash = hash.wrapping_mul(0x100000001b3);
-    }
-    hash
+/// Stable pod identity: the engine-lineage ThreadId. The same work keeps
+/// the same pod id, accent color, and Add-to-Pod claims across restarts,
+/// because the engine mints ids by replay order over the append-only log.
+/// (The former name-hash identity died with the read-path unification: a
+/// renamed work is still the same work.)
+fn pod_id_of(thread_id: u64) -> u64 {
+    thread_id
 }
 
-fn lock_pods(
-    pods: &crate::pods::SharedPods,
-) -> std::sync::MutexGuard<'_, crate::pods::PodHost> {
-    pods.lock()
-        .unwrap_or_else(|poisoned| poisoned.into_inner())
+fn lock_pods(pods: &crate::pods::SharedPods) -> std::cell::RefMut<'_, crate::pods::PodHost> {
+    pods.borrow_mut()
+}
+
+/// The rename session (RFC-0014 WorkNamed): the person's own word for a
+/// body of work, collected against one armed card and sent through the
+/// daemon's canonical naming channel. Nothing canonical is written here —
+/// the daemon validates, persists, and re-derives; the shell only reports
+/// the honest outcome.
+fn rename_control_panel(
+    ui: &mut egui::Ui,
+    works: &[evo_daemon::threads::DisplayThread],
+    root: &Path,
+    armed: &mut Option<u64>,
+    draft: &mut String,
+    note: &mut Option<String>,
+    ctx: &egui::Context,
+) {
+    let Some(thread_id) = *armed else {
+        return;
+    };
+    let Some(work) = works.iter().find(|w| w.thread_id == thread_id) else {
+        // The armed work faded from Home (rebuild, decay): close honestly.
+        *armed = None;
+        draft.clear();
+        return;
+    };
+
+    ui::gap(ui, theme::S4);
+    ui.collapsing(format!("Rename “{}”", work.name), |ui| {
+        ui::caption(
+            ui,
+            "Give this work the name you'd use to ask for it again. Evo uses your word, not a guess.",
+        );
+        ui::gap(ui, theme::S2);
+
+        let field = ui.add(
+            egui::TextEdit::singleline(draft)
+                .id_salt(("evo-rename-field", thread_id))
+                .hint_text(theme::text(
+                    theme::Role::Body,
+                    "What do you call this work?",
+                    theme::MUTED,
+                ))
+                .desired_width(ui.available_width().min(360.0)),
+        );
+        field.request_focus();
+
+        let confirmed = ui
+            .horizontal(|ui| {
+                let save = ui::control(ui, Control::primary("Save name"));
+                let cancel = ui::control(ui, Control::quiet("Cancel"));
+                save.clicked() || cancel.clicked()
+            })
+            .inner;
+        let save = field.lost_focus()
+            && ui.input(|i| i.key_pressed(egui::Key::Enter));
+
+        let submit_now = (confirmed && !save) || save;
+        if submit_now && !draft.trim().is_empty() {
+            // The subject the person is naming: the work's strongest witnessed
+            // member — never a download or an application identity, which are
+            // products and containers, not the work itself (the same rule the
+            // grouping correction applies). The daemon validates the
+            // declaration's shape at the boundary; the person's word needs no
+            // witnessing to be spoken (Law IX).
+            let subject = work
+                .member_subjects
+                .iter()
+                .find(|s| {
+                    !s.trim().is_empty()
+                        && !s.starts_with("Downloaded:")
+                        && !s.starts_with("app:")
+                })
+                .or_else(|| work.member_subjects.first())
+                .cloned()
+                .unwrap_or_else(|| work.bundle.resume_point.clone());
+            match state::submit_naming(root, &subject, draft.trim()) {
+                Ok(evo_daemon::naming::NamingResponse::Accepted) => {
+                    *note = Some("Name sent to capture; it appears on the next refresh.".into());
+                    *armed = None;
+                    draft.clear();
+                    // Ask for a fresh rebuild so the new name shows up.
+                    ctx.request_repaint();
+                }
+                Ok(evo_daemon::naming::NamingResponse::Rejected(reason)) => {
+                    *note = Some(format!("Name declined: {reason}"));
+                }
+                Err(err) => {
+                    *note = Some(format!("Naming failed: {err}"));
+                }
+            }
+        } else if confirmed && draft.trim().is_empty() {
+            *note = Some("A blank name says nothing; nothing was changed.".into());
+            *armed = None;
+            draft.clear();
+        }
+    });
+    // Pressing Escape anywhere closes the session without sending.
+    if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+        *armed = None;
+        draft.clear();
+    }
+}
+
+/// An explicit correction inside Home's scrollable surface, not an inferred
+/// ledger proposal. The final press replays canonical evidence before sending
+/// anything to the daemon; failed or stale reads never create a declaration.
+fn manual_grouping_control(
+    ui: &mut egui::Ui,
+    works: &[evo_daemon::threads::DisplayThread],
+    root: &Path,
+    source: &mut Option<u64>,
+    target: &mut Option<u64>,
+    armed: &mut bool,
+    note: &mut Option<String>,
+) {
+    ui::gap(ui, theme::S4);
+    ui.collapsing("Group two works manually", |ui| {
+        ui::caption(ui, "If two cards describe one intention, choose both. Being open together is not enough evidence to group them.");
+        let old_pair = (*source, *target);
+        for (label, selected) in [("First work", &mut *source), ("Second work", &mut *target)] {
+            egui::ComboBox::from_label(label)
+                .selected_text(selected.and_then(|id| works.iter().find(|w| w.thread_id == id).map(|w| w.name.as_str())).unwrap_or("Choose work"))
+                .show_ui(ui, |ui| {
+                    for work in works {
+                        ui.selectable_value(selected, Some(work.thread_id), &work.name);
+                    }
+                });
+        }
+        if old_pair != (*source, *target) {
+            *armed = false;
+        }
+        let pair = source.zip(*target).and_then(|(a, b)| evo_daemon::threads::grouping_subjects(works, a, b));
+        if pair.is_none() && source.is_some() && target.is_some() {
+            ui::caption(ui, "These works need distinct witnessed resources before Evo can safely group them.");
+        }
+        if pair.is_some() && ui::control(ui, Control::secondary("Review grouping")).clicked() {
+            *armed = true;
+        }
+        if *armed && pair.is_some() {
+            ui::caption(ui, "This joins both works on the next refresh. It does not restore anything.");
+            if ui::control(ui, Control::primary("Confirm grouping")).clicked() {
+                *armed = false;
+                let (a, b) = pair.expect("checked");
+                let current = evo_daemon::threads::grouping_subjects_from_storage(root, source.expect("chosen"), target.expect("chosen"));
+                *note = Some(match current {
+                    Ok(Some((current_a, current_b))) if a == current_a && b == current_b => {
+                        match evo_daemon::grouping::submit_grouping(root, &a, &b) {
+                            Ok(evo_daemon::grouping::GroupingResponse::Accepted) => "Grouping forwarded to capture; check the next refresh.".into(),
+                            Ok(evo_daemon::grouping::GroupingResponse::Rejected(reason)) => format!("Grouping declined: {reason}"),
+                            Err(err) => format!("Grouping failed: {err}"),
+                        }
+                    }
+                    Ok(_) => "Work changed or has a shared resource. Refresh and choose again; nothing was grouped.".into(),
+                    Err(err) => format!("Cannot check current work evidence; nothing was grouped: {err}"),
+                });
+            }
+            if ui::control(ui, Control::quiet("Cancel grouping")).clicked() {
+                *armed = false;
+            }
+        }
+    });
 }
 
 impl EvoApp {
@@ -270,18 +471,22 @@ impl EvoApp {
         // commands execute on the main thread from the action itself —
         // the desktop never waits for this window to paint (a hidden
         // window paints nothing).
-        let pods: crate::pods::SharedPods = std::sync::Arc::new(std::sync::Mutex::new(
-            crate::pods::PodHost::new(),
-        ));
+        let pods: crate::pods::SharedPods =
+            std::rc::Rc::new(std::cell::RefCell::new(crate::pods::PodHost::new()));
         // Add-to-Pod persistence: the addon ledger lives with the rest of
         // the storage root; what a person teaches a pod survives restarts
         // and engine refreshes alike.
-        if let Ok(mut guard) = pods.lock() {
-            guard.set_addons_path(storage_root.join("pod-addons.tsv"));
-        }
-        let pod_presence = crate::presence::PodPresence::new(pods.clone(), cc.egui_ctx.clone());
-        let podbar = crate::podbar::PodBar::new();
-        let mut app = Self {
+        pods.borrow_mut()
+            .set_addons_path(storage_root.join("pod-addons.tsv"));
+        // The old Pod Bar/presence surface is retired. Work launches stay
+        // native to macOS, without registering a second workspace switcher
+        // or global pod hotkey layer.
+        let pod_presence = None;
+        let workspace_layout_preference =
+            std::fs::read_to_string(storage_root.join("workspace-layout.txt"))
+                .ok()
+                .and_then(|key| evo_pods::layout::LayoutId::from_key(key.trim()));
+        let mut app = EvoApp {
             storage_root: storage_root.clone(),
             index,
             workspaces: Vec::new(),
@@ -302,420 +507,95 @@ impl EvoApp {
             selected: None,
             opened: None,
             execution_result: None,
+            workspace_before: None,
+            workspace_arrangement_deadline: None,
+            workspace_layout_preference,
             continue_phase: detail::ContinuePhase::Idle,
             designation_status: None,
             continuation_draft: None,
             continuation_status: None,
             grouping_status: None,
+            stack_open: false,
+            merge_armed: None,
+            group_source: None,
+            group_target: None,
+            group_confirm: false,
+            rename_thread: None,
+            rename_draft: String::new(),
             search_query: String::new(),
-            kind_filter: state::WorkKindFilter::All,
-            period_filter: state::WorkPeriodFilter::All,
-            retrieval_memo: home::Memo::default(),
             engine_threads: Vec::new(),
             pods,
-            pod_browser: false,
-            pod_presence: Some(pod_presence),
-            podbar,
-            merge_proposals: Vec::new(),
+            pod_presence,
             restore_note: None,
-            expanded_work: None,
+            scoped_restore: crate::scoped_restore::ScopedRestore::default(),
             engine_receiver: None,
+            engine_error: None,
+            engine_rebuild_in_flight: false,
             first_run: shell::first_run_pending(),
             settings_open: false,
             status: None,
             last_reload: Instant::now(),
             last_signature: None,
+            // Set by the capture-partial banner's "Check again" and consumed
+            // on the next logic pass: the closure that renders the banner
+            // cannot also reach `self.daemon` (borrow conflict), so the
+            // restart is deferred exactly like the Continue lifecycle.
+            daemon_restart_requested: false,
+            // The voice thread owns mic + wake + transcription; wired
+            // right after the struct literal (it needs `&mut app` for
+            // the notch action channel).
+            voice_events: None,
+            voice_panel: crate::voice::AmbiguityPanel::default(),
+            voice_toast: None,
+            notch_actions: None,
         };
+        // The login agent is the sole microphone/notch owner. Opening the
+        // desktop must not create a second listener or competing overlay, and
+        // quitting it must not terminate the independent voice interaction.
         app.reload();
         app
-    }
-
-    /// Snapshots the pod list and active pod id for the bar — a clone, so
-    /// the bar never holds the host lock across a paint.
-    fn podbar_pods(&self) -> (Vec<evo_pods::pod::Pod>, Option<u64>, Option<crate::podbar::StageStats>) {
-        let guard = lock_pods(&self.pods);
-        let active_id = guard
-            .active
-            .as_ref()
-            .and_then(|name| guard.pods.iter().find(|pod| &pod.name == name))
-            .map(|pod| pod.id.0);
-        let stage_stats = guard.core.lease().map(|lease| {
-            (
-                lease.parked_windows.len(),
-                lease.hidden_apps.len(),
-                lease.unparked_members.len(),
-            )
-        });
-        (guard.pods.clone(), active_id, stage_stats)
-    }
-
-    /// Paints the Pod Bar overlay above everything and applies the actions
-    /// it proposes. Called as the very last thing in `ui` — the bar must
-    /// always win the z-order, whatever else is open.
-    fn paint_podbar(&mut self, ctx: &egui::Context) {
-        let (pods, active_id, stage_stats) = self.podbar_pods();
-        // The Add-to-Pod picker lists the live desktop only while it is
-        // open — a per-frame AX enumeration for a hidden picker would be
-        // spend for nothing.
-        let open_inventory = if self.podbar.add_for.is_some() {
-            lock_pods(&self.pods).open_windows()
-        } else {
-            Vec::new()
-        };
-        let actions = crate::podbar::show(
-            ctx,
-            &mut self.podbar,
-            &pods,
-            active_id,
-            9,
-            stage_stats,
-            &open_inventory,
-        );
-        for action in actions {
-            match action {
-                crate::podbar::PodBarAction::Command(command) => {
-                    let mut guard = lock_pods(&self.pods);
-                    guard.execute(command, crate::pods::epoch_ms());
-                    if let Some(note) = guard.pending_note.take() {
-                        self.restore_note = Some(note);
-                    }
-                }
-                crate::podbar::PodBarAction::OpenAdd(index) => {
-                    self.podbar.add_for = Some(index);
-                    self.podbar.draft_text.clear();
-                }
-                crate::podbar::PodBarAction::CloseAdd => {
-                    self.podbar.add_for = None;
-                    self.podbar.draft_text.clear();
-                }
-                crate::podbar::PodBarAction::Dismiss => {
-                    self.podbar.visible = false;
-                    self.podbar.add_for = None;
-                }
-            }
-        }
     }
 
     /// Re-reads canonical state by refreshing the derived index (only the
     /// records appended since the last reload are parsed).
     fn reload(&mut self) {
-        // ─── The ledger path: Works from the engine process ────────────
-        // Read Works directly from the ledger database (written by
-        // evo-ledger-engine, a separate process). This is a fast indexed
-        // SELECT — no engine computation, no background thread needed.
+        // ─── The engine path: Works from evo-threads (W2 unification) ──
+        // Home's authority on what a work is: the work engine replayed over
+        // the canonical observation log, through one call. Thread ids are
+        // engine lineage — stable across restarts — and every surface (rack
+        // cards, pods, menu bar, merge vocabulary) now speaks them.
         //
-        // Includes: recency-weighted lifecycle (2-week half-life, 30-day fade)
-        // and FTS5 search integration.
-        // The ledger lives inside the storage root: the capture layer's
-        // self-write exclusion covers it there, so the engine's rebuilds
-        // never feed back through the file watcher.
+        // A full log replay is heavier than the ledger's indexed SELECT, so
+        // it runs on a worker thread and lands through `engine_receiver`;
+        // the previous list keeps rendering until the fresh one arrives.
+        // The ledger stays as ingestion + FTS5 search + merge-proposal
+        // shadow (its hypothesis layer is scored by the thread gate until
+        // parity retires it); it no longer names Home's work.
         let ledger_path = self.storage_root.join("ledger.db");
         let mut ledger_has_works = false;
-        if ledger_path.exists() {
-            if let Ok(ledger) = evo_ledger::Ledger::open_readonly(&ledger_path) {
-                let works = ledger.works(30).unwrap_or_default();
-                ledger_has_works = !works.is_empty();
-                let now_ms = std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .map(|d| d.as_millis() as u64)
-                    .unwrap_or(0);
+        if ledger_path.exists() && evo_ledger::Ledger::open_readonly(&ledger_path).is_ok() {
+            ledger_has_works = true;
+            // The ledger's co-sitting candidates describe temporal overlap,
+            // not a relationship between the engine works Home displays.
+            // Never surface them as a declaration to this second authority.
+        }
 
-                // macOS window titles append app chrome ("… — Google Chrome
-                // — Profile"). Nothing is hardcoded: a trailing segment that
-                // recurs across many works' titles is chrome, and it is
-                // dropped; the leading content the person named stays.
-                let chrome_suffixes = recurring_title_suffixes(&works);
-
-                // Each pair carries the work's containment surface so the
-                // two derived lists stay exactly parallel through the
-                // filter and the sort below: the surface at index i is the
-                // pod of the thread at index i. Indexing them separately
-                // (as they once were) makes Enter open the wrong work's
-                // pod the moment the ledger order differs from the
-                // engagement order.
-                let mut paired: Vec<(
-                    evo_daemon::threads::DisplayThread,
-                    crate::pods::Pod,
-                )> = works
-                    .iter()
-                    .filter_map(|w| {
-                        // ─── Work lifecycle: fade, don't delete ─────────
-                        // 30-day fade: untouched for a month → off the surface
-                        let days_since =
-                            (now_ms.saturating_sub(w.last_active_ms)) as f64 / 86_400_000.0;
-                        if days_since > 30.0 {
-                            return None; // faded from default view (still in ledger)
-                        }
-
-                        // Recency decay: 2-week half-life on engagement
-                        let decayed_engagement =
-                            w.total_time_ms as f64 * 0.5_f64.powf(days_since / 14.0);
-
-                        // The person-readable name, from the richest
-                        // evidence the work carries: the page titles the
-                        // person actually read, then the document they
-                        // edited, then a meaningful URL name, then the bare
-                        // identity. Chrome is stripped, never hardcoded.
-                        let name = work_display_name(w, &chrome_suffixes);
-                        let phase = match w.engagement() {
-                            evo_ledger::works::Engagement::Building => {
-                                evo_daemon::work_understanding::WorkPhase::Building
-                            }
-                            evo_ledger::works::Engagement::Writing => {
-                                evo_daemon::work_understanding::WorkPhase::Writing
-                            }
-                            evo_ledger::works::Engagement::Reading => {
-                                evo_daemon::work_understanding::WorkPhase::Researching
-                            }
-                        };
-                        let recency = time_ago(w.last_active_ms, now_ms);
-
-                        // Honest evidence lines, never invented.
-                        let mut completed: Vec<String> = Vec::new();
-                        if w.attached_saves > 0 {
-                            completed.push(format!(
-                                "{} file{} saved",
-                                w.attached_saves,
-                                if w.attached_saves == 1 { "" } else { "s" }
-                            ));
-                        }
-                        if w.has_production {
-                            completed.push("Typed here".to_string());
-                        }
-
-                        // The restore neighborhood: files are stronger
-                        // anchors than pages (they are the produced work),
-                        // so documents lead, then sites, deduplicated.
-                        let mut restore_set: Vec<String> = Vec::new();
-                        for doc in w.documents.iter().chain(w.urls.iter()) {
-                            if !restore_set.contains(doc) {
-                                restore_set.push(doc.clone());
-                            }
-                            if restore_set.len() >= 5 {
-                                break;
-                            }
-                        }
-                        let sites = w.urls.len();
-                        let files = w.documents.len();
-                        let next_step = if sites == 0 && files == 0 {
-                            format!("Open {} again", name)
-                        } else {
-                            format!(
-                                "Reopen {}{}{}",
-                                if files > 0 {
-                                    format!("{} file{}", files, if files == 1 { "" } else { "s" })
-                                } else {
-                                    String::new()
-                                },
-                                if files > 0 && sites > 0 { " and " } else { "" },
-                                if sites > 0 {
-                                    format!("{} site{}", sites, if sites == 1 { "" } else { "s" })
-                                } else {
-                                    String::new()
-                                },
-                            )
-                        };
-
-                        // ─── Build the DisplayThread ─────────────────────
-                        let bundle = evo_threads::ResumeBundle {
-                            resume_point: w
-                                .documents
-                                .first()
-                                .cloned()
-                                .or_else(|| w.urls.first().cloned())
-                                .unwrap_or_default(),
-                            resume_reason: format!(
-                                "{} across {} sessions, last active {}",
-                                w.time_summary(),
-                                w.session_count(),
-                                recency,
-                            ),
-                            restore_set: restore_set.clone(),
-                            open_deltas: vec![],
-                        };
-
-                        // The containment surface built from the same work
-                        // record the thread was built from — same evidence,
-                        // same index. Its label is the work's display name
-                        // (not the ledger identity) so every pod-keyed
-                        // thing — the active-pod strip, the menu bar's
-                        // dot, the parking ledger — speaks one name.
-                        // The pod's evidence surface, from the same record
-                        // the legacy host used to consume: the work's own
-                        // witnesses. resource_apps opens each artifact via
-                        // its most recent app — never one work-level app.
-                        // Capture with Accessibility off records window
-                        // titles in the app slot upstream (the identity
-                        // fallback chain makes the title globally stable).
-                        // At THIS boundary the two are separated again:
-                        // an identity that appears among the work's window
-                        // titles is a window, never an app to launch or a
-                        // containment app-member. Trimming matters: titles
-                        // carry trailing chrome spacing.
-                        let title_set: std::collections::BTreeSet<String> = w
-                            .titles
-                            .iter()
-                            .map(|title| title.trim().to_string())
-                            .collect();
-                        let member_apps: Vec<String> = w
-                            .apps
-                            .iter()
-                            .map(|app| app.trim().to_string())
-                            .filter(|app| !app.is_empty() && !title_set.contains(app))
-                            .collect();
-                        let pod_surfaces = evo_pods::pod::PodSurfaces {
-                            urls: w.urls.clone(),
-                            documents: w.documents.clone(),
-                            titles: w
-                                .titles
-                                .iter()
-                                .map(|title| title.trim().to_string())
-                                .collect(),
-                            apps: member_apps,
-                            resource_apps: w
-                                .documents
-                                .iter()
-                                .chain(w.urls.iter())
-                                .filter_map(|resource| {
-                                    w.app_for_resource(resource).and_then(|app| {
-                                        let app = app.trim().to_string();
-                                        (!app.is_empty() && !title_set.contains(&app))
-                                            .then_some((resource.clone(), app))
-                                    })
-                                })
-                                .collect(),
-                        };
-                        // The pod: same evidence, engine-face. Its id is a
-                        // stable name hash (this presentation path assigns
-                        // no engine thread id; the engine-lineage ids land
-                        // with the Phase-1 read-path unification — W2 in
-                        // the repo assessment).
-                        let pod_id = pod_id_of(&name);
-                                                let pod = evo_pods::pod::Pod {
-                            id: evo_pods::pod::PodId(pod_id),
-                            // Add-to-Pod memory attaches at runtime via the
-                            // addon ledger; this projection reports none.
-                            resources: vec![],
-                            claims: vec![],
-                            name: name.clone(),
-                            color: evo_pods::pod::PodColor::from_thread(pod_id),
-                            reason: bundle.resume_reason.clone(),
-                            engagement: decayed_engagement,
-                            bundle: bundle.clone(),
-                            surfaces: pod_surfaces,
-                            badges: evo_pods::pod::badges_from_bundle(&bundle),
-                            member_subjects: w
-                                .urls
-                                .iter()
-                                .chain(w.documents.iter())
-                                .chain(w.titles.iter())
-                                .cloned()
-                                .collect(),
-                            // Companions/contested need the engine lineage;
-                            // this path reports none (suggestions stay
-                            // silent rather than guessing).
-                            companions: vec![],
-                            // The production document is the honest identity
-                            // carrier this record can cite for gestures.
-                            strongest_anchor: w.documents.first().cloned(),
-                            contested: vec![],
-                            state: evo_pods::pod::PodState::Inactive,
-                        };
-                        let narrative = format!(
-                            "You spent {} across {} sessions {} this — {}. {}",
-                            w.time_summary(),
-                            w.session_count(),
-                            phase.verb(),
-                            if recency == "just now" {
-                                "active moments ago".to_string()
-                            } else {
-                                format!("last active {}", recency)
-                            },
-                            if w.attached_saves > 0 {
-                                format!("{} files were produced here.", w.attached_saves)
-                            } else if w.has_production {
-                                "You were typing here.".to_string()
-                            } else {
-                                "No typing was observed — this was reading.".to_string()
-                            },
-                        );
-
-                        // The containment surface built from the same work
-                        // record the thread was built from — same evidence,
-                        // same index. Its label is the work's display name
-                        // (not the ledger identity) so every pod-keyed
-                        // thing — the active-pod strip, the menu bar's
-                        // dot, the parking ledger — speaks one name.
-                        // (The surface itself is built above, next to the
-                        // thread, from the same work record.)
-                        Some((
-                            evo_daemon::threads::DisplayThread {
-                                thread_id: 0,
-                                name: name.clone(),
-                                bundle,
-                                is_work: true,
-                                engagement: decayed_engagement,
-                                understanding: evo_daemon::work_understanding::WorkUnderstanding {
-                                    title: name.clone(),
-                                    phase,
-                                    trail: w
-                                        .urls
-                                        .iter()
-                                        .chain(w.documents.iter())
-                                        .take(8)
-                                        .map(|u| evo_daemon::work_understanding::TrailEntry {
-                                            name: evo_daemon::work_understanding::meaningful_name(
-                                                u,
-                                            )
-                                            .unwrap_or_else(|| short_resource_name(u)),
-                                            raw: u.clone(),
-                                            action: if u.starts_with("http") {
-                                                evo_daemon::work_understanding::TrailAction::Visited
-                                            } else {
-                                                evo_daemon::work_understanding::TrailAction::Opened
-                                            },
-                                        })
-                                        .collect(),
-                                    completed,
-                                    pending: vec![],
-                                    next_step,
-                                    narrative,
-                                },
-                                last_active_ms: Some(w.last_active_ms),
-                                member_subjects: w
-                                    .urls
-                                    .iter()
-                                    .chain(w.documents.iter())
-                                    .chain(w.titles.iter())
-                                    .cloned()
-                                    .collect(),
-                            },
-                            pod,
-                        ))
-                    })
-                    .collect::<Vec<_>>();
-
-                // Sort by decayed engagement (recent + long work first),
-                // carrying each work's containment surface alongside.
-                paired.sort_by(|a, b| {
-                    b.0.engagement
-                        .partial_cmp(&a.0.engagement)
-                        .unwrap_or(std::cmp::Ordering::Equal)
-                });
-                let (threads, pods): (Vec<_>, Vec<_>) = paired
-                    .into_iter()
-                    .collect::<Vec<_>>()
-                    .into_iter()
-                    .unzip();
-                self.engine_threads = threads;
-                // Containment surfaces, parallel to the threads (built from
-                // the same filtered, sorted pairing): the work's own
-                // evidence (apps, pages, documents, titles) is what the
-                // pod runtime matches live windows against. The names
-                // ride along for the menu bar; a pod whose work vanished
-                // from the list is left honestly.
-                lock_pods(&self.pods).set_pods(pods);
-                self.merge_proposals = ledger.merge_proposals().unwrap_or_default();
+        // Refresh the engine threads off the UI thread.
+        if !self.engine_rebuild_in_flight {
+            self.engine_rebuild_in_flight = true;
+            let (sender, receiver) = std::sync::mpsc::channel();
+            let rebuild_root = self.storage_root.clone();
+            self.engine_receiver = Some(receiver);
+            if let Err(err) = std::thread::Builder::new()
+                .name("evo-engine-threads".into())
+                .spawn(move || {
+                    let threads = evo_daemon::threads::display_threads_from_storage(&rebuild_root)
+                        .map_err(|err| err.to_string());
+                    let _ = sender.send(threads);
+                })
+            {
+                self.engine_rebuild_in_flight = false;
+                self.engine_error = Some(format!("Cannot start work-list refresh: {err}"));
             }
         }
 
@@ -723,10 +603,11 @@ impl EvoApp {
         // The legacy pipeline re-derives its affinity understanding from the
         // full observation history on this thread. With weeks of evidence a
         // single reconstruction outlasts the reload period — the UI thread
-        // would never paint. The ledger engine (its own process) is the
-        // Home surface now, so the legacy reconstruction only runs when the
-        // ledger has nothing to show.
-        if ledger_has_works {
+        // would never paint. The engine path above is Home's authority, so
+        // the legacy reconstruction only runs when the engine returned
+        // nothing (first run, empty log) and the ledger confirms nothing
+        // either.
+        if ledger_has_works || !self.engine_threads.is_empty() {
             self.last_reload = Instant::now();
             return;
         }
@@ -774,10 +655,10 @@ impl EvoApp {
                 // A selection whose Workspace is no longer remembered falls
                 // back to the list honestly rather than showing an empty
                 // detail screen for work Evo cannot find.
-                if let Some(id) = &self.selected {
-                    if !self.workspaces.iter().any(|workspace| workspace.id() == id) {
-                        self.selected = None;
-                    }
+                if let Some(id) = &self.selected
+                    && !self.workspaces.iter().any(|workspace| workspace.id() == id)
+                {
+                    self.selected = None;
                 }
                 self.derive_display_state();
 
@@ -820,6 +701,115 @@ impl EvoApp {
             }
         }
         self.last_reload = Instant::now();
+    }
+
+    /// Builds the containment pod for one engine display thread — the work
+    /// wearing its pod face, keyed by its engine-lineage ThreadId. Evidence
+    /// comes from the work's own witnessed material: the anchors and
+    /// companions the engine measured, split structurally into URLs,
+    /// documents, and window subjects. The application list is a separate
+    /// provenance join from the same observations: a subject that is also a
+    /// member title is a window, never an app to launch (the B1 lesson, held
+    /// at this boundary too).
+    fn pod_for_thread(
+        work: &evo_daemon::threads::DisplayThread,
+        witnessed_apps: &[String],
+        resource_apps: &std::collections::BTreeMap<String, String>,
+    ) -> evo_pods::pod::Pod {
+        let mut urls: Vec<String> = Vec::new();
+        let mut documents: Vec<String> = Vec::new();
+        let mut titles: Vec<String> = Vec::new();
+        let mut member_subjects: Vec<String> = Vec::new();
+        let mut push_subject = |subject: &str| {
+            if subject.is_empty()
+                || subject.starts_with("Downloaded:")
+                || member_subjects.contains(&subject.to_string())
+            {
+                return;
+            }
+            member_subjects.push(subject.to_string());
+            if subject.starts_with("http://") || subject.starts_with("https://") {
+                urls.push(subject.to_string());
+            } else if subject.starts_with('/') || subject.starts_with("file://") {
+                documents.push(subject.to_string());
+            } else {
+                titles.push(subject.trim().to_string());
+            }
+        };
+        for entry in &work.understanding.trail {
+            push_subject(&entry.raw);
+        }
+        for subject in &work.member_subjects {
+            push_subject(subject);
+        }
+        push_subject(&work.bundle.resume_point);
+        // Restore order lives in the bundle the pod carries (resume point,
+        // then the engine's restore set); the surfaces above are the
+        // containment evidence the runtime matches live windows against.
+
+        let pod_id = pod_id_of(work.thread_id);
+        evo_pods::pod::Pod {
+            id: evo_pods::pod::PodId(pod_id),
+            resources: vec![],
+            claims: vec![],
+            name: work.name.clone(),
+            color: evo_pods::pod::PodColor::from_thread(pod_id),
+            reason: work.bundle.resume_reason.clone(),
+            engagement: work.engagement,
+            bundle: work.bundle.clone(),
+            surfaces: evo_pods::pod::PodSurfaces {
+                urls,
+                documents,
+                titles,
+                apps: witnessed_apps.to_vec(),
+                resource_apps: resource_apps.clone(),
+            },
+            badges: evo_pods::pod::badges_from_bundle(&work.bundle),
+            member_subjects,
+            companions: vec![],
+            strongest_anchor: Some(work.bundle.resume_point.clone()).filter(|r| !r.is_empty()),
+            contested: vec![],
+            state: evo_pods::pod::PodState::Inactive,
+        }
+    }
+
+    /// Applies one batch of engine display threads: Home's list, and the
+    /// pods rebuilt from the same threads so rack index i and pod index i
+    /// are the same work by construction (they are built from one Vec in
+    /// one order — the old parallel-derivation drift is structurally gone).
+    fn apply_engine_threads(&mut self, threads: Vec<evo_daemon::threads::DisplayThread>) {
+        // App names are provenance attached to focused-window observations.
+        // Join them to each thread's exact witnessed resources before the pod
+        // opens anything; this is what lets a work containing Terminal,
+        // Safari, and an editor reopen all three through macOS while keeping
+        // the pod's spatial arrangement separate from canonical identity.
+        let (apps_by_work, resource_apps_by_work) = load_persisted_observations(&self.storage_root)
+            .map(|observations| {
+                (
+                    app_names_for_threads(&observations, &threads),
+                    resource_apps_for_threads(&observations, &threads),
+                )
+            })
+            .unwrap_or_default();
+        let empty_resource_apps = std::collections::BTreeMap::new();
+        let pods: Vec<evo_pods::pod::Pod> = threads
+            .iter()
+            .map(|thread| {
+                Self::pod_for_thread(
+                    thread,
+                    apps_by_work
+                        .get(&thread.thread_id)
+                        .map(|apps| apps.as_slice())
+                        .unwrap_or(&[]),
+                    resource_apps_by_work
+                        .get(&thread.thread_id)
+                        .unwrap_or(&empty_resource_apps),
+                )
+            })
+            .collect();
+        self.engine_threads = threads;
+        self.scoped_restore.state.sync(&self.engine_threads);
+        lock_pods(&self.pods).set_pods(pods);
     }
 
     /// Derives the presented Workspace's detail state — the displayed
@@ -930,32 +920,26 @@ fn log_state_change(storage_root: &Path, display: Option<&Workspace>) {
     }
 }
 
-impl eframe::App for EvoApp {
+impl EvoApp {
     /// Non-UI logic: re-check the daemon worker, re-read canonical storage,
     /// and keep the surface alive.
-    fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn logic_impl(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // The window never dies: closing it hides Evo instead. A menu-bar
         // app whose loop can lose its window is a menu-bar app whose
         // commands stop being processed; hiding keeps the pod presence
-        // (menu bar, hotkey, containment) alive. The browser panes
-        // hibernate with the hidden window — nothing pays RAM while
-        // unseen, and "Open Evo" restores the window.
+        // (menu bar, hotkey, containment) alive; "Open Evo" restores the
+        // window.
         if ctx.input(|i| i.viewport().close_requested()) {
             ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
             ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
-            lock_pods(&self.pods).web.hibernate();
-            self.pod_browser = false;
         }
 
-        // The Pod Bar toggle (⌥Space from the menu-bar presence) applies here:
-        // bar visibility is window-level UI state, not pod state.
-        if crate::presence::take_bar_toggle() {
-            self.podbar.toggle();
-            ctx.request_repaint();
-        }
         // While the Pod Bar is open, egui's own input-driven repaints
         // keep it alive (pointer motion and presses each request a frame);
         // a continuous repaint loop here once cost 60 fps of churn.
+        if std::mem::take(&mut self.daemon_restart_requested) {
+            self.daemon.restart();
+        }
         self.daemon.poll();
         self.engine.poll();
 
@@ -1042,11 +1026,15 @@ impl eframe::App for EvoApp {
                         // gets out of the way of the native applications.
                         Some(report) => {
                             self.execution_result = Some(report);
+                            if self.workspace_before.is_some() {
+                                self.workspace_arrangement_deadline =
+                                    Some(Instant::now() + Duration::from_secs(2));
+                            }
                             // Suppress workspace re-derivation for a short period after
                             // execution. The OS actions (opening URLs, raising windows)
                             // create new observations that could shift artifact
                             // assignments between workspaces if processed immediately.
-                            if let Some(index) = self.index.as_mut() {
+                            if let Some(_index) = self.index.as_mut() {
                                 // Execution provenance: observations preserved;
                                 // reconstruction uses origin tag, not temporal suppression.
                             }
@@ -1058,7 +1046,251 @@ impl eframe::App for EvoApp {
             }
         }
 
+        // Native apps create their windows asynchronously after NSWorkspace
+        // accepts an open request. Poll briefly instead of treating the first
+        // empty AX inventory as a successful (but invisible) arrangement.
+        if let Some(deadline) = self.workspace_arrangement_deadline {
+            if let Some(before) = self.workspace_before.as_ref() {
+                let mut surface = crate::pod_surface::MacPodSurface::new();
+                let arranged = crate::unified_workspace::arrange_new_windows_with_layout(
+                    &mut surface,
+                    before,
+                    std::process::id() as i32,
+                    self.workspace_layout_preference,
+                );
+                if arranged.is_some() || Instant::now() >= deadline {
+                    if arranged.is_none() {
+                        eprintln!("EVO workspace: no new native windows observed before timeout");
+                    }
+                    self.workspace_before = None;
+                    self.workspace_arrangement_deadline = None;
+                } else {
+                    ctx.request_repaint_after(Duration::from_millis(50));
+                }
+            } else {
+                self.workspace_arrangement_deadline = None;
+            }
+        }
+
         ctx.request_repaint_after(Duration::from_secs(2));
+
+        // Voice events: "Hey Evo" triggers resolved by the daemon.
+        self.poll_voice(ctx);
+        self.scoped_restore.poll(ctx);
+    }
+}
+
+impl EvoApp {
+    /// Drains voice events from the mic thread and routes them.
+    ///
+    /// - `HeardCommand` → transient "heard" toast.
+    /// - `Outcome(Restored)` → confirmation toast (the daemon already
+    ///   restored; the desktop just reports it honestly).
+    /// - `Outcome(Ambiguous)` → the numbered panel (shown by
+    ///   `drain_voice_events`); the user picks by voice/click/key.
+    /// - `Outcome(NotFound)` → honest "couldn't find it" with recents.
+    /// - `Outcome(Failed)` → the honest error.
+    fn poll_voice(&mut self, ctx: &egui::Context) {
+        // The notch surface's actions first: chip clicks and drags are
+        // user intent that must not wait on the voice stream.
+        loop {
+            let action = self
+                .notch_actions
+                .as_ref()
+                .and_then(|actions| actions.try_recv().ok());
+            match action {
+                Some(crate::notch_window::SurfaceAction::Choose(work_id)) => {
+                    self.choose_work(ctx, &work_id);
+                }
+                Some(crate::notch_window::SurfaceAction::ChooseCandidate(candidate)) => {
+                    self.choose_candidate(ctx, &candidate);
+                }
+                Some(crate::notch_window::SurfaceAction::Dismiss) => {
+                    self.voice_toast = None;
+                }
+                Some(crate::notch_window::SurfaceAction::OpenMain) => {
+                    // Rack deep-link: nothing extra here yet; the
+                    // window is already frontmost when clicked.
+                }
+                Some(crate::notch_window::SurfaceAction::Browse) => {
+                    // The works carousel is the agent's surface: the
+                    // headless evo-agent owns the WORKS round-trip and
+                    // feeds the listing back to the notch. The desktop
+                    // shell has no notch-owned browse to open.
+                }
+                Some(crate::notch_window::SurfaceAction::ContinueRecent) => {
+                    // Same ownership: the agent resumes the daemon's
+                    // most recent work; the desktop reports it through
+                    // its own voice path when it owns the mic.
+                }
+                Some(crate::notch_window::SurfaceAction::ChoiceStep(_)) => {
+                    // The surface thread steps its own engine and
+                    // re-renders; nothing for the app to do.
+                }
+                None => break,
+            }
+        }
+        let Some(receiver) = self.voice_events.as_ref() else {
+            return;
+        };
+        let events = crate::voice::drain_voice_events(receiver, &mut self.voice_panel);
+        for event in events {
+            match event {
+                evo_voice::VoiceEvent::WakeGesture { score } => {
+                    // The notch surface consumes the same event stream;
+                    // in the main window show an honest listening toast.
+                    let detail = score
+                        .map(|s| format!(" (score {s:.2})"))
+                        .unwrap_or_default();
+                    self.voice_toast = Some((format!("Listening…{detail}"), Instant::now()));
+                    ctx.request_repaint();
+                }
+                evo_voice::VoiceEvent::Listening { partial } => {
+                    let shown = partial.unwrap_or_default();
+                    let listening_text = if shown.is_empty() {
+                        "Listening… say a command".to_string()
+                    } else {
+                        format!("Listening: “{shown}”")
+                    };
+                    self.voice_toast = Some((listening_text, Instant::now()));
+                    // Repaint now so partial transcripts animate live.
+                    ctx.request_repaint_after(Duration::from_millis(250));
+                }
+                evo_voice::VoiceEvent::HeardCommand { command } => {
+                    // While the ambiguity panel is visible, an ordinal
+                    // ("the second one", "number 2") is a pick, not a
+                    // new command.
+                    if self.voice_panel.is_visible()
+                        && let Some(index) = crate::voice::parse_ordinal_pick(&command)
+                    {
+                        self.voice_panel.pick(index);
+                        ctx.request_repaint();
+                        continue;
+                    }
+                    self.voice_toast = Some((format!("Heard: \"{command}\""), Instant::now()));
+                    ctx.request_repaint();
+                }
+                evo_voice::VoiceEvent::Outcome(outcome) => match outcome {
+                    evo_voice::VoiceOutcome::Restored {
+                        title,
+                        summary,
+                        offered,
+                    } => {
+                        let extra = if offered.is_empty() {
+                            String::new()
+                        } else {
+                            format!(" {} more offered", offered.len())
+                        };
+                        self.voice_toast = Some((
+                            format!("Resumed \"{title}\" — {summary}{extra}"),
+                            Instant::now(),
+                        ));
+                        ctx.request_repaint();
+                    }
+                    evo_voice::VoiceOutcome::Ambiguous { .. } => {
+                        // The panel is already shown by drain_voice_events.
+                        ctx.request_repaint();
+                    }
+                    evo_voice::VoiceOutcome::NotFound { recent } => {
+                        let names: Vec<&str> =
+                            recent.iter().map(|c| c.title.as_str()).take(3).collect();
+                        let hint = if names.is_empty() {
+                            String::new()
+                        } else {
+                            format!(" Recent: {}", names.join(", "))
+                        };
+                        self.voice_toast =
+                            Some((format!("Couldn't find that work.{hint}"), Instant::now()));
+                        ctx.request_repaint();
+                    }
+                    evo_voice::VoiceOutcome::Failed { reason } => {
+                        self.voice_toast =
+                            Some((format!("Voice restore failed: {reason}"), Instant::now()));
+                        ctx.request_repaint();
+                    }
+                    evo_voice::VoiceOutcome::NoCommand => {}
+                    // The engine-backed read path: the rack, spoken.
+                    evo_voice::VoiceOutcome::Brief { count, narration } => {
+                        let head = match count {
+                            0 => "No works".to_string(),
+                            1 => "One work".to_string(),
+                            n => format!("{n} works"),
+                        };
+                        self.voice_toast = Some((format!("{head}: {narration}"), Instant::now()));
+                        ctx.request_repaint();
+                    }
+                },
+            }
+        }
+        // A pick from the panel (click or number key) sends CHOOSE.
+        if let Some(candidate) = self.voice_panel.take_pick() {
+            self.choose_candidate(ctx, &candidate);
+        }
+        // Fade the toast after a few seconds.
+        if let Some((_, since)) = &self.voice_toast
+            && since.elapsed() >= Duration::from_secs(5)
+        {
+            self.voice_toast = None;
+        }
+    }
+
+    /// Restores one candidate work by id over the daemon's CHOOSE verb
+    /// and toasts the honest outcome. Shared by the ambiguity panel's
+    /// click/ordinal pick and the notch carousel's Restore chip.
+    fn choose_work(&mut self, ctx: &egui::Context, work_id: &str) {
+        let client = crate::voice::VoiceSocketClient::new(self.storage_root.clone());
+        match client.choose(work_id) {
+            Ok(evo_voice::VoiceOutcome::Restored {
+                title,
+                summary,
+                offered,
+            }) => {
+                let extra = if offered.is_empty() {
+                    String::new()
+                } else {
+                    format!(" {} more offered", offered.len())
+                };
+                self.voice_toast = Some((
+                    format!("Resumed \"{title}\" — {summary}{extra}"),
+                    Instant::now(),
+                ));
+            }
+            Ok(other) => {
+                self.voice_toast = Some((format!("Voice outcome: {other:?}"), Instant::now()));
+            }
+            Err(err) => {
+                self.voice_toast = Some((format!("Voice choose failed: {err}"), Instant::now()));
+            }
+        }
+        ctx.request_repaint();
+    }
+
+    fn choose_candidate(&mut self, ctx: &egui::Context, candidate: &evo_voice::VoiceCandidate) {
+        let client = crate::voice::VoiceSocketClient::new(self.storage_root.clone());
+        match client.choose_candidate(candidate) {
+            Ok(evo_voice::VoiceOutcome::Restored {
+                title,
+                summary,
+                offered,
+            }) => {
+                let extra = if offered.is_empty() {
+                    String::new()
+                } else {
+                    format!(" {} more offered", offered.len())
+                };
+                self.voice_toast = Some((
+                    format!("Resumed \"{title}\" — {summary}{extra}"),
+                    Instant::now(),
+                ));
+            }
+            Ok(other) => {
+                self.voice_toast = Some((format!("Voice outcome: {other:?}"), Instant::now()));
+            }
+            Err(err) => {
+                self.voice_toast = Some((format!("Voice choose failed: {err}"), Instant::now()));
+            }
+        }
+        ctx.request_repaint();
     }
 
     /// Renders the shell.
@@ -1068,7 +1300,7 @@ impl eframe::App for EvoApp {
     /// explicit selection, keyed by canonical Workspace identity. The
     /// contextual continuation panel lives inside that detail screen and is
     /// never the application's navigation.
-    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+    fn ui_impl(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let max = ui.max_rect();
         // The environment. A soft vertical band, not a flat page fill: it is
         // what the surfaces above it are lit against, and it is the only thing
@@ -1083,6 +1315,33 @@ impl eframe::App for EvoApp {
         }
 
         let daemon_status = self.daemon.poll();
+
+        // The engine-threads worker's result, drained when it lands: Home's
+        // list and the pod set are rebuilt together from one Vec, so rack
+        // index i and pod index i stay the same work by construction. The
+        // previous list keeps rendering until then.
+        if self.engine_rebuild_in_flight
+            && let Some(receiver) = &self.engine_receiver
+        {
+            match receiver.try_recv() {
+                Ok(Ok(threads)) => {
+                    self.engine_rebuild_in_flight = false;
+                    self.engine_error = None;
+                    self.apply_engine_threads(threads);
+                }
+                Ok(Err(err)) => {
+                    self.engine_rebuild_in_flight = false;
+                    self.engine_error = Some(format!("Cannot read recorded work: {err}"));
+                }
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                    self.engine_rebuild_in_flight = false;
+                    self.engine_error = Some(
+                        "Work-list refresh stopped unexpectedly; retry on the next refresh.".into(),
+                    );
+                }
+                Err(std::sync::mpsc::TryRecvError::Empty) => {}
+            }
+        }
 
         // Navigation is resolved before anything is drawn, so the frame the
         // user's click lands on already shows the work they opened rather than
@@ -1114,7 +1373,6 @@ impl eframe::App for EvoApp {
         // written through.
         let Self {
             storage_root,
-            workspaces,
             display,
             outcome,
             subjects,
@@ -1134,14 +1392,17 @@ impl eframe::App for EvoApp {
             continuation_draft,
             continuation_status,
             grouping_status,
-            search_query,
-            kind_filter,
-            period_filter,
-            retrieval_memo,
             status,
             settings_open,
+            workspace_before,
+            workspace_arrangement_deadline,
             ..
         } = self;
+
+        // The transport dock's Continue gate, written from inside the screen
+        // scope below (the same shared plan the stage announces — one
+        // definition, two readers). False on Home, where there is no plan.
+        let mut continuable = false;
 
         ui.scope_builder(
             egui::UiBuilder::new()
@@ -1163,233 +1424,210 @@ impl eframe::App for EvoApp {
 
                 match view {
                     state::ShellView::Home => {
-                        // Entering a pod with web pages opens them here:
-                        // the work's web presence lives inside Evo, so the
-                        // person never juggles a browser to get back in.
-                        // Drained once — hiding the panel stays hidden
-                        // until the next pod entry.
-                        {
-                            let mut pods_guard = lock_pods(&self.pods);
-                            if pods_guard.wants_browser {
-                                pods_guard.wants_browser = false;
-                                self.pod_browser = true;
-                            }
+                        if let Some(note) = self.restore_note.as_deref() {
+                            ui::caption(ui, note);
+                            ui::gap(ui, theme::S3);
                         }
-                        // Stage 3: the pod browser. While a pod is
-                        // active and the panel is open, the work's own
-                        // pages render inside this window — no app switch,
-                        // no second window to juggle. The panel replaces
-                        // the list: a pod occupies the whole surface or
-                        // none of it.
-                        if self.pod_browser {
-                            let mut pods_guard = lock_pods(&self.pods);
-                            if let Some(pod_name) = pods_guard.active.clone() {
-                                // Hydration is idempotent and honest: the
-                                // first open (or a pod switch) creates the
-                                // panes; the same work re-opened keeps
-                                // them.
-                                if !pods_guard.web.is_hydrated_for(&pod_name) {
-                                    let urls: Vec<String> = pods_guard
-                                        .pods
-                                        .iter()
-                                        .find(|pod| pod.name == pod_name)
-                                        .map(|pod| pod.bundle.restore_set.clone())
-                                        .unwrap_or_default();
-                                    pods_guard.web.hydrate(&pod_name, &urls);
-                                }
-                                drop(pods_guard);
-
-                                // The pod strip: where you are, and the
-                                // way back to the list.
-                                egui::Frame::new()
-                                    .inner_margin(egui::Margin::symmetric(
-                                        theme::M6,
-                                        theme::M2,
-                                    ))
-                                    .show(ui, |ui| {
-                                        ui.set_width(ui.available_width());
-                                        ui.horizontal(|ui| {
-                                            ui.label("\u{25CF}");
-                                            ui.strong(format!("In: {pod_name}"));
-                                            if ui.small_button("Hide browser").clicked() {
-                                                // Hiding is hibernation,
-                                                // not hiding: the panes
-                                                // and their processes
-                                                // leave RAM; the data
-                                                // store stays on disk.
-                                                lock_pods(&self.pods).web.hibernate();
-                                                self.pod_browser = false;
-                                            }
-                                            ui.weak("  logins isolated per work");
-                                        });
+                        if let Some(err) = self.engine_error.as_deref() {
+                            // Do not offer stale cards as though a failed
+                            // canonical refresh had confirmed them.
+                            shell::storage_error(ui, err);
+                            return;
+                        }
+                        // The rack is the primary surface: up to three
+                        // track cards, the stack behind them, and the way
+                        // into a work's pod.
+                        let rack_request = ui::scroll(ui, |ui| {
+                            let request = rack::rack(
+                                ui,
+                                &self.engine_threads,
+                                &[],
+                                &mut self.stack_open,
+                                &mut self.merge_armed,
+                                &mut self.search_query,
+                            );
+                            if self.engine_threads.len() >= 2 {
+                                manual_grouping_control(
+                                    ui,
+                                    &self.engine_threads,
+                                    storage_root,
+                                    &mut self.group_source,
+                                    &mut self.group_target,
+                                    &mut self.group_confirm,
+                                    &mut self.restore_note,
+                                );
+                            }
+                            let panel_ctx = ui.ctx().clone();
+                            rename_control_panel(
+                                ui,
+                                &self.engine_threads,
+                                storage_root,
+                                &mut self.rename_thread,
+                                &mut self.rename_draft,
+                                &mut self.restore_note,
+                                &panel_ctx,
+                            );
+                            request
+                        });
+                        match rack_request {
+                            None => {}
+                            Some(rack::RackAction::RestoreSelected(thread_id)) => {
+                                self.scoped_restore.state.open_for(thread_id, &self.engine_threads);
+                            }
+                            Some(rack::RackAction::Rename(thread_id)) => {
+                                // Arm the rename session against the chosen
+                                // work. The field renders beside the rack;
+                                // nothing is sent until the person confirms.
+                                self.rename_thread = Some(thread_id);
+                                self.rename_draft = self
+                                    .engine_threads
+                                    .iter()
+                                    .find(|w| w.thread_id == thread_id)
+                                    .map(|w| w.name.clone())
+                                    .unwrap_or_default();
+                            }
+                            Some(rack::RackAction::NotWork(thread_id)) => {
+                                // The person's own class for the work's strongest
+                                // witnessed member: this surface is not work.
+                                // The daemon validates and persists it; the
+                                // engine then stops founding or naming a work
+                                // by it — retroactively, over the whole log —
+                                // and deletes nothing. The subject rule is the
+                                // one the rename session uses: the strongest
+                                // witnessed member, never a download or an
+                                // application identity.
+                                let subject = self
+                                    .engine_threads
+                                    .iter()
+                                    .find(|w| w.thread_id == thread_id)
+                                    .and_then(|work| {
+                                        work.member_subjects
+                                            .iter()
+                                            .find(|s| {
+                                                !s.trim().is_empty()
+                                                    && !s.starts_with("Downloaded:")
+                                                    && !s.starts_with("app:")
+                                            })
+                                            .or_else(|| work.member_subjects.first())
+                                            .cloned()
+                                            .or_else(|| {
+                                                let point = work.bundle.resume_point.trim();
+                                                (!point.is_empty()).then(|| point.to_string())
+                                            })
                                     });
-
-                                // The tab strip: back/forward and the
-                                // work's own pages. Nothing more — Evo
-                                // hosts the work's web presence, it does
-                                // not become a browser. A work with many
-                                // pages wraps rather than scrolls: every
-                                // page stays reachable.
-                                let mut pods_guard = lock_pods(&self.pods);
-                                let (can_back, can_forward) =
-                                    (pods_guard.web.can_go_back(), pods_guard.web.can_go_forward());
-                                ui.horizontal_wrapped(|ui| {
-                                    ui.add_enabled_ui(can_back, |ui| {
-                                        if ui.button("\u{2039}").clicked() {
-                                            pods_guard.web.go_back();
-                                        }
-                                    });
-                                    ui.add_enabled_ui(can_forward, |ui| {
-                                        if ui.button("\u{203A}").clicked() {
-                                            pods_guard.web.go_forward();
-                                        }
-                                    });
-                                    ui.separator();
-                                    for index in 0..pods_guard.web.pane_count() {
-                                        let label: String = pods_guard
-                                            .web
-                                            .tab_label(index)
-                                            .chars()
-                                            .take(28)
-                                            .collect();
-                                        if ui
-                                            .selectable_label(
-                                                pods_guard.web.active_index() == index,
-                                                label,
-                                            )
-                                            .clicked()
-                                        {
-                                            pods_guard.web.switch_tab(index);
+                                self.restore_note = Some(match subject {
+                                    None => "This work has no witnessed surface to classify yet; nothing was sent.".into(),
+                                    Some(subject) => {
+                                        match state::submit_classification(storage_root, &subject, "NotWork") {
+                                            Ok(evo_daemon::classification::ClassificationResponse::Accepted) => "Classification sent to capture; it applies on the next refresh.".into(),
+                                            Ok(evo_daemon::classification::ClassificationResponse::Rejected(reason)) => format!("Classification declined: {reason}"),
+                                            Err(err) => format!("Classification failed: {err}"),
                                         }
                                     }
                                 });
-                                ui.add_space(theme::S2);
-
-                                // The pane itself: egui reserves the rect
-                                // and never interacts with it — the native
-                                // web view above it receives every mouse
-                                // and keyboard event over that region.
-                                if pods_guard.web.pane_count() == 0 {
-                                    ui::caption(
-                                        ui,
-                                        "This work has no web pages to host.",
-                                    );
-                                } else {
-                                    let pane = ui.available_rect_before_wrap();
-                                    ui.painter().rect_filled(pane, 4.0, theme::WELL);
-                                    ui.allocate_rect(pane, egui::Sense::hover());
-                                    pods_guard.web.layout_active((
-                                        pane.min.x,
-                                        pane.min.y,
-                                        pane.width(),
-                                        pane.height(),
-                                    ));
-                                }
-                                return;
                             }
-                            // A browser panel without a pod cannot exist:
-                            // the pod was left while the panel was open.
-                            lock_pods(&self.pods).web.hibernate();
-                            self.pod_browser = false;
-                        }
-                        // The new engine's work section is the primary surface.
-                        // When it has work to show, the legacy pipeline's Home
-                        // screen (with its separate heading, search, and list)
-                        // is not rendered at all — one clean section, not two.
-                        let active_pod = {
-                            let pods_guard = lock_pods(&self.pods);
-                            pods_guard.active.clone()
-                        };
-                        match ui::scroll(ui, |ui| {
-                            home::work_section(
-                                ui,
-                                &self.engine_threads,
-                                &mut self.expanded_work,
-                                self.restore_note.as_deref(),
-                                search_query,
-                                &self.merge_proposals,
-                                active_pod.as_deref(),
-                            )
-                        }) {
-                            None => {}
-                            Some(home::WorkAction::Merge {
-                                subject_a,
-                                subject_b,
-                                other_name,
-                            }) => {
-                                // The person confirmed a merge proposal: the
-                                // declaration goes through the daemon's
-                                // grouping socket and becomes ground truth
-                                // the engine honors from the next cycle.
-                                match evo_daemon::grouping::submit_grouping(
-                                    &*storage_root,
-                                    &subject_a,
-                                    &subject_b,
-                                ) {
-                                    // The socket's answer is reported exactly:
-                                    // Accepted means the declaration was
-                                    // forwarded for canonical persistence;
-                                    // Rejected means it was NOT — conflating
-                                    // the two once showed failures as
-                                    // success.
-                                    Ok(evo_daemon::grouping::GroupingResponse::Accepted) => {
-                                        self.restore_note = Some(format!(
-                                            "Declared one work with {other_name} — they will join on the next refresh."
-                                        ));
-                                    }
-                                    Ok(evo_daemon::grouping::GroupingResponse::Rejected(reason)) => {
-                                        self.restore_note =
-                                            Some(format!("Merge declined: {reason}"));
-                                    }
-                                    Err(err) => {
-                                        self.restore_note =
-                                            Some(format!("Merge declaration failed: {err}"));
-                                    }
-                                }
+                            Some(rack::RackAction::Dismiss(thread_id)) => {
+                                // Dismissal is a presentation correction for a
+                                // witnessed work subject. It does not classify
+                                // the subject, delete history, or write a
+                                // derived thread id into the observation log.
+                                let subject = self
+                                    .engine_threads
+                                    .iter()
+                                    .find(|w| w.thread_id == thread_id)
+                                    .and_then(|work| {
+                                        work.member_subjects
+                                            .iter()
+                                            .find(|s| {
+                                                !s.trim().is_empty()
+                                                    && !s.starts_with("Downloaded:")
+                                                    && !s.starts_with("app:")
+                                            })
+                                            .or_else(|| work.member_subjects.first())
+                                            .cloned()
+                                            .or_else(|| {
+                                                let point = work.bundle.resume_point.trim();
+                                                (!point.is_empty()).then(|| point.to_string())
+                                            })
+                                    });
+                                self.restore_note = Some(match subject {
+                                    None => "This work has no witnessed surface to dismiss; nothing was sent.".into(),
+                                    Some(subject) => match state::submit_dismissal(storage_root, &subject) {
+                                        Ok(evo_daemon::feedback::FeedbackResponse::Accepted) => "Work dismissed from Home; its evidence remains retrievable.".into(),
+                                        Ok(evo_daemon::feedback::FeedbackResponse::Rejected(reason)) => format!("Dismissal declined: {reason}"),
+                                        Err(err) => format!("Dismissal failed: {err}"),
+                                    },
+                                });
                             }
-                            Some(home::WorkAction::Continue(index)) => {
+                            Some(rack::RackAction::Merge(_)) => {} // No inferred proposals on Home.
+                            Some(rack::RackAction::Continue(index)) => {
                                 // Continuing a work IS entering its pod:
                                 // containment hides everything not of this
                                 // work, restoration opens every artifact
-                                // (files through their witnessed apps, the
-                                // work's pages in its own browser panel —
-                                // logins isolated per work), and the pod
+                                // (files through their witnessed apps, URLs
+                                // through the normal macOS handler), and the
+                                // pod
                                 // report says what happened. One path, one
                                 // note; the menu-bar Enter does the same.
+                                let mut surface = crate::pod_surface::MacPodSurface::new();
+                                *workspace_before = Some(crate::unified_workspace::snapshot(
+                                    &mut surface,
+                                    std::process::id() as i32,
+                                ));
                                 if let Some(note) =
                                     lock_pods(&self.pods).enter_at(index, crate::pods::epoch_ms())
                                 {
                                     self.restore_note = Some(note);
                                 }
+                                *workspace_arrangement_deadline =
+                                    Some(Instant::now() + Duration::from_secs(2));
                             }
-                            Some(home::WorkAction::OpenBrowser) => {
-                                // The pod browser opens for the active
-                                // pod only; hydration happens in the
-                                // render pass that first shows the panel.
-                                if lock_pods(&self.pods).active.is_some() {
-                                    self.pod_browser = true;
-                                }
-                            }
-                            Some(home::WorkAction::Leave) => {
-                                // Leaving restores the desktop and releases
-                                // the work's web panes through the
-                                // runtime — the same path the menu bar
-                                // takes.
-                                if let Some(note) = lock_pods(&self.pods).leave() {
-                                    self.pod_browser = false;
+                            Some(rack::RackAction::Open(index)) => {
+                                // Opening a card enters its pod: containment,
+                                // restoration, and the pod report — the same
+                                // path the menu bar takes.
+                                let mut surface = crate::pod_surface::MacPodSurface::new();
+                                *workspace_before = Some(crate::unified_workspace::snapshot(
+                                    &mut surface,
+                                    std::process::id() as i32,
+                                ));
+                                if let Some(note) =
+                                    lock_pods(&self.pods).enter_at(index, crate::pods::epoch_ms())
+                                {
                                     self.restore_note = Some(note);
                                 }
+                                *workspace_arrangement_deadline =
+                                    Some(Instant::now() + Duration::from_secs(2));
+                                // The centre stage: the same work opened as
+                                // the canonical Workspace, so the detail
+                                // screen's derivation, marks, and Continue
+                                // lifecycle are all in play. The bridge is
+                                // witnessed membership; when the record has
+                                // not yet linked them, the work still enters
+                                // (engine truth) and Evo says so.
+                                if let Some(work) = self.engine_threads.get(index) {
+                                    let bridged = state::workspace_for_thread(
+                                        &work.member_subjects,
+                                        &self.workspaces,
+                                        subjects,
+                                    );
+                                    match bridged {
+                                        Some(id) => {
+                                            *selected = Some(id);
+                                        }
+                                        None => {
+                                            self.restore_note =
+                                                Some("Evo has not yet linked this work to its record; it is entered as a pod. The stage follows once the record connects them.".to_string());
+                                        }
+                                    }
+                                }
                             }
                         }
-                        // The new engine has work: the Home screen is complete.
-                        // The legacy screen is not rendered — no duplicate
-                        // heading, no stale list, no confusion.
-                        if !self.engine_threads.is_empty() {
-                            return;
-                        }
-                        // No new-engine work either: show why.
-                        if workspaces.is_empty() {
-                            if let Some(status) = status.as_deref() {
+                        // The rack is the primary surface; with no engine
+                        // work the honest states below explain why it is
+                        // empty.
+                        if self.engine_threads.is_empty() {
+                            if let Some(status) = self.engine_error.as_deref().or(status.as_deref()) {
                                 shell::storage_error(ui, status);
                                 return;
                             }
@@ -1419,41 +1657,20 @@ impl eframe::App for EvoApp {
                                             &format!("{detail}\nGrant Accessibility in System Settings, then click Check again.",),
                                         );
                                         ui::gap(ui_inner, theme::S3);
-                                        if ui_inner.button("Open System Settings").clicked() {
-                                            crate::daemon::open_accessibility_settings();
-                                        }
-                                        ui::gap(ui_inner, theme::S1);
-                                        if ui_inner.button("Check again").clicked() {
-                                            // restart deferred to avoid borrow conflict
-                                        }
+                                        // The same one place as the header notice:
+                                        // the restart is deferred through the flag
+                                        // because this closure cannot also borrow
+                                        // the daemon.
+                                        shell::permission_actions(ui_inner, || {
+                                            self.daemon_restart_requested = true;
+                                        });
                                     });
                                 }
                                 other => {
                                     home::empty(ui, matches!(other, DaemonStatus::Capturing))
                                 }
                             }
-                            return;
                         }
-                        // The threads section was already rendered above
-                        // (before the empty-check), so it shows even when
-                        // the legacy pipeline has nothing. The Restore
-                        // action is handled there.
-                        let mut retrieval = home::Retrieval {
-                            query: search_query,
-                            kind: kind_filter,
-                            period: period_filter,
-                            memo: retrieval_memo,
-                        };
-                        home::screen(
-                            ui,
-                            workspaces.as_slice(),
-                            home_cards.as_slice(),
-                            &*subjects,
-                            &*kinds,
-                            status.is_some(),
-                            selected,
-                            &mut retrieval,
-                        );
                     }
                     state::ShellView::Workspace(_) => {
                         let Some(workspace) = display.as_ref() else {
@@ -1495,13 +1712,75 @@ impl eframe::App for EvoApp {
                         // of work without a return trip Home. `place_nav`
                         // filters them to work other than this one.
                         detail::screen(ui, &canon, home_cards.as_slice(), &mut transient);
+                        // The dock's Continue gate is this screen's gate: one
+                        // definition (the shared plan), two readers — the
+                        // promise on the dock and the act in execution can
+                        // never disagree (UI-VALIDATION-0001 B.9).
+                        continuable = detail::continue_ready(&canon);
                     }
                 }
             },
         );
 
+        // The dock: the persistent control panel under every screen. It
+        // rides above the content, below the settings sheet, and owns the
+        // primary action with its live progress — the one place to look
+        // for what Evo will do next (DESIGN.md: The dock).
+        let dock_rect = egui::Rect::from_min_max(
+            egui::pos2(max.min.x, max.max.y - theme::ACTION_BAR_HEIGHT),
+            egui::pos2(max.max.x, max.max.y),
+        );
+        let dock_ctx = dock::DockContext {
+            // Pod chrome was removed from the product surface. The dock now
+            // exposes only native work continuation and library navigation.
+            active_pod: None,
+            in_focus: matches!(view, state::ShellView::Workspace(_)),
+            // Set inside the screen scope from the same shared plan the
+            // stage announces; false on Home, where there is no plan.
+            continuable,
+        };
+        match dock::show(
+            ui,
+            dock_rect,
+            &dock_ctx,
+            &self.continue_phase,
+            self.execution_result.as_ref(),
+        ) {
+            Some(dock::DockAction::Library) => {
+                *selected = None;
+            }
+            Some(dock::DockAction::Continue) => {
+                if matches!(self.continue_phase, detail::ContinuePhase::Idle) {
+                    let mut surface = crate::pod_surface::MacPodSurface::new();
+                    *workspace_before = Some(crate::unified_workspace::snapshot(
+                        &mut surface,
+                        std::process::id() as i32,
+                    ));
+                    // Commit now; `logic` runs the plan after the dwell so
+                    // the transition paints first. One step per frame keeps
+                    // the progress the dock shows honest.
+                    self.continue_phase = detail::ContinuePhase::Preparing {
+                        since: Instant::now(),
+                    };
+                }
+            }
+            Some(dock::DockAction::Eject) => {
+                // Leaving restores the desktop through the same path the
+                // menu bar takes.
+                if let Some(note) = lock_pods(&self.pods).leave() {
+                    self.restore_note = Some(note);
+                }
+            }
+            Some(dock::DockAction::DismissReport) => {
+                self.execution_result = None;
+            }
+            None => {}
+        }
+
         // Settings, above everything. Called every frame so it leaves along
         // the path it arrived by.
+        self.scoped_restore
+            .show(ui.ctx(), &self.engine_threads, storage_root.as_path());
         shell::settings(
             ui,
             settings_open,
@@ -1509,16 +1788,235 @@ impl eframe::App for EvoApp {
             daemon,
             storage_root.as_path(),
         );
+        self.show_workspace_layout_settings(ui.ctx());
 
         // The Pod Bar (⌥Space) floats above every other surface. The bar
         // paints above the settings window too: summoning it must always
         // work, whatever else is open.
-        self.paint_podbar(ui.ctx());
+        self.paint_pod_bar(ui.ctx());
+        self.paint_voice_panel(ui.ctx());
+        // The former Pod Bar is intentionally not painted. Native apps own
+        // their windows; Evo only coordinates the restored work.
+    }
+
+    /// The window-layout picker and drag-to-learn gesture hosted on the
+    /// desktop. Mirrors the Settings layout shelf but lives where the
+    /// bars/cards sit so a user can choose a layout and drag a window to
+    /// teach the arrangement from here.
+    fn paint_pod_bar(&mut self, ctx: &egui::Context) {
+        if !self.settings_open {
+            return;
+        }
+        egui::Window::new("pod-bar-desktop")
+            .title_bar(false)
+            .collapsible(false)
+            .resizable(false)
+            .anchor(egui::Align2::CENTER_BOTTOM, egui::vec2(0.0, -34.0))
+            .show(ctx, |ui| {
+                // Drag-to-learn target: the shelf is the card. We use a small
+        // explicit drag source on the shelf itself (a 320x28 strip over the
+        // work-tile row) whose drop teaches the active work's recipe. That is
+        // the smallest gesture that can honestly be called learn_drag and it
+        // keeps the teaching path inside this card instead of a pointer-release
+        // coincidence anywhere on the shelf.
+        let teaching_pos = pod_bar_drag::update_state(ctx, egui::Id::new("evo-pod-bar-shelf"));
+        if let Some(hover) = teaching_pos {
+            let frame = evo_pods::surface::Frame {
+                x: hover.x as f64 - 160.0,
+                y: hover.y as f64 - 100.0,
+                w: 320.0,
+                h: 200.0,
+            };
+            if let Some(workspace) = self.display.as_ref() {
+                let pod_id = evo_pods::pod::PodId(
+                    workspace.id().as_str().to_string().strip_prefix("pod-")
+                        .and_then(|s| s.parse::<u64>().ok())
+                        .unwrap_or(0),
+                );
+                let resource = workspace.id().as_str().to_string();
+                self.pods.borrow_mut().core.learn_frame(pod_id, &resource, frame);
+            }
+        }
+                ui.horizontal(|ui| {
+                    ui.label(egui::RichText::new("Work tiles").strong());
+                    if ui
+                        .selectable_label(self.workspace_layout_preference.is_none(), "Auto")
+                        .clicked()
+                    {
+                        self.workspace_layout_preference = None;
+                        let _ =
+                            std::fs::remove_file(self.storage_root.join("workspace-layout.txt"));
+                    }
+                    for (id, label) in [
+                        (evo_pods::layout::LayoutId::Full, "Full"),
+                        (evo_pods::layout::LayoutId::Halves, "Halves"),
+                        (evo_pods::layout::LayoutId::Thirds, "Thirds"),
+                        (evo_pods::layout::LayoutId::Quads, "Quads"),
+                        (evo_pods::layout::LayoutId::MainSide, "Main + Side"),
+                        (evo_pods::layout::LayoutId::LeftSplitRight, "Left split + right"),
+                        (evo_pods::layout::LayoutId::LeftRightSplit, "Left + right split"),
+                        (evo_pods::layout::LayoutId::MainSideVertical, "Main + side (vertical)"),
+                        (evo_pods::layout::LayoutId::HalvesVertical, "Halves (vertical)"),
+                        (evo_pods::layout::LayoutId::ThirdsVertical, "Thirds (vertical)"),
+                        (evo_pods::layout::LayoutId::HeroRails, "5–8"),
+                        (evo_pods::layout::LayoutId::Stack, "Stack"),
+                    ] {
+                        if ui
+                            .selectable_label(self.workspace_layout_preference == Some(id), label)
+                            .clicked()
+                        {
+                            self.workspace_layout_preference = Some(id);
+                            let _ = std::fs::write(
+                                self.storage_root.join("workspace-layout.txt"),
+                                id.key(),
+                            );
+                        }
+                    }
+                });
+                ui.label("Choose a preset or let Evo fit the number of windows automatically.");
+            });
+    }
+
+    /// A drag source state for the pod bar shelf. Holds the dragged frame so
+    /// the drop can teach the arrangement. One shelf per bar; the drag is
+    /// the explicit gesture the user performs.
+
+
+    /// A small workspace-layout control inside Settings. Presets are the same
+    /// Setpiece-derived seeds used by the native arranger; automatic mode
+    /// chooses from the number of windows in the opened work.
+    fn show_workspace_layout_settings(&mut self, ctx: &egui::Context) {
+        if !self.settings_open {
+            return;
+        }
+        egui::Window::new("workspace-layout-settings")
+            .title_bar(false)
+            .collapsible(false)
+            .resizable(false)
+            .anchor(egui::Align2::CENTER_BOTTOM, egui::vec2(0.0, -34.0))
+            .show(ctx, |ui| {
+                ui.horizontal(|ui| {
+                    ui.label(egui::RichText::new("Work tiles").strong());
+                    if ui
+                        .selectable_label(self.workspace_layout_preference.is_none(), "Auto")
+                        .clicked()
+                    {
+                        self.workspace_layout_preference = None;
+                        let _ =
+                            std::fs::remove_file(self.storage_root.join("workspace-layout.txt"));
+                    }
+                    for (id, label) in [
+                        (evo_pods::layout::LayoutId::Full, "Full"),
+                        (evo_pods::layout::LayoutId::Halves, "Halves"),
+                        (evo_pods::layout::LayoutId::Thirds, "Thirds"),
+                        (evo_pods::layout::LayoutId::Quads, "Quads"),
+                        (evo_pods::layout::LayoutId::MainSide, "Main + Side"),
+                        (evo_pods::layout::LayoutId::LeftSplitRight, "Left split + right"),
+                        (evo_pods::layout::LayoutId::LeftRightSplit, "Left + right split"),
+                        (evo_pods::layout::LayoutId::MainSideVertical, "Main + side (vertical)"),
+                        (evo_pods::layout::LayoutId::HalvesVertical, "Halves (vertical)"),
+                        (evo_pods::layout::LayoutId::ThirdsVertical, "Thirds (vertical)"),
+                        (evo_pods::layout::LayoutId::HeroRails, "5–8"),
+                        (evo_pods::layout::LayoutId::Stack, "Stack"),
+                    ] {
+                        if ui
+                            .selectable_label(self.workspace_layout_preference == Some(id), label)
+                            .clicked()
+                        {
+                            self.workspace_layout_preference = Some(id);
+                            let _ = std::fs::write(
+                                self.storage_root.join("workspace-layout.txt"),
+                                id.key(),
+                            );
+                        }
+                    }
+                });
+                ui.label("Choose a preset or let Evo fit the number of windows automatically.");
+            });
+    }
+
+    /// Renders the voice ambiguity panel and toast.
+    ///
+    /// The panel is a floating numbered list, bottom-center, shown when a
+    /// voice trigger resolved to multiple similar candidates. Each row shows
+    /// its ordinal number, the work title, and a distinguishing hint. The
+    /// user picks by clicking a row, pressing 1/2/3, or saying "the second
+    /// one" (ordinals are also parsed from the next voice command while
+    /// the panel is visible). Esc dismisses with no restore — the panel
+    /// never guesses.
+    ///
+    /// Painted just below the Pod Bar in z-order: both are floating
+    /// overlays, and the bar must always win.
+    fn paint_voice_panel(&mut self, ctx: &egui::Context) {
+        // Toast: transient outcome message, fades after a few seconds.
+        if let Some((message, _)) = &self.voice_toast {
+            egui::Window::new("voice-toast")
+                .collapsible(false)
+                .resizable(false)
+                .title_bar(false)
+                .anchor(egui::Align2::CENTER_BOTTOM, egui::vec2(0.0, -80.0))
+                .show(ctx, |ui| {
+                    ui.label(message);
+                });
+        }
+
+        if !self.voice_panel.is_visible() {
+            return;
+        }
+
+        // Number-key shortcuts: 1/2/3 pick the candidate.
+        for (index, key) in [egui::Key::Num1, egui::Key::Num2, egui::Key::Num3]
+            .iter()
+            .enumerate()
+        {
+            if ctx.input(|i| i.key_pressed(*key)) {
+                self.voice_panel.pick(index);
+            }
+        }
+        if ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
+            self.voice_panel.dismiss();
+            return;
+        }
+
+        let mut picked_via_ui: Option<usize> = None;
+        egui::Window::new("voice-ambiguity")
+            .collapsible(false)
+            .resizable(false)
+            .title_bar(false)
+            .anchor(egui::Align2::CENTER_BOTTOM, egui::vec2(0.0, -120.0))
+            .show(ctx, |ui| {
+                ui.label("Which one did you mean?");
+                ui.add_space(8.0);
+                for (index, candidate) in self.voice_panel.candidates().iter().enumerate() {
+                    let row = ui.horizontal(|ui| {
+                        ui.label(format!("{}. ", index + 1));
+                        ui.label(&candidate.title);
+                    });
+                    if row.response.clicked() {
+                        picked_via_ui = Some(index);
+                    }
+                }
+                ui.add_space(8.0);
+                ui.label("Say \"the second one\", press 1–3, or click. Esc to cancel.");
+            });
+        if let Some(index) = picked_via_ui {
+            self.voice_panel.pick(index);
+        }
     }
 }
 
-/// Reads events from the legacy SQLite store into the ledger's event format.
-// ─── Work title presentation ────────────────────────────────────────────────
+impl eframe::App for EvoApp {
+    fn logic(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        self.logic_impl(ctx, frame);
+    }
+
+    fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
+        self.ui_impl(ui, frame);
+    }
+}
+
+// Reads events from the legacy SQLite store into the ledger's event format.
+// ─── Work title presentation ────────────────────────────────────────────
 
 /// Trailing title segments that recur across many works.
 ///
@@ -1527,6 +2025,7 @@ impl eframe::App for EvoApp {
 /// or name, a trailing segment that appears across at least this many
 /// distinct works' titles is chrome: the person did not write it, their
 /// window manager did.
+#[allow(dead_code)]
 fn recurring_title_suffixes(
     works: &[evo_ledger::works::Work],
 ) -> std::collections::HashSet<String> {
@@ -1562,6 +2061,7 @@ fn recurring_title_suffixes(
 ///
 /// Only trailing segments are removed (chrome is appended, never prepended),
 /// and never all of them — a title is always shown.
+#[allow(dead_code)]
 fn clean_work_title(title: &str, chrome: &std::collections::HashSet<String>) -> String {
     let mut segments = title_segments(title);
     // Drop trailing chrome segments, but keep at least the leading segment.
@@ -1591,6 +2091,7 @@ fn clean_work_title(title: &str, chrome: &std::collections::HashSet<String>) -> 
 /// 3. A meaningful name extracted from a URL (path segments that read like
 ///    words) or a document stem.
 /// 4. The bare identity: host, title, or app.
+#[allow(dead_code)]
 fn work_display_name(
     work: &evo_ledger::works::Work,
     chrome: &std::collections::HashSet<String>,
@@ -1613,12 +2114,11 @@ fn work_display_name(
     }
 
     // 2. The identity document's filename.
-    if work.identity_kind == evo_ledger::works::IdentityKind::Document {
-        if let Some(file) = work.identity.rsplit('/').next() {
-            if !file.is_empty() {
-                return file.to_string();
-            }
-        }
+    if work.identity_kind == evo_ledger::works::IdentityKind::Document
+        && let Some(file) = work.identity.rsplit('/').next()
+        && !file.is_empty()
+    {
+        return file.to_string();
     }
 
     // 3. A meaningful name from the work's resources — but a bare host
@@ -1629,10 +2129,11 @@ fn work_display_name(
         if let Some(name) = evo_daemon::work_understanding::meaningful_name(resource) {
             let host_only =
                 !name.contains(' ') && (name.contains('.') || name == name.to_lowercase());
-            if host_only && !work.urls.is_empty() {
-                if let Some(collection) = shared_collection_token(&work.urls) {
-                    return format!("Playlist {collection}");
-                }
+            if host_only
+                && !work.urls.is_empty()
+                && let Some(collection) = shared_collection_token(&work.urls)
+            {
+                return format!("Playlist {collection}");
             }
             if !host_only {
                 return name;
@@ -1664,6 +2165,7 @@ fn shared_collection_token(urls: &[String]) -> Option<String> {
 
 /// A human recency phrase: "just now", "12 minutes ago", "3 hours ago",
 /// "2 days ago". Pure arithmetic on witnessed time, never a guess.
+#[allow(dead_code)]
 fn time_ago(then_ms: u64, now_ms: u64) -> String {
     let secs = now_ms.saturating_sub(then_ms) / 1000;
     if secs < 60 {
@@ -1697,6 +2199,7 @@ fn title_segments(title: &str) -> Vec<String> {
 
 /// A compact fallback name for a resource the understanding layer could not
 /// name: domain for URLs, filename for paths.
+#[allow(dead_code)]
 fn short_resource_name(resource: &str) -> String {
     if let Some(rest) = resource.strip_prefix("file://") {
         return rest.rsplit('/').next().unwrap_or(rest).to_string();
@@ -1710,6 +2213,7 @@ fn short_resource_name(resource: &str) -> String {
     resource.chars().take(40).collect()
 }
 
+#[allow(dead_code)]
 fn read_events_from_sqlite(db_path: &std::path::Path) -> Vec<evo_ledger::ObservedEvent> {
     let output = std::process::Command::new("sqlite3")
         .arg("-json")
@@ -1766,6 +2270,7 @@ fn read_events_from_sqlite(db_path: &std::path::Path) -> Vec<evo_ledger::Observe
     events
 }
 
+#[allow(dead_code)]
 fn json_u64(json: &str, key: &str) -> Option<u64> {
     let needle = format!("\"{key}\":");
     let start = json.find(&needle)? + needle.len();
@@ -1776,6 +2281,7 @@ fn json_u64(json: &str, key: &str) -> Option<u64> {
     rest[..end].parse().ok()
 }
 
+#[allow(dead_code)]
 fn json_str(json: &str, key: &str) -> Option<String> {
     let needle = format!("\"{key}\":\"");
     let start = json.find(&needle)? + needle.len();

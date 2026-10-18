@@ -18,7 +18,7 @@
 
 use evo_daemon::cache::CanonicalIndex;
 use evo_daemon::daemon_lock::daemon_is_running;
-use evo_daemon::daemon_status::{read_capture_sources, read_capture_status, CaptureStatus};
+use evo_daemon::daemon_status::{CaptureStatus, read_capture_sources, read_capture_status};
 use evo_daemon::persistence::{
     load_artifact_locators, load_artifact_subjects, load_current_continuation_surface,
     load_current_designation, load_persisted_observations,
@@ -50,8 +50,12 @@ fn main() {
             .and_then(|text| text.trim().parse::<u32>().ok());
         match stale {
             Some(pid) => {
-                println!("daemon: not running; stale lock left by dead pid {pid} (replaced on next start)");
-                problems.push(format!("stale daemon lock present (pid {pid} is not alive)"));
+                println!(
+                    "daemon: not running; stale lock left by dead pid {pid} (replaced on next start)"
+                );
+                problems.push(format!(
+                    "stale daemon lock present (pid {pid} is not alive)"
+                ));
             }
             None => println!("daemon: not running"),
         }
@@ -193,7 +197,10 @@ fn main() {
             replayed.len()
         );
     } else {
-        println!("canonical replay check: {} divergence(s) found", replay_divergences.len());
+        println!(
+            "canonical replay check: {} divergence(s) found",
+            replay_divergences.len()
+        );
         for divergence in &replay_divergences {
             problems.push(divergence.clone());
         }
@@ -205,7 +212,8 @@ fn main() {
     let index_surface = index.current_continuation_surface();
     if replay_surface != index_surface {
         problems.push(
-            "derived index and full replay disagree on the current continuation surface".to_string(),
+            "derived index and full replay disagree on the current continuation surface"
+                .to_string(),
         );
     } else {
         match &index_surface {
@@ -234,7 +242,9 @@ fn count_records(root: &std::path::Path, kind: StorageObjectKind) -> usize {
 
 fn finish(problems: Vec<String>) {
     if problems.is_empty() {
-        println!("\nresult: OK — canonical state loads and the derived index matches the full replay");
+        println!(
+            "\nresult: OK — canonical state loads and the derived index matches the full replay"
+        );
         std::process::exit(0);
     }
     println!("\nresult: {} problem(s) found", problems.len());

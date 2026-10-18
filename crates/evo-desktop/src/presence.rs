@@ -26,17 +26,23 @@
 use crate::pods::SharedPods;
 
 #[cfg(target_os = "macos")]
-mod imp {
-    use super::PodPresence;
+#[allow(dead_code)]
+pub mod imp {
     use crate::pods::{PodCommand, PodHost, SharedPods};
+    use std::cell::RefCell;
     use std::os::raw::{c_char, c_void};
     use std::ptr;
-    use std::sync::{Arc, Mutex};
+    use std::rc::Rc;
 
-    type Bool = i8;
-    type Id = *mut Object;
-    type Class = *mut objc_class;
-    type Sel = *mut c_void;
+    // Shared with notch_window::objc so both crates' extern "C"
+    // declarations of class_addMethod (and the other ObjC runtime
+    // symbols) agree at the type level.
+    pub type Bool = i8;
+    pub type Id = *mut Object;
+    pub type Class = *mut objc_class;
+    pub type Sel = *mut c_void;
+    pub type Imp = extern "C" fn(Id, Sel, Id);
+    pub type Ivar = *mut c_void;
     type CFIndex = isize;
 
     #[repr(C)]
@@ -55,7 +61,11 @@ mod imp {
     const KVK_ANSI_E: u32 = 14; // kVK_ANSI_E
 
     type EventHotKeyRef = *mut c_void;
-    type EventHotKeyID = [u32; 2];
+    #[repr(C)]
+    struct EventHotKeyID {
+        signature: u32,
+        id: u32,
+    }
     type EventHandlerRef = *mut c_void;
     type EventTypeSpec = [u32; 2]; // eventClass, eventKind
     type OSStatus = i32;
@@ -69,6 +79,7 @@ mod imp {
     #[link(name = "Foundation", kind = "framework")]
     #[link(name = "AppKit", kind = "framework")]
     #[link(name = "Carbon", kind = "framework")]
+    #[allow(clippy::duplicated_attributes)]
     unsafe extern "C" {
         fn objc_getClass(name: *const c_char) -> Class;
         fn objc_allocateClassPair(
@@ -76,7 +87,7 @@ mod imp {
             name: *const c_char,
             extra_bytes: usize,
         ) -> Class;
-        fn class_addMethod(cls: Class, name: Sel, imp: IMP, types: *const c_char) -> Bool;
+        fn class_addMethod(cls: Class, name: Sel, imp: Imp, types: *const c_char) -> Bool;
         fn objc_registerClassPair(cls: Class);
         fn objc_msgSend();
         fn sel_registerName(name: *const c_char) -> Sel;
@@ -111,8 +122,6 @@ mod imp {
         fn GetCurrentEventLoop() -> *mut c_void;
         fn ReceiveNextEvent(timeout: f64, out_event: *mut EventRef) -> OSStatus;
     }
-
-    type IMP = extern "C" fn(Id, Sel, Id);
 
     const SYSTEM_STATUS_BAR_SEL: &[u8] = b"systemStatusBar\0";
     const STATUS_ITEM_WITH_LENGTH_SEL: &[u8] = b"statusItemWithLength:\0";
@@ -166,7 +175,7 @@ mod imp {
 
     /// The shared pod state the actions execute directly (main thread,
     /// synchronous — the desktop never waits for a window to paint).
-    static mut COMMAND_RUNTIME: Option<Arc<Mutex<PodHost>>> = None;
+    static mut COMMAND_RUNTIME: Option<Rc<RefCell<PodHost>>> = None;
     /// The egui context: a pod transition the app must show (notes,
     /// strip, menu dot) also wakes its frame loop when it can.
     static mut COMMAND_CONTEXT: Option<egui::Context> = None;
@@ -180,7 +189,7 @@ mod imp {
             if let PodCommand::Open = command {
                 show_main_window();
                 // Cloned through a reference to the static: a bitwise copy
-                // out of it (read_volatile of Option<Arc<_>>) skips the
+                // out of it (read_volatile of Option<Rc<_>>) skips the
                 // refcount increment while its drop still decrements —
                 // every command would leak one decrement until the
                 // runtime was freed under the app's feet.
@@ -207,16 +216,15 @@ mod imp {
             }
             let runtime = (*std::ptr::addr_of!(COMMAND_RUNTIME)).clone();
             if let Some(runtime) = runtime {
-                if let Ok(mut runtime) = runtime.lock() {
-                    // Generate a current millisecond timestamp
-                    let now_ms = std::time::SystemTime::now()
-                        .duration_since(std::time::UNIX_EPOCH)
-                        .unwrap_or(std::time::Duration::from_secs(0))
-                        .as_millis() as u64;
+                let mut runtime = runtime.borrow_mut();
+                // Generate a current millisecond timestamp
+                let now_ms = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or(std::time::Duration::from_secs(0))
+                    .as_millis() as u64;
 
-                    // Pass both the command and the timestamp
-                    runtime.execute(command, now_ms);
-                }
+                // Pass both the command and the timestamp
+                runtime.execute(command, now_ms);
             }
             // No repaint request from here: the pod has already changed
             // on the desktop, and requesting a repaint from inside the
@@ -257,7 +265,10 @@ mod imp {
     ) -> OSStatus {
         unsafe {
             // kEventParamDirectObject ('----'), typeEventHotKeyID
-            let mut hot_key_id: EventHotKeyID = [0u32; 2];
+            let mut hot_key_id = EventHotKeyID {
+                signature: 0,
+                id: 0,
+            };
             let status = GetEventParameter(
                 event,
                 0x2D2D2D2D, // '----'
@@ -268,9 +279,9 @@ mod imp {
                 &mut hot_key_id as *mut _ as *mut c_void,
             );
             if status == NO_ERR {
-                match hot_key_id[0] {
+                match hot_key_id.signature {
                     1 => run_command(PodCommand::Cycle),
-                    2..=10 => run_command(PodCommand::Enter((hot_key_id[0] as usize) - 2)),
+                    2..=10 => run_command(PodCommand::Enter((hot_key_id.signature as usize) - 2)),
                     11 => run_command(PodCommand::ToggleBar),
                     _ => {}
                 }
@@ -284,30 +295,32 @@ mod imp {
     /// action runs on the main thread, so no dispatch is needed and no
     /// frame has to be painted first.
     unsafe fn show_main_window() {
-        let app = msg_send_id(
-            objc_getClass(b"NSApplication\0".as_ptr() as *const c_char) as Id,
-            sel(b"sharedApplication\0"),
-        );
-        if app.is_null() {
-            return;
-        }
-        let function: extern "C" fn(Id, Sel, isize) -> Bool =
-            std::mem::transmute(objc_msgSend as *const ());
-        // activateIgnoringOtherApps: — bring the whole app forward.
-        let _ = function(app, sel(b"activateIgnoringOtherApps:\0"), 1);
-        let windows = msg_send_id(app, sel(b"windows\0"));
-        if windows.is_null() {
-            return;
-        }
-        let count = msg_send_usize(windows, sel(COUNT_SEL));
-        for i in 0..count {
-            let window = msg_send_id1(windows, sel(OBJECT_AT_INDEX_SEL), i as Id);
-            if window.is_null() {
-                continue;
+        unsafe {
+            let app = msg_send_id(
+                objc_getClass(c"NSApplication".as_ptr()) as Id,
+                sel(b"sharedApplication\0"),
+            );
+            if app.is_null() {
+                return;
             }
-            // makeKeyAndOrderFront: shows the hidden window.
-            let _ = msg_send_id(window, sel(b"makeKeyAndOrderFront:\0"));
-            return;
+            let function: extern "C" fn(Id, Sel, isize) -> Bool =
+                std::mem::transmute(objc_msgSend as *const ());
+            // activateIgnoringOtherApps: — bring the whole app forward.
+            let _ = function(app, sel(b"activateIgnoringOtherApps:\0"), 1);
+            let windows = msg_send_id(app, sel(b"windows\0"));
+            if windows.is_null() {
+                return;
+            }
+            let count = msg_send_usize(windows, sel(COUNT_SEL));
+            for i in 0..count {
+                let window = msg_send_id1(windows, sel(OBJECT_AT_INDEX_SEL), i as Id);
+                if window.is_null() {
+                    continue;
+                }
+                // makeKeyAndOrderFront: shows the hidden window.
+                let _ = msg_send_id(window, sel(b"makeKeyAndOrderFront:\0"));
+                return;
+            }
         }
     }
 
@@ -373,7 +386,10 @@ mod imp {
                 let status = RegisterEventHotKey(
                     KVK_ANSI_E,
                     CMD_KEY | SHIFT_KEY,
-                    [1, 0],
+                    EventHotKeyID {
+                        signature: 1,
+                        id: 0,
+                    },
                     GetApplicationEventTarget(),
                     0,
                     &mut hot_key,
@@ -394,13 +410,17 @@ mod imp {
                 // Direct pod hotkeys: ⌥1..⌥9 (ids [2..10]) and the Pod Bar
                 // toggle ⌥Space (id [11]).
                 const OPTION_KEY: u32 = 0x0800;
-                let digit_keycodes: [u32; 9] = [0x12, 0x13, 0x14, 0x15, 0x17, 0x16, 0x1A, 0x1C, 0x19];
+                let digit_keycodes: [u32; 9] =
+                    [0x12, 0x13, 0x14, 0x15, 0x17, 0x16, 0x1A, 0x1C, 0x19];
                 for (n, keycode) in digit_keycodes.iter().enumerate() {
                     let mut digit_hot_key: EventHotKeyRef = ptr::null_mut();
                     let _ = RegisterEventHotKey(
                         *keycode,
                         OPTION_KEY,
-                        [(n as u32) + 2, 0],
+                        EventHotKeyID {
+                            signature: (n as u32) + 2,
+                            id: 0,
+                        },
                         GetApplicationEventTarget(),
                         0,
                         &mut digit_hot_key,
@@ -410,7 +430,10 @@ mod imp {
                 let _ = RegisterEventHotKey(
                     0x31, // kVK_Space
                     OPTION_KEY,
-                    [11, 0],
+                    EventHotKeyID {
+                        signature: 11,
+                        id: 0,
+                    },
                     GetApplicationEventTarget(),
                     0,
                     &mut bar_hot_key,
@@ -472,7 +495,7 @@ mod imp {
                         msg_send_id(class_ns_menu_item() as Id, sel(SEPARATOR_ITEM_SEL));
                     let _ = msg_send_id1(self._menu, sel(ADD_ITEM_SEL), separator);
                 }
-                let add_simple = |title: &str, tag: isize| unsafe {
+                let add_simple = |title: &str, tag: isize| {
                     let item = msg_send_id4(
                         self._menu,
                         sel(ADD_ITEM_WITH_TITLE_ACTION_KEY_EQ_SEL),
@@ -496,55 +519,59 @@ mod imp {
     }
 
     unsafe fn ensure_target_class() -> Option<Class> {
-        let name = b"EvoPresenceTarget\0";
-        let existing = objc_getClass(name.as_ptr() as *const c_char);
-        if !existing.is_null() {
-            return Some(existing);
+        unsafe {
+            let name = b"EvoPresenceTarget\0";
+            let existing = objc_getClass(name.as_ptr() as *const c_char);
+            if !existing.is_null() {
+                return Some(existing);
+            }
+            let superclass = objc_getClass(c"NSObject".as_ptr());
+            if superclass.is_null() {
+                return None;
+            }
+            let cls = objc_allocateClassPair(superclass, name.as_ptr() as *const c_char, 0);
+            if cls.is_null() {
+                return None;
+            }
+            // - (void)menuAction:(id)sender — void return, one id arg.
+            let types = b"v@:\0";
+            if class_addMethod(
+                cls,
+                sel(MENU_ACTION_SEL),
+                menu_action,
+                types.as_ptr() as *const c_char,
+            ) == 0
+            {
+                return None;
+            }
+            objc_registerClassPair(cls);
+            Some(cls)
         }
-        let superclass = objc_getClass(b"NSObject\0".as_ptr() as *const c_char);
-        if superclass.is_null() {
-            return None;
-        }
-        let cls = objc_allocateClassPair(superclass, name.as_ptr() as *const c_char, 0);
-        if cls.is_null() {
-            return None;
-        }
-        // - (void)menuAction:(id)sender — void return, one id arg.
-        let types = b"v@:\0";
-        if class_addMethod(
-            cls,
-            sel(MENU_ACTION_SEL),
-            menu_action,
-            types.as_ptr() as *const c_char,
-        ) == 0
-        {
-            return None;
-        }
-        objc_registerClassPair(cls);
-        Some(cls)
     }
 
     unsafe fn class_ns_status_bar() -> Class {
-        objc_getClass(b"NSStatusBar\0".as_ptr() as *const c_char)
+        unsafe { objc_getClass(c"NSStatusBar".as_ptr()) }
     }
     unsafe fn class_ns_menu() -> Class {
-        objc_getClass(b"NSMenu\0".as_ptr() as *const c_char)
+        unsafe { objc_getClass(c"NSMenu".as_ptr()) }
     }
     unsafe fn class_ns_menu_item() -> Class {
-        objc_getClass(b"NSMenuItem\0".as_ptr() as *const c_char)
+        unsafe { objc_getClass(c"NSMenuItem".as_ptr()) }
     }
     unsafe fn class_ns_image() -> Class {
-        objc_getClass(b"NSImage\0".as_ptr() as *const c_char)
+        unsafe { objc_getClass(c"NSImage".as_ptr()) }
     }
 
     unsafe fn ns_string(value: &str) -> Id {
-        let mut bytes = value.as_bytes().to_vec();
-        bytes.push(0);
-        msg_send_id1(
-            objc_getClass(b"NSString\0".as_ptr() as *const c_char) as Id,
-            sel(STRING_WITH_UTF8_SEL),
-            bytes.as_ptr() as *mut c_char as Id,
-        )
+        unsafe {
+            let mut bytes = value.as_bytes().to_vec();
+            bytes.push(0);
+            msg_send_id1(
+                objc_getClass(c"NSString".as_ptr()) as Id,
+                sel(STRING_WITH_UTF8_SEL),
+                bytes.as_ptr() as *mut c_char as Id,
+            )
+        }
     }
 
     const NUMBER_OF_ITEMS_SEL: &[u8] = b"numberOfItems\0";
@@ -556,51 +583,70 @@ mod imp {
     }
 
     unsafe fn msg_send_id(receiver: Id, selector: Sel) -> Id {
-        let function: extern "C" fn(Id, Sel) -> Id = std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector)
+        unsafe {
+            let function: extern "C" fn(Id, Sel) -> Id =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector)
+        }
     }
     unsafe fn msg_send_id1(receiver: Id, selector: Sel, arg: Id) -> Id {
-        let function: extern "C" fn(Id, Sel, Id) -> Id =
-            std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector, arg)
+        unsafe {
+            let function: extern "C" fn(Id, Sel, Id) -> Id =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector, arg)
+        }
     }
     unsafe fn msg_send_id2(receiver: Id, selector: Sel, arg: Id) -> Id {
-        msg_send_id1(receiver, selector, arg)
+        unsafe { msg_send_id1(receiver, selector, arg) }
     }
     unsafe fn msg_send_id3(receiver: Id, selector: Sel, a: Id, b: Id) -> Id {
-        let function: extern "C" fn(Id, Sel, Id, Id) -> Id =
-            std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector, a, b)
+        unsafe {
+            let function: extern "C" fn(Id, Sel, Id, Id) -> Id =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector, a, b)
+        }
     }
     unsafe fn msg_send_id_f64(receiver: Id, selector: Sel, arg: f64) -> Id {
-        let function: extern "C" fn(Id, Sel, f64) -> Id =
-            std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector, arg)
+        unsafe {
+            let function: extern "C" fn(Id, Sel, f64) -> Id =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector, arg)
+        }
     }
     unsafe fn msg_send_bool1(receiver: Id, selector: Sel, arg: isize) -> Bool {
-        let function: extern "C" fn(Id, Sel, isize) -> Bool =
-            std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector, arg)
+        unsafe {
+            let function: extern "C" fn(Id, Sel, isize) -> Bool =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector, arg)
+        }
     }
     unsafe fn msg_send_id4(receiver: Id, selector: Sel, a: Id, b: Id, c: Id) -> Id {
-        let function: extern "C" fn(Id, Sel, Id, Id, Id) -> Id =
-            std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector, a, b, c)
+        unsafe {
+            let function: extern "C" fn(Id, Sel, Id, Id, Id) -> Id =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector, a, b, c)
+        }
     }
     unsafe fn msg_send_isize1(receiver: Id, selector: Sel, arg: isize) -> isize {
-        let function: extern "C" fn(Id, Sel, isize) -> isize =
-            std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector, arg)
+        unsafe {
+            let function: extern "C" fn(Id, Sel, isize) -> isize =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector, arg)
+        }
     }
     unsafe fn msg_send_usize(receiver: Id, selector: Sel) -> usize {
-        let function: extern "C" fn(Id, Sel) -> usize =
-            std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector)
+        unsafe {
+            let function: extern "C" fn(Id, Sel) -> usize =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector)
+        }
     }
     unsafe fn msg_send_isize(receiver: Id, selector: Sel) -> isize {
-        let function: extern "C" fn(Id, Sel) -> isize =
-            std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector)
+        unsafe {
+            let function: extern "C" fn(Id, Sel) -> isize =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector)
+        }
     }
 }
 

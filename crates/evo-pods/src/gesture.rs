@@ -86,10 +86,12 @@ pub fn gesture_to_declaration(gesture: &PodGesture) -> GestureOutcome {
             source_anchor,
             ..
         } => match source_anchor {
-            Some(anchor) if anchor != subject => GestureOutcome::Declare(Declaration::SeparateWork {
-                a: subject.clone(),
-                b: anchor.clone(),
-            }),
+            Some(anchor) if anchor != subject => {
+                GestureOutcome::Declare(Declaration::SeparateWork {
+                    a: subject.clone(),
+                    b: anchor.clone(),
+                })
+            }
             // No counter-side to separate from: quarantine is the honest
             // fallback — the subject leaves every view.
             _ => GestureOutcome::Declare(Declaration::NotMine {
@@ -101,14 +103,11 @@ pub fn gesture_to_declaration(gesture: &PodGesture) -> GestureOutcome {
 
 /// The UI's strongest identity for a loose window, for gesture purposes.
 /// Shapes only, never apps: document, then page, then title.
-pub fn strongest_identity(
-    ax_document: Option<&str>,
-    title: &str,
-) -> Option<String> {
-    if let Some(doc) = ax_document {
-        if !doc.is_empty() {
-            return Some(doc.to_string());
-        }
+pub fn strongest_identity(ax_document: Option<&str>, title: &str) -> Option<String> {
+    if let Some(doc) = ax_document
+        && !doc.is_empty()
+    {
+        return Some(doc.to_string());
     }
     if !title.is_empty() {
         return Some(title.to_string());
@@ -118,7 +117,5 @@ pub fn strongest_identity(
 
 /// Card-level merge availability test for UI affordance (drag hover).
 pub fn merge_ready(source: &Pod, target: &Pod) -> bool {
-    source.strongest_anchor.is_some()
-        && target.strongest_anchor.is_some()
-        && source.id != target.id
+    source.strongest_anchor.is_some() && target.strongest_anchor.is_some() && source.id != target.id
 }

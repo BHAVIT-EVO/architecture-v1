@@ -160,6 +160,7 @@ mod tests {
             process_identifier: None,
             owning_process_name: None,
             observed_state: None,
+            window_id: None,
         }
     }
 
@@ -350,8 +351,8 @@ mod tests {
         );
 
         // And the resolved Artifact-level surface agrees.
-        let observations = crate::persistence::load_persisted_observations(&root)
-            .expect("observations load");
+        let observations =
+            crate::persistence::load_persisted_observations(&root).expect("observations load");
         let evidence = understanding::evidence_of(&observations);
         assert_eq!(
             evidence.surface,

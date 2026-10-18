@@ -7,5 +7,6 @@ description = "Evo Restoration Execution layer — platform-neutral engine + pla
 [dependencies]
 evo-artifact = { path = "../evo-artifact" }
 evo-ledger = { path = "../evo-ledger" }
+evo-observation = { path = "../evo-observation" }
 evo-restoration = { path = "../evo-restoration" }
 evo-workspace = { path = "../evo-workspace" }

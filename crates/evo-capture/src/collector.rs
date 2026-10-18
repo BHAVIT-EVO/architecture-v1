@@ -34,7 +34,12 @@ mod tests {
     use std::collections::HashMap;
     use std::time::SystemTime;
 
-    fn cases() -> Vec<(ObservationConcept, ObservationSchema, &'static str, &'static str)> {
+    fn cases() -> Vec<(
+        ObservationConcept,
+        ObservationSchema,
+        &'static str,
+        &'static str,
+    )> {
         vec![
             (
                 ObservationConcept::WindowFocusGained {
@@ -123,10 +128,14 @@ mod tests {
             );
 
             let candidate = collector.translate(raw_event);
-            let observation = accept(candidate, &schema).expect("valid candidate should be accepted");
+            let observation =
+                accept(candidate, &schema).expect("valid candidate should be accepted");
 
             assert_eq!(observation.schema(), &schema);
-            assert_eq!(observation.provenance().observed_at(), SystemTime::UNIX_EPOCH);
+            assert_eq!(
+                observation.provenance().observed_at(),
+                SystemTime::UNIX_EPOCH
+            );
             assert_eq!(
                 observation.evidence().fact(fact_name).unwrap().value(),
                 &FactValue::Text(subject.into())

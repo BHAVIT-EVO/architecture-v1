@@ -88,18 +88,18 @@ fn common_dir_for_git_dir(git_dir: &Path) -> Option<String> {
     // Linked worktrees carry a `commondir` file whose content is the common
     // directory path relative to the gitdir.
     let commondir_file = git_dir.join("commondir");
-    if commondir_file.is_file() {
-        if let Ok(content) = std::fs::read_to_string(&commondir_file) {
-            let target = content.trim();
-            if !target.is_empty() {
-                let resolved = if Path::new(target).is_absolute() {
-                    PathBuf::from(target)
-                } else {
-                    git_dir.join(target)
-                };
-                let common = std::path::absolute(resolved).ok()?;
-                return Some(canonical_identity(&common));
-            }
+    if commondir_file.is_file()
+        && let Ok(content) = std::fs::read_to_string(&commondir_file)
+    {
+        let target = content.trim();
+        if !target.is_empty() {
+            let resolved = if Path::new(target).is_absolute() {
+                PathBuf::from(target)
+            } else {
+                git_dir.join(target)
+            };
+            let common = std::path::absolute(resolved).ok()?;
+            return Some(canonical_identity(&common));
         }
     }
     // Fall back to the canonical worktree layout: the common dir is the
@@ -222,21 +222,33 @@ mod tests {
     fn linked_worktree_resolves_to_the_same_identity_as_the_main_worktree() {
         let main = unique("worktree-main");
         init_repo(&main);
-        let main_identity = repository_identity_for_path(&main.join("file.txt"))
-            .expect("main resolves");
+        let main_identity =
+            repository_identity_for_path(&main.join("file.txt")).expect("main resolves");
         std::fs::write(main.join("file.txt"), "x").expect("write");
 
         let worktree = unique("worktree-linked");
-        let status = git(&["worktree", "add", worktree.to_str().unwrap(), "-b", "feature"], &main);
+        let status = git(
+            &[
+                "worktree",
+                "add",
+                worktree.to_str().unwrap(),
+                "-b",
+                "feature",
+            ],
+            &main,
+        );
         assert!(status.status.success(), "git worktree add");
 
-        let worktree_identity = repository_identity_for_path(&worktree.join("file.txt"))
-            .expect("worktree resolves");
+        let worktree_identity =
+            repository_identity_for_path(&worktree.join("file.txt")).expect("worktree resolves");
         assert_eq!(
             worktree_identity, main_identity,
             "linked worktrees unify to one repository identity"
         );
-        let _ = git(&["worktree", "remove", "--force", worktree.to_str().unwrap()], &main);
+        let _ = git(
+            &["worktree", "remove", "--force", worktree.to_str().unwrap()],
+            &main,
+        );
         let _ = std::fs::remove_dir_all(&main);
     }
 
@@ -316,8 +328,8 @@ mod tests {
         git(&["add", "."], &dir);
         git(&["commit", "-m", "first"], &dir);
         let from_file = repository_identity_for_path(&file).expect("file identity");
-        let from_reflog =
-            repository_identity_from_reflog_path(&dir.join(".git/logs/HEAD")).expect("reflog identity");
+        let from_reflog = repository_identity_from_reflog_path(&dir.join(".git/logs/HEAD"))
+            .expect("reflog identity");
         assert_eq!(from_file, from_reflog);
         let _ = std::fs::remove_dir_all(&dir);
     }

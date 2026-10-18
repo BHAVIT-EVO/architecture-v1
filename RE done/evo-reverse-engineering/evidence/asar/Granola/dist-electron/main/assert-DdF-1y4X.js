@@ -1,0 +1,2 @@
+var e=class extends Error{code=`UNREACHABLE_CODE`;constructor(e){super(`Unreachable code reached: ${e}`),this.name=`UnreachableError`}};function t(t){throw console.trace(`Reached unreachable code with unhandled value:`,t),new e(t)}Object.defineProperty(exports,"t",{enumerable:!0,get:function(){return t}});
+//# sourceMappingURL=assert-DdF-1y4X.js.map

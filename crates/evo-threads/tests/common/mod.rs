@@ -2,6 +2,10 @@
 //! day, rendered as epoch ms. Everything ends up as plain `Event`s; fixtures
 //! are just stories told in the engine's own alphabet.
 
+// Shared scaffolding: each integration test binary compiles this module
+// separately and uses a different subset of helpers.
+#![allow(dead_code)]
+
 use evo_threads::*;
 
 pub const BASE: u64 = 1_700_000_000_000;
@@ -10,6 +14,11 @@ pub const MIN: u64 = 60_000;
 /// Minutes past midnight -> timestamp.
 pub fn t(min: u64) -> u64 {
     BASE + min * MIN
+}
+
+/// Minutes:seconds past midnight -> timestamp, for sitting-internal timing.
+pub fn t_sec(min: u64, sec: u64) -> u64 {
+    BASE + min * MIN + sec * 1000
 }
 
 pub fn ev(ts: u64, i: Interaction, r: &str) -> Event {
@@ -119,10 +128,16 @@ pub fn all_thread_participants(e: &Engine) -> Vec<String> {
 pub fn leaks_into_work(e: &Engine, resource_prefix: &str) -> bool {
     let threads = e.threads();
     for t in &threads {
-        if t.anchors.iter().any(|a| a.resource.starts_with(resource_prefix)) {
+        if t.anchors
+            .iter()
+            .any(|a| a.resource.starts_with(resource_prefix))
+        {
             return true;
         }
-        if t.companions.iter().any(|(r, _)| r.starts_with(resource_prefix)) {
+        if t.companions
+            .iter()
+            .any(|(r, _)| r.starts_with(resource_prefix))
+        {
             return true;
         }
         if t.episodes.iter().any(|ep| {

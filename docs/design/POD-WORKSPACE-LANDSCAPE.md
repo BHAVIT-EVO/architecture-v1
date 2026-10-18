@@ -60,7 +60,7 @@ decomposed to four bugs + one design correction:
 | B2 | Home page doesn't scroll | Home body never wrapped in `ui::scroll` (helper existed unused on this path) | wrap the work section in the scroll helper |
 | B3 | Pod bar cards inert | two sibling `egui::Area`s at equal `Order` (backdrop + panel): z/input order unreliable | one Area; backdrop painted+hit-tested first, panel content after (later widgets win) |
 | B4 | App lags | `ctx.request_repaint()` every frame while the bar is visible (60fps churn) + per-frame unconditional repaint loop | repaint on input/toggle only; egui already repaints on input |
-| D1 | Web pages opening inside Evo on entry ("rooms concept") | `enter_at` set `wants_browser = true` unconditionally | entry never opens the pane; "Pages" button opens it on demand; leave/pods-switch hibernation unchanged |
+| D1 | Web pages opening inside Evo ("rooms concept") | the pod UI hydrated `bundle.restore_set` into an embedded Pages surface | restore-set URLs dispatch through the normal macOS handler; Evo exposes no embedded browser control |
 
 **Arrangement/containment had already shipped (round 1):** `PodRuntime.enter`
 plans and applies stage-recipe moves; the user's note showed honest zeros

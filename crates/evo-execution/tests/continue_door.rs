@@ -20,7 +20,7 @@
 
 use evo_artifact::artifact_id::ArtifactId;
 use evo_execution::{
-    BoundResource, Locator, LocatorKind, PlatformExecutor, PreflightSource, RestorationSelection,
+    BindingFailure, Locator, LocatorKind, PlatformExecutor, PreflightSource, RestorationSelection,
     StepPlan, TargetStatus, WindowInfo, classify_locator, execute_step, plan_selection,
     select_restoration,
 };
@@ -50,6 +50,8 @@ struct FakeOs {
     windows: Vec<WindowInfo>,
     /// Path → the windows the OS says are displaying that file.
     documents: HashMap<String, Vec<WindowInfo>>,
+    /// Path → the reason document inspection fails for this target.
+    document_errors: HashMap<String, String>,
     /// Paths the OS says exist.
     files: Vec<String>,
     /// Set when the platform cannot report its window list at all.
@@ -86,6 +88,12 @@ impl FakeOs {
         self
     }
 
+    fn failing_document_inspection(mut self, path: &str, reason: &str) -> Self {
+        self.document_errors
+            .insert(path.to_string(), reason.to_string());
+        self
+    }
+
     fn performed(&self) -> Vec<String> {
         self.performed.borrow().clone()
     }
@@ -104,7 +112,10 @@ impl PreflightSource for FakeOs {
     }
 
     fn windows_showing_document(&self, path: &str) -> Result<Vec<WindowInfo>, String> {
-        Ok(self.documents.get(path).cloned().unwrap_or_default())
+        match self.document_errors.get(path) {
+            Some(reason) => Err(reason.clone()),
+            None => Ok(self.documents.get(path).cloned().unwrap_or_default()),
+        }
     }
 }
 
@@ -749,8 +760,10 @@ fn a_platform_that_cannot_report_its_windows_says_so_and_opens_nothing() {
     let outcome = outcome_for("artifact-window", &["artifact-window"]);
     let selection = select_restoration(&outcome, &members, &evidence(&facts));
 
-    let mut os = FakeOs::default();
-    os.windows_unreadable = Some("Accessibility permission is not granted".to_string());
+    let os = FakeOs {
+        windows_unreadable: Some("Accessibility permission is not granted".to_string()),
+        ..Default::default()
+    };
     let results = run_all(&selection, &locators(&facts), &os);
 
     match &results[0].1 {
@@ -766,31 +779,139 @@ fn a_platform_that_cannot_report_its_windows_says_so_and_opens_nothing() {
 }
 
 #[test]
-fn a_file_open_in_several_windows_is_delegated_with_the_reason_recorded() {
-    // Evo declines to choose between two equally valid windows. It hands the
-    // file to the system exactly as Finder would, and the binding records why —
-    // it does not silently pick one and call it a focus.
+fn a_file_open_in_several_windows_is_ambiguous_without_delegating_to_the_system() {
+    let members = [member("artifact-shared-doc", ResourceRole::Continuation)];
+    let facts = [("artifact-shared-doc", SCHEMA_FILE, "/repo/shared.md")];
+    let outcome = outcome_for("artifact-shared-doc", &["artifact-shared-doc"]);
+    let selection = select_restoration(&outcome, &members, &evidence(&facts));
     let os = FakeOs::default()
         .showing_document("/repo/shared.md", "shared.md — A", 1, "Editor A")
         .showing_document("/repo/shared.md", "shared.md — B", 2, "Editor B");
 
-    let binding = evo_execution::bind_resource(
+    let failure = evo_execution::bind_resource(
         &artifact("artifact-shared-doc"),
         &LocatorKind::FilePath("/repo/shared.md".to_string()),
         &os,
     )
-    .expect("a file always has an honest fallback");
+    .expect_err("several document windows cannot safely bind");
 
-    match binding.resource() {
-        BoundResource::OpenFile { path, witnessed } => {
-            assert_eq!(path, "/repo/shared.md");
-            let reason = witnessed
-                .reason()
-                .expect("not choosing between two windows is a fact worth stating");
-            assert!(reason.contains('2'), "the count reaches the user: {reason}");
+    assert_eq!(
+        failure,
+        BindingFailure::SeveralDocumentWindows {
+            path: "/repo/shared.md".to_string(),
+            count: 2,
         }
-        other => panic!("two candidate windows must not become a focus: {other:?}"),
-    }
+    );
+    let results = run_all(&selection, &locators(&facts), &os);
+    assert_eq!(
+        results,
+        vec![(
+            "artifact-shared-doc".to_string(),
+            TargetStatus::Ambiguous {
+                reason: "2 open windows are showing the file “/repo/shared.md”; Evo cannot \
+                         choose between them without more canonical evidence"
+                    .to_string(),
+            },
+        )]
+    );
+    assert!(os.performed().is_empty(), "no focus or reopen is permitted");
+}
+
+#[test]
+fn a_document_inspection_error_is_unavailable_without_reopening() {
+    let members = [member("artifact-file", ResourceRole::Continuation)];
+    let facts = [("artifact-file", SCHEMA_FILE, "/repo/report.md")];
+    let outcome = outcome_for("artifact-file", &["artifact-file"]);
+    let selection = select_restoration(&outcome, &members, &evidence(&facts));
+    let os = FakeOs::default()
+        .with_file("/repo/report.md")
+        .failing_document_inspection("/repo/report.md", "Accessibility permission is not granted");
+
+    let results = run_all(&selection, &locators(&facts), &os);
+    assert_eq!(
+        results,
+        vec![(
+            "artifact-file".to_string(),
+            TargetStatus::Unavailable {
+                reason: "cannot inspect open windows: Accessibility permission is not granted"
+                    .to_string(),
+            },
+        )]
+    );
+    assert!(
+        os.performed().is_empty(),
+        "an error is not an empty window list"
+    );
+}
+
+#[test]
+fn document_binding_refusals_do_not_block_independent_targets() {
+    let members = [
+        member("artifact-a-ambiguous", ResourceRole::Continuation),
+        member("artifact-b-unreadable", ResourceRole::Primary),
+        member("artifact-c-file", ResourceRole::Primary),
+        member("artifact-d-url", ResourceRole::Primary),
+    ];
+    let facts = [
+        ("artifact-a-ambiguous", SCHEMA_FILE, "/repo/shared.md"),
+        ("artifact-b-unreadable", SCHEMA_FILE, "/repo/report.md"),
+        ("artifact-c-file", SCHEMA_FILE, "/other/main.rs"),
+        ("artifact-d-url", SCHEMA_URL, "https://docs.dev/api"),
+    ];
+    let outcome = outcome_for(
+        "artifact-a-ambiguous",
+        &[
+            "artifact-a-ambiguous",
+            "artifact-b-unreadable",
+            "artifact-c-file",
+            "artifact-d-url",
+        ],
+    );
+    let selection = select_restoration(&outcome, &members, &evidence(&facts));
+    let os = FakeOs::default()
+        .showing_document("/repo/shared.md", "shared.md — A", 1, "Editor A")
+        .showing_document("/repo/shared.md", "shared.md — B", 2, "Editor B")
+        .with_file("/repo/report.md")
+        .failing_document_inspection("/repo/report.md", "document inspection failed")
+        .with_file("/other/main.rs");
+
+    let results = run_all(&selection, &locators(&facts), &os);
+    assert_eq!(
+        results,
+        vec![
+            (
+                "artifact-a-ambiguous".to_string(),
+                TargetStatus::Ambiguous {
+                    reason: "2 open windows are showing the file “/repo/shared.md”; Evo cannot \
+                             choose between them without more canonical evidence"
+                        .to_string(),
+                },
+            ),
+            (
+                "artifact-b-unreadable".to_string(),
+                TargetStatus::Unavailable {
+                    reason: "cannot inspect open windows: document inspection failed".to_string(),
+                },
+            ),
+            (
+                "artifact-c-file".to_string(),
+                TargetStatus::Opened {
+                    detail: "opened file /other/main.rs".to_string(),
+                },
+            ),
+            (
+                "artifact-d-url".to_string(),
+                TargetStatus::Opened {
+                    detail: "opened URL https://docs.dev/api".to_string(),
+                },
+            ),
+        ]
+    );
+    assert_eq!(
+        os.performed(),
+        vec!["open_file /other/main.rs", "open_url https://docs.dev/api"],
+        "refused documents produce no actions while unrelated targets continue"
+    );
 }
 
 #[test]

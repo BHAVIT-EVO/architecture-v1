@@ -21,7 +21,7 @@ use evo_daemon::understanding::{derive, evidence_of};
 use evo_engagement::{
     ActCharacter, Engagement, EngagementParams, Reconstruction, ResourceRole, SubjectShape,
 };
-use evo_execution::{select_restoration, Disposition, RestorationSelection};
+use evo_execution::{Disposition, RestorationSelection, select_restoration};
 use evo_storage::canonical_storage_root;
 use evo_workspace::projection::project_engagements;
 
@@ -159,7 +159,9 @@ fn main() {
     // exist yet classifies itself.
     let mut shape_of: BTreeMap<&str, (SubjectShape, BTreeSet<ActCharacter>)> = BTreeMap::new();
     for act in &acts {
-        let key = reconstruction.identity().canonical(act.resource().subject());
+        let key = reconstruction
+            .identity()
+            .canonical(act.resource().subject());
         let entry = shape_of
             .entry(key)
             .or_insert_with(|| (act.resource().shape(), BTreeSet::new()));
@@ -319,11 +321,12 @@ fn main() {
                     reconstruction
                         .graph()
                         .evidence(participant.subject(), other)
-                        .filter(|evidence| {
-                            evidence.score(reconstruction.params()) > 0.0
-                        })
+                        .filter(|evidence| evidence.score(reconstruction.params()) > 0.0)
                         .map(|evidence| {
-                            (evidence.score(reconstruction.params()), evidence.strongest(reconstruction.params()))
+                            (
+                                evidence.score(reconstruction.params()),
+                                evidence.strongest(reconstruction.params()),
+                            )
                         })
                 })
                 .max_by(|a, b| a.0.total_cmp(&b.0));
@@ -491,7 +494,10 @@ fn main() {
     println!();
     println!("================================================================");
     let remembered = reconstruction.set().remembered();
-    println!("SEEN AND KEPT, WITHOUT THE CLAIM OF WORK ({} threads)", remembered.len());
+    println!(
+        "SEEN AND KEPT, WITHOUT THE CLAIM OF WORK ({} threads)",
+        remembered.len()
+    );
     println!("================================================================");
     let mut kept: Vec<&evo_engagement::Engagement> = remembered.iter().collect();
     kept.sort_by_key(|engagement| std::cmp::Reverse(engagement.participants().len()));
@@ -534,7 +540,10 @@ fn main() {
     let unattended = reconstruction.set().unattended();
     println!();
     println!("================================================================");
-    println!("WITNESSED WITH NO PERSON IN THE RECORD ({} resources)", unattended.len());
+    println!(
+        "WITNESSED WITH NO PERSON IN THE RECORD ({} resources)",
+        unattended.len()
+    );
     println!("================================================================");
     for subject in unattended.iter().take(12) {
         println!("      {}", trim(subject, 70));
@@ -637,9 +646,7 @@ fn silence_reason(engagement: &Engagement, params: &EngagementParams) -> String 
             "no member belongs to this work alone: {attended} attended, all witnessed elsewhere too"
         );
     }
-    format!(
-        "{attended} attended, {exclusive} exclusive, {returned} returned — but none is both"
-    )
+    format!("{attended} attended, {exclusive} exclusive, {returned} returned — but none is both")
 }
 
 fn trim(text: &str, width: usize) -> String {

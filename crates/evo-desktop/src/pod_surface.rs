@@ -15,7 +15,113 @@
 
 use evo_pods::surface::{CommandSpec, Frame, PodApp, PodSurface, PodWindow};
 
+use evo_execution::locator::{LocatorKind, classify_subject};
+use evo_execution::restore::{
+    self, DispatchResult, RestoreReceipt, RestoreTarget, TargetReceipt, VerificationResult,
+};
+use evo_pods::pod::PodResource;
+
+/// Restoration is independent of containment. Tests can supply receipts without
+/// reading or changing the desktop; the runtime still owns every stage/lease.
+pub(crate) trait PodRestorer {
+    fn restore_targets(&self, targets: &[RestoreTarget]) -> RestoreReceipt;
+    fn open_resource(&self, resource: &PodResource) -> RestoreReceipt;
+}
+
+pub(crate) struct SystemPodRestorer;
+
+impl PodRestorer for SystemPodRestorer {
+    fn restore_targets(&self, targets: &[RestoreTarget]) -> RestoreReceipt {
+        restore::restore_with_receipt(targets)
+    }
+
+    fn open_resource(&self, resource: &PodResource) -> RestoreReceipt {
+        open_resource_with(resource, restore::restore_with_receipt, dispatch_open)
+    }
+}
+
+/// Use raise-first/resource verification wherever the executor understands the
+/// saved kind. Explicit app/folder launches, relative paths and schemes such as
+/// mailto: still use the person's selected opener, never title matching.
+fn open_resource_with(
+    resource: &PodResource,
+    restore: impl FnOnce(&[RestoreTarget]) -> RestoreReceipt,
+    dispatch: impl FnOnce(&CommandSpec) -> Result<(), String>,
+) -> RestoreReceipt {
+    let understood = match resource {
+        PodResource::File(value) => matches!(classify_subject(value), LocatorKind::FilePath(_)),
+        PodResource::Url(value) => matches!(classify_subject(value), LocatorKind::Url(_)),
+        // A directory does not have a document-focus verification adapter.
+        PodResource::App(_) | PodResource::Folder(_) => false,
+    };
+    if understood {
+        // The saved opener carries no witnessed application or native identity.
+        // Passing a URL must not manufacture a browser profile/tab constraint.
+        restore(&[RestoreTarget::with_default_handler(resource.value())])
+    } else {
+        unverified_open_receipt(resource.value(), dispatch(&resource.open_spec()))
+    }
+}
+
+fn unverified_open_receipt(resource: &str, result: Result<(), String>) -> RestoreReceipt {
+    let mut receipt = RestoreReceipt::default();
+    let (dispatch, verification) = match result {
+        Ok(()) => {
+            receipt.outcome.opened.push(resource.to_string());
+            (
+                DispatchResult::OpenAccepted,
+                VerificationResult::Unverified {
+                    reason: "verification unavailable: this saved opener has no postcondition adapter; exact window, browser tab, and profile restoration cannot be verified".into(),
+                },
+            )
+        }
+        Err(reason) => {
+            receipt
+                .outcome
+                .unopened
+                .push((resource.to_string(), reason.clone()));
+            (
+                DispatchResult::Failed { reason },
+                VerificationResult::Unverified {
+                    reason: "no action was accepted".into(),
+                },
+            )
+        }
+    };
+    receipt.targets.push(TargetReceipt {
+        resource: resource.to_string(),
+        dispatch,
+        verification,
+    });
+    receipt
+}
+
 #[cfg(target_os = "macos")]
+fn dispatch_open(spec: &CommandSpec) -> Result<(), String> {
+    // Unlike PodSurface::run's detached instance launches, an open receipt
+    // waits for the opener's exit status. Spawn alone is not OS acceptance.
+    let output = std::process::Command::new(&spec.program)
+        .args(&spec.args)
+        .stdin(std::process::Stdio::null())
+        .output()
+        .map_err(|err| format!("could not ask the OS to open the resource: {err}"))?;
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(format!(
+            "the OS refused the open request: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        ))
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+fn dispatch_open(_spec: &CommandSpec) -> Result<(), String> {
+    Err("pods require macOS".into())
+}
+
+#[cfg(target_os = "macos")]
+#[allow(dead_code)]
 mod imp {
     use evo_pods::surface::{CommandSpec, Frame, PodApp, PodWindow};
     use std::ffi::CStr;
@@ -52,6 +158,7 @@ mod imp {
     #[link(name = "AppKit", kind = "framework")]
     #[link(name = "ApplicationServices", kind = "framework")]
     #[link(name = "CoreFoundation", kind = "framework")]
+    #[allow(clippy::duplicated_attributes)]
     unsafe extern "C" {
         fn objc_getClass(name: *const c_char) -> Class;
         fn objc_msgSend();
@@ -298,47 +405,48 @@ mod imp {
     where
         F: FnMut(&LiveWindow),
     {
-        let element = AXUIElementCreateApplication(pid);
-        if element.is_null() {
-            return Err("cannot address the application".to_string());
-        }
-        let windows_attr = cfstring(KAX_WINDOWS_ATTRIBUTE);
-        let mut windows_value: CFTypeRef = ptr::null();
-        let err = AXUIElementCopyAttributeValue(element, windows_attr, &mut windows_value);
-        CFRelease(windows_attr);
-        if err != AX_SUCCESS || windows_value.is_null() {
+        unsafe {
+            let element = AXUIElementCreateApplication(pid);
+            if element.is_null() {
+                return Err("cannot address the application".to_string());
+            }
+            let windows_attr = cfstring(KAX_WINDOWS_ATTRIBUTE);
+            let mut windows_value: CFTypeRef = ptr::null();
+            let err = AXUIElementCopyAttributeValue(element, windows_attr, &mut windows_value);
+            CFRelease(windows_attr);
+            if err != AX_SUCCESS || windows_value.is_null() {
+                CFRelease(element as CFTypeRef);
+                // An app with no windows (or a dying app) is an empty answer,
+                // not an error.
+                return Ok(());
+            }
+
+            let array = windows_value as CFArrayRef;
+            let count = CFArrayGetCount(array);
+            for i in 0..count {
+                let window_element = CFArrayGetValueAtIndex(array, i) as AXUIElementRef;
+                let mut window_id: u32 = 0;
+                let _ = _AXUIElementGetWindow(window_element, &mut window_id);
+                let title =
+                    copy_string_attribute(window_element, KAX_TITLE_ATTRIBUTE).unwrap_or_default();
+                let document = copy_string_attribute(window_element, KAX_DOCUMENT_ATTRIBUTE);
+                let minimized = copy_boolean_attribute(window_element, KAX_MINIMIZED_ATTRIBUTE);
+                let frame = copy_frame(window_element);
+                f(&LiveWindow {
+                    window_id,
+                    title,
+                    document,
+                    minimized,
+                    frame,
+                    element: window_element,
+                });
+            }
+
+            CFRelease(windows_value);
             CFRelease(element as CFTypeRef);
-            // An app with no windows (or a dying app) is an empty answer,
-            // not an error.
-            return Ok(());
+            Ok(())
         }
-
-        let array = windows_value as CFArrayRef;
-        let count = CFArrayGetCount(array);
-        for i in 0..count {
-            let window_element = CFArrayGetValueAtIndex(array, i) as AXUIElementRef;
-            let mut window_id: u32 = 0;
-            let _ = _AXUIElementGetWindow(window_element, &mut window_id);
-            let title =
-                copy_string_attribute(window_element, KAX_TITLE_ATTRIBUTE).unwrap_or_default();
-            let document = copy_string_attribute(window_element, KAX_DOCUMENT_ATTRIBUTE);
-            let minimized = copy_boolean_attribute(window_element, KAX_MINIMIZED_ATTRIBUTE);
-            let frame = copy_frame(window_element);
-            f(&LiveWindow {
-                window_id,
-                title,
-                document,
-                minimized,
-                frame,
-                element: window_element,
-            });
-        }
-
-        CFRelease(windows_value);
-        CFRelease(element as CFTypeRef);
-        Ok(())
     }
-
 
     /// All screens as global frames, main first (its frame contains the
     /// global origin).
@@ -359,9 +467,10 @@ mod imp {
                 frames.push(Frame::new(rect.x, rect.y, rect.width, rect.height));
             }
             // Main first: the screen covering the global origin.
-            if let Some(main) = frames.iter().position(|f| {
-                f.x <= 0.0 && f.y <= 0.0 && f.x + f.w >= 0.0 && f.y + f.h >= 0.0
-            }) {
+            if let Some(main) = frames
+                .iter()
+                .position(|f| f.x <= 0.0 && f.y <= 0.0 && f.x + f.w >= 0.0 && f.y + f.h >= 0.0)
+            {
                 frames.swap(0, main);
             }
             frames
@@ -378,8 +487,14 @@ mod imp {
         unsafe {
             with_app_windows(pid, |window| {
                 if outcome.is_none() && window.window_id == window_id && !window.element.is_null() {
-                    let point = PlainPair { x: frame.x, y: frame.y };
-                    let size = PlainPair { x: frame.w, y: frame.h };
+                    let point = PlainPair {
+                        x: frame.x,
+                        y: frame.y,
+                    };
+                    let size = PlainPair {
+                        x: frame.w,
+                        y: frame.h,
+                    };
                     let point_value = AXValueCreate(
                         KAX_VALUE_CG_POINT_TYPE,
                         &point as *const PlainPair as *const c_void,
@@ -390,8 +505,10 @@ mod imp {
                     );
                     let pos_attr = cfstring(KAX_POSITION_ATTRIBUTE);
                     let size_attr = cfstring(KAX_SIZE_ATTRIBUTE);
-                    let err_pos = AXUIElementSetAttributeValue(window.element, pos_attr, point_value);
-                    let err_size = AXUIElementSetAttributeValue(window.element, size_attr, size_value);
+                    let err_pos =
+                        AXUIElementSetAttributeValue(window.element, pos_attr, point_value);
+                    let err_size =
+                        AXUIElementSetAttributeValue(window.element, size_attr, size_value);
                     CFRelease(pos_attr);
                     CFRelease(size_attr);
                     CFRelease(point_value);
@@ -426,10 +543,7 @@ mod imp {
             .stdin(std::process::Stdio::null())
             .stdout(std::process::Stdio::null())
             .stderr(std::process::Stdio::null());
-        command
-            .spawn()
-            .map(|_| ())
-            .map_err(|err| format!("{err}"))
+        command.spawn().map(|_| ()).map_err(|err| format!("{err}"))
     }
 
     // ── the veil (Dim's body) ────────────────────────────────────────────
@@ -439,11 +553,13 @@ mod imp {
     static VEIL_NEXT_HANDLE: AtomicU64 = AtomicU64::new(1);
 
     unsafe fn veil_store() -> &'static std::sync::Mutex<Vec<(u64, usize)>> {
-        let veils = &mut *std::ptr::addr_of_mut!(VEILS);
-        if veils.is_none() {
-            *veils = Some(std::sync::Mutex::new(Vec::new()));
+        unsafe {
+            let veils = &mut *std::ptr::addr_of_mut!(VEILS);
+            if veils.is_none() {
+                *veils = Some(std::sync::Mutex::new(Vec::new()));
+            }
+            veils.as_ref().unwrap()
         }
-        veils.as_ref().unwrap()
     }
 
     /// A translucent, borderless, mouse-transparent NSWindow covering
@@ -455,7 +571,12 @@ mod imp {
             if allocated.is_null() {
                 return Err("NSWindow allocation failed".to_string());
             }
-            let rect = NsRect { x: frame.x, y: frame.y, width: frame.w, height: frame.h };
+            let rect = NsRect {
+                x: frame.x,
+                y: frame.y,
+                width: frame.w,
+                height: frame.h,
+            };
             let window = msg_send_rect4(
                 allocated,
                 sel(INIT_WITH_CONTENT_RECT_SEL),
@@ -503,7 +624,12 @@ mod imp {
                 .find(|(h, _)| *h == handle)
                 .map(|(_, w)| *w)
                 .ok_or_else(|| "the veil is no longer open".to_string())?;
-            let rect = NsRect { x: frame.x, y: frame.y, width: frame.w, height: frame.h };
+            let rect = NsRect {
+                x: frame.x,
+                y: frame.y,
+                width: frame.w,
+                height: frame.h,
+            };
             msg_send_rect_bool(window as Id, sel(SET_FRAME_DISPLAY_SEL), rect, 1);
             Ok(())
         }
@@ -513,7 +639,9 @@ mod imp {
         unsafe {
             let store = veil_store();
             let window = {
-                let mut guard = store.lock().map_err(|_| "veil store poisoned".to_string())?;
+                let mut guard = store
+                    .lock()
+                    .map_err(|_| "veil store poisoned".to_string())?;
                 guard
                     .iter()
                     .position(|(h, _)| *h == handle)
@@ -605,137 +733,180 @@ mod imp {
         element: AXUIElementRef,
         attribute: &'static [u8],
     ) -> Option<String> {
-        let attr = cfstring(attribute);
-        let mut value: CFTypeRef = ptr::null();
-        let err = AXUIElementCopyAttributeValue(element, attr, &mut value);
-        CFRelease(attr);
-        if err != AX_SUCCESS || value.is_null() {
-            return None;
+        unsafe {
+            let attr = cfstring(attribute);
+            let mut value: CFTypeRef = ptr::null();
+            let err = AXUIElementCopyAttributeValue(element, attr, &mut value);
+            CFRelease(attr);
+            if err != AX_SUCCESS || value.is_null() {
+                return None;
+            }
+            let string = cfstring_to_string(value as CFStringRef);
+            CFRelease(value);
+            string
         }
-        let string = cfstring_to_string(value as CFStringRef);
-        CFRelease(value);
-        string
     }
 
     unsafe fn copy_boolean_attribute(element: AXUIElementRef, attribute: &'static [u8]) -> bool {
-        let attr = cfstring(attribute);
-        let mut value: CFTypeRef = ptr::null();
-        let err = AXUIElementCopyAttributeValue(element, attr, &mut value);
-        CFRelease(attr);
-        if err != AX_SUCCESS || value.is_null() {
-            return false;
+        unsafe {
+            let attr = cfstring(attribute);
+            let mut value: CFTypeRef = ptr::null();
+            let err = AXUIElementCopyAttributeValue(element, attr, &mut value);
+            CFRelease(attr);
+            if err != AX_SUCCESS || value.is_null() {
+                return false;
+            }
+            let boolean = CFBooleanGetValue(value as CFBooleanRef) != 0;
+            CFRelease(value);
+            boolean
         }
-        let boolean = CFBooleanGetValue(value as CFBooleanRef) != 0;
-        CFRelease(value);
-        boolean
     }
 
     unsafe fn shared_workspace() -> Id {
-        msg_send_id(class_id(b"NSWorkspace\0") as Id, sel(SHARED_WORKSPACE_SEL))
+        unsafe { msg_send_id(class_id(b"NSWorkspace\0") as Id, sel(SHARED_WORKSPACE_SEL)) }
     }
 
     unsafe fn optional_nsstring(receiver: Id, selector: Sel) -> Option<String> {
-        let value = msg_send_id(receiver, selector);
-        if value.is_null() {
-            return None;
+        unsafe {
+            let value = msg_send_id(receiver, selector);
+            if value.is_null() {
+                return None;
+            }
+            let cstr = msg_send_id(value, sel(UTF8_STRING_SEL));
+            if cstr.is_null() {
+                return None;
+            }
+            let bytes = CStr::from_ptr(cstr as *const c_char);
+            Some(bytes.to_string_lossy().into_owned())
         }
-        let cstr = msg_send_id(value, sel(UTF8_STRING_SEL));
-        if cstr.is_null() {
-            return None;
-        }
-        let bytes = CStr::from_ptr(cstr as *const c_char);
-        Some(bytes.to_string_lossy().into_owned())
     }
-
 
     const ALLOC_SEL_PATH: &[u8] = b"alloc\0";
 
     unsafe fn msg_send_nsrect(receiver: Id, selector: Sel) -> NsRect {
-        let function: extern "C" fn(Id, Sel) -> NsRect = std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector)
+        unsafe {
+            let function: extern "C" fn(Id, Sel) -> NsRect =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector)
+        }
     }
 
-    unsafe fn msg_send_rect4(receiver: Id, selector: Sel, rect: NsRect, a: usize, b: usize, c: isize) -> Id {
-        let function: extern "C" fn(Id, Sel, NsRect, usize, usize, isize) -> Id =
-            std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector, rect, a, b, c)
+    unsafe fn msg_send_rect4(
+        receiver: Id,
+        selector: Sel,
+        rect: NsRect,
+        a: usize,
+        b: usize,
+        c: isize,
+    ) -> Id {
+        unsafe {
+            let function: extern "C" fn(Id, Sel, NsRect, usize, usize, isize) -> Id =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector, rect, a, b, c)
+        }
     }
 
     unsafe fn msg_send_rect_bool(receiver: Id, selector: Sel, rect: NsRect, flag: isize) {
-        let function: extern "C" fn(Id, Sel, NsRect, isize) = std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector, rect, flag);
+        unsafe {
+            let function: extern "C" fn(Id, Sel, NsRect, isize) =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector, rect, flag);
+        }
     }
 
     unsafe fn msg_send_void_isize(receiver: Id, selector: Sel, arg: isize) {
-        let function: extern "C" fn(Id, Sel, isize) = std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector, arg);
+        unsafe {
+            let function: extern "C" fn(Id, Sel, isize) =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector, arg);
+        }
     }
 
     unsafe fn msg_send_void_bool(receiver: Id, selector: Sel, arg: isize) {
-        let function: extern "C" fn(Id, Sel, isize) = std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector, arg);
+        unsafe {
+            let function: extern "C" fn(Id, Sel, isize) =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector, arg);
+        }
     }
 
     unsafe fn msg_send_void_id_nil(receiver: Id, selector: Sel) {
-        let function: extern "C" fn(Id, Sel) = std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector);
+        unsafe {
+            let function: extern "C" fn(Id, Sel) = std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector);
+        }
     }
 
     /// A window's frame: position + size as one value, only if AX gives
     /// both legs honestly.
     unsafe fn copy_frame(element: AXUIElementRef) -> Option<Frame> {
-        let position = copy_point(element, KAX_POSITION_ATTRIBUTE, KAX_VALUE_CG_POINT_TYPE)?;
-        let size = copy_point(element, KAX_SIZE_ATTRIBUTE, KAX_VALUE_CG_SIZE_TYPE)?;
-        Some(Frame::new(position.x, position.y, size.x, size.y))
-    }
-
-    unsafe fn copy_point(element: AXUIElementRef, attribute: &'static [u8], value_type: u32) -> Option<PlainPair> {
-        let attr = cfstring(attribute);
-        let mut value: CFTypeRef = ptr::null();
-        let err = AXUIElementCopyAttributeValue(element, attr, &mut value);
-        CFRelease(attr);
-        if err != AX_SUCCESS || value.is_null() {
-            return None;
+        unsafe {
+            let position = copy_point(element, KAX_POSITION_ATTRIBUTE, KAX_VALUE_CG_POINT_TYPE)?;
+            let size = copy_point(element, KAX_SIZE_ATTRIBUTE, KAX_VALUE_CG_SIZE_TYPE)?;
+            Some(Frame::new(position.x, position.y, size.x, size.y))
         }
-        let mut point = PlainPair { x: 0.0, y: 0.0 };
-        let ok = AXValueGetValue(value, value_type, &mut point as *mut PlainPair as *mut c_void);
-        CFRelease(value);
-        if ok != 0 { Some(point) } else { None }
     }
 
+    unsafe fn copy_point(
+        element: AXUIElementRef,
+        attribute: &'static [u8],
+        value_type: u32,
+    ) -> Option<PlainPair> {
+        unsafe {
+            let attr = cfstring(attribute);
+            let mut value: CFTypeRef = ptr::null();
+            let err = AXUIElementCopyAttributeValue(element, attr, &mut value);
+            CFRelease(attr);
+            if err != AX_SUCCESS || value.is_null() {
+                return None;
+            }
+            let mut point = PlainPair { x: 0.0, y: 0.0 };
+            let ok = AXValueGetValue(
+                value,
+                value_type,
+                &mut point as *mut PlainPair as *mut c_void,
+            );
+            CFRelease(value);
+            if ok != 0 { Some(point) } else { None }
+        }
+    }
 
     unsafe fn cfstring(bytes: &'static [u8]) -> CFStringRef {
-        CFStringCreateWithCString(
-            ptr::null(),
-            bytes.as_ptr() as *const c_char,
-            CFSTRING_ENCODING_UTF8,
-        )
+        unsafe {
+            CFStringCreateWithCString(
+                ptr::null(),
+                bytes.as_ptr() as *const c_char,
+                CFSTRING_ENCODING_UTF8,
+            )
+        }
     }
 
     unsafe fn cfstring_to_string(value: CFStringRef) -> Option<String> {
-        if value.is_null() {
-            return None;
+        unsafe {
+            if value.is_null() {
+                return None;
+            }
+            let length = CFStringGetLength(value);
+            if length <= 0 {
+                return Some(String::new());
+            }
+            let max_size = CFStringGetMaximumSizeForEncoding(length, CFSTRING_ENCODING_UTF8) + 1;
+            if max_size <= 0 {
+                return None;
+            }
+            let mut buffer = vec![0u8; max_size as usize];
+            let ok = CFStringGetCString(
+                value,
+                buffer.as_mut_ptr() as *mut c_char,
+                buffer.len() as isize,
+                CFSTRING_ENCODING_UTF8,
+            );
+            if ok == 0 {
+                return None;
+            }
+            let end = buffer.iter().position(|b| *b == 0).unwrap_or(buffer.len());
+            String::from_utf8(buffer[..end].to_vec()).ok()
         }
-        let length = CFStringGetLength(value);
-        if length <= 0 {
-            return Some(String::new());
-        }
-        let max_size = CFStringGetMaximumSizeForEncoding(length, CFSTRING_ENCODING_UTF8) + 1;
-        if max_size <= 0 {
-            return None;
-        }
-        let mut buffer = vec![0u8; max_size as usize];
-        let ok = CFStringGetCString(
-            value,
-            buffer.as_mut_ptr() as *mut c_char,
-            buffer.len() as isize,
-            CFSTRING_ENCODING_UTF8,
-        );
-        if ok == 0 {
-            return None;
-        }
-        let end = buffer.iter().position(|b| *b == 0).unwrap_or(buffer.len());
-        String::from_utf8(buffer[..end].to_vec()).ok()
     }
 
     fn sel(bytes: &'static [u8]) -> Sel {
@@ -743,42 +914,55 @@ mod imp {
     }
 
     unsafe fn class_id(name: &'static [u8]) -> Class {
-        objc_getClass(name.as_ptr() as *const c_char)
+        unsafe { objc_getClass(name.as_ptr() as *const c_char) }
     }
 
     unsafe fn msg_send_id(receiver: Id, selector: Sel) -> Id {
-        let function: extern "C" fn(Id, Sel) -> Id = std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector)
+        unsafe {
+            let function: extern "C" fn(Id, Sel) -> Id =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector)
+        }
     }
 
     unsafe fn msg_send_id1(receiver: Id, selector: Sel, arg: Id) -> Id {
-        let function: extern "C" fn(Id, Sel, Id) -> Id =
-            std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector, arg)
+        unsafe {
+            let function: extern "C" fn(Id, Sel, Id) -> Id =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector, arg)
+        }
     }
 
     unsafe fn msg_send_bool(receiver: Id, selector: Sel) -> Bool {
-        let function: extern "C" fn(Id, Sel) -> Bool =
-            std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector)
+        unsafe {
+            let function: extern "C" fn(Id, Sel) -> Bool =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector)
+        }
     }
 
     unsafe fn msg_send_usize(receiver: Id, selector: Sel) -> usize {
-        let function: extern "C" fn(Id, Sel) -> usize =
-            std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector)
+        unsafe {
+            let function: extern "C" fn(Id, Sel) -> usize =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector)
+        }
     }
 
     unsafe fn msg_send_usize1(receiver: Id, selector: Sel, arg: usize) -> usize {
-        let function: extern "C" fn(Id, Sel, usize) -> usize =
-            std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector, arg)
+        unsafe {
+            let function: extern "C" fn(Id, Sel, usize) -> usize =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector, arg)
+        }
     }
 
     unsafe fn msg_send_i32(receiver: Id, selector: Sel) -> i32 {
-        let function: extern "C" fn(Id, Sel) -> i32 =
-            std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector)
+        unsafe {
+            let function: extern "C" fn(Id, Sel) -> i32 =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector)
+        }
     }
 
     const UTF8_STRING_SEL: &[u8] = b"UTF8String\0";
@@ -906,5 +1090,117 @@ impl PodSurface for MacPodSurface {
     }
     fn run(&mut self, _cmd: CommandSpec) -> Result<(), String> {
         Err("pods require macOS".to_string())
+    }
+}
+
+#[cfg(test)]
+mod restore_tests {
+    use super::*;
+    use std::cell::Cell;
+
+    fn accepted(resource: &str, verification: VerificationResult) -> RestoreReceipt {
+        RestoreReceipt {
+            outcome: evo_execution::restore::RestoreOutcome {
+                opened: vec![resource.to_string()],
+                ..Default::default()
+            },
+            targets: vec![TargetReceipt {
+                resource: resource.to_string(),
+                dispatch: DispatchResult::OpenAccepted,
+                verification,
+            }],
+        }
+    }
+
+    #[test]
+    fn saved_file_uses_restore_receipt_without_inventing_identity() {
+        let restore_called = Cell::new(false);
+        let receipt = open_resource_with(
+            &PodResource::File("/tmp/notes.md".into()),
+            |targets| {
+                restore_called.set(true);
+                assert_eq!(targets.len(), 1);
+                assert_eq!(targets[0].resource, "/tmp/notes.md");
+                assert_eq!(targets[0].app, None);
+                assert_eq!(targets[0].surface, None);
+                accepted(
+                    &targets[0].resource,
+                    VerificationResult::Unverified {
+                        reason: "test adapter has no focused window".into(),
+                    },
+                )
+            },
+            |_| panic!("receipt-backed resources must not use the raw opener"),
+        );
+
+        assert!(restore_called.get());
+        assert!(matches!(
+            receipt.targets[0].dispatch,
+            DispatchResult::OpenAccepted
+        ));
+        assert!(matches!(
+            receipt.targets[0].verification,
+            VerificationResult::Unverified { .. }
+        ));
+    }
+
+    #[test]
+    fn saved_url_is_not_claimed_as_a_browser_tab_or_profile() {
+        let receipt = open_resource_with(
+            &PodResource::Url("https://example.test/doc".into()),
+            |targets| {
+                assert_eq!(targets[0].app, None);
+                assert_eq!(targets[0].surface, None);
+                accepted(
+                    &targets[0].resource,
+                    VerificationResult::Unverified {
+                        reason: "generic URL adapter unavailable".into(),
+                    },
+                )
+            },
+            |_| panic!("receipt-backed URLs must not use the raw opener"),
+        );
+
+        assert_eq!(receipt.targets.len(), 1);
+        assert!(matches!(
+            receipt.targets[0].verification,
+            VerificationResult::Unverified { .. }
+        ));
+    }
+
+    #[test]
+    fn app_and_folder_keep_dispatch_separate_from_unverified_verification() {
+        for resource in [
+            PodResource::App("Editor".into()),
+            PodResource::Folder("relative/folder".into()),
+        ] {
+            let receipt = open_resource_with(
+                &resource,
+                |_| panic!("unsupported resource kinds use their explicit opener"),
+                |_| Ok(()),
+            );
+            assert!(matches!(
+                receipt.targets[0].dispatch,
+                DispatchResult::OpenAccepted
+            ));
+            assert!(matches!(
+                receipt.targets[0].verification,
+                VerificationResult::Unverified { .. }
+            ));
+        }
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    #[test]
+    fn system_opener_is_honest_about_unsupported_platform() {
+        let receipt = SystemPodRestorer.open_resource(&PodResource::App("Editor".into()));
+        assert!(matches!(
+            receipt.targets[0].dispatch,
+            DispatchResult::Failed { ref reason } if reason == "pods require macOS"
+        ));
+        assert!(matches!(
+            receipt.targets[0].verification,
+            VerificationResult::Unverified { .. }
+        ));
     }
 }

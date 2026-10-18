@@ -61,7 +61,7 @@ impl Cap {
 
 #[derive(Clone, Copy)]
 enum Body {
-    Home { query: &'static str },
+    Home,
     Detail(usize),
     Settings,
     FirstRun(u8),
@@ -86,35 +86,35 @@ fn shots() -> Vec<Shot> {
             w: 980.0,
             h: 720.0,
             cap: Cap::Running,
-            body: Body::Home { query: "" },
+            body: Body::Home,
         },
         Shot {
             name: "02-home-notice",
             w: 980.0,
             h: 720.0,
             cap: Cap::Partial,
-            body: Body::Home { query: "" },
+            body: Body::Home,
         },
         Shot {
             name: "03-home-search",
             w: 980.0,
             h: 720.0,
             cap: Cap::Running,
-            body: Body::Home { query: "e" },
+            body: Body::Home,
         },
         Shot {
             name: "04-home-no-results",
             w: 980.0,
             h: 720.0,
             cap: Cap::Running,
-            body: Body::Home { query: "zzqq" },
+            body: Body::Home,
         },
         Shot {
             name: "05-home-narrow",
             w: 460.0,
             h: 720.0,
             cap: Cap::Running,
-            body: Body::Home { query: "" },
+            body: Body::Home,
         },
         Shot {
             name: "06-detail-a",
@@ -265,10 +265,6 @@ fn load(root: &Path) -> Canon {
 /// The user-authored transient state the screens borrow mutably.
 #[derive(Default)]
 struct Transient {
-    query: String,
-    kind_filter: state::WorkKindFilter,
-    period_filter: state::WorkPeriodFilter,
-    memo: home::Memo,
     selected: Option<WorkspaceId>,
     designation_status: Option<(String, bool)>,
     continuation_draft: Option<BTreeSet<String>>,
@@ -330,23 +326,11 @@ fn compose(
                     ui,
                     "canonical storage could not be read: observation.log is unreadable",
                 ),
-                Body::Home { .. } | Body::Settings => {
-                    let mut retrieval = home::Retrieval {
-                        query: &mut tr.query,
-                        kind: &mut tr.kind_filter,
-                        period: &mut tr.period_filter,
-                        memo: &mut tr.memo,
-                    };
-                    home::screen(
-                        ui,
-                        canon.workspaces.as_slice(),
-                        canon.cards.as_slice(),
-                        &canon.subjects,
-                        &canon.kinds,
-                        false,
-                        &mut tr.selected,
-                        &mut retrieval,
-                    );
+                Body::Home | Body::Settings => {
+                    // The QA harness photographs the empty composition; the
+                    // live rack needs an engine corpus this canonical-only
+                    // harness does not carry.
+                    home::empty(ui, true);
                 }
                 Body::Detail(n) => {
                     let Some(workspace) = canon.workspaces.get(n) else {
@@ -789,10 +773,6 @@ fn main() {
         theme::install(&ctx);
         let screen = Rect::from_min_size(Pos2::ZERO, egui::vec2(shot.w, shot.h));
         let mut tr = Transient {
-            query: match shot.body {
-                Body::Home { query } => query.to_string(),
-                _ => String::new(),
-            },
             settings_open: matches!(shot.body, Body::Settings),
             selected: match shot.body {
                 Body::Detail(n) => canon.workspaces.get(n).map(|w| w.id().clone()),

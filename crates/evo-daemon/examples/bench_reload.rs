@@ -48,10 +48,7 @@ fn main() {
     generate_observations(count);
 
     println!("== full-log reparse vs. incremental index refresh ==");
-    println!(
-        "storage root: {}",
-        root.display()
-    );
+    println!("storage root: {}", root.display());
     println!("observations in log: {count}\n");
 
     // The OLD per-reload path: every reload re-parsed the full log through
@@ -118,16 +115,16 @@ fn generate_observations(count: usize) {
         // `bench_derivation`; what this benchmark isolates is per-reload cost
         // as the LOG grows, which needs the resource count held fixed.
         let subject = format!("Benchmark Window — subject {:05}", index % 1_000);
-        let observed_at = UNIX_EPOCH.checked_add(Duration::from_secs(index as u64)).expect("time");
+        let observed_at = UNIX_EPOCH
+            .checked_add(Duration::from_secs(index as u64))
+            .expect("time");
         let observation = Observation::new(
             ObservationId::new(),
             schema.clone(),
             Provenance::new(source.clone(), observed_at, HashMap::new()),
-            Evidence::new(vec![ObservedFact::new(
-                fact_name.clone(),
-                FactValue::Text(subject),
-            )
-            .expect("fact")]),
+            Evidence::new(vec![
+                ObservedFact::new(fact_name, FactValue::Text(subject)).expect("fact"),
+            ]),
         );
         persist_observation(&observation).expect("observation persists");
     }

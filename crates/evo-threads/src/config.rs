@@ -64,6 +64,11 @@ pub struct Config {
     /// neighborhood, not the museum.
     pub restore_cap: usize,
 
+    /// Reduced activation cap (default 3). This is a product cognitive limit,
+    /// not an evidence threshold; it applies only when the caller explicitly
+    /// requests reduced restoration.
+    pub reduced_restore_cap: usize,
+
     /// How recent a companion's last contact must be (ms, default 30 min)
     /// for it to rejoin the restore set. The boundary between "still near
     /// you when you stopped" and "finished supporting work that served its
@@ -76,6 +81,15 @@ pub struct Config {
     /// 30_000) before configuration alone may carry an assignment. Exists so
     /// one shared glance can never attach an episode to a work.
     pub config_min_weight: f64,
+
+    /// Substantive-dwell floor (ms, default 120_000 — the ledger's
+    /// INTERLEAVE_DWELL_CAP_MS). A production-free episode whose dominant
+    /// attention sits on a resource the candidate work has never carried is
+    /// NOT a fragment of that work: interleave carries fragments, and
+    /// substantive engagement is not a fragment. Below this floor the old
+    /// rule stands — a brief consultation may ride borrowed context. This is
+    /// the work-engine mirror of the ledger's establishment-precedence rule.
+    pub establishment_dwell_floor: u64,
 
     /// Required dominance margins (default 1.5 / 1.2). Decisions require a
     /// winner by a margin; a near-tie forks (alternatives retained) instead of
@@ -104,7 +118,7 @@ pub struct Config {
 
     /// Production credit schedule (units; the currency of "you made this").
     /// Typed counts its content-free weight; the rest are flat event credits.
-    pub typed_unit: u64,        // multiplier per unit of Typed weight (default 1)
+    pub typed_unit: u64, // multiplier per unit of Typed weight (default 1)
     pub saved_credit: u64,      // default 60
     pub downloaded_credit: u64, // default 80
     pub command_credit: u64,    // default 60 — a command that visibly changed its resource
@@ -150,8 +164,10 @@ impl Default for Config {
             companion_halflife: 3 * 86_400_000,
             resume_window: 3 * 3_600_000,
             restore_cap: 5,
+            reduced_restore_cap: 3,
             restore_recency: 30 * 60_000,
             config_min_weight: 30_000.0,
+            establishment_dwell_floor: 120_000,
             config_margin_ratio: 1.5,
             anchor_margin_ratio: 1.2,
             min_anchor_recurrence: 2,

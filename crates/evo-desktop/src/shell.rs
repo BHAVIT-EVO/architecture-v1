@@ -37,8 +37,11 @@ pub fn header(ui: &mut egui::Ui, rect: egui::Rect, daemon_status: &DaemonStatus)
         |ui| {
             ui::gap(ui, (rect.height() - theme::CONTROL_HEIGHT) * 0.5);
             ui.horizontal(|ui| {
-                ui.add_space(theme::PAGE_PAD);
-                ui::label(ui, Role::Title, "Evo", theme::ACCENT);
+                // With the full-size content view the header shares its top
+                // band with the traffic lights; the leading inset clears
+                // them (they end ≈ 70pt at their declared position).
+                ui.add_space(theme::PAGE_PAD + theme::S7);
+                ui::label(ui, Role::Title, "Evo", theme::TEXT);
                 ui.add_space(theme::S4);
                 let (word, severity) = capture_status(daemon_status);
                 // The word is the indicator. A colored dot on its own would
@@ -87,7 +90,7 @@ pub fn capture_notice(ui: &mut egui::Ui, daemon_status: &DaemonStatus, daemon: &
                  — and it will not pretend otherwise.",
                 |ui| {
                     ui::gap(ui, theme::S3);
-                    permission_actions(ui, daemon);
+                    permission_actions(ui, || daemon.restart());
                 },
             );
             ui::gap(ui, theme::S4);
@@ -103,7 +106,7 @@ pub fn capture_notice(ui: &mut egui::Ui, daemon_status: &DaemonStatus, daemon: &
                 ),
                 |ui| {
                     ui::gap(ui, theme::S3);
-                    permission_actions(ui, daemon);
+                    permission_actions(ui, || daemon.restart());
                 },
             );
             ui::gap(ui, theme::S4);
@@ -126,7 +129,7 @@ pub fn capture_notice(ui: &mut egui::Ui, daemon_status: &DaemonStatus, daemon: &
                 &format!("Evo's capture worker stopped: {detail}"),
                 |ui| {
                     ui::gap(ui, theme::S3);
-                    permission_actions(ui, daemon);
+                    permission_actions(ui, || daemon.restart());
                 },
             );
             ui::gap(ui, theme::S4);
@@ -135,8 +138,12 @@ pub fn capture_notice(ui: &mut egui::Ui, daemon_status: &DaemonStatus, daemon: &
 }
 
 /// The two real permission mechanisms: hand the user to macOS, then let them
-/// ask Evo to look again. Neither one fabricates a granted state.
-pub fn permission_actions(ui: &mut egui::Ui, daemon: &mut DaemonManager) {
+/// ask Evo to look again. Neither one fabricates a granted state. The caller
+/// supplies what "Check again" does, because the two surfaces reach the
+/// daemon differently: the header notice restarts it directly, while the
+/// Home empty state defers through a flag (its render closure cannot also
+/// borrow the daemon).
+pub fn permission_actions(ui: &mut egui::Ui, check_again: impl FnOnce()) {
     let responses = ui::control_row(
         ui,
         vec![
@@ -148,7 +155,7 @@ pub fn permission_actions(ui: &mut egui::Ui, daemon: &mut DaemonManager) {
         crate::daemon::open_accessibility_settings();
     }
     if responses[1].clicked() {
-        daemon.restart();
+        check_again();
     }
 }
 
@@ -226,7 +233,7 @@ pub fn first_run(
                     }
                 }
                 _ => {
-                    permission_actions(ui, daemon);
+                    permission_actions(ui, || daemon.restart());
                     ui::gap(ui, theme::S5);
                     // Deliberately the only primary control on the step, and
                     // below the permission actions: entering Evo without the
@@ -326,11 +333,13 @@ pub fn settings(
     let max = ui.max_rect();
 
     // The scrim pushes the window back rather than hiding it: the user has not
-    // left where they were, and can see that they have not.
+    // left where they were, and can see that they have not. On the dark
+    // environment the scrim is deep black; the sheet above it is the
+    // lifted material.
     ui.painter().rect_filled(
         max,
         0.0,
-        egui::Color32::from_rgba_unmultiplied(0x14, 0x12, 0x10, (52.0 * reveal) as u8),
+        egui::Color32::from_rgba_unmultiplied(0x05, 0x06, 0x07, (150.0 * reveal) as u8),
     );
 
     let needs_permission = !matches!(daemon_status, DaemonStatus::Capturing);
@@ -375,7 +384,7 @@ pub fn settings(
                 });
                 if needs_permission {
                     ui::gap(ui, theme::S3);
-                    permission_actions(ui, daemon);
+                    permission_actions(ui, || daemon.restart());
                 }
 
                 ui::gap(ui, theme::S5);

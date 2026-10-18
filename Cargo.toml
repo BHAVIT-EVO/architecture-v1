@@ -15,5 +15,7 @@ members = [
     "crates/evo-retrieval",
     "crates/evo-storage",
     "crates/evo-daemon",
-    "crates/evo-desktop"
+    "crates/evo-desktop",
+    "crates/evo-semantic",
+    "crates/evo-voice"
 ]

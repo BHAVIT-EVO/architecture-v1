@@ -28,7 +28,7 @@ fn main() {
     let bytes = std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
 
     let t0 = Instant::now();
-    let (events, saves, declared) = read_observation_log(&path);
+    let (events, saves, declared, _classified) = read_observation_log(&path);
     let parse = t0.elapsed();
 
     let t1 = Instant::now();
@@ -40,7 +40,7 @@ fn main() {
     let ingest = t1.elapsed();
 
     let t2 = Instant::now();
-    let (attached, dropped) = ledger.attach_production(&saves).unwrap_or((0, saves.len()));
+    let (_attached, _dropped) = ledger.attach_production(&saves).unwrap_or((0, saves.len()));
     let attach = t2.elapsed();
 
     let t3 = Instant::now();

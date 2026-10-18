@@ -16,7 +16,13 @@ pub fn app(pid: i32, name: &str, hidden: bool) -> PodApp {
 }
 
 pub fn window(pid: i32, window_id: u32, title: &str, ax_document: Option<&str>) -> PodWindow {
-    window_with_frame(pid, window_id, title, ax_document, Frame::new(0.0, 0.0, 800.0, 600.0))
+    window_with_frame(
+        pid,
+        window_id,
+        title,
+        ax_document,
+        Frame::new(0.0, 0.0, 800.0, 600.0),
+    )
 }
 
 pub fn window_with_frame(
@@ -105,7 +111,12 @@ impl PodSurface for FakeSurface {
         Ok(self.apps.clone())
     }
     fn windows_of(&self, pid: i32) -> Result<Vec<PodWindow>, String> {
-        Ok(self.windows.iter().filter(|w| w.pid == pid).cloned().collect())
+        Ok(self
+            .windows
+            .iter()
+            .filter(|w| w.pid == pid)
+            .cloned()
+            .collect())
     }
     fn screens(&self) -> Vec<Frame> {
         vec![self.screen]
@@ -135,7 +146,8 @@ impl PodSurface for FakeSurface {
         Ok(())
     }
     fn move_window(&mut self, pid: i32, window_id: u32, frame: Frame) -> Result<(), String> {
-        self.log.push(format!("mv:{pid}:{window_id}:{}:{}", frame.x, frame.y));
+        self.log
+            .push(format!("mv:{pid}:{window_id}:{}:{}", frame.x, frame.y));
         Ok(())
     }
     fn activate_app(&mut self, pid: i32) -> Result<(), String> {

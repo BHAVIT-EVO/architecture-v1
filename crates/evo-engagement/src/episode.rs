@@ -107,17 +107,13 @@ pub fn segment_episodes(mut acts: Vec<Act>, params: &EngagementParams) -> Vec<Ep
     let mut current: Vec<Act> = Vec::new();
 
     for act in acts {
-        match current.last() {
-            Some(previous) => {
-                let gap = act
-                    .at
-                    .duration_since(previous.at)
-                    .unwrap_or(Duration::ZERO);
-                if gap > params.presence_horizon {
-                    episodes.push(Episode { acts: std::mem::take(&mut current) });
-                }
+        if let Some(previous) = current.last() {
+            let gap = act.at.duration_since(previous.at).unwrap_or(Duration::ZERO);
+            if gap > params.presence_horizon {
+                episodes.push(Episode {
+                    acts: std::mem::take(&mut current),
+                });
             }
-            None => {}
         }
         current.push(act);
     }
@@ -258,22 +254,19 @@ impl AttentionLedger {
                     _ => act.at(),
                 });
 
-                if act.character() == ActCharacter::Attentional {
-                    if let Some(next) = acts.get(position + 1) {
-                        let gap = next
-                            .at()
-                            .duration_since(act.at())
-                            .unwrap_or(Duration::ZERO);
-                        // A gap longer than one continuous stretch of attention
-                        // is silence, and silence is not attention. Credited
-                        // whole or not at all — never truncated into a claim.
-                        if gap <= params.max_interval_attention {
-                            record.attention += gap;
-                            *record
-                                .per_episode
-                                .entry(episode_index)
-                                .or_insert(Duration::ZERO) += gap;
-                        }
+                if act.character() == ActCharacter::Attentional
+                    && let Some(next) = acts.get(position + 1)
+                {
+                    let gap = next.at().duration_since(act.at()).unwrap_or(Duration::ZERO);
+                    // A gap longer than one continuous stretch of attention
+                    // is silence, and silence is not attention. Credited
+                    // whole or not at all — never truncated into a claim.
+                    if gap <= params.max_interval_attention {
+                        record.attention += gap;
+                        *record
+                            .per_episode
+                            .entry(episode_index)
+                            .or_insert(Duration::ZERO) += gap;
                     }
                 }
             }
@@ -294,10 +287,7 @@ impl AttentionLedger {
 
     /// The total attention across every witnessed resource.
     pub fn total_attention(&self) -> Duration {
-        self.records
-            .values()
-            .map(|record| record.attention)
-            .sum()
+        self.records.values().map(|record| record.attention).sum()
     }
 }
 
@@ -344,14 +334,10 @@ mod tests {
     #[test]
     fn segmentation_is_independent_of_input_order() {
         let params = EngagementParams::default();
-        let forward = segment_episodes(
-            vec![focus("a", 0), focus("b", 30), focus("c", 60)],
-            &params,
-        );
-        let shuffled = segment_episodes(
-            vec![focus("c", 60), focus("a", 0), focus("b", 30)],
-            &params,
-        );
+        let forward =
+            segment_episodes(vec![focus("a", 0), focus("b", 30), focus("c", 60)], &params);
+        let shuffled =
+            segment_episodes(vec![focus("c", 60), focus("a", 0), focus("b", 30)], &params);
         assert_eq!(forward, shuffled);
     }
 

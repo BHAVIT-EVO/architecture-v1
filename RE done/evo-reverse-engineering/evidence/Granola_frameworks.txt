@@ -1,0 +1,11 @@
+total 0
+drwxr-xr-x@ 10 bhavitsaini  admin  320 Oct 14 21:19 .
+drwxr-xr-x@ 13 bhavitsaini  admin  416 Oct 14 21:18 ..
+drwxr-xr-x@  7 bhavitsaini  admin  224 Oct 14 21:19 Electron Framework.framework
+drwxr-xr-x@  3 bhavitsaini  admin   96 Oct 14 21:19 Granola Helper (GPU).app
+drwxr-xr-x@  3 bhavitsaini  admin   96 Oct 14 21:19 Granola Helper (Plugin).app
+drwxr-xr-x@  3 bhavitsaini  admin   96 Oct 14 21:19 Granola Helper (Renderer).app
+drwxr-xr-x@  3 bhavitsaini  admin   96 Oct 14 21:19 Granola Helper.app
+drwxr-xr-x@  5 bhavitsaini  admin  160 Oct 14 21:19 Mantle.framework
+drwxr-xr-x@  5 bhavitsaini  admin  160 Oct 14 21:19 ReactiveObjC.framework
+drwxr-xr-x@  5 bhavitsaini  admin  160 Oct 14 21:19 Squirrel.framework

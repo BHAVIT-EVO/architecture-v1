@@ -44,9 +44,7 @@ fn main() {
     // would make a green run meaningless.
     let scratch = std::env::var_os("EVO_VERIFY_SCRATCH")
         .map(PathBuf::from)
-        .unwrap_or_else(|| {
-            PathBuf::from("target").join(format!("evo-collector-verify-{stamp}"))
-        });
+        .unwrap_or_else(|| PathBuf::from("target").join(format!("evo-collector-verify-{stamp}")));
     let scratch = std::path::absolute(&scratch).unwrap_or(scratch);
     if !evo_capture::macos_fsevents::is_user_visible_path(&scratch.to_string_lossy(), &home) {
         println!(
@@ -104,7 +102,9 @@ fn main() {
             .env("GIT_CONFIG_NOSYSTEM", "1")
             .env("HOME", &scratch);
         if pinned {
-            command.env("GIT_DIR", &git_dir).env("GIT_WORK_TREE", &repo_dir);
+            command
+                .env("GIT_DIR", &git_dir)
+                .env("GIT_WORK_TREE", &repo_dir);
         }
         let output = command.output().expect("git runs");
         if !output.status.success() {
@@ -170,7 +170,9 @@ fn main() {
     // second is the witnessed change the poller emits.
     let _ = Command::new("open").arg("https://example.com/").status();
     std::thread::sleep(Duration::from_secs(4));
-    let _ = Command::new("open").arg("https://example.com/evo-collector").status();
+    let _ = Command::new("open")
+        .arg("https://example.com/evo-collector")
+        .status();
     println!("== triggered browser navigation to https://example.com/evo-collector");
 
     // ── Capture window ─────────────────────────────────────────────────────
@@ -253,14 +255,20 @@ fn main() {
     }
 
     println!("\n== verification summary");
-    println!("  file save witnessed:  {file_seen} (expected {})", save_file.display());
+    println!(
+        "  file save witnessed:  {file_seen} (expected {})",
+        save_file.display()
+    );
     println!("  commit witnessed:     {commit_seen} (expected {head_hash})");
     println!("  url navigation seen:  {url_seen}");
     println!("  file membership:      {file_membership_seen} (RFC-0012, same repo)");
     println!("  commit membership:    {commit_membership_seen} (RFC-0012, same repo)");
 
     let all_ok = file_seen && commit_seen && url_seen;
-    println!("\nVERIFY-COLLECTORS {}", if all_ok { "OK" } else { "PARTIAL" });
+    println!(
+        "\nVERIFY-COLLECTORS {}",
+        if all_ok { "OK" } else { "PARTIAL" }
+    );
 
     // Clean up the whole scratch root (deletions are not witnessed), so a
     // verification run leaves nothing behind on the machine it ran on.

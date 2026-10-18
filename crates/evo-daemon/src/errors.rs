@@ -19,6 +19,8 @@ pub enum DaemonError {
     DaemonAlreadyRunning { pid: u32, root: String },
     /// The user designation channel (RFC-0011) failed.
     Designation(String),
+    /// The user feedback channel (dismissal/member lifecycle) failed.
+    Feedback(String),
     /// Runtime unavailable on this platform.
     UnsupportedPlatform,
 }
@@ -36,6 +38,7 @@ impl fmt::Display for DaemonError {
                 "another daemon instance is already running (pid {pid}) on storage root {root}"
             ),
             DaemonError::Designation(detail) => write!(f, "daemon designation error: {detail}"),
+            DaemonError::Feedback(detail) => write!(f, "daemon feedback error: {detail}"),
             DaemonError::UnsupportedPlatform => {
                 write!(f, "daemon runtime is only available on supported platforms")
             }

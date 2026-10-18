@@ -1,0 +1,1 @@
+"use strict";const e=require("electron");e.contextBridge.exposeInMainWorld("analytics",{receive:(a,n)=>{["analytics-event","analytics-user","analytics-user-props","analytics-default-params"].includes(a)&&e.ipcRenderer.on(a,(e,...a)=>n(...a))}});

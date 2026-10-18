@@ -1,0 +1,2 @@
+try{let e=typeof window<`u`?window:typeof global<`u`?global:typeof globalThis<`u`?globalThis:typeof self<`u`?self:{},t=new e.Error().stack;t&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[t]=`ff1d84c6-eb4b-4d7b-b2dd-d2ca4e2f9735`,e._sentryDebugIdIdentifier=`sentry-dbid-ff1d84c6-eb4b-4d7b-b2dd-d2ca4e2f9735`)}catch{}import"./_sentry-release-injection-file-DZROVGkF.js";import{n as e}from"./const-DyQrM_b5.js";function t(t){let n=t.split(`@`)[1]?.toLowerCase();return n?e.has(n):!1}export{t};
+//# sourceMappingURL=isEmailWithGenericDomain-2pcwnhA1.js.map

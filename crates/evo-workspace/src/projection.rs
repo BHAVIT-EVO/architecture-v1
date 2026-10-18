@@ -150,7 +150,12 @@ pub fn project_engagements<'a>(
 pub fn project_workspace(
     engagement: &Engagement,
     sittings: &[Episode],
-    identity: &IdentityIndex,
+    // Not yet wired: the deterministic-identity path (`founding_sighting`
+    // below, `founding_identity` in `crate::deterministic`) is the designed
+    // mechanism for stable workspace identity (W-2, W-3, §19), but the
+    // projection currently derives identity from the engagement's work id.
+    // The parameter stays so the signature already accepts the design.
+    _identity: &IdentityIndex,
     artifacts: &SubjectArtifacts,
 ) -> Option<Workspace> {
     let attachments = attachments_of(engagement, artifacts);
@@ -341,6 +346,11 @@ fn snapshots_of(
 /// decodes to nothing. Nothing reads a Workspace's meaning out of its identity, and
 /// the four channels through which a person states intent are all keyed by subject,
 /// so identity changing could never discard what they said.
+//
+// Not yet wired into `project_workspace` (see the `_identity` parameter there):
+// this is the designed "which sighting founds the workspace" half of the
+// deterministic-identity path. Kept with the design, not deleted as cruft.
+#[allow(dead_code)]
 fn founding_sighting<'a>(
     engagement: &'a Engagement,
     identity: &'a IdentityIndex,
@@ -348,17 +358,17 @@ fn founding_sighting<'a>(
     /// The earliest-witnessed of a set of participants: least `first_seen`, ties
     /// broken on canonical subject order so the choice is deterministic. A member
     /// with no witnessed time cannot have founded anything, so it sorts last.
-    fn earliest<'p>(
-        candidates: impl Iterator<Item = &'p Participant>,
-    ) -> Option<&'p Participant> {
-        candidates.min_by(|left, right| match (left.first_seen(), right.first_seen()) {
-            (Some(left_at), Some(right_at)) => left_at
-                .cmp(&right_at)
-                .then_with(|| left.subject().cmp(right.subject())),
-            (Some(_), None) => std::cmp::Ordering::Less,
-            (None, Some(_)) => std::cmp::Ordering::Greater,
-            (None, None) => left.subject().cmp(right.subject()),
-        })
+    fn earliest<'p>(candidates: impl Iterator<Item = &'p Participant>) -> Option<&'p Participant> {
+        candidates.min_by(
+            |left, right| match (left.first_seen(), right.first_seen()) {
+                (Some(left_at), Some(right_at)) => left_at
+                    .cmp(&right_at)
+                    .then_with(|| left.subject().cmp(right.subject())),
+                (Some(_), None) => std::cmp::Ordering::Less,
+                (None, Some(_)) => std::cmp::Ordering::Greater,
+                (None, None) => left.subject().cmp(right.subject()),
+            },
+        )
     }
 
     let founder = earliest(engagement.seeds())

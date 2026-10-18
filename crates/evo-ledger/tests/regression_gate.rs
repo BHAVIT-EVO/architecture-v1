@@ -28,6 +28,13 @@ fn regression_gate_on_the_real_log() {
         report.works.len(),
         report.merge_proposals
     );
+    println!(
+        "design metrics: observations={}, design_events={}, rate_per_1000={:.2}, floor_met={}",
+        report.observation_count,
+        report.design_event_count,
+        report.design_event_rate_per_1000,
+        report.design_event_floor_met
+    );
     for work in &report.works {
         println!("  work: {}", work.identity);
     }

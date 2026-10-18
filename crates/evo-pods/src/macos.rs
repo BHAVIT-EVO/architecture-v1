@@ -2,9 +2,8 @@
 //!
 //! This crate is deliberately platform-pure: the real `PodSurface`
 //! implementation lives in the host app (`evo-desktop`), which already
-//! owns the Accessibility plumbing and the ObjC exception guard that makes
-//! WebKit-safe FFI honest (`objc_try`). Keeping the OS legs in the host
-//! also keeps the pods core compilable and testable everywhere — IS-0023's
+//! owns the Accessibility plumbing and the AppKit FFI. Keeping the OS legs in
+//! the host also keeps the pods core compilable and testable everywhere — IS-0023's
 //! logic is pure decisions; the host is the body.
 //!
 //! What exists here instead:
@@ -45,7 +44,11 @@ pub fn materialize_wrapper(root: &str, spec: &WrapperSpec) -> Result<WrapperOutc
     Ok(outcome)
 }
 
-fn write_bundle_files(root: &str, spec: &WrapperSpec, try_register: bool) -> Result<WrapperOutcome, String> {
+fn write_bundle_files(
+    root: &str,
+    spec: &WrapperSpec,
+    try_register: bool,
+) -> Result<WrapperOutcome, String> {
     use std::fs;
     use std::process::Command;
 

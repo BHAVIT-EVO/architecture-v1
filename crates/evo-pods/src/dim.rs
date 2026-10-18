@@ -117,6 +117,7 @@ pub enum PlanError {
 ///   pre-filter; the plan itself won't act on apps it wasn't shown except
 ///   through belonging evidence members).
 /// - `protected` pids are never touched, even hidden=false & foreign.
+///
 /// `screen` is the pod's stage (the main screen's usable frame): recipe
 /// ratios materialize THERE — once, per enter. Materializing a ratio per
 /// window's own rect instead (an earlier mistake) staged windows onto
@@ -188,11 +189,16 @@ pub fn plan_activation(
         if window_match(w, surfaces).belongs() {
             continue;
         }
-        let owner_regular = apps.iter().find(|a| a.pid == w.pid).map(|a| a.regular).unwrap_or(true);
+        let owner_regular = apps
+            .iter()
+            .find(|a| a.pid == w.pid)
+            .map(|a| a.regular)
+            .unwrap_or(true);
         if !owner_regular {
             continue;
         }
         match mode {
+            ContainMode::Open => {}
             ContainMode::Dim => {
                 if w.frame.usable() {
                     plan.veil.push((w.pid, w.window_id, w.frame));
@@ -204,9 +210,7 @@ pub fn plan_activation(
             // outside the pod) park windows one by one; apps with no
             // witness in the pod are hidden whole below — no Dock
             // clutter of minimized windows the user never parked.
-            ContainMode::Stage if pod_pid.contains(&w.pid) => {
-                plan.park.push((w.pid, w.window_id))
-            }
+            ContainMode::Stage if pod_pid.contains(&w.pid) => plan.park.push((w.pid, w.window_id)),
             ContainMode::Stage => {}
         }
     }
@@ -256,12 +260,16 @@ fn resource_of(window: &PodWindow, surfaces: &PodSurfaces) -> Option<String> {
 fn fit(target: Frame, current: &Frame) -> Frame {
     let w = target.w.max(160.0f64.min(target.w));
     let h = target.h.max(120.0f64.min(target.h));
-    let (base_x, base_y) = if current.usable() {
+    let (base_x, _base_y) = if current.usable() {
         (current.x, current.y)
     } else {
         (target.x, target.y)
     };
     // Keep the anchor corner nearest the current position.
-    let x = if (base_x - target.x).abs() < 40.0 { base_x } else { target.x };
+    let x = if (base_x - target.x).abs() < 40.0 {
+        base_x
+    } else {
+        target.x
+    };
     Frame::new(x, target.y, w, h)
 }
