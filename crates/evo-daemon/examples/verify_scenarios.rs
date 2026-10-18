@@ -34,7 +34,7 @@ use evo_daemon::persistence::load_persisted_observations;
 use evo_daemon::runtime::{RestorationInputBoundary, VerticalPipeline};
 use evo_daemon::workspace_replay::replay_workspaces_from_observations;
 use evo_observation::provenance::ObservationSource;
-use evo_restoration::{derive_restoration_plan, DerivationOutcome, RestorationInput};
+use evo_restoration::{DerivationOutcome, RestorationInput, derive_restoration_plan};
 use evo_storage::{Storage, StorageObjectKind};
 use evo_workspace::attachment::ResourceRole;
 use evo_workspace::workspace::Workspace;
@@ -59,6 +59,7 @@ fn focus(subject: &str, secs: u64) -> MacOSSignal {
         process_identifier: None,
         owning_process_name: None,
         observed_state: None,
+        window_id: None,
     }
 }
 
@@ -193,10 +194,7 @@ fn run(scenario: &str, signals: &[MacOSSignal]) -> Derived {
     let adapter = MacOSAdapter::new(source);
     let mut engine = CaptureEngine::new();
 
-    let (sender, receiver): (
-        std::sync::mpsc::Sender<Result<RestorationInputBoundary, evo_daemon::DaemonError>>,
-        std::sync::mpsc::Receiver<Result<RestorationInputBoundary, evo_daemon::DaemonError>>,
-    ) = channel();
+    let (sender, receiver) = channel::<Result<RestorationInputBoundary, evo_daemon::DaemonError>>();
     let mut pipeline = VerticalPipeline::new(sender, root.clone()).expect("pipeline builds");
 
     for signal in signals {
@@ -265,7 +263,10 @@ fn coherent_task() -> Vec<MacOSSignal> {
             moment += 300;
             signals.push(save("/Users/alice/internship/assignment.md", moment));
             moment += 30;
-            signals.push(visit("https://example.edu/internship/assignment-brief", moment));
+            signals.push(visit(
+                "https://example.edu/internship/assignment-brief",
+                moment,
+            ));
             moment += 120;
             signals.push(focus("assignment analysis — Terminal", moment));
             moment += 180;
@@ -303,11 +304,17 @@ fn main() {
     let mut report = Report {
         lines: Vec::new(),
         failures: Vec::new(),
-        canonical_root_records_before: count_records(&canonical_root, StorageObjectKind::Observation),
+        canonical_root_records_before: count_records(
+            &canonical_root,
+            StorageObjectKind::Observation,
+        ),
     };
 
     println!("== adversarial verification suite (scenarios A–O) ==");
-    println!("canonical root (must stay untouched): {}", canonical_root.display());
+    println!(
+        "canonical root (must stay untouched): {}",
+        canonical_root.display()
+    );
 
     scenario_a_attention_alone(&mut report);
     scenario_b_messaging_alone_and_as_work(&mut report);
@@ -330,7 +337,10 @@ fn main() {
         println!("\nresult: OK — every adversarial scenario holds");
         std::process::exit(0);
     }
-    println!("\nresult: {} scenario check(s) failed", report.failures.len());
+    println!(
+        "\nresult: {} scenario check(s) failed",
+        report.failures.len()
+    );
     for failure in &report.failures {
         println!("  - {failure}");
     }
@@ -520,7 +530,10 @@ fn scenario_f_two_tasks_in_one_application(report: &mut Report) {
             moment += 300;
             signals.push(save("/Users/alice/estates/probate-valuation.docx", moment));
             moment += 30;
-            signals.push(visit("https://revenue.example.org/probate/valuation", moment));
+            signals.push(visit(
+                "https://revenue.example.org/probate/valuation",
+                moment,
+            ));
             moment += 120;
         }
         moment += 3 * 60 * 60;
@@ -664,7 +677,10 @@ fn scenario_h_return_to_earlier_work(report: &mut Report) {
             resume
                 .as_deref()
                 .is_some_and(|subject| derived.members(grant).contains(subject)),
-            format!("resume point: {}", resume.unwrap_or_else(|| "<none>".into())),
+            format!(
+                "resume point: {}",
+                resume.unwrap_or_else(|| "<none>".into())
+            ),
         );
     }
 }
@@ -759,15 +775,13 @@ fn scenario_kl_restart_and_replay(report: &mut Report) {
     report.check(
         "and calls each body of work by the same name",
         renamed == derived.titles,
-        format!(
-            "{}",
-            derived
-                .titles
-                .values()
-                .map(|title| format!("“{title}”"))
-                .collect::<Vec<_>>()
-                .join(", ")
-        ),
+        derived
+            .titles
+            .values()
+            .map(|title| format!("“{title}”"))
+            .collect::<Vec<_>>()
+            .join(", ")
+            .to_string(),
     );
 
     let observations =
@@ -848,7 +862,10 @@ fn scenario_n_degradation_without_shared_vocabulary(report: &mut Report) {
             resume
                 .as_deref()
                 .is_some_and(|subject| derived.members(work).contains(subject)),
-            format!("resume point: {}", resume.unwrap_or_else(|| "<none>".into())),
+            format!(
+                "resume point: {}",
+                resume.unwrap_or_else(|| "<none>".into())
+            ),
         );
     }
 }
@@ -866,8 +883,8 @@ fn scenario_o_canonical_root_untouched(report: &mut Report, canonical_root: &Pat
             report.canonical_root_records_before, after
         ),
     );
-    let refused = evo_storage::fabrication_root().is_err()
-        || std::env::var_os("EVO_STORAGE_ROOT").is_some();
+    let refused =
+        evo_storage::fabrication_root().is_err() || std::env::var_os("EVO_STORAGE_ROOT").is_some();
     report.check(
         "the storage boundary refuses fabrication against the canonical root",
         refused,

@@ -1,0 +1,5 @@
+{
+  "name": "rambox",
+  "version": "3.1.1",
+  "main": ".vite/build/index.js"
+}

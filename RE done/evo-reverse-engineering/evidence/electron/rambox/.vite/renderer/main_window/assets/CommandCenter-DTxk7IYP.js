@@ -1,0 +1,1 @@
+function r(r,t){return r?r.split("+").map(r=>{switch(r){case"CommandOrControl":case"CmdOrCtrl":return t?"⌘":"Ctrl";case"Command":case"Cmd":case"Super":case"Meta":return t?"⌘":"Win";case"Control":return t?"⌃":"Ctrl";case"Alt":case"Option":return t?"⌥":"Alt";case"Shift":return t?"⇧":"Shift";default:return r}}).join(" + "):""}export{r as f};

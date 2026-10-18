@@ -102,7 +102,9 @@ fn main() {
         .collect();
     let persisted_ok = surface_observations.len() == 1;
     let ordered_ok = surface_observations.first().is_some_and(|observation| {
-        observation.evidence().facts()[0].value().to_string()
+        observation.evidence().facts()[0]
+            .value()
+            .to_string()
             .contains("/Users/alice/evo/plan.md")
     });
     println!("== declaration persisted canonically: {persisted_ok}");
@@ -112,7 +114,9 @@ fn main() {
     let index = CanonicalIndex::new(root.clone()).expect("fresh index rebuilds");
     let index_surface = index.current_continuation_surface();
     let replayed = replay_current_continuation_surface(&root).expect("canonical replay");
-    let derived_ok = index_surface.as_ref().is_some_and(|subjects| subjects.len() == 2);
+    let derived_ok = index_surface
+        .as_ref()
+        .is_some_and(|subjects| subjects.len() == 2);
     let replay_ok = index_surface == replayed;
     println!("== current surface derived: {derived_ok} (2 declared subjects)");
     println!("== restart + replay preserve the surface: {replay_ok}");
@@ -148,7 +152,11 @@ fn main() {
                 .attachments()
                 .iter()
                 .filter_map(|attachment| {
-                    workspaces_after.0.subjects().get(attachment.artifact_id().as_str()).cloned()
+                    workspaces_after
+                        .0
+                        .subjects()
+                        .get(attachment.artifact_id().as_str())
+                        .cloned()
                 })
                 .collect()
         })
@@ -183,7 +191,13 @@ fn main() {
         let surface: BTreeSet<String> = outcome
             .continuation_surface()
             .iter()
-            .filter_map(|artifact| workspaces_after.0.subjects().get(artifact.as_str()).cloned())
+            .filter_map(|artifact| {
+                workspaces_after
+                    .0
+                    .subjects()
+                    .get(artifact.as_str())
+                    .cloned()
+            })
             .collect();
         surface == declared
     });
@@ -196,8 +210,13 @@ fn main() {
     let workspace_replay_ok = replayed_workspaces == workspaces_after.1;
     println!("== replay reproduces the declared body of work exactly: {workspace_replay_ok}");
 
-    let ok = persisted_ok && ordered_ok && derived_ok && replay_ok && declaration_ok
-        && workspace_replay_ok && index_artifacts.len() == 2;
+    let ok = persisted_ok
+        && ordered_ok
+        && derived_ok
+        && replay_ok
+        && declaration_ok
+        && workspace_replay_ok
+        && index_artifacts.len() == 2;
     println!(
         "\nVERIFY-CONTINUATION-SURFACE {}",
         if ok { "OK" } else { "FAIL" }

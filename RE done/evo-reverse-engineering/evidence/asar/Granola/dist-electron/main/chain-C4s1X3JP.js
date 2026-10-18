@@ -1,0 +1,2 @@
+const e=require("./CredentialsProviderError-C3Ufgc6u.js");var t=(...t)=>async()=>{if(t.length===0)throw new e.n(`No providers in chain`);let n;for(let e of t)try{return await e()}catch(e){if(n=e,e?.tryNextLink)continue;throw e}throw n};Object.defineProperty(exports,"t",{enumerable:!0,get:function(){return t}});
+//# sourceMappingURL=chain-C4s1X3JP.js.map

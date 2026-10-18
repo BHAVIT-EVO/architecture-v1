@@ -1,0 +1,1092 @@
+//
+//  DebugSettingsViewModel.swift
+//  DynamicNotch
+//
+//  Created by Евгений Петрукович on 3/21/26.
+//
+
+#if DEBUG
+import SwiftUI
+import Combine
+
+@MainActor
+final class DebugSettingsViewModel: ObservableObject {
+    @Published var isOnboardingPreviewEnabled = false
+    @Published var isFocusLivePreviewEnabled = false
+    @Published var isScreenRecordingPreviewEnabled = false
+    @Published var isHotspotPreviewEnabled = false
+    @Published var isNowPlayingPreviewEnabled = false
+    @Published var isDownloadPreviewEnabled = false
+    @Published var isTimerPreviewEnabled = false
+    @Published var isFileTrayPreviewEnabled = false
+    @Published var isLockScreenPreviewEnabled = false
+    @Published var isSoftwareUpdatePreviewEnabled = false
+
+    @Published private(set) var isPreviewSequenceRunning = false
+
+    private static let sequenceContentPrefix = NotchContentRegistry.DebugSequence.prefix
+    private static let sequenceFocusID = NotchContentRegistry.DebugSequence.focus
+    private static let sequenceScreenRecordingID = NotchContentRegistry.DebugSequence.screenRecording
+    private static let sequenceHotspotID = NotchContentRegistry.DebugSequence.hotspot
+    private static let sequenceNowPlayingID = NotchContentRegistry.DebugSequence.nowPlaying
+    private static let sequenceDownloadsID = NotchContentRegistry.DebugSequence.download
+    private static let sequenceTimerID = NotchContentRegistry.DebugSequence.timer
+    private static let sequenceAirDropID = NotchContentRegistry.DebugSequence.airDrop
+    private static let sequenceTrayID = NotchContentRegistry.DebugSequence.tray
+    private static let sequenceCombinedDropID = NotchContentRegistry.DebugSequence.combinedDrop
+    private static let sequenceTrayActiveID = NotchContentRegistry.DebugSequence.trayActive
+    private static let sequenceLockScreenID = NotchContentRegistry.DebugSequence.lockScreen
+    private static let sequenceSoftwareUpdateID = NotchContentRegistry.DebugSequence.softwareUpdate
+    private static let livePreviewDuration: TimeInterval = 4
+    private static let previewGapDuration: TimeInterval = 1
+    private static let transitionBufferDuration: TimeInterval = 0.35
+    private static let waitPollInterval: UInt64 = 50_000_000
+    private static let sequenceLiveActivityIDs = [
+        sequenceFocusID,
+        sequenceScreenRecordingID,
+        sequenceHotspotID,
+        sequenceNowPlayingID,
+        sequenceDownloadsID,
+        sequenceTimerID,
+        sequenceAirDropID,
+        sequenceTrayID,
+        sequenceCombinedDropID,
+        sequenceTrayActiveID,
+        sequenceLockScreenID,
+        sequenceSoftwareUpdateID
+    ]
+
+    private let notchViewModel: NotchViewModel
+    private let notchEventCoordinator: NotchEventCoordinator
+    private let bluetoothViewModel: BluetoothViewModel
+    private let powerService: PowerService
+    private let wifiViewModel: WifiViewModel
+    private let vpnViewModel: VpnViewModel
+    private let downloadViewModel: DownloadViewModel
+    private let timerViewModel: TimerViewModel
+    private let nowPlayingViewModel: NowPlayingViewModel
+    private let lockScreenManager: LockScreenManager
+    private let settingsViewModel: SettingsViewModel
+    private let dragAndDropPreviewViewModel = AirDropNotchViewModel()
+    private let fileTrayPreviewViewModel: FileTrayViewModel
+
+    private var cancellables = Set<AnyCancellable>()
+    private var previewSequenceTask: Task<Void, Never>?
+
+    init(
+        notchViewModel: NotchViewModel,
+        notchEventCoordinator: NotchEventCoordinator,
+        bluetoothViewModel: BluetoothViewModel,
+        powerService: PowerService,
+        wifiViewModel: WifiViewModel,
+        vpnViewModel: VpnViewModel,
+        downloadViewModel: DownloadViewModel,
+        timerViewModel: TimerViewModel,
+        settingsViewModel: SettingsViewModel,
+        nowPlayingViewModel: NowPlayingViewModel,
+        lockScreenManager: LockScreenManager
+    ) {
+        self.notchViewModel = notchViewModel
+        self.notchEventCoordinator = notchEventCoordinator
+        self.bluetoothViewModel = bluetoothViewModel
+        self.powerService = powerService
+        self.wifiViewModel = wifiViewModel
+        self.vpnViewModel = vpnViewModel
+        self.downloadViewModel = downloadViewModel
+        self.timerViewModel = timerViewModel
+        self.settingsViewModel = settingsViewModel
+        self.nowPlayingViewModel = nowPlayingViewModel
+        self.lockScreenManager = lockScreenManager
+        let previewDefaults = UserDefaults(
+            suiteName: "DynamicNotch.Debug.Previews.\(UUID().uuidString)"
+        ) ?? .standard
+        self.fileTrayPreviewViewModel = FileTrayViewModel(defaults: previewDefaults)
+        setupPreviewBindings()
+    }
+
+    func triggerBluetoothPreview() {
+        applyBluetoothPreviewState()
+        notchEventCoordinator.handleBluetoothEvent(.connected)
+    }
+
+    func triggerNoInternetConnectionPreview() {
+        notchEventCoordinator.handleWifiEvent(.noInternetConnection)
+    }
+
+    func triggerVPNPreview() {
+        applyVPNPreviewState()
+        UserDefaults.standard.set(false, forKey: "debug.vpn.mockThreeDigitTimer")
+        NotificationCenter.default.post(name: NSNotification.Name("debug.vpn.mockChanged"), object: nil)
+        notchEventCoordinator.handleVpnEvent(.vpnConnected)
+    }
+
+    func triggerVPNLongTimerPreview() {
+        applyVPNLongTimerPreviewState()
+        UserDefaults.standard.set(true, forKey: "debug.vpn.mockThreeDigitTimer")
+        NotificationCenter.default.post(name: NSNotification.Name("debug.vpn.mockChanged"), object: nil)
+        notchEventCoordinator.handleVpnEvent(.vpnConnected)
+    }
+
+    func triggerVPNDisconnectedPreview() {
+        applyVPNDisconnectedPreviewState()
+        UserDefaults.standard.set(false, forKey: "debug.vpn.mockThreeDigitTimer")
+        NotificationCenter.default.post(name: NSNotification.Name("debug.vpn.mockChanged"), object: nil)
+        notchEventCoordinator.handleVpnEvent(.vpnDisconnected)
+    }
+
+    func triggerChargingPreview() {
+        applyChargingPreviewState()
+        notchEventCoordinator.handlePowerEvent(.charger)
+    }
+
+    func triggerLowPowerPreview() {
+        applyLowPowerPreviewState()
+        notchEventCoordinator.handlePowerEvent(.lowPower)
+    }
+
+    func triggerFullBatteryPreview() {
+        applyFullBatteryPreviewState()
+        notchEventCoordinator.handlePowerEvent(.fullPower)
+    }
+
+    func triggerFocusOffPreview() {
+        isFocusLivePreviewEnabled = false
+        notchEventCoordinator.handleFocusEvent(.FocusOff(.custom))
+    }
+
+    func triggerBrightnessHUDPreview() {
+        notchEventCoordinator.handleHudEvent(.display(72))
+    }
+
+    func triggerKeyboardHUDPreview() {
+        notchEventCoordinator.handleHudEvent(.keyboard(64))
+    }
+
+    func triggerVolumeHUDPreview() {
+        notchEventCoordinator.handleHudEvent(.volume(42))
+    }
+
+    func triggerNotchWidthPreview() {
+        notchEventCoordinator.handleNotchWidthEvent(.width)
+    }
+
+    func triggerNotchHeightPreview() {
+        notchEventCoordinator.handleNotchWidthEvent(.height)
+    }
+
+    func triggerNowPlayingPausePreview() {
+        nowPlayingViewModel.showDebugPreviewSnapshotIfNeeded()
+        notchEventCoordinator.handleNowPlayingEvent(.started)
+        nowPlayingViewModel.pause()
+        notchEventCoordinator.handleNowPlayingEvent(.playbackStateChanged(isPlaying: false))
+    }
+
+    func triggerNowPlayingPlayPreview() {
+        nowPlayingViewModel.showDebugPreviewSnapshotIfNeeded()
+        notchEventCoordinator.handleNowPlayingEvent(.started)
+        nowPlayingViewModel.play()
+        notchEventCoordinator.handleNowPlayingEvent(.playbackStateChanged(isPlaying: true))
+    }
+
+    func triggerNowPlayingStoppedPreview() {
+        notchEventCoordinator.handleNowPlayingEvent(.stopped)
+        nowPlayingViewModel.hideDebugPreviewSnapshotIfNeeded()
+        isNowPlayingPreviewEnabled = false
+    }
+
+    func triggerDownloadStoppedPreview() {
+        downloadViewModel.hideDebugPreviewDownloadsIfNeeded()
+        notchEventCoordinator.handleDownloadEvent(.stopped)
+        isDownloadPreviewEnabled = false
+    }
+
+    func triggerTimerUpdatedPreview() {
+        timerViewModel.showDebugPreviewSnapshotIfNeeded()
+        notchEventCoordinator.handleTimerEvent(.updated)
+    }
+
+    func triggerTimerStoppedPreview() {
+        notchEventCoordinator.handleTimerEvent(.stopped)
+        timerViewModel.hideDebugPreviewSnapshotIfNeeded()
+        isTimerPreviewEnabled = false
+    }
+
+    func triggerScreenRecordingStoppedPreview() {
+        notchEventCoordinator.handleScreenRecordingEvent(.stopped)
+        isScreenRecordingPreviewEnabled = false
+    }
+
+    func triggerHotspotHidePreview() {
+        wifiViewModel.hotspotActive = false
+        notchEventCoordinator.handleWifiEvent(.hotspotHide)
+        isHotspotPreviewEnabled = false
+    }
+
+    func triggerLockScreenStoppedPreview() {
+        lockScreenManager.setDebugLockState(false)
+        notchEventCoordinator.handleLockScreenEvent(.stopped)
+        isLockScreenPreviewEnabled = false
+    }
+
+    func triggerAirDropTargetPreview() {
+        showDragAndDropTargetPreview(.airDrop)
+    }
+
+    func triggerTrayTargetPreview() {
+        showDragAndDropTargetPreview(.tray)
+    }
+
+    func triggerCombinedDragAndDropPreview() {
+        showCombinedDragAndDropPreview()
+    }
+
+    func triggerDragAndDropEndedPreview() {
+        dragAndDropPreviewViewModel.setDraggingFile(false)
+        hideDragAndDropTargetPreviews()
+        notchEventCoordinator.handleAirDropEvent(.dragEnded)
+    }
+
+    func triggerDragAndDropDroppedPreview() {
+        dragAndDropPreviewViewModel.handleSuccessfulDrop()
+        hideDragAndDropTargetPreviews()
+        notchEventCoordinator.handleAirDropEvent(.dropped)
+    }
+
+    func triggerAirDropTransferPreview() {
+        let testID = UUID()
+        let sampleURL = URL(fileURLWithPath: "/tmp/sample_airdrop_document.pdf")
+        let previewViewModel = AirDropNotchViewModel()
+        previewViewModel.beginTransfer(id: testID, urls: [sampleURL], initialProgress: 0.1)
+
+        notchViewModel.send(
+            .showLiveActivity(
+                AirDropActiveNotchContent(
+                    airDropViewModel: previewViewModel,
+                    mediaSettings: settingsViewModel.mediaAndFiles
+                )
+            )
+        )
+
+        Task { @MainActor in
+            let progressSteps = [0.25, 0.48, 0.72, 0.90, 1.0]
+            for p in progressSteps {
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                previewViewModel.updateTransferProgress(id: testID, progress: p)
+            }
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            previewViewModel.completeTransfer(id: testID)
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            self.notchViewModel.send(.hideLiveActivity(id: NotchContentRegistry.DragAndDrop.airDropTransferActive.id))
+        }
+    }
+
+    func triggerExternalDriveConnectedPreview() {
+        notchEventCoordinator.handleExternalDriveEvent(.debugPreviewConnected)
+    }
+
+    func triggerExternalDriveUSBPreview() {
+        notchEventCoordinator.handleExternalDriveEvent(.debugPreviewUSB)
+    }
+
+    func triggerExternalDriveEjectedPreview() {
+        notchEventCoordinator.handleExternalDriveEvent(.debugPreviewEjected)
+    }
+
+    func togglePreviewSequence() {
+        if isPreviewSequenceRunning {
+            stopPreviewSequence()
+        } else {
+            startPreviewSequence()
+        }
+    }
+
+    func hideCurrentTemporaryPreview() {
+        notchViewModel.hideTemporaryNotification()
+    }
+
+    func resetAllPreviews() {
+        stopPreviewSequence()
+        isOnboardingPreviewEnabled = false
+        isFocusLivePreviewEnabled = false
+        isScreenRecordingPreviewEnabled = false
+        isHotspotPreviewEnabled = false
+        isNowPlayingPreviewEnabled = false
+        isDownloadPreviewEnabled = false
+        isTimerPreviewEnabled = false
+        isFileTrayPreviewEnabled = false
+        isLockScreenPreviewEnabled = false
+        hideDragAndDropTargetPreviews()
+        notchViewModel.hideTemporaryNotification()
+        UserDefaults.standard.set(false, forKey: "debug.vpn.mockThreeDigitTimer")
+        NotificationCenter.default.post(name: NSNotification.Name("debug.vpn.mockChanged"), object: nil)
+    }
+
+    private func setupPreviewBindings() {
+        $isOnboardingPreviewEnabled
+            .dropFirst()
+            .sink { [weak self] enabled in self?.updateOnboardingPreview(isEnabled: enabled) }
+            .store(in: &cancellables)
+
+        $isFocusLivePreviewEnabled
+            .dropFirst()
+            .sink { [weak self] enabled in self?.updateFocusPreview(isEnabled: enabled) }
+            .store(in: &cancellables)
+
+        $isScreenRecordingPreviewEnabled
+            .dropFirst()
+            .sink { [weak self] enabled in self?.updateScreenRecordingPreview(isEnabled: enabled) }
+            .store(in: &cancellables)
+
+        $isHotspotPreviewEnabled
+            .dropFirst()
+            .sink { [weak self] enabled in self?.updateHotspotPreview(isEnabled: enabled) }
+            .store(in: &cancellables)
+
+        $isNowPlayingPreviewEnabled
+            .dropFirst()
+            .sink { [weak self] enabled in self?.updateNowPlayingPreview(isEnabled: enabled) }
+            .store(in: &cancellables)
+
+        $isDownloadPreviewEnabled
+            .dropFirst()
+            .sink { [weak self] enabled in self?.updateDownloadPreview(isEnabled: enabled) }
+            .store(in: &cancellables)
+
+        $isTimerPreviewEnabled
+            .dropFirst()
+            .sink { [weak self] enabled in self?.updateTimerPreview(isEnabled: enabled) }
+            .store(in: &cancellables)
+
+        $isFileTrayPreviewEnabled
+            .dropFirst()
+            .sink { [weak self] enabled in self?.updateFileTrayPreview(isEnabled: enabled) }
+            .store(in: &cancellables)
+
+        $isLockScreenPreviewEnabled
+            .dropFirst()
+            .sink { [weak self] enabled in self?.updateLockScreenPreview(isEnabled: enabled) }
+            .store(in: &cancellables)
+
+        $isSoftwareUpdatePreviewEnabled
+            .dropFirst()
+            .sink { [weak self] enabled in self?.updateSoftwareUpdatePreview(isEnabled: enabled) }
+            .store(in: &cancellables)
+    }
+
+    private func updateOnboardingPreview(isEnabled: Bool? = nil) {
+        let enabled = isEnabled ?? isOnboardingPreviewEnabled
+        if enabled {
+            notchEventCoordinator.showDebugOnboardingPreview(step: .first)
+        } else {
+            notchEventCoordinator.hideOnboarding()
+        }
+    }
+
+    private func updateFocusPreview(isEnabled: Bool? = nil) {
+        let enabled = isEnabled ?? isFocusLivePreviewEnabled
+        if enabled {
+            notchEventCoordinator.handleFocusEvent(.FocusOn(.custom))
+        } else {
+            notchViewModel.send(.hideLiveActivity(id: NotchContentRegistry.Focus.active.id))
+        }
+    }
+
+    private func updateScreenRecordingPreview(isEnabled: Bool? = nil) {
+        let enabled = isEnabled ?? isScreenRecordingPreviewEnabled
+        if enabled {
+            notchEventCoordinator.handleScreenRecordingEvent(.started)
+        } else {
+            notchEventCoordinator.handleScreenRecordingEvent(.stopped)
+        }
+    }
+
+    private func updateHotspotPreview(isEnabled: Bool? = nil) {
+        let enabled = isEnabled ?? isHotspotPreviewEnabled
+        print("[DebugSettingsViewModel] updateHotspotPreview: isHotspotPreviewEnabled=\(enabled)")
+        if enabled {
+            wifiViewModel.hotspotActive = true
+            if wifiViewModel.hotspotBatteryLevel == nil {
+                wifiViewModel.hotspotBatteryLevel = HotspotBatteryMonitor.shared.currentBatteryLevel
+                print("[DebugSettingsViewModel] Assigned hotspotBatteryLevel = \(String(describing: wifiViewModel.hotspotBatteryLevel))")
+            }
+            notchEventCoordinator.handleWifiEvent(.hotspotActive)
+        } else {
+            wifiViewModel.hotspotActive = false
+            notchEventCoordinator.handleWifiEvent(.hotspotHide)
+        }
+    }
+
+    private func updateNowPlayingPreview(isEnabled: Bool? = nil) {
+        let enabled = isEnabled ?? isNowPlayingPreviewEnabled
+        if enabled {
+            nowPlayingViewModel.showDebugPreviewSnapshotIfNeeded()
+            notchEventCoordinator.handleNowPlayingEvent(.started)
+        } else {
+            notchEventCoordinator.handleNowPlayingEvent(.stopped)
+            nowPlayingViewModel.hideDebugPreviewSnapshotIfNeeded()
+        }
+    }
+
+    private func updateDownloadPreview(isEnabled: Bool? = nil) {
+        let enabled = isEnabled ?? isDownloadPreviewEnabled
+        if enabled {
+            downloadViewModel.showDebugPreviewDownloadsIfNeeded()
+            notchEventCoordinator.handleDownloadEvent(.started)
+        } else {
+            downloadViewModel.hideDebugPreviewDownloadsIfNeeded()
+
+            if downloadViewModel.hasActiveDownloads {
+                notchEventCoordinator.handleDownloadEvent(.started)
+            } else {
+                notchEventCoordinator.handleDownloadEvent(.stopped)
+            }
+        }
+    }
+    
+    private func updateTimerPreview(isEnabled: Bool? = nil) {
+        let enabled = isEnabled ?? isTimerPreviewEnabled
+        if enabled {
+            timerViewModel.showDebugPreviewSnapshotIfNeeded()
+            notchEventCoordinator.handleTimerEvent(.started)
+        } else {
+            notchEventCoordinator.handleTimerEvent(.stopped)
+            timerViewModel.hideDebugPreviewSnapshotIfNeeded()
+        }
+    }
+
+    private func updateFileTrayPreview(isEnabled: Bool? = nil) {
+        let enabled = isEnabled ?? isFileTrayPreviewEnabled
+        if enabled {
+            showFileTrayActivePreview()
+        } else {
+            notchViewModel.send(.hideLiveActivity(id: Self.sequenceTrayActiveID))
+            fileTrayPreviewViewModel.clear()
+        }
+    }
+
+    private func updateLockScreenPreview(isEnabled: Bool? = nil) {
+        let enabled = isEnabled ?? isLockScreenPreviewEnabled
+        lockScreenManager.setDebugLockState(enabled)
+        notchEventCoordinator.handleLockScreenEvent(
+            enabled ? .started : .stopped
+        )
+    }
+
+    private func updateSoftwareUpdatePreview(isEnabled: Bool? = nil) {
+        let enabled = isEnabled ?? isSoftwareUpdatePreviewEnabled
+        if enabled {
+            SparkleUpdater.shared.latestVersionString = "1.2.0"
+            SparkleUpdater.shared.isUpdateAvailable = true
+        } else {
+            SparkleUpdater.shared.isUpdateAvailable = false
+        }
+    }
+
+    private func startPreviewSequence() {
+        stopPreviewSequence()
+
+        previewSequenceTask = Task { [weak self] in
+            guard let self else { return }
+
+            self.isPreviewSequenceRunning = true
+            self.clearPreviewSequenceArtifacts()
+
+            defer {
+                self.clearPreviewSequenceArtifacts()
+                self.isPreviewSequenceRunning = false
+                self.previewSequenceTask = nil
+            }
+
+            do {
+                try await self.playLivePreview(
+                    DebugOnboardingPreviewNotchContent(
+                        step: .first,
+                        notchEventCoordinator: notchEventCoordinator
+                    ),
+                    id: NotchContentRegistry.DebugSequence.onboarding
+                )
+                try await self.playLivePreview(
+                    FocusOnNotchContent(settingsViewModel: settingsViewModel, focusModeType: .custom),
+                    id: Self.sequenceFocusID
+                )
+                try await self.playLivePreview(
+                    ScreenRecordingContent(settingsViewModel: settingsViewModel),
+                    id: Self.sequenceScreenRecordingID
+                )
+                try await self.playTemporaryPreview(
+                    FocusOffNotchContent(settingsViewModel: settingsViewModel, focusModeType: .custom),
+                    id: NotchContentRegistry.DebugSequence.focusOff,
+                    duration: 3
+                )
+                try await self.playLivePreview(
+                    HotspotActiveContent(
+                        settingsViewModel: settingsViewModel,
+                        wifiViewModel: wifiViewModel
+                    ),
+                    id: Self.sequenceHotspotID
+                )
+                try await self.playNowPlayingPreview()
+                try await self.playDownloadsPreview()
+                try await self.playTimerPreview()
+                try await self.playDragAndDropTargetPreview(
+                    .airDrop,
+                    id: Self.sequenceAirDropID
+                )
+                try await self.playDragAndDropTargetPreview(
+                    .tray,
+                    id: Self.sequenceTrayID
+                )
+                try await self.playCombinedDragAndDropPreview()
+                try await self.playFileTrayActivePreview()
+                try await self.playBluetoothPreview()
+                try await self.playTemporaryPreview(
+                    NoInternetConnectionContent(
+                        onDismiss: { [weak self] in
+                            self?.notchViewModel.hideTemporaryNotification()
+                        }
+                    ),
+                    id: NotchContentRegistry.DebugSequence.noInternet,
+                    duration: 5
+                )
+                try await self.playVPNPreview()
+                try await self.playChargingPreview()
+                try await self.playLowPowerPreview()
+                try await self.playFullBatteryPreview()
+                try await self.playTemporaryPreview(
+                    HudNotchContent(
+                        kind: .brightness,
+                        level: 72,
+                        applicationSettings: settingsViewModel.application
+                    ),
+                    id: NotchContentRegistry.DebugSequence.hudBrightness,
+                    duration: 2
+                )
+                try await self.playTemporaryPreview(
+                    HudNotchContent(
+                        kind: .keyboard,
+                        level: 64,
+                        applicationSettings: settingsViewModel.application
+                    ),
+                    id: NotchContentRegistry.DebugSequence.hudKeyboard,
+                    duration: 2
+                )
+                try await self.playTemporaryPreview(
+                    HudNotchContent(
+                        kind: .volume,
+                        level: 42,
+                        applicationSettings: settingsViewModel.application
+                    ),
+                    id: NotchContentRegistry.DebugSequence.hudVolume,
+                    duration: 2
+                )
+                try await self.playTemporaryPreview(
+                    NotchSizeWidthNotchContent(settingsViewModel: settingsViewModel),
+                    id: NotchContentRegistry.DebugSequence.notchSizeWidth,
+                    duration: 3
+                )
+                try await self.playTemporaryPreview(
+                    NotchSizeHeightNotchContent(settingsViewModel: settingsViewModel),
+                    id: NotchContentRegistry.DebugSequence.notchSizeHeight,
+                    duration: 3
+                )
+                try await self.playTemporaryPreview(
+                    NotchStrokeOpacityNotchContent(settingsViewModel: settingsViewModel),
+                    id: NotchContentRegistry.DebugSequence.notchStrokeOpacity,
+                    duration: 3
+                )
+                try await self.playLockScreenPreview()
+                try await self.playSoftwareUpdatePreview()
+            } catch is CancellationError {
+            } catch {
+            }
+        }
+    }
+
+    private func stopPreviewSequence() {
+        previewSequenceTask?.cancel()
+        previewSequenceTask = nil
+        isPreviewSequenceRunning = false
+        clearPreviewSequenceArtifacts()
+    }
+
+    private func showDragAndDropTargetPreview(_ target: DragAndDropTarget) {
+        dragAndDropPreviewViewModel.setDraggingFile(true)
+        dragAndDropPreviewViewModel.setTargetedDropTarget(target)
+
+        let id: String
+        switch target {
+        case .airDrop:
+            id = Self.sequenceAirDropID
+        case .tray:
+            id = Self.sequenceTrayID
+        }
+
+        notchViewModel.send(
+            .showLiveActivity(
+                makeSequenceContent(
+                    makeDragAndDropTargetContent(for: target),
+                    id: id,
+                    priorityBoost: 1_000
+                )
+            )
+        )
+    }
+
+    private func showCombinedDragAndDropPreview() {
+        dragAndDropPreviewViewModel.setDraggingFile(true)
+        dragAndDropPreviewViewModel.setTargetedDropTarget(.airDrop)
+        notchViewModel.send(
+            .showLiveActivity(
+                makeSequenceContent(
+                    DragAndDropCombinedNotchContent(
+                        airDropViewModel: dragAndDropPreviewViewModel,
+                        settingsViewModel: settingsViewModel
+                    ),
+                    id: Self.sequenceCombinedDropID,
+                    priorityBoost: 1_000
+                )
+            )
+        )
+    }
+
+    private func hideDragAndDropTargetPreviews() {
+        [
+            Self.sequenceAirDropID,
+            Self.sequenceTrayID,
+            Self.sequenceCombinedDropID
+        ].forEach { id in
+            notchViewModel.send(.hideLiveActivity(id: id))
+        }
+    }
+
+    private func makeDragAndDropTargetContent(for target: DragAndDropTarget) -> any NotchContentProtocol {
+        switch target {
+        case .airDrop:
+            return AirDropNotchContent(
+                airDropViewModel: dragAndDropPreviewViewModel,
+                settingsViewModel: settingsViewModel
+            )
+
+        case .tray:
+            return TrayNotchContent(
+                airDropViewModel: dragAndDropPreviewViewModel,
+                settingsViewModel: settingsViewModel
+            )
+        }
+    }
+
+    private func showFileTrayActivePreview() {
+        do {
+            try prepareFileTrayPreviewItems()
+            notchViewModel.send(
+                .showLiveActivity(
+                    makeSequenceContent(
+                        TrayActiveNotchContent(
+                            fileTrayViewModel: fileTrayPreviewViewModel,
+                            mediaSettings: settingsViewModel.mediaAndFiles
+                        ),
+                        id: Self.sequenceTrayActiveID,
+                        priorityBoost: 1_000
+                    )
+                )
+            )
+        } catch {
+            isFileTrayPreviewEnabled = false
+        }
+    }
+
+    private func playBluetoothPreview() async throws {
+        applyBluetoothPreviewState()
+        try await playTemporaryPreview(
+            BluetoothConnectedNotchContent(
+                bluetoothViewModel: bluetoothViewModel,
+                settings: settingsViewModel.connectivity,
+                applicationSettings: settingsViewModel.application
+            ),
+            id: NotchContentRegistry.DebugSequence.bluetooth,
+            duration: 5
+        )
+    }
+
+    private func playVPNPreview() async throws {
+        applyVPNPreviewState()
+        try await playTemporaryPreview(
+            VpnConnectedNotchContent(
+                vpnViewModel: vpnViewModel,
+                settings: settingsViewModel.connectivity
+            ),
+            id: NotchContentRegistry.DebugSequence.vpn,
+            duration: 5
+        )
+    }
+
+    private func playChargingPreview() async throws {
+        applyChargingPreviewState()
+        try await playTemporaryPreview(
+            ChargerNotchContent(
+                powerService: powerService,
+                settingsViewModel: settingsViewModel
+            ),
+            id: NotchContentRegistry.DebugSequence.charging,
+            duration: 4
+        )
+    }
+
+    private func playLowPowerPreview() async throws {
+        applyLowPowerPreviewState()
+        try await playTemporaryPreview(
+            LowPowerNotchContent(
+                powerService: powerService,
+                settingsViewModel: settingsViewModel
+            ),
+            id: NotchContentRegistry.DebugSequence.lowPower,
+            duration: 4
+        )
+    }
+
+    private func playFullBatteryPreview() async throws {
+        applyFullBatteryPreviewState()
+        try await playTemporaryPreview(
+            FullPowerNotchContent(
+                powerService: powerService,
+                settingsViewModel: settingsViewModel
+            ),
+            id: NotchContentRegistry.DebugSequence.fullPower,
+            duration: 4
+        )
+    }
+
+    private func playNowPlayingPreview() async throws {
+        nowPlayingViewModel.showDebugPreviewSnapshotIfNeeded()
+        try await playLivePreview(
+            NowPlayingNotchContent(
+                nowPlayingViewModel: nowPlayingViewModel,
+                settings: settingsViewModel.mediaAndFiles,
+                applicationSettings: settingsViewModel.application
+            ),
+            id: Self.sequenceNowPlayingID
+        )
+        nowPlayingViewModel.hideDebugPreviewSnapshotIfNeeded()
+
+        if isNowPlayingPreviewEnabled {
+            updateNowPlayingPreview()
+        }
+    }
+
+    private func playDownloadsPreview() async throws {
+        downloadViewModel.showDebugPreviewDownloadsIfNeeded()
+        try await playLivePreview(
+            DownloadNotchContent(
+                downloadViewModel: downloadViewModel,
+                settingsViewModel: settingsViewModel
+            ),
+            id: Self.sequenceDownloadsID
+        )
+        downloadViewModel.hideDebugPreviewDownloadsIfNeeded()
+
+        if isDownloadPreviewEnabled {
+            updateDownloadPreview()
+        }
+    }
+
+    private func playTimerPreview() async throws {
+        timerViewModel.showDebugPreviewSnapshotIfNeeded()
+        try await playLivePreview(
+            TimerNotchContent(
+                timerViewModel: timerViewModel,
+                settingsViewModel: settingsViewModel
+            ),
+            id: Self.sequenceTimerID
+        )
+        timerViewModel.hideDebugPreviewSnapshotIfNeeded()
+
+        if isTimerPreviewEnabled {
+            updateTimerPreview()
+        }
+    }
+
+    private func playDragAndDropTargetPreview(
+        _ target: DragAndDropTarget,
+        id: String
+    ) async throws {
+        dragAndDropPreviewViewModel.setDraggingFile(true)
+        dragAndDropPreviewViewModel.setTargetedDropTarget(target)
+        try await playLivePreview(
+            makeDragAndDropTargetContent(for: target),
+            id: id,
+            duration: 3
+        )
+        dragAndDropPreviewViewModel.setDraggingFile(false)
+    }
+
+    private func playCombinedDragAndDropPreview() async throws {
+        dragAndDropPreviewViewModel.setDraggingFile(true)
+        dragAndDropPreviewViewModel.setTargetedDropTarget(.airDrop)
+        try await playLivePreview(
+            DragAndDropCombinedNotchContent(
+                airDropViewModel: dragAndDropPreviewViewModel,
+                settingsViewModel: settingsViewModel
+            ),
+            id: Self.sequenceCombinedDropID,
+            duration: 3
+        )
+        dragAndDropPreviewViewModel.setDraggingFile(false)
+    }
+
+    private func playFileTrayActivePreview() async throws {
+        try prepareFileTrayPreviewItems()
+        try await playLivePreview(
+            TrayActiveNotchContent(
+                fileTrayViewModel: fileTrayPreviewViewModel,
+                mediaSettings: settingsViewModel.mediaAndFiles
+            ),
+            id: Self.sequenceTrayActiveID
+        )
+        fileTrayPreviewViewModel.clear()
+    }
+
+    private func playLockScreenPreview() async throws {
+        lockScreenManager.setDebugLockState(true)
+        try await playLivePreview(
+            LockScreenNotchContent(
+                lockScreenManager: lockScreenManager,
+                style: settingsViewModel.lockScreen.lockScreenStyle
+            ),
+            id: Self.sequenceLockScreenID
+        )
+        lockScreenManager.setDebugLockState(false)
+    }
+
+    private func playSoftwareUpdatePreview() async throws {
+        SparkleUpdater.shared.latestVersionString = "1.2.0"
+        try await playLivePreview(
+            SoftwareUpdateNotchContent(settingsViewModel: settingsViewModel),
+            id: Self.sequenceSoftwareUpdateID
+        )
+    }
+
+    private func playTemporaryPreview(
+        _ content: any NotchContentProtocol,
+        id: String,
+        duration: TimeInterval
+    ) async throws {
+        notchViewModel.send(
+            .showTemporaryNotification(
+                makeSequenceContent(content, id: id),
+                duration: duration
+            )
+        )
+
+        try await waitUntil {
+            self.notchViewModel.notchModel.temporaryNotificationContent?.id == id
+        }
+        try await pause(for: duration)
+        try await waitUntil {
+            self.notchViewModel.notchModel.temporaryNotificationContent?.id != id
+        }
+        try await pause(for: Self.transitionBufferDuration)
+        try await pause(for: Self.previewGapDuration)
+    }
+
+    private func playLivePreview(
+        _ content: any NotchContentProtocol,
+        id: String
+    ) async throws {
+        try await playLivePreview(
+            content,
+            id: id,
+            duration: Self.livePreviewDuration
+        )
+    }
+
+    private func playLivePreview(
+        _ content: any NotchContentProtocol,
+        id: String,
+        duration: TimeInterval
+    ) async throws {
+        notchViewModel.send(
+            .showLiveActivity(
+                makeSequenceContent(content, id: id, priorityBoost: 1_000)
+            )
+        )
+
+        try await waitUntil {
+            self.notchViewModel.notchModel.liveActivityContent?.id == id
+        }
+        try await pause(for: duration)
+
+        notchViewModel.send(.hideLiveActivity(id: id))
+
+        try await waitUntil {
+            self.notchViewModel.notchModel.liveActivityContent?.id != id
+        }
+        try await pause(for: Self.transitionBufferDuration)
+        try await pause(for: Self.previewGapDuration)
+    }
+
+    private func clearPreviewSequenceArtifacts() {
+        if let currentTemporaryID = notchViewModel.notchModel.temporaryNotificationContent?.id,
+           currentTemporaryID.hasPrefix(Self.sequenceContentPrefix) {
+            notchViewModel.hideTemporaryNotification()
+        }
+
+        Self.sequenceLiveActivityIDs.forEach { id in
+            notchViewModel.send(.hideLiveActivity(id: id))
+        }
+
+        dragAndDropPreviewViewModel.setDraggingFile(false)
+        fileTrayPreviewViewModel.clear()
+        nowPlayingViewModel.hideDebugPreviewSnapshotIfNeeded()
+        downloadViewModel.hideDebugPreviewDownloadsIfNeeded()
+        timerViewModel.hideDebugPreviewSnapshotIfNeeded()
+        lockScreenManager.setDebugLockState(isLockScreenPreviewEnabled)
+
+        if isNowPlayingPreviewEnabled {
+            updateNowPlayingPreview()
+        }
+
+        if isDownloadPreviewEnabled {
+            updateDownloadPreview()
+        }
+
+        if isTimerPreviewEnabled {
+            updateTimerPreview()
+        }
+
+        if isFileTrayPreviewEnabled {
+            updateFileTrayPreview()
+        }
+
+        if isScreenRecordingPreviewEnabled {
+            updateScreenRecordingPreview()
+        }
+
+        if isLockScreenPreviewEnabled {
+            updateLockScreenPreview()
+        }
+
+        if isSoftwareUpdatePreviewEnabled {
+            updateSoftwareUpdatePreview()
+        }
+    }
+
+    private func makeSequenceContent(
+        _ content: any NotchContentProtocol,
+        id: String,
+        priorityBoost: Int = 0
+    ) -> DebugSequenceNotchContent {
+        DebugSequenceNotchContent(
+            id: id,
+            priority: content.priority + priorityBoost,
+            base: content
+        )
+    }
+
+    private func waitUntil(
+        _ condition: @escaping @MainActor () -> Bool
+    ) async throws {
+        while !condition() {
+            try Task.checkCancellation()
+            try await Task.sleep(nanoseconds: Self.waitPollInterval)
+        }
+    }
+
+    private func pause(for duration: TimeInterval) async throws {
+        try Task.checkCancellation()
+        try await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
+        try Task.checkCancellation()
+    }
+
+    private func prepareFileTrayPreviewItems() throws {
+        fileTrayPreviewViewModel.clear()
+        let directory = try debugPreviewDirectory()
+        let reportURL = directory.appendingPathComponent("Debug Report.txt")
+        let imageURL = directory.appendingPathComponent("Debug Image.png")
+
+        try Data("DynamicNotch debug tray preview".utf8).write(to: reportURL, options: .atomic)
+        try debugPNGData().write(to: imageURL, options: .atomic)
+        fileTrayPreviewViewModel.add([reportURL, imageURL])
+    }
+
+    private func debugPreviewDirectory() throws -> URL {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("DynamicNotch", isDirectory: true)
+            .appendingPathComponent("DebugPreviews", isDirectory: true)
+
+        try FileManager.default.createDirectory(
+            at: directory,
+            withIntermediateDirectories: true
+        )
+
+        return directory
+    }
+
+    private func debugPNGData() throws -> Data {
+        let base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII="
+
+        guard let data = Data(base64Encoded: base64) else {
+            throw NSError(
+                domain: "DynamicNotch.DebugPreview",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Could not create the debug preview image."]
+            )
+        }
+
+        return data
+    }
+
+    private func applyBluetoothPreviewState() {
+        bluetoothViewModel.isConnected = true
+        bluetoothViewModel.deviceName = "AirPods Pro"
+        bluetoothViewModel.batteryLevel = 76
+        bluetoothViewModel.deviceType = .airpodsPro
+    }
+
+    private func applyVPNPreviewState() {
+        vpnViewModel.vpnConnected = true
+        vpnViewModel.vpnName = "WireGuard Tunnel"
+        vpnViewModel.vpnConnectedAt = .now.addingTimeInterval(-513)
+    }
+
+    private func applyVPNLongTimerPreviewState() {
+        vpnViewModel.vpnConnected = true
+        vpnViewModel.vpnName = "WireGuard Tunnel"
+        vpnViewModel.vpnConnectedAt = .now.addingTimeInterval(-6120)
+    }
+
+    private func applyVPNDisconnectedPreviewState() {
+        vpnViewModel.vpnConnected = false
+        vpnViewModel.vpnName = ""
+        vpnViewModel.vpnConnectedAt = nil
+        vpnViewModel.lastVpnName = "WireGuard Tunnel"
+        vpnViewModel.lastVpnBundleID = "com.wireguard.macos"
+    }
+
+    private func applyChargingPreviewState() {
+        powerService.applyDebugState(
+            onACPower: true,
+            batteryLevel: 67,
+            isCharging: true,
+            isLowPowerMode: false
+        )
+    }
+
+    private func applyLowPowerPreviewState() {
+        powerService.applyDebugState(
+            onACPower: false,
+            batteryLevel: 14,
+            isCharging: false,
+            isLowPowerMode: false
+        )
+    }
+
+    private func applyFullBatteryPreviewState() {
+        powerService.applyDebugState(
+            onACPower: true,
+            batteryLevel: 100,
+            isCharging: false,
+            isLowPowerMode: false
+        )
+    }
+}
+#endif

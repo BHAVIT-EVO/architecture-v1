@@ -29,7 +29,7 @@ mod tests {
     fn builder_is_constructible_copy_and_default() {
         let builder = DaemonBuilder::new();
         let copied = builder;
-        let cloned = builder.clone();
+        let cloned = builder;
         let defaulted: DaemonBuilder = Default::default();
 
         assert_eq!(builder, copied);

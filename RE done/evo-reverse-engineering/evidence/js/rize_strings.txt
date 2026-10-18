@@ -1,0 +1,18 @@
+
+===== categoriz (13 unique) =====
+  [index.js] (e)},r.getComponents=function(){return e=r.props,N$(N$({},UW),e.components);var e},r.buildCategorizedOptions=function(){return IG(r.props,r.state.selectValue)},r.getCategorizedOptions=funct
+  [index.js] ;var e},r.buildCategorizedOptions=function(){return IG(r.props,r.state.selectValue)},r.getCategorizedOptions=function(){return r.props.menuIsOpen?r.buildCategorizedOptions():[]},r.buildFocu
+  [index.js] r.state.selectValue)},r.getCategorizedOptions=function(){return r.props.menuIsOpen?r.buildCategorizedOptions():[]},r.buildFocusableOptions=function(){return AG(r.buildCategorizedOptions())}
+  [index.js] sOpen?r.buildCategorizedOptions():[]},r.buildFocusableOptions=function(){return AG(r.buildCategorizedOptions())},r.getFocusableOptions=function(){return r.props.menuIsOpen?r.buildFocusableO
+
+===== focus session (14 unique) =====
+  [index.js] nction(e){f(e),c(e)});return(0,zR.jsxs)(zR.Fragment,{children:[(0,zR.jsx)(UN,{title:"Your focus session ended.",mesage:(0,zR.jsxs)(zR.Fragment,{children:["Nice work completing ",(0,zR.jsx)("b",
+  [index.js] (this,arguments)}}());return(0,zR.jsxs)(zR.Fragment,{children:[(0,zR.jsx)(UN,{title:"Your focus session started.",message:"Writing down a goal for your session helps you retain focus and preven
+  [index.js] jsxs)("b",{children:[s," meetings"]})," and"," ",(0,zR.jsxs)("b",{children:[u," scheduled focus sessions"]})," today."]})}),(0,zR.jsx)(YY,{events:a,formatTime:i})]})},XY=function(e){var t=e.not
+  [index.js] rn"";switch(t){case pO:return"for breaks";case hO:return"for meetings";default:return"for focus sessions"}};const vO=function(e){var t=e.trackingRule,n=e.sessionType,r=t.alwaysBlock,o=t.categor
+
+===== idle (514 unique) =====
+  [tesseract-core-relaxedsimd.wasm.js] AAED0hIEEAIQlBACEdQQAhGUEAIRxBACEXA0AgESAJayIWtyI5RJqZmZmZmbk/ovwCIR4gOUQAAAAAAADoP6L8AiErIDlEAAAAAAAAwD+i/AIhFAJAIAcgJkYEQEEBIRUMAQsgCSARSARAIBZBfnEhGCAWQQFxIRNBACEOIBEgCUEBakYhDSAHIQ
+  [tesseract-core-relaxedsimd-lstm.wasm.js] BkIREgABBOISYgABA+IScgABA/ISBBACEJQQAhHUEAIRlBACEcQQAhFwNAIBEgCWsiFrciOUSamZmZmZm5P6L8AiEeIDlEAAAAAAAA6D+i/AIhKyA5RAAAAAAAAMA/ovwCIRQCQCAHICZGBEBBASEVDAELIAkgEUgEQCAWQX5xIRggFkEBcSETQQ
+  [tesseract-core-relaxedsimd-lstm.wasm.js] wCCyAUQQBKICtBAE5yIBxyCyETIBgLIiJBAWoiJiAHayIvtyI5RJqZmZmZmbk/ovwCISsgOUQAAAAAAADoP6L8AiEsIDlEAAAAAAAAwD+i/AIhLiAVQQFzIBlyIRkgE0EBcyAcciEcIB0gHQJ/AkAgCSARRgRAIAcgIGwhKCARQQFrIQ5BASEYIB
+  [tesseract-core-relaxedsimd-lstm.wasm.js] ujID67oAu2lCASKgIMIj4gP5STID0gPZQgPiA+lJKRIkCVuyI7IBErAygiN6EgESsDICI4oyI5RAAAAAAAAAAAZgRAIDlEAAAAAAAA4D+g/AIMAQtBAEQAAAAAAADgPyA5ofwCawshAkEAIQUgESgCCCAEa0ECdSIGQQJPBEAgOyA4IAK3oiA3oK

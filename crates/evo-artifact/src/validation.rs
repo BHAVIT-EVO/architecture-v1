@@ -48,7 +48,7 @@ pub fn validate(candidate: &CandidateArtifact) -> Result<(), ValidationError> {
     let mut seen = HashSet::with_capacity(observations.len());
 
     for observation in observations {
-        let inserted = seen.insert(observation.id().clone());
+        let inserted = seen.insert(*observation.id());
         if !inserted {
             return Err(ValidationError::StructuralValidationFailed(
                 "candidate artifact must not reference the same observation more than once".into(),

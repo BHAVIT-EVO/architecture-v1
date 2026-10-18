@@ -1,0 +1,3003 @@
+evidence_id: ev_c1a6032dd65908bea87962dd1d78dba92a6c678fefbf3a5d702dcfcdb6512612
+subject:
+  name: ManicTime
+  digest:
+    sha256: 20c27db9ff4bf89253f016316f6dda18ba5ab350d2fa028414f3fb89f34bfa89
+  format: mach-o
+  architecture: arm64
+  local_path: /Applications/ManicTime.app/Contents/MacOS/ManicTime
+provider:
+  id: native-macos
+  name: macOS native inspection utilities
+  version: null
+predicate_type: rea.analysis
+operation: inspect_macho
+parameters:
+raw_result:
+  provenance[8]:
+    - tool: file
+      command[3]: /usr/bin/file,"-b",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: a4ba66d26a9cfdc70637c78cdacef920f94147f6aa45ccc73858e493589ef94d
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 31
+      stderr_bytes: 0
+    - tool: lipo
+      command[3]: /Library/Developer/CommandLineTools/usr/bin/lipo,"-detailed_info",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 751c4a4636efc5f4015999dc7d41be6e2552b39f8949d6eb971e958fccf0e386
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 172
+      stderr_bytes: 0
+    - tool: otool
+      command[4]: /Library/Developer/CommandLineTools/usr/bin/llvm-otool,"-h","-l",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 7febe4f134f15c4ef414413499003605e42aac955c6192ab7ab6139b79a77ace
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 55116
+      stderr_bytes: 0
+    - tool: nm
+      command[3]: /Library/Developer/CommandLineTools/usr/bin/llvm-nm,"-gjU",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 93d97ad8918dec796007159bdfe3ee60a3f4814eb80e6bd56b6012a0f5c57753
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 20336
+      stderr_bytes: 0
+    - tool: dyld_info
+      command[3]: /Library/Developer/CommandLineTools/usr/bin/dyld_info,"-imports",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 68ea34828d32464d4c754962d355dcf212d49ffb4aef71266852aab5953654ad
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 7940
+      stderr_bytes: 0
+    - tool: dyld_info
+      command[3]: /Library/Developer/CommandLineTools/usr/bin/dyld_info,"-exports",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 68ea34828d32464d4c754962d355dcf212d49ffb4aef71266852aab5953654ad
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 27439
+      stderr_bytes: 0
+    - tool: dwarfdump
+      command[3]: /Library/Developer/CommandLineTools/usr/bin/llvm-dwarfdump,"--uuid",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 1dd077fc25a9a8f4ba61f62483be226515ee7f18776b2fa97ac6191dc6fa47de
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 104
+      stderr_bytes: 0
+    - tool: vtool
+      command[3]: /Library/Developer/CommandLineTools/usr/bin/vtool,"-show-build",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: e98bb965cb748669b515a3a963e3687fab7762de1d914053e0ccbb31d998a024
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 198
+      stderr_bytes: 0
+normalized_result:
+  format: mach-o
+  endian: null
+  word_size: 64
+  file_type: "2"
+  flags[1]: 0x00a10085
+  uuid: E2602788-B833-3151-99E6-7E68129E9631
+  entrypoints:
+    items[1]{file_offset}:
+      95908
+    total: 1
+    exhaustive: true
+    limitations: []
+  architectures:
+    items[1]{name,cpu_type,cpu_subtype,file_offset,size,alignment}:
+      arm64,null,null,null,null,null
+    total: 1
+    exhaustive: true
+    limitations: []
+  build_metadata:
+    items[1]:
+      - platform: "1"
+        minimum_os: "12.0"
+        sdk: "26.5"
+        tools[1]{name,version}:
+          "3","1267.0"
+    total: 1
+    exhaustive: true
+    limitations: []
+  load_commands:
+    items[189]:
+      - index: 0
+        kind: LC_SEGMENT_64
+        fields:
+          cmd: LC_SEGMENT_64
+          cmdsize: 72
+          segname: __PAGEZERO
+          vmaddr: 0
+          vmsize: 4294967296
+          fileoff: 0
+          filesize: 0
+          maxprot: 0
+          initprot: 0
+          nsects: 0
+          flags: 0
+      - index: 1
+        kind: LC_SEGMENT_64
+        fields:
+          cmd: LC_SEGMENT_64
+          cmdsize: 1512
+          segname: __TEXT
+          vmaddr: 4294967296
+          vmsize: 1687552
+          fileoff: 0
+          filesize: 1687552
+          maxprot: 5
+          initprot: 5
+          nsects: 18
+          flags: 0
+      - index: 2
+        kind: LC_SEGMENT_64
+        fields:
+          cmd: LC_SEGMENT_64
+          cmdsize: 632
+          segname: __DATA_CONST
+          vmaddr: 4296654848
+          vmsize: 32768
+          fileoff: 1687552
+          filesize: 32768
+          maxprot: 3
+          initprot: 3
+          nsects: 7
+          flags: 16
+      - index: 3
+        kind: LC_SEGMENT_64
+        fields:
+          cmd: LC_SEGMENT_64
+          cmdsize: 1112
+          segname: __DATA
+          vmaddr: 4296687616
+          vmsize: 458752
+          fileoff: 1720320
+          filesize: 425984
+          maxprot: 3
+          initprot: 3
+          nsects: 13
+          flags: 0
+      - index: 4
+        kind: LC_SEGMENT_64
+        fields:
+          cmd: LC_SEGMENT_64
+          cmdsize: 72
+          segname: __LINKEDIT
+          vmaddr: 4297146368
+          vmsize: 2179072
+          fileoff: 2146304
+          filesize: 2169680
+          maxprot: 1
+          initprot: 1
+          nsects: 0
+          flags: 0
+      - index: 5
+        kind: LC_DYLD_CHAINED_FIXUPS
+        fields:
+          cmd: LC_DYLD_CHAINED_FIXUPS
+          cmdsize: 16
+          dataoff: 2146304
+          datasize: 3632
+      - index: 6
+        kind: LC_DYLD_EXPORTS_TRIE
+        fields:
+          cmd: LC_DYLD_EXPORTS_TRIE
+          cmdsize: 16
+          dataoff: 2149936
+          datasize: 8984
+      - index: 7
+        kind: LC_SYMTAB
+        fields:
+          cmd: LC_SYMTAB
+          cmdsize: 24
+          symoff: 2169448
+          nsyms: 54820
+          stroff: 3047472
+          strsize: 1240840
+      - index: 8
+        kind: LC_DYSYMTAB
+        fields:
+          cmd: LC_DYSYMTAB
+          cmdsize: 80
+          ilocalsym: 0
+          nlocalsym: 54302
+          iextdefsym: 54302
+          nextdefsym: 350
+          iundefsym: 54652
+          nundefsym: 168
+          tocoff: 0
+          ntoc: 0
+          modtaboff: 0
+          nmodtab: 0
+          extrefsymoff: 0
+          nextrefsyms: 0
+          indirectsymoff: 3046568
+          nindirectsyms: 226
+          extreloff: 0
+          nextrel: 0
+          locreloff: 0
+          nlocrel: 0
+      - index: 9
+        kind: LC_LOAD_DYLINKER
+        fields:
+          cmd: LC_LOAD_DYLINKER
+          cmdsize: 32
+          name: /usr/lib/dyld (offset 12)
+      - index: 10
+        kind: LC_UUID
+        fields:
+          cmd: LC_UUID
+          cmdsize: 24
+          uuid: E2602788-B833-3151-99E6-7E68129E9631
+      - index: 11
+        kind: LC_BUILD_VERSION
+        fields:
+          cmd: LC_BUILD_VERSION
+          cmdsize: 32
+          platform: 1
+          minos: "12.0"
+          sdk: "26.5"
+          ntools: 1
+          tool: 3
+          version: "1267.0"
+      - index: 12
+        kind: LC_SOURCE_VERSION
+        fields:
+          cmd: LC_SOURCE_VERSION
+          cmdsize: 16
+          version: "0.0"
+      - index: 13
+        kind: LC_MAIN
+        fields:
+          cmd: LC_MAIN
+          cmdsize: 24
+          entryoff: 95908
+          stacksize: 0
+      - index: 14
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: @executable_path/../../Contents/MonoBundle/libSystem.Globalization.Native.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 0.0.0
+          "compatibility version": 0.0.0
+      - index: 15
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 112
+          name: @executable_path/../../Contents/MonoBundle/libSystem.IO.Compression.Native.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 0.0.0
+          "compatibility version": 0.0.0
+      - index: 16
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: @executable_path/../../Contents/MonoBundle/libSystem.Native.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 0.0.0
+          "compatibility version": 0.0.0
+      - index: 17
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: @executable_path/../../Contents/MonoBundle/libSystem.Net.Security.Native.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 0.0.0
+          "compatibility version": 0.0.0
+      - index: 18
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 120
+          name: @executable_path/../../Contents/MonoBundle/libSystem.Security.Cryptography.Native.Apple.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 0.0.0
+          "compatibility version": 0.0.0
+      - index: 19
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: @executable_path/../../Contents/MonoBundle/libclrgc.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 0.0.0
+          "compatibility version": 0.0.0
+      - index: 20
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: @executable_path/../../Contents/MonoBundle/libclrgcexp.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 0.0.0
+          "compatibility version": 0.0.0
+      - index: 21
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: @executable_path/../../Contents/MonoBundle/libclrjit.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 0.0.0
+          "compatibility version": 0.0.0
+      - index: 22
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: @executable_path/../../Contents/MonoBundle/libcoreclr.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 0.0.0
+          "compatibility version": 0.0.0
+      - index: 23
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: @executable_path/../../Contents/MonoBundle/libhostfxr.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 0.0.0
+          "compatibility version": 0.0.0
+      - index: 24
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: @executable_path/../../Contents/MonoBundle/libhostpolicy.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 0.0.0
+          "compatibility version": 0.0.0
+      - index: 25
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: @executable_path/../../Contents/MonoBundle/libmscordaccore.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 0.0.0
+          "compatibility version": 0.0.0
+      - index: 26
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: @executable_path/../../Contents/MonoBundle/libmscordbi.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 0.0.0
+          "compatibility version": 0.0.0
+      - index: 27
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: @executable_path/../../Contents/MonoBundle/libgit2-3f4182d.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.8.4
+          "compatibility version": 1.8.0
+      - index: 28
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/Accelerate.framework/Versions/A/Accelerate (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 4.0.0
+          "compatibility version": 1.0.0
+      - index: 29
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/Accessibility.framework/Versions/A/Accessibility (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 30
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/Accounts.framework/Versions/A/Accounts (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 31
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/AdServices.framework/Versions/A/AdServices (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 32
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/AdSupport.framework/Versions/A/AdSupport (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 33
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/AppKit.framework/Versions/C/AppKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 2685.60.104
+          "compatibility version": 45.0.0
+      - index: 34
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 112
+          name: /System/Library/Frameworks/ApplicationServices.framework/Versions/A/ApplicationServices (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 66.0.0
+          "compatibility version": 1.0.0
+      - index: 35
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 120
+          name: /System/Library/Frameworks/AppTrackingTransparency.framework/Versions/A/AppTrackingTransparency (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 36
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/AudioToolbox.framework/Versions/A/AudioToolbox (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1000.0.0
+          "compatibility version": 1.0.0
+      - index: 37
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/AudioUnit.framework/Versions/A/AudioUnit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 38
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 120
+          name: /System/Library/Frameworks/AuthenticationServices.framework/Versions/A/AuthenticationServices (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 624.2.5
+          "compatibility version": 1.0.0
+      - index: 39
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 144
+          name: /System/Library/Frameworks/AutomaticAssessmentConfiguration.framework/Versions/A/AutomaticAssessmentConfiguration (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 0.0.0
+          "compatibility version": 0.0.0
+      - index: 40
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/AVFoundation.framework/Versions/A/AVFoundation (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 2.0.0
+          "compatibility version": 1.0.0
+      - index: 41
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/AVKit.framework/Versions/A/AVKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 42
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/BusinessChat.framework/Versions/A/BusinessChat (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 43
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/CallKit.framework/Versions/A/CallKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 44
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/CFNetwork.framework/Versions/A/CFNetwork (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 3860.255.21
+          "compatibility version": 1.0.0
+      - index: 45
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/ClassKit.framework/Versions/A/ClassKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 151.5.0
+          "compatibility version": 1.0.0
+      - index: 46
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/CloudKit.framework/Versions/A/CloudKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 2360.120.2
+          "compatibility version": 1.0.0
+      - index: 47
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/Contacts.framework/Versions/A/Contacts (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 3804.255.21
+          "compatibility version": 0.0.0
+      - index: 48
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/ContactsUI.framework/Versions/A/ContactsUI (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 2732.255.11
+          "compatibility version": 1.0.0
+      - index: 49
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/CoreAudio.framework/Versions/A/CoreAudio (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 50
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/CoreAudioKit.framework/Versions/A/CoreAudioKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 51
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/CoreBluetooth.framework/Versions/A/CoreBluetooth (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 195.7.0
+          "compatibility version": 1.0.0
+      - index: 52
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/CoreData.framework/Versions/A/CoreData (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1526.0.0
+          "compatibility version": 1.0.0
+      - index: 53
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 5026.5.4
+          "compatibility version": 150.0.0
+      - index: 54
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/CoreGraphics.framework/Versions/A/CoreGraphics (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1965.5.1
+          "compatibility version": 64.0.0
+      - index: 55
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/CoreHaptics.framework/Versions/A/CoreHaptics (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 56
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/CoreImage.framework/Versions/A/CoreImage (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 7.0.0
+          "compatibility version": 1.0.1
+      - index: 57
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/CoreLocation.framework/Versions/A/CoreLocation (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 3075.0.8
+          "compatibility version": 1.0.0
+      - index: 58
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/CoreMedia.framework/Versions/A/CoreMedia (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 3320.8.5
+          "compatibility version": 1.0.0
+      - index: 59
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/CoreMIDI.framework/Versions/A/CoreMIDI (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 69.0.0
+          "compatibility version": 1.0.0
+      - index: 60
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/CoreML.framework/Versions/A/CoreML (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 61
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/CoreMotion.framework/Versions/A/CoreMotion (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 3075.0.8
+          "compatibility version": 1.0.0
+      - index: 62
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/CoreServices.framework/Versions/A/CoreServices (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1226.0.0
+          "compatibility version": 1.0.0
+      - index: 63
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/CoreSpotlight.framework/Versions/A/CoreSpotlight (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 2418.5.9
+          "compatibility version": 1.0.0
+      - index: 64
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/CoreText.framework/Versions/A/CoreText (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 877.4.0
+          "compatibility version": 1.0.0
+      - index: 65
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/CoreVideo.framework/Versions/A/CoreVideo (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 734.4.0
+          "compatibility version": 1.2.0
+      - index: 66
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/CoreWLAN.framework/Versions/A/CoreWLAN (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 67
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/CryptoTokenKit.framework/Versions/A/CryptoTokenKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 805.120.2
+          "compatibility version": 0.0.0
+      - index: 68
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/DataDetection.framework/Versions/A/DataDetection (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 821.7.0
+          "compatibility version": 1.0.0
+      - index: 69
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/DeviceCheck.framework/Versions/A/DeviceCheck (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 70
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/EventKit.framework/Versions/A/EventKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1934.4.9
+          "compatibility version": 1.0.0
+      - index: 71
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/ExecutionPolicy.framework/Versions/A/ExecutionPolicy (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 72
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/ExternalAccessory.framework/ExternalAccessory (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 73
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/FileProvider.framework/Versions/A/FileProvider (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 4018.120.24
+          "compatibility version": 1.0.0
+      - index: 74
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/FileProviderUI.framework/Versions/A/FileProviderUI (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 56.4.1
+          "compatibility version": 1.0.0
+      - index: 75
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/FinderSync.framework/Versions/A/FinderSync (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1828.5.2
+          "compatibility version": 1.0.0
+      - index: 76
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/Foundation.framework/Versions/C/Foundation (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 5026.5.4
+          "compatibility version": 300.0.0
+      - index: 77
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/GameController.framework/Versions/A/GameController (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 13.5.1
+          "compatibility version": 1.0.0
+      - index: 78
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/GameKit.framework/Versions/A/GameKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 820.5.18
+          "compatibility version": 1.0.0
+      - index: 79
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/GameplayKit.framework/Versions/A/GameplayKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 101.4.1
+          "compatibility version": 1.0.0
+      - index: 80
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/GLKit.framework/Versions/A/GLKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 129.0.0
+          "compatibility version": 1.0.0
+      - index: 81
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 112
+          name: /System/Library/Frameworks/ImageCaptureCore.framework/Versions/A/ImageCaptureCore (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 82
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/ImageIO.framework/Versions/A/ImageIO (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 83
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/Intents.framework/Versions/A/Intents (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 84
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/IntentsUI.framework/Versions/A/IntentsUI (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 85
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/IOKit.framework/Versions/A/IOKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 275.0.0
+          "compatibility version": 1.0.0
+      - index: 86
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/IOSurface.framework/Versions/A/IOSurface (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 87
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/iTunesLibrary.framework/Versions/A/iTunesLibrary (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 0.0.0
+          "compatibility version": 0.0.0
+      - index: 88
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/JavaScriptCore.framework/Versions/A/JavaScriptCore (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 624.2.5
+          "compatibility version": 1.0.0
+      - index: 89
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 112
+          name: /System/Library/Frameworks/LinkPresentation.framework/Versions/A/LinkPresentation (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 296.11.0
+          "compatibility version": 1.0.0
+      - index: 90
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 112
+          name: /System/Library/Frameworks/LocalAuthentication.framework/Versions/A/LocalAuthentication (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 2005.121.1
+          "compatibility version": 1.0.0
+      - index: 91
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 136
+          name: /System/Library/Frameworks/LocalAuthenticationEmbeddedUI.framework/Versions/A/LocalAuthenticationEmbeddedUI (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 2005.121.1
+          "compatibility version": 1.0.0
+      - index: 92
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/MailKit.framework/Versions/A/MailKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 3864.255.51
+          "compatibility version": 1.0.0
+      - index: 93
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/MapKit.framework/Versions/A/MapKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 0.0.0
+          "compatibility version": 1.0.0
+      - index: 94
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 112
+          name: /System/Library/Frameworks/MediaAccessibility.framework/Versions/A/MediaAccessibility (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 62.0.0
+          "compatibility version": 1.0.0
+      - index: 95
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/MediaLibrary.framework/Versions/A/MediaLibrary (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 812.0.0
+          "compatibility version": 1.0.0
+      - index: 96
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/MediaPlayer.framework/Versions/A/MediaPlayer (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 97
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/MediaToolbox.framework/Versions/A/MediaToolbox (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 3320.8.5
+          "compatibility version": 1.0.0
+      - index: 98
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/Metal.framework/Versions/A/Metal (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 373.2.0
+          "compatibility version": 1.0.0
+      - index: 99
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/MetalKit.framework/Versions/A/MetalKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 173.7.0
+          "compatibility version": 1.0.0
+      - index: 100
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 120
+          name: /System/Library/Frameworks/MetalPerformanceShaders.framework/Versions/A/MetalPerformanceShaders (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 129.5.1
+          "compatibility version": 1.0.0
+      - index: 101
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 136
+          name: /System/Library/Frameworks/MetalPerformanceShadersGraph.framework/Versions/A/MetalPerformanceShadersGraph (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 102
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/MetricKit.framework/Versions/A/MetricKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 103
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/MLCompute.framework/Versions/A/MLCompute (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 104
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/ModelIO.framework/Versions/A/ModelIO (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 268.2.2
+          "compatibility version": 1.0.0
+      - index: 105
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 120
+          name: /System/Library/Frameworks/MultipeerConnectivity.framework/Versions/A/MultipeerConnectivity (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 179.255.1
+          "compatibility version": 1.0.0
+      - index: 106
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/NaturalLanguage.framework/Versions/A/NaturalLanguage (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 114.0.0
+          "compatibility version": 1.0.0
+      - index: 107
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 112
+          name: /System/Library/Frameworks/NearbyInteraction.framework/Versions/A/NearbyInteraction (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 0.0.0
+          "compatibility version": 0.0.0
+      - index: 108
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/Network.framework/Versions/A/Network (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 5812.121.1
+          "compatibility version": 1.0.0
+      - index: 109
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 112
+          name: /System/Library/Frameworks/NetworkExtension.framework/Versions/A/NetworkExtension (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 110
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 112
+          name: /System/Library/Frameworks/NotificationCenter.framework/Versions/A/NotificationCenter (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1553.4.18
+          "compatibility version": 1.0.0
+      - index: 111
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/OpenGL.framework/Versions/A/OpenGL (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 112
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/OSLog.framework/Versions/A/OSLog (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1861.120.4
+          "compatibility version": 1.0.0
+      - index: 113
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/PassKit.framework/Versions/A/PassKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 114
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/PencilKit.framework/Versions/A/PencilKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 115
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/PHASE.framework/Versions/A/PHASE (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 349.255.0
+          "compatibility version": 1.0.0
+      - index: 116
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/Photos.framework/Versions/A/Photos (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 851.0.102
+          "compatibility version": 1.0.0
+      - index: 117
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/PhotosUI.framework/Versions/A/PhotosUI (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 851.0.102
+          "compatibility version": 1.0.0
+      - index: 118
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/PushKit.framework/Versions/A/PushKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 119
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/Quartz.framework/Versions/A/Quartz (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 120
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/QuartzCore.framework/Versions/A/QuartzCore (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1195.14.4
+          "compatibility version": 1.2.0
+      - index: 121
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/QuickLook.framework/Versions/A/QuickLook (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 0.0.0
+          "compatibility version": 1.0.0
+      - index: 122
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 120
+          name: /System/Library/Frameworks/QuickLookThumbnailing.framework/Versions/A/QuickLookThumbnailing (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 0.0.0
+          "compatibility version": 1.0.0
+      - index: 123
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/ReplayKit.framework/Versions/A/ReplayKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 124
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/SafariServices.framework/Versions/A/SafariServices (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 624.2.5
+          "compatibility version": 535.0.0
+      - index: 125
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/SceneKit.framework/Versions/A/SceneKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 608.255.0
+          "compatibility version": 1.0.0
+      - index: 126
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/ScreenTime.framework/Versions/A/ScreenTime (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 605.5.10
+          "compatibility version": 1.0.0
+      - index: 127
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/ScriptingBridge.framework/Versions/A/ScriptingBridge (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 128
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/Security.framework/Versions/A/Security (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 61901.120.67
+          "compatibility version": 1.0.0
+      - index: 129
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 112
+          name: /System/Library/Frameworks/ServiceManagement.framework/Versions/A/ServiceManagement (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 3102.120.13
+          "compatibility version": 1.0.0
+      - index: 130
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/ShazamKit.framework/Versions/A/ShazamKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 131
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/Social.framework/Versions/A/Social (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 772.0.0
+          "compatibility version": 1.0.0
+      - index: 132
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/SoundAnalysis.framework/Versions/A/SoundAnalysis (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 133
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/Speech.framework/Versions/A/Speech (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 134
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/SpriteKit.framework/Versions/A/SpriteKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 52.4.1
+          "compatibility version": 1.0.0
+      - index: 135
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/StoreKit.framework/Versions/A/StoreKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 379.0.0
+          "compatibility version": 1.0.0
+      - index: 136
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 112
+          name: /System/Library/Frameworks/SystemConfiguration.framework/Versions/A/SystemConfiguration (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1405.120.5
+          "compatibility version": 1.0.0
+      - index: 137
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 120
+          name: /System/Library/Frameworks/UniformTypeIdentifiers.framework/Versions/A/UniformTypeIdentifiers (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 709.0.0
+          "compatibility version": 1.0.0
+      - index: 138
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 112
+          name: /System/Library/Frameworks/UserNotifications.framework/Versions/A/UserNotifications (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 139
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 112
+          name: /System/Library/Frameworks/UserNotificationsUI.framework/Versions/A/UserNotificationsUI (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 140
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 120
+          name: /System/Library/Frameworks/VideoSubscriberAccount.framework/Versions/A/VideoSubscriberAccount (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 593.50.1
+          "compatibility version": 1.0.0
+      - index: 141
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/VideoToolbox.framework/Versions/A/VideoToolbox (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 3320.8.5
+          "compatibility version": 1.0.0
+      - index: 142
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/Vision.framework/Versions/A/Vision (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 9.5.4
+          "compatibility version": 1.0.0
+      - index: 143
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/WebKit.framework/Versions/A/WebKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 624.2.5
+          "compatibility version": 1.0.0
+      - index: 144
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/AVRouting.framework/Versions/A/AVRouting (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 145
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 112
+          name: /System/Library/Frameworks/BackgroundAssets.framework/Versions/A/BackgroundAssets (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 146
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/Cinematic.framework/Versions/A/Cinematic (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 147
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 128
+          name: /System/Library/Frameworks/DeviceDiscoveryExtension.framework/Versions/A/DeviceDiscoveryExtension (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 148
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/ExtensionKit.framework/Versions/A/ExtensionKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 97.0.0
+          "compatibility version": 1.0.0
+      - index: 149
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/FSKit.framework/Versions/A/FSKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 150
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/GameSave.framework/Versions/A/GameSave (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 151
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/HealthKit.framework/Versions/A/HealthKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 152
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/MediaExtension.framework/Versions/A/MediaExtension (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 3320.8.5
+          "compatibility version": 0.0.0
+      - index: 153
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/MetalFX.framework/Versions/A/MetalFX (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 154
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/SafetyKit.framework/Versions/A/SafetyKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 0.0.0
+          "compatibility version": 0.0.0
+      - index: 155
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 112
+          name: /System/Library/Frameworks/ScreenCaptureKit.framework/Versions/A/ScreenCaptureKit (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 156
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 96
+          name: /System/Library/Frameworks/SecurityUI.framework/Versions/A/SecurityUI (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 157
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 128
+          name: /System/Library/Frameworks/SensitiveContentAnalysis.framework/Versions/A/SensitiveContentAnalysis (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 158
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/SharedWithYou.framework/Versions/A/SharedWithYou (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 159
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 112
+          name: /System/Library/Frameworks/SharedWithYouCore.framework/Versions/A/SharedWithYouCore (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 160
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 88
+          name: /System/Library/Frameworks/Symbols.framework/Versions/A/Symbols (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 190.4.0
+          "compatibility version": 1.0.0
+      - index: 161
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 104
+          name: /System/Library/Frameworks/ThreadNetwork.framework/Versions/A/ThreadNetwork (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 162
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 56
+          name: /usr/lib/libcompression.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 163
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 48
+          name: /usr/lib/libz.1.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.2.12
+          "compatibility version": 1.0.0
+      - index: 164
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 56
+          name: /usr/lib/libiconv.2.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 7.0.0
+          "compatibility version": 7.0.0
+      - index: 165
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 56
+          name: /usr/lib/libicucore.A.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 78.1.0
+          "compatibility version": 1.0.0
+      - index: 166
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 56
+          name: /usr/lib/libobjc.A.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 228.0.0
+          "compatibility version": 1.0.0
+      - index: 167
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 48
+          name: /usr/lib/libc++.1.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 2100.43.0
+          "compatibility version": 1.0.0
+      - index: 168
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 56
+          name: /usr/lib/libSystem.B.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1356.0.0
+          "compatibility version": 1.0.0
+      - index: 169
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 64
+          name: /usr/lib/swift/libswiftCore.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 0.0.0
+          "compatibility version": 0.0.0
+      - index: 170
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 72
+          name: /usr/lib/swift/libswiftCoreFoundation.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 120.100.0
+          "compatibility version": 1.0.0
+      - index: 171
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 64
+          name: /usr/lib/swift/libswiftCoreImage.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 2.2.0
+          "compatibility version": 1.0.0
+      - index: 172
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 64
+          name: /usr/lib/swift/libswiftDarwin.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 377.120.8
+          "compatibility version": 1.0.0
+      - index: 173
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 64
+          name: /usr/lib/swift/libswiftDispatch.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1542.100.32
+          "compatibility version": 1.0.0
+      - index: 174
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 64
+          name: /usr/lib/swift/libswiftIOKit.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 175
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 64
+          name: /usr/lib/swift/libswiftMetal.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 373.2.0
+          "compatibility version": 1.0.0
+      - index: 176
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 64
+          name: /usr/lib/swift/libswiftOSLog.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 10.0.0
+          "compatibility version": 1.0.0
+      - index: 177
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 64
+          name: /usr/lib/swift/libswiftObjectiveC.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 951.7.0
+          "compatibility version": 1.0.0
+      - index: 178
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 64
+          name: /usr/lib/swift/libswiftQuartzCore.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 5.0.0
+          "compatibility version": 1.0.0
+      - index: 179
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 64
+          name: /usr/lib/swift/libswiftSpatial.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 180
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 80
+          name: /usr/lib/swift/libswiftUniformTypeIdentifiers.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 877.5.1
+          "compatibility version": 1.0.0
+      - index: 181
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 64
+          name: /usr/lib/swift/libswiftXPC.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 128.120.2
+          "compatibility version": 1.0.0
+      - index: 182
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 56
+          name: /usr/lib/swift/libswiftos.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1082.0.0
+          "compatibility version": 1.0.0
+      - index: 183
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 64
+          name: /usr/lib/swift/libswiftsimd.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 23.0.0
+          "compatibility version": 1.0.0
+      - index: 184
+        kind: LC_LOAD_WEAK_DYLIB
+        fields:
+          cmd: LC_LOAD_WEAK_DYLIB
+          cmdsize: 64
+          name: /usr/lib/swift/libswiftFoundation.dylib (offset 24)
+          "time stamp": "2 Thu Jan  1 05:30:02 1970"
+          "current version": 1.0.0
+          "compatibility version": 1.0.0
+      - index: 185
+        kind: LC_RPATH
+        fields:
+          cmd: LC_RPATH
+          cmdsize: 48
+          path: @executable_path/../MonoBundle/ (offset 12)
+      - index: 186
+        kind: LC_FUNCTION_STARTS
+        fields:
+          cmd: LC_FUNCTION_STARTS
+          cmdsize: 16
+          dataoff: 2158920
+          datasize: 10528
+      - index: 187
+        kind: LC_DATA_IN_CODE
+        fields:
+          cmd: LC_DATA_IN_CODE
+          cmdsize: 16
+          dataoff: 2169448
+          datasize: 0
+      - index: 188
+        kind: LC_CODE_SIGNATURE
+        fields:
+          cmd: LC_CODE_SIGNATURE
+          cmdsize: 16
+          dataoff: 4288320
+          datasize: 27664
+    total: 189
+    exhaustive: true
+    limitations: []
+  dependencies:
+    items[172]{path,kind,current_version,compatibility_version}:
+      /usr/lib/dyld,LC_LOAD_DYLINKER,null,null
+      @executable_path/../../Contents/MonoBundle/libSystem.Globalization.Native.dylib,LC_LOAD_DYLIB,0.0.0,0.0.0
+      @executable_path/../../Contents/MonoBundle/libSystem.IO.Compression.Native.dylib,LC_LOAD_DYLIB,0.0.0,0.0.0
+      @executable_path/../../Contents/MonoBundle/libSystem.Native.dylib,LC_LOAD_DYLIB,0.0.0,0.0.0
+      @executable_path/../../Contents/MonoBundle/libSystem.Net.Security.Native.dylib,LC_LOAD_DYLIB,0.0.0,0.0.0
+      @executable_path/../../Contents/MonoBundle/libSystem.Security.Cryptography.Native.Apple.dylib,LC_LOAD_DYLIB,0.0.0,0.0.0
+      @executable_path/../../Contents/MonoBundle/libclrgc.dylib,LC_LOAD_DYLIB,0.0.0,0.0.0
+      @executable_path/../../Contents/MonoBundle/libclrgcexp.dylib,LC_LOAD_DYLIB,0.0.0,0.0.0
+      @executable_path/../../Contents/MonoBundle/libclrjit.dylib,LC_LOAD_DYLIB,0.0.0,0.0.0
+      @executable_path/../../Contents/MonoBundle/libcoreclr.dylib,LC_LOAD_DYLIB,0.0.0,0.0.0
+      @executable_path/../../Contents/MonoBundle/libhostfxr.dylib,LC_LOAD_DYLIB,0.0.0,0.0.0
+      @executable_path/../../Contents/MonoBundle/libhostpolicy.dylib,LC_LOAD_DYLIB,0.0.0,0.0.0
+      @executable_path/../../Contents/MonoBundle/libmscordaccore.dylib,LC_LOAD_DYLIB,0.0.0,0.0.0
+      @executable_path/../../Contents/MonoBundle/libmscordbi.dylib,LC_LOAD_DYLIB,0.0.0,0.0.0
+      @executable_path/../../Contents/MonoBundle/libgit2-3f4182d.dylib,LC_LOAD_DYLIB,1.8.4,1.8.0
+      /System/Library/Frameworks/Accelerate.framework/Versions/A/Accelerate,LC_LOAD_DYLIB,4.0.0,1.0.0
+      /System/Library/Frameworks/Accessibility.framework/Versions/A/Accessibility,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/Accounts.framework/Versions/A/Accounts,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/AdServices.framework/Versions/A/AdServices,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/AdSupport.framework/Versions/A/AdSupport,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/AppKit.framework/Versions/C/AppKit,LC_LOAD_DYLIB,2685.60.104,45.0.0
+      /System/Library/Frameworks/ApplicationServices.framework/Versions/A/ApplicationServices,LC_LOAD_DYLIB,66.0.0,1.0.0
+      /System/Library/Frameworks/AppTrackingTransparency.framework/Versions/A/AppTrackingTransparency,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/AudioToolbox.framework/Versions/A/AudioToolbox,LC_LOAD_DYLIB,1000.0.0,1.0.0
+      /System/Library/Frameworks/AudioUnit.framework/Versions/A/AudioUnit,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/AuthenticationServices.framework/Versions/A/AuthenticationServices,LC_LOAD_DYLIB,624.2.5,1.0.0
+      /System/Library/Frameworks/AutomaticAssessmentConfiguration.framework/Versions/A/AutomaticAssessmentConfiguration,LC_LOAD_DYLIB,0.0.0,0.0.0
+      /System/Library/Frameworks/AVFoundation.framework/Versions/A/AVFoundation,LC_LOAD_DYLIB,2.0.0,1.0.0
+      /System/Library/Frameworks/AVKit.framework/Versions/A/AVKit,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/BusinessChat.framework/Versions/A/BusinessChat,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/CallKit.framework/Versions/A/CallKit,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/CFNetwork.framework/Versions/A/CFNetwork,LC_LOAD_DYLIB,3860.255.21,1.0.0
+      /System/Library/Frameworks/ClassKit.framework/Versions/A/ClassKit,LC_LOAD_DYLIB,151.5.0,1.0.0
+      /System/Library/Frameworks/CloudKit.framework/Versions/A/CloudKit,LC_LOAD_DYLIB,2360.120.2,1.0.0
+      /System/Library/Frameworks/Contacts.framework/Versions/A/Contacts,LC_LOAD_DYLIB,3804.255.21,0.0.0
+      /System/Library/Frameworks/ContactsUI.framework/Versions/A/ContactsUI,LC_LOAD_DYLIB,2732.255.11,1.0.0
+      /System/Library/Frameworks/CoreAudio.framework/Versions/A/CoreAudio,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/CoreAudioKit.framework/Versions/A/CoreAudioKit,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/CoreBluetooth.framework/Versions/A/CoreBluetooth,LC_LOAD_DYLIB,195.7.0,1.0.0
+      /System/Library/Frameworks/CoreData.framework/Versions/A/CoreData,LC_LOAD_DYLIB,1526.0.0,1.0.0
+      /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation,LC_LOAD_DYLIB,5026.5.4,150.0.0
+      /System/Library/Frameworks/CoreGraphics.framework/Versions/A/CoreGraphics,LC_LOAD_DYLIB,1965.5.1,64.0.0
+      /System/Library/Frameworks/CoreHaptics.framework/Versions/A/CoreHaptics,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/CoreImage.framework/Versions/A/CoreImage,LC_LOAD_DYLIB,7.0.0,1.0.1
+      /System/Library/Frameworks/CoreLocation.framework/Versions/A/CoreLocation,LC_LOAD_DYLIB,3075.0.8,1.0.0
+      /System/Library/Frameworks/CoreMedia.framework/Versions/A/CoreMedia,LC_LOAD_DYLIB,3320.8.5,1.0.0
+      /System/Library/Frameworks/CoreMIDI.framework/Versions/A/CoreMIDI,LC_LOAD_DYLIB,69.0.0,1.0.0
+      /System/Library/Frameworks/CoreML.framework/Versions/A/CoreML,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/CoreMotion.framework/Versions/A/CoreMotion,LC_LOAD_DYLIB,3075.0.8,1.0.0
+      /System/Library/Frameworks/CoreServices.framework/Versions/A/CoreServices,LC_LOAD_DYLIB,1226.0.0,1.0.0
+      /System/Library/Frameworks/CoreSpotlight.framework/Versions/A/CoreSpotlight,LC_LOAD_DYLIB,2418.5.9,1.0.0
+      /System/Library/Frameworks/CoreText.framework/Versions/A/CoreText,LC_LOAD_DYLIB,877.4.0,1.0.0
+      /System/Library/Frameworks/CoreVideo.framework/Versions/A/CoreVideo,LC_LOAD_DYLIB,734.4.0,1.2.0
+      /System/Library/Frameworks/CoreWLAN.framework/Versions/A/CoreWLAN,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/CryptoTokenKit.framework/Versions/A/CryptoTokenKit,LC_LOAD_DYLIB,805.120.2,0.0.0
+      /System/Library/Frameworks/DataDetection.framework/Versions/A/DataDetection,LC_LOAD_DYLIB,821.7.0,1.0.0
+      /System/Library/Frameworks/DeviceCheck.framework/Versions/A/DeviceCheck,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/EventKit.framework/Versions/A/EventKit,LC_LOAD_DYLIB,1934.4.9,1.0.0
+      /System/Library/Frameworks/ExecutionPolicy.framework/Versions/A/ExecutionPolicy,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/ExternalAccessory.framework/ExternalAccessory,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/FileProvider.framework/Versions/A/FileProvider,LC_LOAD_DYLIB,4018.120.24,1.0.0
+      /System/Library/Frameworks/FileProviderUI.framework/Versions/A/FileProviderUI,LC_LOAD_DYLIB,56.4.1,1.0.0
+      /System/Library/Frameworks/FinderSync.framework/Versions/A/FinderSync,LC_LOAD_DYLIB,1828.5.2,1.0.0
+      /System/Library/Frameworks/Foundation.framework/Versions/C/Foundation,LC_LOAD_DYLIB,5026.5.4,300.0.0
+      /System/Library/Frameworks/GameController.framework/Versions/A/GameController,LC_LOAD_DYLIB,13.5.1,1.0.0
+      /System/Library/Frameworks/GameKit.framework/Versions/A/GameKit,LC_LOAD_DYLIB,820.5.18,1.0.0
+      /System/Library/Frameworks/GameplayKit.framework/Versions/A/GameplayKit,LC_LOAD_DYLIB,101.4.1,1.0.0
+      /System/Library/Frameworks/GLKit.framework/Versions/A/GLKit,LC_LOAD_DYLIB,129.0.0,1.0.0
+      /System/Library/Frameworks/ImageCaptureCore.framework/Versions/A/ImageCaptureCore,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/ImageIO.framework/Versions/A/ImageIO,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/Intents.framework/Versions/A/Intents,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/IntentsUI.framework/Versions/A/IntentsUI,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/IOKit.framework/Versions/A/IOKit,LC_LOAD_DYLIB,275.0.0,1.0.0
+      /System/Library/Frameworks/IOSurface.framework/Versions/A/IOSurface,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/iTunesLibrary.framework/Versions/A/iTunesLibrary,LC_LOAD_DYLIB,0.0.0,0.0.0
+      /System/Library/Frameworks/JavaScriptCore.framework/Versions/A/JavaScriptCore,LC_LOAD_DYLIB,624.2.5,1.0.0
+      /System/Library/Frameworks/LinkPresentation.framework/Versions/A/LinkPresentation,LC_LOAD_DYLIB,296.11.0,1.0.0
+      /System/Library/Frameworks/LocalAuthentication.framework/Versions/A/LocalAuthentication,LC_LOAD_DYLIB,2005.121.1,1.0.0
+      /System/Library/Frameworks/LocalAuthenticationEmbeddedUI.framework/Versions/A/LocalAuthenticationEmbeddedUI,LC_LOAD_DYLIB,2005.121.1,1.0.0
+      /System/Library/Frameworks/MailKit.framework/Versions/A/MailKit,LC_LOAD_DYLIB,3864.255.51,1.0.0
+      /System/Library/Frameworks/MapKit.framework/Versions/A/MapKit,LC_LOAD_DYLIB,0.0.0,1.0.0
+      /System/Library/Frameworks/MediaAccessibility.framework/Versions/A/MediaAccessibility,LC_LOAD_DYLIB,62.0.0,1.0.0
+      /System/Library/Frameworks/MediaLibrary.framework/Versions/A/MediaLibrary,LC_LOAD_DYLIB,812.0.0,1.0.0
+      /System/Library/Frameworks/MediaPlayer.framework/Versions/A/MediaPlayer,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/MediaToolbox.framework/Versions/A/MediaToolbox,LC_LOAD_DYLIB,3320.8.5,1.0.0
+      /System/Library/Frameworks/Metal.framework/Versions/A/Metal,LC_LOAD_DYLIB,373.2.0,1.0.0
+      /System/Library/Frameworks/MetalKit.framework/Versions/A/MetalKit,LC_LOAD_DYLIB,173.7.0,1.0.0
+      /System/Library/Frameworks/MetalPerformanceShaders.framework/Versions/A/MetalPerformanceShaders,LC_LOAD_DYLIB,129.5.1,1.0.0
+      /System/Library/Frameworks/MetalPerformanceShadersGraph.framework/Versions/A/MetalPerformanceShadersGraph,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/MetricKit.framework/Versions/A/MetricKit,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/MLCompute.framework/Versions/A/MLCompute,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/ModelIO.framework/Versions/A/ModelIO,LC_LOAD_DYLIB,268.2.2,1.0.0
+      /System/Library/Frameworks/MultipeerConnectivity.framework/Versions/A/MultipeerConnectivity,LC_LOAD_DYLIB,179.255.1,1.0.0
+      /System/Library/Frameworks/NaturalLanguage.framework/Versions/A/NaturalLanguage,LC_LOAD_DYLIB,114.0.0,1.0.0
+      /System/Library/Frameworks/NearbyInteraction.framework/Versions/A/NearbyInteraction,LC_LOAD_DYLIB,0.0.0,0.0.0
+      /System/Library/Frameworks/Network.framework/Versions/A/Network,LC_LOAD_DYLIB,5812.121.1,1.0.0
+      /System/Library/Frameworks/NetworkExtension.framework/Versions/A/NetworkExtension,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/NotificationCenter.framework/Versions/A/NotificationCenter,LC_LOAD_DYLIB,1553.4.18,1.0.0
+      /System/Library/Frameworks/OpenGL.framework/Versions/A/OpenGL,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/OSLog.framework/Versions/A/OSLog,LC_LOAD_DYLIB,1861.120.4,1.0.0
+      /System/Library/Frameworks/PassKit.framework/Versions/A/PassKit,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/PencilKit.framework/Versions/A/PencilKit,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/PHASE.framework/Versions/A/PHASE,LC_LOAD_DYLIB,349.255.0,1.0.0
+      /System/Library/Frameworks/Photos.framework/Versions/A/Photos,LC_LOAD_DYLIB,851.0.102,1.0.0
+      /System/Library/Frameworks/PhotosUI.framework/Versions/A/PhotosUI,LC_LOAD_DYLIB,851.0.102,1.0.0
+      /System/Library/Frameworks/PushKit.framework/Versions/A/PushKit,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/Quartz.framework/Versions/A/Quartz,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/QuartzCore.framework/Versions/A/QuartzCore,LC_LOAD_DYLIB,1195.14.4,1.2.0
+      /System/Library/Frameworks/QuickLook.framework/Versions/A/QuickLook,LC_LOAD_DYLIB,0.0.0,1.0.0
+      /System/Library/Frameworks/QuickLookThumbnailing.framework/Versions/A/QuickLookThumbnailing,LC_LOAD_DYLIB,0.0.0,1.0.0
+      /System/Library/Frameworks/ReplayKit.framework/Versions/A/ReplayKit,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/SafariServices.framework/Versions/A/SafariServices,LC_LOAD_DYLIB,624.2.5,535.0.0
+      /System/Library/Frameworks/SceneKit.framework/Versions/A/SceneKit,LC_LOAD_DYLIB,608.255.0,1.0.0
+      /System/Library/Frameworks/ScreenTime.framework/Versions/A/ScreenTime,LC_LOAD_DYLIB,605.5.10,1.0.0
+      /System/Library/Frameworks/ScriptingBridge.framework/Versions/A/ScriptingBridge,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/Security.framework/Versions/A/Security,LC_LOAD_DYLIB,61901.120.67,1.0.0
+      /System/Library/Frameworks/ServiceManagement.framework/Versions/A/ServiceManagement,LC_LOAD_DYLIB,3102.120.13,1.0.0
+      /System/Library/Frameworks/ShazamKit.framework/Versions/A/ShazamKit,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/Social.framework/Versions/A/Social,LC_LOAD_DYLIB,772.0.0,1.0.0
+      /System/Library/Frameworks/SoundAnalysis.framework/Versions/A/SoundAnalysis,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/Speech.framework/Versions/A/Speech,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/SpriteKit.framework/Versions/A/SpriteKit,LC_LOAD_DYLIB,52.4.1,1.0.0
+      /System/Library/Frameworks/StoreKit.framework/Versions/A/StoreKit,LC_LOAD_WEAK_DYLIB,379.0.0,1.0.0
+      /System/Library/Frameworks/SystemConfiguration.framework/Versions/A/SystemConfiguration,LC_LOAD_DYLIB,1405.120.5,1.0.0
+      /System/Library/Frameworks/UniformTypeIdentifiers.framework/Versions/A/UniformTypeIdentifiers,LC_LOAD_DYLIB,709.0.0,1.0.0
+      /System/Library/Frameworks/UserNotifications.framework/Versions/A/UserNotifications,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/UserNotificationsUI.framework/Versions/A/UserNotificationsUI,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/VideoSubscriberAccount.framework/Versions/A/VideoSubscriberAccount,LC_LOAD_DYLIB,593.50.1,1.0.0
+      /System/Library/Frameworks/VideoToolbox.framework/Versions/A/VideoToolbox,LC_LOAD_DYLIB,3320.8.5,1.0.0
+      /System/Library/Frameworks/Vision.framework/Versions/A/Vision,LC_LOAD_DYLIB,9.5.4,1.0.0
+      /System/Library/Frameworks/WebKit.framework/Versions/A/WebKit,LC_LOAD_DYLIB,624.2.5,1.0.0
+      /System/Library/Frameworks/AVRouting.framework/Versions/A/AVRouting,LC_LOAD_WEAK_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/BackgroundAssets.framework/Versions/A/BackgroundAssets,LC_LOAD_WEAK_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/Cinematic.framework/Versions/A/Cinematic,LC_LOAD_WEAK_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/DeviceDiscoveryExtension.framework/Versions/A/DeviceDiscoveryExtension,LC_LOAD_WEAK_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/ExtensionKit.framework/Versions/A/ExtensionKit,LC_LOAD_WEAK_DYLIB,97.0.0,1.0.0
+      /System/Library/Frameworks/FSKit.framework/Versions/A/FSKit,LC_LOAD_WEAK_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/GameSave.framework/Versions/A/GameSave,LC_LOAD_WEAK_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/HealthKit.framework/Versions/A/HealthKit,LC_LOAD_WEAK_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/MediaExtension.framework/Versions/A/MediaExtension,LC_LOAD_WEAK_DYLIB,3320.8.5,0.0.0
+      /System/Library/Frameworks/MetalFX.framework/Versions/A/MetalFX,LC_LOAD_WEAK_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/SafetyKit.framework/Versions/A/SafetyKit,LC_LOAD_WEAK_DYLIB,0.0.0,0.0.0
+      /System/Library/Frameworks/ScreenCaptureKit.framework/Versions/A/ScreenCaptureKit,LC_LOAD_WEAK_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/SecurityUI.framework/Versions/A/SecurityUI,LC_LOAD_WEAK_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/SensitiveContentAnalysis.framework/Versions/A/SensitiveContentAnalysis,LC_LOAD_WEAK_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/SharedWithYou.framework/Versions/A/SharedWithYou,LC_LOAD_WEAK_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/SharedWithYouCore.framework/Versions/A/SharedWithYouCore,LC_LOAD_WEAK_DYLIB,1.0.0,1.0.0
+      /System/Library/Frameworks/Symbols.framework/Versions/A/Symbols,LC_LOAD_WEAK_DYLIB,190.4.0,1.0.0
+      /System/Library/Frameworks/ThreadNetwork.framework/Versions/A/ThreadNetwork,LC_LOAD_WEAK_DYLIB,1.0.0,1.0.0
+      /usr/lib/libcompression.dylib,LC_LOAD_DYLIB,1.0.0,1.0.0
+      /usr/lib/libz.1.dylib,LC_LOAD_DYLIB,1.2.12,1.0.0
+      /usr/lib/libiconv.2.dylib,LC_LOAD_DYLIB,7.0.0,7.0.0
+      /usr/lib/libicucore.A.dylib,LC_LOAD_DYLIB,78.1.0,1.0.0
+      /usr/lib/libobjc.A.dylib,LC_LOAD_DYLIB,228.0.0,1.0.0
+      /usr/lib/libc++.1.dylib,LC_LOAD_DYLIB,2100.43.0,1.0.0
+      /usr/lib/libSystem.B.dylib,LC_LOAD_DYLIB,1356.0.0,1.0.0
+      /usr/lib/swift/libswiftCore.dylib,LC_LOAD_DYLIB,0.0.0,0.0.0
+      /usr/lib/swift/libswiftCoreFoundation.dylib,LC_LOAD_WEAK_DYLIB,120.100.0,1.0.0
+      /usr/lib/swift/libswiftCoreImage.dylib,LC_LOAD_WEAK_DYLIB,2.2.0,1.0.0
+      /usr/lib/swift/libswiftDarwin.dylib,LC_LOAD_WEAK_DYLIB,377.120.8,1.0.0
+      /usr/lib/swift/libswiftDispatch.dylib,LC_LOAD_WEAK_DYLIB,1542.100.32,1.0.0
+      /usr/lib/swift/libswiftIOKit.dylib,LC_LOAD_WEAK_DYLIB,1.0.0,1.0.0
+      /usr/lib/swift/libswiftMetal.dylib,LC_LOAD_WEAK_DYLIB,373.2.0,1.0.0
+      /usr/lib/swift/libswiftOSLog.dylib,LC_LOAD_WEAK_DYLIB,10.0.0,1.0.0
+      /usr/lib/swift/libswiftObjectiveC.dylib,LC_LOAD_WEAK_DYLIB,951.7.0,1.0.0
+      /usr/lib/swift/libswiftQuartzCore.dylib,LC_LOAD_WEAK_DYLIB,5.0.0,1.0.0
+      /usr/lib/swift/libswiftSpatial.dylib,LC_LOAD_WEAK_DYLIB,1.0.0,1.0.0
+      /usr/lib/swift/libswiftUniformTypeIdentifiers.dylib,LC_LOAD_WEAK_DYLIB,877.5.1,1.0.0
+      /usr/lib/swift/libswiftXPC.dylib,LC_LOAD_WEAK_DYLIB,128.120.2,1.0.0
+      /usr/lib/swift/libswiftos.dylib,LC_LOAD_WEAK_DYLIB,1082.0.0,1.0.0
+      /usr/lib/swift/libswiftsimd.dylib,LC_LOAD_WEAK_DYLIB,23.0.0,1.0.0
+      /usr/lib/swift/libswiftFoundation.dylib,LC_LOAD_WEAK_DYLIB,1.0.0,1.0.0
+    total: 172
+    exhaustive: true
+    limitations: []
+  imports:
+    items[153]{name,address,weak,reexport,source}:
+      _coreclr_create_delegate,null,null,null,libcoreclr
+      _coreclr_execute_assembly,null,null,null,libcoreclr
+      _coreclr_initialize,null,null,null,libcoreclr
+      _CFDictionaryCreateMutable,null,null,null,CoreFoundation
+      _CFDictionaryGetValue,null,null,null,CoreFoundation
+      _CFDictionaryGetValueIfPresent,null,null,null,CoreFoundation
+      _CFDictionaryRemoveValue,null,null,null,CoreFoundation
+      _CFDictionarySetValue,null,null,null,CoreFoundation
+      _CFRelease,null,null,null,CoreFoundation
+      _NSURLIsDirectoryKey,null,null,null,CoreFoundation
+      _NSURLNameKey,null,null,null,CoreFoundation
+      _OBJC_EHTYPE_$_NSException,null,null,null,CoreFoundation
+      _kCFAllocatorDefault,null,null,null,CoreFoundation
+      _NSLog,null,null,null,Foundation
+      _NSSetUncaughtExceptionHandler,null,null,null,Foundation
+      _$s8StoreKit03AppA0O13requestReview2inySo16NSViewControllerC_tFZ,null,true,null,StoreKit
+      ___objc_personality_v0,null,null,null,libobjc
+      _class_copyProtocolList,null,null,null,libobjc
+      _class_getClassMethod,null,null,null,libobjc
+      _class_getInstanceMethod,null,null,null,libobjc
+      _class_getMethodImplementation,null,null,null,libobjc
+      _class_getName,null,null,null,libobjc
+      _class_getSuperclass,null,null,null,libobjc
+      _class_isMetaClass,null,null,null,libobjc
+      _method_getDescription,null,null,null,libobjc
+      _method_getTypeEncoding,null,null,null,libobjc
+      _objc_alloc,null,null,null,libobjc
+      _objc_allocWithZone,null,null,null,libobjc
+      _objc_alloc_init,null,null,null,libobjc
+      _objc_autorelease,null,null,null,libobjc
+      _objc_begin_catch,null,null,null,libobjc
+      _objc_end_catch,null,null,null,libobjc
+      _objc_enumerationMutation,null,null,null,libobjc
+      _objc_exception_throw,null,null,null,libobjc
+      _objc_getAssociatedObject,null,null,null,libobjc
+      _objc_getClass,null,null,null,libobjc
+      _objc_msgSend,null,null,null,libobjc
+      _objc_msgSendSuper,null,null,null,libobjc
+      _objc_msgSendSuper2,null,null,null,libobjc
+      _objc_opt_class,null,null,null,libobjc
+      _objc_opt_self,null,null,null,libobjc
+      _objc_release,null,null,null,libobjc
+      _objc_retain,null,null,null,libobjc
+      _objc_setAssociatedObject,null,null,null,libobjc
+      _object_getClass,null,null,null,libobjc
+      _protocol_getMethodDescription,null,null,null,libobjc
+      _sel_getName,null,null,null,libobjc
+      __Block_copy,null,null,null,libSystem
+      __Block_release,null,null,null,libSystem
+      __DefaultRuneLocale,null,null,null,libSystem
+      __NSConcreteStackBlock,null,null,null,libSystem
+      __Unwind_Resume,null,null,null,libSystem
+      ___chkstk_darwin,null,null,null,libSystem
+      ___error,null,null,null,libSystem
+      ___stack_chk_fail,null,null,null,libSystem
+      ___stack_chk_guard,null,null,null,libSystem
+      ___stderrp,null,null,null,libSystem
+      __dispatch_main_q,null,null,null,libSystem
+      __os_log_default,null,null,null,libSystem
+      __os_log_impl,null,null,null,libSystem
+      _abort,null,null,null,libSystem
+      _atol,null,null,null,libSystem
+      _bsearch,null,null,null,libSystem
+      _bzero,null,null,null,libSystem
+      _calloc,null,null,null,libSystem
+      _chdir,null,null,null,libSystem
+      _close,null,null,null,libSystem
+      _dispatch_async,null,null,null,libSystem
+      _dispatch_async_f,null,null,null,libSystem
+      _dispatch_once_f,null,null,null,libSystem
+      _dlopen,null,null,null,libSystem
+      _dlsym,null,null,null,libSystem
+      _fprintf,null,null,null,libSystem
+      _free,null,null,null,libSystem
+      _fstat,null,null,null,libSystem
+      _getcwd,null,null,null,libSystem
+      _getenv,null,null,null,libSystem
+      _mach_task_self_,null,null,null,libSystem
+      _memcpy,null,null,null,libSystem
+      _memset,null,null,null,libSystem
+      _mmap,null,null,null,libSystem
+      _munmap,null,null,null,libSystem
+      _open,null,null,null,libSystem
+      _os_log_type_enabled,null,null,null,libSystem
+      _os_release,null,true,null,libSystem
+      _os_unfair_lock_lock,null,true,null,libSystem
+      _os_unfair_lock_unlock,null,true,null,libSystem
+      _pthread_getspecific,null,null,null,libSystem
+      _pthread_mutex_init,null,null,null,libSystem
+      _pthread_mutex_lock,null,null,null,libSystem
+      _pthread_mutex_unlock,null,null,null,libSystem
+      _pthread_mutexattr_destroy,null,null,null,libSystem
+      _pthread_mutexattr_init,null,null,null,libSystem
+      _pthread_mutexattr_settype,null,null,null,libSystem
+      _pthread_setspecific,null,null,null,libSystem
+      _qsort,null,null,null,libSystem
+      _setenv,null,null,null,libSystem
+      _snprintf,null,null,null,libSystem
+      _stat,null,null,null,libSystem
+      _strchr,null,null,null,libSystem
+      _strcmp,null,null,null,libSystem
+      _strdup,null,null,null,libSystem
+      _strerror,null,null,null,libSystem
+      _strlcpy,null,null,null,libSystem
+      _strlen,null,null,null,libSystem
+      _strncmp,null,null,null,libSystem
+      _strndup,null,null,null,libSystem
+      _strnlen,null,null,null,libSystem
+      _strrchr,null,null,null,libSystem
+      _vasprintf,null,null,null,libSystem
+      _vm_read_overwrite,null,null,null,libSystem
+      _vm_region_64,null,null,null,libSystem
+      _voucher_adopt,null,true,null,libSystem
+      __swift_stdlib_operatingSystemVersion,null,null,null,libswiftCore
+      _swift_errorRetain,null,null,null,libswiftCore
+      _swift_getObjCClassMetadata,null,null,null,libswiftCore
+      _swift_once,null,null,null,libswiftCore
+      __ZdlPv,null,null,null,<weak-def-coalesce>
+      __Znwm,null,null,null,<weak-def-coalesce>
+      ___CFConstantStringClassReference,null,null,null,CoreFoundation
+      _OBJC_CLASS_$_NSObject,null,null,null,libobjc
+      _OBJC_CLASS_$_NSAutoreleasePool,null,null,null,Foundation
+      _OBJC_CLASS_$_NSThread,null,null,null,Foundation
+      _OBJC_CLASS_$_NSString,null,null,null,Foundation
+      _OBJC_CLASS_$_NSBundle,null,null,null,Foundation
+      _OBJC_CLASS_$_NSDictionary,null,null,null,CoreFoundation
+      _OBJC_CLASS_$_NSException,null,null,null,CoreFoundation
+      _OBJC_CLASS_$_NSMutableArray,null,null,null,CoreFoundation
+      _OBJC_CLASS_$_NSFileManager,null,null,null,Foundation
+      _OBJC_CLASS_$_NSURL,null,null,null,CoreFoundation
+      _OBJC_CLASS_$_NSArray,null,null,null,CoreFoundation
+      _OBJC_CLASS_$_NSNumber,null,null,null,Foundation
+      _OBJC_CLASS_$_NSValue,null,null,null,Foundation
+      _OBJC_CLASS_$_NSMethodSignature,null,null,null,CoreFoundation
+      _OBJC_CLASS_$_NSWindow,null,null,null,AppKit
+      _OBJC_CLASS_$_NSWindowController,null,null,null,AppKit
+      _OBJC_CLASS_$_NSView,null,null,null,AppKit
+      _OBJC_CLASS_$_NSViewController,null,null,null,AppKit
+      _OBJC_CLASS_$_CIFilter,null,null,null,CoreImage
+      __objc_empty_cache,null,null,null,libobjc
+      _OBJC_METACLASS_$_NSObject,null,null,null,libobjc
+      _$sBOWV,null,null,null,libswiftCore
+      _OBJC_METACLASS_$_NSWindow,null,null,null,AppKit
+      _OBJC_METACLASS_$_NSWindowController,null,null,null,AppKit
+      _OBJC_METACLASS_$_NSView,null,null,null,AppKit
+      _OBJC_METACLASS_$_NSViewController,null,null,null,AppKit
+      _OBJC_METACLASS_$_CIFilter,null,null,null,CoreImage
+      _OBJC_METACLASS_$_NSError,null,null,null,Foundation
+      _OBJC_CLASS_$_NSError,null,null,null,Foundation
+      _OBJC_METACLASS_$_NSThread,null,null,null,Foundation
+      _OBJC_METACLASS_$_NSInputStream,null,null,null,CoreFoundation
+      _OBJC_CLASS_$_NSInputStream,null,null,null,CoreFoundation
+      __tlv_bootstrap,null,null,null,libSystem
+    total: null
+    exhaustive: false
+    limitations[1]: dyld_info textual imports may omit chained or toolchain-unsupported metadata.
+  exports:
+    items[350]{name,address,weak,reexport,source}:
+      _OBJC_CLASS_$_XamarinSwiftFunctions,0x1001df838,null,false,null
+      _xamarin_CGPoint__VNImagePointForFaceLandmarkPoint_Vector2_CGRect_nuint_nuint_string,0x10000527c,null,false,null
+      _xamarin_CGPoint__VNNormalizedFaceBoundingBoxPointForLandmarkPoint_Vector2_CGRect_nuint_nuint_string,0x100005158,null,false,null
+      _xamarin_encode_CGAffineTransform,0x10001524c,null,false,null
+      _xamarin_find_protocol_wrapper_type,0x10000d0d4,null,false,null
+      _xamarin_free,0x10000c378,null,false,null
+      _xamarin_get_block_descriptor,0x100008b24,null,false,null
+      _xamarin_get_original_working_directory_path,0x100016604,null,false,null
+      _xamarin_init_nsthread,0x1000088a8,null,false,null
+      _xamarin_initialize,0x10000d170,null,false,null
+      _xamarin_is_object_valid,0x10000fa58,null,false,null
+      _xamarin_is_user_type,0x10000f900,null,false,null
+      _xamarin_localized_string_format,0x100015258,null,false,null
+      _xamarin_localized_string_format_1,0x100015270,null,false,null
+      _xamarin_localized_string_format_2,0x1000152a8,null,false,null
+      _xamarin_localized_string_format_3,0x1000152e4,null,false,null
+      _xamarin_localized_string_format_4,0x100015324,null,false,null
+      _xamarin_localized_string_format_5,0x100015364,null,false,null
+      _xamarin_localized_string_format_6,0x1000153a8,null,false,null
+      _xamarin_localized_string_format_7,0x1000153ec,null,false,null
+      _xamarin_localized_string_format_8,0x100015434,null,false,null
+      _xamarin_localized_string_format_9,0x100015480,null,false,null
+      _xamarin_locate_assembly_resource,0x10000c5fc,null,false,null
+      _xamarin_log,0x100015128,null,false,null
+      _xamarin_mono_object_retain,0x100015d4c,null,false,null
+      _xamarin_NativeHandle_objc_msgSend_NativeHandle_exception,0x100005f80,null,false,null
+      _xamarin_NativeHandle_objc_msgSend_NativeHandle_IntPtr_IntPtr_IntPtr_UIntPtr_exception,0x1000061a8,null,false,null
+      _xamarin_NativeHandle_objc_msgSend_NativeHandle_NativeHandle_UIntPtr_exception,0x100006038,null,false,null
+      _xamarin_NativeHandle_objc_msgSend_NativeHandle_UIntPtr_IntPtr_UIntPtr_exception,0x1000060f0,null,false,null
+      _xamarin_NativeHandle_objc_msgSendSuper_NativeHandle_exception,0x100005fdc,null,false,null
+      _xamarin_NativeHandle_objc_msgSendSuper_NativeHandle_IntPtr_IntPtr_IntPtr_UIntPtr_exception,0x100006204,null,false,null
+      _xamarin_NativeHandle_objc_msgSendSuper_NativeHandle_NativeHandle_UIntPtr_exception,0x100006094,null,false,null
+      _xamarin_NativeHandle_objc_msgSendSuper_NativeHandle_UIntPtr_IntPtr_UIntPtr_exception,0x10000614c,null,false,null
+      _xamarin_nfloat_objc_msgSend_exception,0x1000050a0,null,false,null
+      _xamarin_nfloat_objc_msgSendSuper_exception,0x1000050fc,null,false,null
+      _xamarin_os_log,0x10001507c,null,false,null
+      _xamarin_release_block_on_main_thread,0x10000dc94,null,false,null
+      _xamarin_release_managed_ref,0x10000dc20,null,false,null
+      _xamarin_set_gchandle_with_flags_safe,0x10000dc08,null,false,null
+      _xamarin_simd__bool_objc_msgSend_NVector2i_IntPtr_float_NativeHandle_NativeHandle_NativeHandle,0x1000058a8,null,false,null
+      _xamarin_simd__bool_objc_msgSend_NVector2i_NativeHandle_NativeHandle_NativeHandle_NativeHandle,0x100005878,null,false,null
+      _xamarin_simd__bool_objc_msgSend_NVector4i_bool_bool_bool_bool,0x100005d70,null,false,null
+      _xamarin_simd__bool_objc_msgSendSuper_NVector2i_IntPtr_float_NativeHandle_NativeHandle_NativeHandle,0x1000058c4,null,false,null
+      _xamarin_simd__bool_objc_msgSendSuper_NVector2i_NativeHandle_NativeHandle_NativeHandle_NativeHandle,0x100005890,null,false,null
+      _xamarin_simd__bool_objc_msgSendSuper_NVector4i_bool_bool_bool_bool,0x100005d94,null,false,null
+      _xamarin_simd__float_objc_msgSend_NVector2i,0x1000069f0,null,false,null
+      _xamarin_simd__float_objc_msgSend_Vector2,0x1000069e0,null,false,null
+      _xamarin_simd__float_objc_msgSendSuper_NVector2i,0x1000069f8,null,false,null
+      _xamarin_simd__float_objc_msgSendSuper_Vector2,0x1000069e8,null,false,null
+      _xamarin_simd__GKBox_objc_msgSend,0x100006af8,null,false,null
+      _xamarin_simd__GKBox_objc_msgSend_stret,0x100006b60,null,false,null
+      _xamarin_simd__GKBox_objc_msgSendSuper,0x100006b2c,null,false,null
+      _xamarin_simd__GKBox_objc_msgSendSuper_stret,0x100006b9c,null,false,null
+      _xamarin_simd__GKQuad_objc_msgSend,0x100006cb8,null,false,null
+      _xamarin_simd__GKQuad_objc_msgSendSuper,0x100006cd8,null,false,null
+      _xamarin_simd__GKTriangle_objc_msgSend_stret_UIntPtr,0x100006dd0,null,false,null
+      _xamarin_simd__GKTriangle_objc_msgSend_UIntPtr,0x100006d60,null,false,null
+      _xamarin_simd__GKTriangle_objc_msgSendSuper_stret_UIntPtr,0x100006e14,null,false,null
+      _xamarin_simd__GKTriangle_objc_msgSendSuper_UIntPtr,0x100006d98,null,false,null
+      _xamarin_simd__IntPtr_objc_msgSend_float_NativeHandle_NVector2i_IntPtr,0x100005d58,null,false,null
+      _xamarin_simd__IntPtr_objc_msgSend_NativeHandle_int_UInt32_NativeHandle,0x1000067b0,null,false,null
+      _xamarin_simd__IntPtr_objc_msgSend_NVector2i,0x100005e60,null,false,null
+      _xamarin_simd__IntPtr_objc_msgSend_Vector3_bool_IntPtr_NativeHandle,0x100006758,null,false,null
+      _xamarin_simd__IntPtr_objc_msgSend_Vector3_NVector2i_bool_bool_bool_IntPtr_NativeHandle,0x100006800,null,false,null
+      _xamarin_simd__IntPtr_objc_msgSend_Vector3_NVector2i_bool_bool_IntPtr_NativeHandle,0x1000067b8,null,false,null
+      _xamarin_simd__IntPtr_objc_msgSend_Vector3_NVector2i_bool_IntPtr_NativeHandle,0x100006770,null,false,null
+      _xamarin_simd__IntPtr_objc_msgSend_Vector3_NVector2i_int_bool_IntPtr_NativeHandle,0x100006850,null,false,null
+      _xamarin_simd__IntPtr_objc_msgSend_Vector3_NVector2i_IntPtr_NativeHandle,0x100006898,null,false,null
+      _xamarin_simd__IntPtr_objc_msgSend_Vector3_NVector3i_bool_IntPtr_NativeHandle,0x1000057e8,null,false,null
+      _xamarin_simd__IntPtr_objc_msgSendSuper_float_NativeHandle_NVector2i_IntPtr,0x100005d64,null,false,null
+      _xamarin_simd__IntPtr_objc_msgSendSuper_NativeHandle_int_UInt32_NativeHandle,0x1000067b4,null,false,null
+      _xamarin_simd__IntPtr_objc_msgSendSuper_NVector2i,0x100005e68,null,false,null
+      _xamarin_simd__IntPtr_objc_msgSendSuper_Vector3_bool_IntPtr_NativeHandle,0x100006764,null,false,null
+      _xamarin_simd__IntPtr_objc_msgSendSuper_Vector3_NVector2i_bool_bool_bool_IntPtr_NativeHandle,0x100006828,null,false,null
+      _xamarin_simd__IntPtr_objc_msgSendSuper_Vector3_NVector2i_bool_bool_IntPtr_NativeHandle,0x1000067dc,null,false,null
+      _xamarin_simd__IntPtr_objc_msgSendSuper_Vector3_NVector2i_bool_IntPtr_NativeHandle,0x100006790,null,false,null
+      _xamarin_simd__IntPtr_objc_msgSendSuper_Vector3_NVector2i_int_bool_IntPtr_NativeHandle,0x100006874,null,false,null
+      _xamarin_simd__IntPtr_objc_msgSendSuper_Vector3_NVector2i_IntPtr_NativeHandle,0x1000068b4,null,false,null
+      _xamarin_simd__IntPtr_objc_msgSendSuper_Vector3_NVector3i_bool_IntPtr_NativeHandle,0x100005808,null,false,null
+      _xamarin_simd__MDLAxisAlignedBoundingBox_objc_msgSend,0x1000058e0,null,false,null
+      _xamarin_simd__MDLAxisAlignedBoundingBox_objc_msgSend_Double,0x100005b30,null,false,null
+      _xamarin_simd__MDLAxisAlignedBoundingBox_objc_msgSend_NVector4i,0x100005a10,null,false,null
+      _xamarin_simd__MDLAxisAlignedBoundingBox_objc_msgSend_stret,0x100005948,null,false,null
+      _xamarin_simd__MDLAxisAlignedBoundingBox_objc_msgSend_stret_Double,0x100005b98,null,false,null
+      _xamarin_simd__MDLAxisAlignedBoundingBox_objc_msgSend_stret_NVector4i,0x100005a98,null,false,null
+      _xamarin_simd__MDLAxisAlignedBoundingBox_objc_msgSendSuper,0x100005914,null,false,null
+      _xamarin_simd__MDLAxisAlignedBoundingBox_objc_msgSendSuper_Double,0x100005b64,null,false,null
+      _xamarin_simd__MDLAxisAlignedBoundingBox_objc_msgSendSuper_NVector4i,0x100005a54,null,false,null
+      _xamarin_simd__MDLAxisAlignedBoundingBox_objc_msgSendSuper_stret,0x100005984,null,false,null
+      _xamarin_simd__MDLAxisAlignedBoundingBox_objc_msgSendSuper_stret_Double,0x100005bd4,null,false,null
+      _xamarin_simd__MDLAxisAlignedBoundingBox_objc_msgSendSuper_stret_NVector4i,0x100005ae4,null,false,null
+      _xamarin_simd__MDLVoxelIndexExtent_objc_msgSend,0x100007260,null,false,null
+      _xamarin_simd__MDLVoxelIndexExtent_objc_msgSend_stret,0x1000072a8,null,false,null
+      _xamarin_simd__MDLVoxelIndexExtent_objc_msgSendSuper,0x100007284,null,false,null
+      _xamarin_simd__MDLVoxelIndexExtent_objc_msgSendSuper_stret,0x1000072d4,null,false,null
+      _xamarin_simd__MPSAxisAlignedBoundingBox_objc_msgSend,0x100008408,null,false,null
+      _xamarin_simd__MPSAxisAlignedBoundingBox_objc_msgSend_stret,0x100008470,null,false,null
+      _xamarin_simd__MPSAxisAlignedBoundingBox_objc_msgSendSuper,0x10000843c,null,false,null
+      _xamarin_simd__MPSAxisAlignedBoundingBox_objc_msgSendSuper_stret,0x1000084ac,null,false,null
+      _xamarin_simd__MPSImageHistogramInfo_objc_msgSend,0x100006e58,null,false,null
+      _xamarin_simd__MPSImageHistogramInfo_objc_msgSend_stret,0x100006f50,null,false,null
+      _xamarin_simd__MPSImageHistogramInfo_objc_msgSendSuper,0x100006ed4,null,false,null
+      _xamarin_simd__MPSImageHistogramInfo_objc_msgSendSuper_stret,0x100006fd4,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_float_float_NativeHandle_NVector2i,0x100005de8,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_float_NativeHandle_NVector2i_int_IntPtr_bool,0x100005df8,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_float_NativeHandle_NVector2i_int_IntPtr_NativeHandle_NativeHandle,0x100005e20,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_float_Vector2_UIntPtr_UIntPtr_IntPtr_bool_NativeHandle,0x100005858,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_float_Vector2_UIntPtr_UIntPtr_UIntPtr_IntPtr_bool_NativeHandle,0x100005868,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_float_Vector2_Vector2,0x100006938,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_float_Vector2_Vector2_NativeHandle,0x100006958,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_GKBox,0x100006bd8,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_GKBox_float,0x100006c20,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_GKQuad,0x100006cf8,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_GKQuad_float,0x100006d18,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_MDLVoxelIndexExtent,0x100007518,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NativeHandle_bool_NativeHandle_NVector2i_IntPtr_UIntPtr_IntPtr_bool,0x100005710,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NativeHandle_GKBox,0x100006c70,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NativeHandle_GKQuad,0x100006d40,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NativeHandle_IntPtr_NVector2i_float_float_float_float,0x100005db8,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NativeHandle_IntPtr_NVector2i_float_float_float_float_float,0x100007830,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NativeHandle_MDLAxisAlignedBoundingBox_float,0x100005c10,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NativeHandle_NativeHandle_NativeHandle_NVector2i,0x100005e50,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NativeHandle_NativeHandle_NVector2i,0x1000056e8,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NativeHandle_NativeHandle_NVector2i_float,0x1000056f8,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NativeHandle_NMatrix2,0x1000071d8,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NativeHandle_NMatrix3,0x100007440,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NativeHandle_NMatrix4,0x1000076a0,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NativeHandle_NVector2d_NVector2d_NVector2i_bool,0x1000068d0,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NativeHandle_Quaternion,0x1000084e8,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NativeHandle_Quaternion_NativeHandle,0x100008508,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NativeHandle_ref_MPSImageHistogramInfo,0x1000070b8,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NativeHandle_UIntPtr_NMatrix4,0x100007528,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NativeHandle_UIntPtr_Vector2,0x100005630,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NativeHandle_UIntPtr_Vector3,0x1000055f8,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NativeHandle_UIntPtr_Vector4,0x100005610,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NativeHandle_Vector2,0x100006320,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NativeHandle_Vector2_exception,0x100006260,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NativeHandle_Vector3,0x100006400,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NativeHandle_Vector4,0x100006418,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NMatrix4,0x1000074c0,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NMatrix4_bool,0x1000074f8,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NVector2d_IntPtr,0x100008528,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NVector2d_NativeHandle,0x100008538,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NVector2i,0x100005e70,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NVector2i_int_int_bool,0x1000056c0,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_NVector2i_int_int_bool_NativeHandle,0x100006908,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_Vector2,0x100005680,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_Vector2_NVector2i_IntPtr_NativeHandle,0x100005750,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_Vector2_Vector2_exception,0x100006330,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_Vector3,0x100005778,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_Vector3_NativeHandle,0x1000054e8,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_Vector3_NVector3i_IntPtr_bool_NativeHandle,0x1000057a8,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_Vector3_UIntPtr_UIntPtr_IntPtr_bool_bool_NativeHandle,0x100005790,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSend_Vector4,0x100006438,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_float_float_NativeHandle_NVector2i,0x100005df0,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_float_NativeHandle_NVector2i_int_IntPtr_bool,0x100005e0c,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_float_NativeHandle_NVector2i_int_IntPtr_NativeHandle_NativeHandle,0x100005e38,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_float_Vector2_UIntPtr_UIntPtr_IntPtr_bool_NativeHandle,0x100005860,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_float_Vector2_UIntPtr_UIntPtr_UIntPtr_IntPtr_bool_NativeHandle,0x100005870,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_float_Vector2_Vector2,0x100006948,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_float_Vector2_Vector2_NativeHandle,0x100006968,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_GKBox,0x100006bfc,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_GKBox_float,0x100006c48,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_GKQuad,0x100006d08,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_GKQuad_float,0x100006d2c,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_MDLVoxelIndexExtent,0x100007520,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NativeHandle_bool_NativeHandle_NVector2i_IntPtr_UIntPtr_IntPtr_bool,0x100005730,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NativeHandle_GKBox,0x100006c94,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NativeHandle_GKQuad,0x100006d50,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NativeHandle_IntPtr_NVector2i_float_float_float_float,0x100005dd0,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NativeHandle_IntPtr_NVector2i_float_float_float_float_float,0x10000784c,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NativeHandle_MDLAxisAlignedBoundingBox_float,0x100005c38,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NativeHandle_NativeHandle_NativeHandle_NVector2i,0x100005e58,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NativeHandle_NativeHandle_NVector2i,0x1000056f0,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NativeHandle_NativeHandle_NVector2i_float,0x100005704,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NativeHandle_NMatrix2,0x1000071e8,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NativeHandle_NMatrix3,0x100007474,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NativeHandle_NMatrix4,0x1000076ac,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NativeHandle_NVector2d_NVector2d_NVector2i_bool,0x1000068ec,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NativeHandle_Quaternion,0x1000084f8,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NativeHandle_Quaternion_NativeHandle,0x100008518,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NativeHandle_ref_MPSImageHistogramInfo,0x100007148,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NativeHandle_UIntPtr_NMatrix4,0x100007534,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NativeHandle_UIntPtr_Vector2,0x100005638,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NativeHandle_UIntPtr_Vector3,0x100005604,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NativeHandle_UIntPtr_Vector4,0x100005620,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NativeHandle_Vector2,0x100006328,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NativeHandle_Vector2_exception,0x1000062c0,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NativeHandle_Vector3,0x10000640c,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NativeHandle_Vector4,0x100006428,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NMatrix4,0x1000074cc,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NMatrix4_bool,0x100007508,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NVector2d_IntPtr,0x100008530,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NVector2d_NativeHandle,0x100008540,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NVector2i,0x100005e78,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NVector2i_int_int_bool,0x1000056d4,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_NVector2i_int_int_bool_NativeHandle,0x100006920,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_Vector2,0x100005688,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_Vector2_NVector2i_IntPtr_NativeHandle,0x100005764,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_Vector2_Vector2_exception,0x100006398,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_Vector3,0x100005784,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_Vector3_NativeHandle,0x1000054f4,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_Vector3_NVector3i_IntPtr_bool_NativeHandle,0x1000057c8,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_Vector3_UIntPtr_UIntPtr_IntPtr_bool_bool_NativeHandle,0x10000579c,null,false,null
+      _xamarin_simd__NativeHandle_objc_msgSendSuper_Vector4,0x100006448,null,false,null
+      _xamarin_simd__NMatrix2_objc_msgSend,0x100007078,null,false,null
+      _xamarin_simd__NMatrix2_objc_msgSendSuper,0x100007098,null,false,null
+      _xamarin_simd__NMatrix3_objc_msgSend,0x100007300,null,false,null
+      _xamarin_simd__NMatrix3_objc_msgSend_stret,0x1000073a8,null,false,null
+      _xamarin_simd__NMatrix3_objc_msgSendSuper,0x100007354,null,false,null
+      _xamarin_simd__NMatrix3_objc_msgSendSuper_stret,0x1000073f4,null,false,null
+      _xamarin_simd__NMatrix4_objc_msgSend,0x100007540,null,false,null
+      _xamarin_simd__NMatrix4_objc_msgSend_Double,0x1000075f0,null,false,null
+      _xamarin_simd__NMatrix4_objc_msgSend_NativeHandle_Double,0x100005ec8,null,false,null
+      _xamarin_simd__NMatrix4_objc_msgSend_stret,0x100007590,null,false,null
+      _xamarin_simd__NMatrix4_objc_msgSend_stret_Double,0x100007640,null,false,null
+      _xamarin_simd__NMatrix4_objc_msgSend_stret_NativeHandle_Double,0x100005f18,null,false,null
+      _xamarin_simd__NMatrix4_objc_msgSendSuper,0x100007568,null,false,null
+      _xamarin_simd__NMatrix4_objc_msgSendSuper_Double,0x100007618,null,false,null
+      _xamarin_simd__NMatrix4_objc_msgSendSuper_NativeHandle_Double,0x100005ef0,null,false,null
+      _xamarin_simd__NMatrix4_objc_msgSendSuper_stret,0x1000075c0,null,false,null
+      _xamarin_simd__NMatrix4_objc_msgSendSuper_stret_Double,0x100007670,null,false,null
+      _xamarin_simd__NMatrix4_objc_msgSendSuper_stret_NativeHandle_Double,0x100005f4c,null,false,null
+      _xamarin_simd__NMatrix4d_objc_msgSend,0x100007868,null,false,null
+      _xamarin_simd__NMatrix4d_objc_msgSend_Double,0x100007a58,null,false,null
+      _xamarin_simd__NMatrix4d_objc_msgSend_stret,0x100007958,null,false,null
+      _xamarin_simd__NMatrix4d_objc_msgSend_stret_Double,0x100007b48,null,false,null
+      _xamarin_simd__NMatrix4d_objc_msgSendSuper,0x1000078e0,null,false,null
+      _xamarin_simd__NMatrix4d_objc_msgSendSuper_Double,0x100007ad0,null,false,null
+      _xamarin_simd__NMatrix4d_objc_msgSendSuper_stret,0x1000079d8,null,false,null
+      _xamarin_simd__NMatrix4d_objc_msgSendSuper_stret_Double,0x100007bc8,null,false,null
+      _xamarin_simd__NMatrix4x3_objc_msgSend,0x1000076b8,null,false,null
+      _xamarin_simd__NMatrix4x3_objc_msgSend_stret,0x100007780,null,false,null
+      _xamarin_simd__NMatrix4x3_objc_msgSendSuper,0x10000771c,null,false,null
+      _xamarin_simd__NMatrix4x3_objc_msgSendSuper_stret,0x1000077d8,null,false,null
+      _xamarin_simd__NQuaterniond_objc_msgSend_Double,0x100006598,null,false,null
+      _xamarin_simd__NQuaterniond_objc_msgSend_stret_Double,0x100006648,null,false,null
+      _xamarin_simd__NQuaterniond_objc_msgSendSuper_Double,0x1000065f0,null,false,null
+      _xamarin_simd__NQuaterniond_objc_msgSendSuper_stret_Double,0x1000066b0,null,false,null
+      _xamarin_simd__NVector16b_objc_msgSend,0x100008558,null,false,null
+      _xamarin_simd__NVector16b_objc_msgSendSuper,0x10000864c,null,false,null
+      _xamarin_simd__NVector2d_objc_msgSend,0x100006978,null,false,null
+      _xamarin_simd__NVector2d_objc_msgSend_Double,0x100007e58,null,false,null
+      _xamarin_simd__NVector2d_objc_msgSendSuper,0x100006990,null,false,null
+      _xamarin_simd__NVector2d_objc_msgSendSuper_Double,0x100007e70,null,false,null
+      _xamarin_simd__NVector2i_objc_msgSend,0x100005640,null,false,null
+      _xamarin_simd__NVector2i_objc_msgSendSuper,0x100005660,null,false,null
+      _xamarin_simd__NVector3_objc_msgSend,0x1000053a0,null,false,null
+      _xamarin_simd__NVector3_objc_msgSend_Double,0x100007f88,null,false,null
+      _xamarin_simd__NVector3_objc_msgSendSuper,0x1000053c0,null,false,null
+      _xamarin_simd__NVector3_objc_msgSendSuper_Double,0x100007fa8,null,false,null
+      _xamarin_simd__NVector3d_objc_msgSend_Double,0x100007fc8,null,false,null
+      _xamarin_simd__NVector3d_objc_msgSend_stret_Double,0x100008080,null,false,null
+      _xamarin_simd__NVector3d_objc_msgSendSuper_Double,0x100008024,null,false,null
+      _xamarin_simd__NVector3d_objc_msgSendSuper_stret_Double,0x1000080f4,null,false,null
+      _xamarin_simd__NVector4d_objc_msgSend_Double,0x100008288,null,false,null
+      _xamarin_simd__NVector4d_objc_msgSend_stret_Double,0x100008338,null,false,null
+      _xamarin_simd__NVector4d_objc_msgSendSuper_Double,0x1000082e0,null,false,null
+      _xamarin_simd__NVector4d_objc_msgSendSuper_stret_Double,0x1000083a0,null,false,null
+      _xamarin_simd__NVector4i_objc_msgSend_Vector3,0x100005ce0,null,false,null
+      _xamarin_simd__NVector4i_objc_msgSendSuper_Vector3,0x100005d1c,null,false,null
+      _xamarin_simd__Quaternion_objc_msgSend,0x100006458,null,false,null
+      _xamarin_simd__Quaternion_objc_msgSend_Double,0x100006718,null,false,null
+      _xamarin_simd__Quaternion_objc_msgSendSuper,0x100006478,null,false,null
+      _xamarin_simd__Quaternion_objc_msgSendSuper_Double,0x100006738,null,false,null
+      _xamarin_simd__Vector2_objc_msgSend,0x100005568,null,false,null
+      _xamarin_simd__Vector2_objc_msgSend_Double,0x100007e28,null,false,null
+      _xamarin_simd__Vector2_objc_msgSend_IntPtr,0x100007e88,null,false,null
+      _xamarin_simd__Vector2_objc_msgSend_UIntPtr,0x100005690,null,false,null
+      _xamarin_simd__Vector2_objc_msgSendSuper,0x100005580,null,false,null
+      _xamarin_simd__Vector2_objc_msgSendSuper_Double,0x100007e40,null,false,null
+      _xamarin_simd__Vector2_objc_msgSendSuper_IntPtr,0x100007ea0,null,false,null
+      _xamarin_simd__Vector2_objc_msgSendSuper_UIntPtr,0x1000056a8,null,false,null
+      _xamarin_simd__Vector3_objc_msgSend,0x100005458,null,false,null
+      _xamarin_simd__Vector3_objc_msgSend_Double,0x100005490,null,false,null
+      _xamarin_simd__Vector3_objc_msgSend_NVector2i_NVector2i,0x100005e80,null,false,null
+      _xamarin_simd__Vector3_objc_msgSend_NVector4i,0x100005c60,null,false,null
+      _xamarin_simd__Vector3_objc_msgSend_UIntPtr,0x1000069a8,null,false,null
+      _xamarin_simd__Vector3_objc_msgSend_Vector3,0x100005410,null,false,null
+      _xamarin_simd__Vector3_objc_msgSendSuper,0x100005474,null,false,null
+      _xamarin_simd__Vector3_objc_msgSendSuper_Double,0x1000054ac,null,false,null
+      _xamarin_simd__Vector3_objc_msgSendSuper_NVector2i_NVector2i,0x100005ea4,null,false,null
+      _xamarin_simd__Vector3_objc_msgSendSuper_NVector4i,0x100005c8c,null,false,null
+      _xamarin_simd__Vector3_objc_msgSendSuper_UIntPtr,0x1000069c4,null,false,null
+      _xamarin_simd__Vector3_objc_msgSendSuper_Vector3,0x100005434,null,false,null
+      _xamarin_simd__Vector4_objc_msgSend,0x1000055b8,null,false,null
+      _xamarin_simd__Vector4_objc_msgSend_Double,0x100008248,null,false,null
+      _xamarin_simd__Vector4_objc_msgSendSuper,0x1000055d8,null,false,null
+      _xamarin_simd__Vector4_objc_msgSendSuper_Double,0x100008268,null,false,null
+      _xamarin_simd__void_objc_msgSend_float_NVector2i,0x100006ae8,null,false,null
+      _xamarin_simd__void_objc_msgSend_MDLAxisAlignedBoundingBox_bool,0x1000059c0,null,false,null
+      _xamarin_simd__void_objc_msgSend_NativeHandle_Vector2_Vector2,0x100006a20,null,false,null
+      _xamarin_simd__void_objc_msgSend_NativeHandle_Vector2_Vector2_IntPtr,0x100006a00,null,false,null
+      _xamarin_simd__void_objc_msgSend_NMatrix2,0x100007058,null,false,null
+      _xamarin_simd__void_objc_msgSend_NMatrix3,0x1000071f8,null,false,null
+      _xamarin_simd__void_objc_msgSend_NMatrix4,0x1000074a8,null,false,null
+      _xamarin_simd__void_objc_msgSend_NMatrix4_Double,0x1000074d8,null,false,null
+      _xamarin_simd__void_objc_msgSend_NMatrix4d,0x100007d20,null,false,null
+      _xamarin_simd__void_objc_msgSend_NMatrix4d_Double,0x100007c48,null,false,null
+      _xamarin_simd__void_objc_msgSend_NQuaterniond_Double,0x1000064c0,null,false,null
+      _xamarin_simd__void_objc_msgSend_NVector2d,0x100008548,null,false,null
+      _xamarin_simd__void_objc_msgSend_NVector2d_Double,0x100007e10,null,false,null
+      _xamarin_simd__void_objc_msgSend_NVector3,0x1000053e0,null,false,null
+      _xamarin_simd__void_objc_msgSend_NVector3_Double,0x100007eb8,null,false,null
+      _xamarin_simd__void_objc_msgSend_NVector3d,0x100006a40,null,false,null
+      _xamarin_simd__void_objc_msgSend_NVector3d_Double,0x100007ed8,null,false,null
+      _xamarin_simd__void_objc_msgSend_NVector4d_Double,0x100008190,null,false,null
+      _xamarin_simd__void_objc_msgSend_NVector4i,0x100005cb8,null,false,null
+      _xamarin_simd__void_objc_msgSend_Quaternion,0x100006578,null,false,null
+      _xamarin_simd__void_objc_msgSend_Quaternion_Double,0x100006498,null,false,null
+      _xamarin_simd__void_objc_msgSend_Vector2,0x100005558,null,false,null
+      _xamarin_simd__void_objc_msgSend_Vector2_Double,0x100007df8,null,false,null
+      _xamarin_simd__void_objc_msgSend_Vector3,0x1000053f8,null,false,null
+      _xamarin_simd__void_objc_msgSend_Vector3_Double,0x1000054c8,null,false,null
+      _xamarin_simd__void_objc_msgSend_Vector3_Vector3,0x100005828,null,false,null
+      _xamarin_simd__void_objc_msgSend_Vector4,0x100005598,null,false,null
+      _xamarin_simd__void_objc_msgSend_Vector4_Double,0x100008168,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_float_NVector2i,0x100006af0,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_MDLAxisAlignedBoundingBox_bool,0x1000059e8,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_NativeHandle_Vector2_Vector2,0x100006a30,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_NativeHandle_Vector2_Vector2_IntPtr,0x100006a10,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_NMatrix2,0x100007068,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_NMatrix3,0x10000722c,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_NMatrix4,0x1000074b4,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_NMatrix4_Double,0x1000074e8,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_NMatrix4d,0x100007d8c,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_NMatrix4d_Double,0x100007cb4,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_NQuaterniond_Double,0x10000651c,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_NVector2d,0x100008550,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_NVector2d_Double,0x100007e1c,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_NVector3,0x1000053ec,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_NVector3_Double,0x100007ec8,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_NVector3d,0x100006a94,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_NVector3d_Double,0x100007f30,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_NVector4d_Double,0x1000081ec,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_NVector4i,0x100005ccc,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_Quaternion,0x100006588,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_Quaternion_Double,0x1000064ac,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_Vector2,0x100005560,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_Vector2_Double,0x100007e04,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_Vector3,0x100005404,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_Vector3_Double,0x1000054d8,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_Vector3_Vector3,0x100005840,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_Vector4,0x1000055a8,null,false,null
+      _xamarin_simd__void_objc_msgSendSuper_Vector4_Double,0x10000817c,null,false,null
+      _xamarin_switch_gchandle,0x10000d818,null,false,null
+      _xamarin_vector_float3__Vector4_objc_msgSend,0x100005500,null,false,null
+      _xamarin_vector_float3__Vector4_objc_msgSendSuper,0x100005520,null,false,null
+      _xamarin_vector_float3__void_objc_msgSend_Vector4,0x100005540,null,false,null
+      _xamarin_vector_float3__void_objc_msgSendSuper_Vector4,0x10000554c,null,false,null
+    total: null
+    exhaustive: false
+    limitations[1]: Merged nm/dyld_info results may be incomplete for stripped binaries.
+  segments:
+    items[5]:
+      - name: __PAGEZERO
+        vm_address: 0x0
+        vm_size: 4294967296
+        file_offset: 0
+        file_size: 0
+        maximum_permissions:
+          read: false
+          write: false
+          execute: false
+          raw: "0"
+        initial_permissions:
+          read: false
+          write: false
+          execute: false
+          raw: "0"
+        sections:
+          items: []
+          total: 0
+          exhaustive: true
+          limitations: []
+      - name: __TEXT
+        vm_address: 0x100000000
+        vm_size: 1687552
+        file_offset: 0
+        file_size: 1687552
+        maximum_permissions:
+          read: true
+          write: false
+          execute: true
+          raw: "5"
+        initial_permissions:
+          read: true
+          write: false
+          execute: true
+          raw: "5"
+        sections:
+          items[18]:
+            - segment: __TEXT
+              name: __text
+              address: 0x1000050a0
+              size: 915124
+              file_offset: 20640
+              alignment: 4
+              flags[1]: "2147484672"
+            - segment: __TEXT
+              name: __stubs
+              address: 0x1000e4754
+              size: 1272
+              file_offset: 935764
+              alignment: 4
+              flags[1]: "2147484680"
+            - segment: __TEXT
+              name: __objc_stubs
+              address: 0x1000e4c60
+              size: 64
+              file_offset: 937056
+              alignment: 32
+              flags[1]: "2147484672"
+            - segment: __TEXT
+              name: __init_offsets
+              address: 0x1000e4ca0
+              size: 4
+              file_offset: 937120
+              alignment: 4
+              flags[1]: "22"
+            - segment: __TEXT
+              name: __objc_methlist
+              address: 0x1000e4ca8
+              size: 122156
+              file_offset: 937128
+              alignment: 8
+              flags[1]: "0"
+            - segment: __TEXT
+              name: __gcc_except_tab
+              address: 0x1001029d4
+              size: 564
+              file_offset: 1059284
+              alignment: 4
+              flags[1]: "0"
+            - segment: __TEXT
+              name: __cstring
+              address: 0x100102c08
+              size: 349075
+              file_offset: 1059848
+              alignment: 1
+              flags[1]: "2"
+            - segment: __TEXT
+              name: __const
+              address: 0x100157fa0
+              size: 81652
+              file_offset: 1408928
+              alignment: 16
+              flags[1]: "0"
+            - segment: __TEXT
+              name: __objc_classname
+              address: 0x10016bea0
+              size: 40712
+              file_offset: 1490592
+              alignment: 16
+              flags[1]: "2"
+            - segment: __TEXT
+              name: __objc_methname
+              address: 0x100175da8
+              size: 79876
+              file_offset: 1531304
+              alignment: 1
+              flags[1]: "2"
+            - segment: __TEXT
+              name: __objc_methtype
+              address: 0x1001895ac
+              size: 62211
+              file_offset: 1611180
+              alignment: 1
+              flags[1]: "2"
+            - segment: __TEXT
+              name: __oslogstring
+              address: 0x1001988af
+              size: 11
+              file_offset: 1673391
+              alignment: 1
+              flags[1]: "2"
+            - segment: __TEXT
+              name: __constg_swiftt
+              address: 0x1001988bc
+              size: 56
+              file_offset: 1673404
+              alignment: 4
+              flags[1]: "0"
+            - segment: __TEXT
+              name: __swift5_typeref
+              address: 0x1001988f4
+              size: 20
+              file_offset: 1673460
+              alignment: 2
+              flags[1]: "0"
+            - segment: __TEXT
+              name: __swift5_fieldmd
+              address: 0x100198908
+              size: 16
+              file_offset: 1673480
+              alignment: 4
+              flags[1]: "0"
+            - segment: __TEXT
+              name: __swift5_types
+              address: 0x100198918
+              size: 4
+              file_offset: 1673496
+              alignment: 4
+              flags[1]: "0"
+            - segment: __TEXT
+              name: __unwind_info
+              address: 0x10019891c
+              size: 9296
+              file_offset: 1673500
+              alignment: 4
+              flags[1]: "0"
+            - segment: __TEXT
+              name: __eh_frame
+              address: 0x10019ad70
+              size: 104
+              file_offset: 1682800
+              alignment: 8
+              flags[1]: "1744830475"
+          total: 18
+          exhaustive: true
+          limitations: []
+      - name: __DATA_CONST
+        vm_address: 0x10019c000
+        vm_size: 32768
+        file_offset: 1687552
+        file_size: 32768
+        maximum_permissions:
+          read: true
+          write: true
+          execute: false
+          raw: "3"
+        initial_permissions:
+          read: true
+          write: true
+          execute: false
+          raw: "3"
+        sections:
+          items[7]:
+            - segment: __DATA_CONST
+              name: __got
+              address: 0x10019c000
+              size: 960
+              file_offset: 1687552
+              alignment: 8
+              flags[1]: "6"
+            - segment: __DATA_CONST
+              name: __const
+              address: 0x10019c3c0
+              size: 5880
+              file_offset: 1688512
+              alignment: 8
+              flags[1]: "0"
+            - segment: __DATA_CONST
+              name: __cfstring
+              address: 0x10019dab8
+              size: 672
+              file_offset: 1694392
+              alignment: 8
+              flags[1]: "0"
+            - segment: __DATA_CONST
+              name: __objc_classlist
+              address: 0x10019dd58
+              size: 5752
+              file_offset: 1695064
+              alignment: 8
+              flags[1]: "268435456"
+            - segment: __DATA_CONST
+              name: __objc_catlist
+              address: 0x10019f3d0
+              size: 8
+              file_offset: 1700816
+              alignment: 8
+              flags[1]: "268435456"
+            - segment: __DATA_CONST
+              name: __objc_protolist
+              address: 0x10019f3d8
+              size: 3864
+              file_offset: 1700824
+              alignment: 8
+              flags[1]: "0"
+            - segment: __DATA_CONST
+              name: __objc_imageinfo
+              address: 0x1001a02f0
+              size: 8
+              file_offset: 1704688
+              alignment: 4
+              flags[1]: "0"
+          total: 7
+          exhaustive: true
+          limitations: []
+      - name: __DATA
+        vm_address: 0x1001a4000
+        vm_size: 458752
+        file_offset: 1720320
+        file_size: 425984
+        maximum_permissions:
+          read: true
+          write: true
+          execute: false
+          raw: "3"
+        initial_permissions:
+          read: true
+          write: true
+          execute: false
+          raw: "3"
+        sections:
+          items[13]:
+            - segment: __DATA
+              name: __objc_const
+              address: 0x1001a4000
+              size: 221624
+              file_offset: 1720320
+              alignment: 8
+              flags[1]: "0"
+            - segment: __DATA
+              name: __objc_selrefs
+              address: 0x1001da1b8
+              size: 19776
+              file_offset: 1941944
+              alignment: 8
+              flags[1]: "268435461"
+            - segment: __DATA
+              name: __objc_classrefs
+              address: 0x1001deef8
+              size: 752
+              file_offset: 1961720
+              alignment: 8
+              flags[1]: "268435456"
+            - segment: __DATA
+              name: __objc_superrefs
+              address: 0x1001df1e8
+              size: 40
+              file_offset: 1962472
+              alignment: 8
+              flags[1]: "268435456"
+            - segment: __DATA
+              name: __objc_ivar
+              address: 0x1001df210
+              size: 1160
+              file_offset: 1962512
+              alignment: 4
+              flags[1]: "0"
+            - segment: __DATA
+              name: __objc_data
+              address: 0x1001df698
+              size: 57616
+              file_offset: 1963672
+              alignment: 8
+              flags[1]: "0"
+            - segment: __DATA
+              name: __data
+              address: 0x1001ed7a8
+              size: 117793
+              file_offset: 2021288
+              alignment: 8
+              flags[1]: "0"
+            - segment: __DATA
+              name: __s_async_hook
+              address: 0x10020a3d0
+              size: 400
+              file_offset: 2139088
+              alignment: 8
+              flags[1]: "0"
+            - segment: __DATA
+              name: __swift56_hooks
+              address: 0x10020a560
+              size: 176
+              file_offset: 2139488
+              alignment: 8
+              flags[1]: "0"
+            - segment: __DATA
+              name: __thread_vars
+              address: 0x10020a610
+              size: 24
+              file_offset: 2139664
+              alignment: 8
+              flags[1]: "19"
+            - segment: __DATA
+              name: __thread_bss
+              address: 0x10020a628
+              size: 4
+              file_offset: 0
+              alignment: 4
+              flags[1]: "18"
+            - segment: __DATA
+              name: __bss
+              address: 0x10020a630
+              size: 28360
+              file_offset: 0
+              alignment: 8
+              flags[1]: "1"
+            - segment: __DATA
+              name: __common
+              address: 0x1002114f8
+              size: 144
+              file_offset: 0
+              alignment: 8
+              flags[1]: "1"
+          total: 13
+          exhaustive: true
+          limitations: []
+      - name: __LINKEDIT
+        vm_address: 0x100214000
+        vm_size: 2179072
+        file_offset: 2146304
+        file_size: 2169680
+        maximum_permissions:
+          read: true
+          write: false
+          execute: false
+          raw: "1"
+        initial_permissions:
+          read: true
+          write: false
+          execute: false
+          raw: "1"
+        sections:
+          items: []
+          total: 0
+          exhaustive: true
+          limitations: []
+    total: 5
+    exhaustive: true
+    limitations: []
+  provenance[8]:
+    - tool: file
+      command[3]: /usr/bin/file,"-b",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: a4ba66d26a9cfdc70637c78cdacef920f94147f6aa45ccc73858e493589ef94d
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 31
+      stderr_bytes: 0
+    - tool: lipo
+      command[3]: /Library/Developer/CommandLineTools/usr/bin/lipo,"-detailed_info",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 751c4a4636efc5f4015999dc7d41be6e2552b39f8949d6eb971e958fccf0e386
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 172
+      stderr_bytes: 0
+    - tool: otool
+      command[4]: /Library/Developer/CommandLineTools/usr/bin/llvm-otool,"-h","-l",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 7febe4f134f15c4ef414413499003605e42aac955c6192ab7ab6139b79a77ace
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 55116
+      stderr_bytes: 0
+    - tool: nm
+      command[3]: /Library/Developer/CommandLineTools/usr/bin/llvm-nm,"-gjU",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 93d97ad8918dec796007159bdfe3ee60a3f4814eb80e6bd56b6012a0f5c57753
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 20336
+      stderr_bytes: 0
+    - tool: dyld_info
+      command[3]: /Library/Developer/CommandLineTools/usr/bin/dyld_info,"-imports",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 68ea34828d32464d4c754962d355dcf212d49ffb4aef71266852aab5953654ad
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 7940
+      stderr_bytes: 0
+    - tool: dyld_info
+      command[3]: /Library/Developer/CommandLineTools/usr/bin/dyld_info,"-exports",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 68ea34828d32464d4c754962d355dcf212d49ffb4aef71266852aab5953654ad
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 27439
+      stderr_bytes: 0
+    - tool: dwarfdump
+      command[3]: /Library/Developer/CommandLineTools/usr/bin/llvm-dwarfdump,"--uuid",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 1dd077fc25a9a8f4ba61f62483be226515ee7f18776b2fa97ac6191dc6fa47de
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 104
+      stderr_bytes: 0
+    - tool: vtool
+      command[3]: /Library/Developer/CommandLineTools/usr/bin/vtool,"-show-build",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: e98bb965cb748669b515a3a963e3687fab7762de1d914053e0ccbb31d998a024
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 198
+      stderr_bytes: 0
+  limitations[2]: Imports and exports combine dyld_info and nm; stripped or toolchain-hidden symbols may be absent.,vtool output is retained as provenance but only otool build metadata is normalized.
+confidence: observed
+authority: shipped-artifact
+environment: null
+limitations[2]: Imports and exports combine dyld_info and nm; stripped or toolchain-hidden symbols may be absent.,vtool output is retained as provenance but only otool build metadata is normalized.
+locations[5]{kind,start,end}:
+  file-offset-range,0,0
+  file-offset-range,0,1687552
+  file-offset-range,1687552,1720320
+  file-offset-range,1720320,2146304
+  file-offset-range,2146304,4315984
+evidence_links: []

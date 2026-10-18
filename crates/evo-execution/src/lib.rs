@@ -49,6 +49,8 @@
 //! Nothing to the right of the arrow ever flows back to the left.
 
 pub mod binding;
+pub mod browser_identity;
+pub mod browser_macos;
 pub mod engine;
 pub mod locator;
 // The macOS executor module self-gates its platform-specific implementation

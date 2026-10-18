@@ -86,9 +86,9 @@ mod tests {
             .duration_since(std::time::UNIX_EPOCH)
             .expect("system time should be after unix epoch")
             .as_nanos();
-        Storage::with_thread_root(std::env::temp_dir().join(format!(
-            "evo-artifact-acceptance-test-{nanos}"
-        )))
+        Storage::with_thread_root(
+            std::env::temp_dir().join(format!("evo-artifact-acceptance-test-{nanos}")),
+        )
     }
 
     #[test]

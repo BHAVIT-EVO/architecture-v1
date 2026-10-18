@@ -1,0 +1,2 @@
+try{let e=typeof window<`u`?window:typeof global<`u`?global:typeof globalThis<`u`?globalThis:typeof self<`u`?self:{},t=new e.Error().stack;t&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[t]=`5804a854-5666-4126-82cc-28d13a48e1bf`,e._sentryDebugIdIdentifier=`sentry-dbid-5804a854-5666-4126-82cc-28d13a48e1bf`)}catch{}import{E as e,T as t}from"./format-BEzPiJsk.js";function n(n,r,i){let a=t(n,i?.in);return isNaN(r)?e(i?.in||n,NaN):(r&&a.setDate(a.getDate()+r),a)}export{n as t};
+//# sourceMappingURL=addDays-M226wbYu.js.map

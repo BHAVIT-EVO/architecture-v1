@@ -1,0 +1,7 @@
+
+===== autotracker (1024 unique) =====
+  [index.cjs] ED_DISMISS: "idle-detection:dismiss", IDLE_ACTION_TAKEN: "idle-detection:action-taken", AUTOTRACKER_SET_BETA_ENABLED: "autotracker:set-beta-enabled", AUTOTRACKER_GET_ENABLED: "autotracker:
+  [index.cjs] miss", IDLE_ACTION_TAKEN: "idle-detection:action-taken", AUTOTRACKER_SET_BETA_ENABLED: "autotracker:set-beta-enabled", AUTOTRACKER_GET_ENABLED: "autotracker:get-enabled", AUTOTRACKER_SET_
+  [index.cjs] -detection:action-taken", AUTOTRACKER_SET_BETA_ENABLED: "autotracker:set-beta-enabled", AUTOTRACKER_GET_ENABLED: "autotracker:get-enabled", AUTOTRACKER_SET_ENABLED: "autotracker:set-enable
+  [index.cjs] AUTOTRACKER_SET_BETA_ENABLED: "autotracker:set-beta-enabled", AUTOTRACKER_GET_ENABLED: "autotracker:get-enabled", AUTOTRACKER_SET_ENABLED: "autotracker:set-enabled", AUTOTRACKER_ENABLED_C
+  [index.cjs] ED: "autotracker:set-beta-enabled", AUTOTRACKER_GET_ENABLED: "autotracker:get-enabled", AUTOTRACKER_SET_ENABLED: "autotracker:set-enabled", AUTOTRACKER_ENABLED_CHANGED: "autotracker:enable

@@ -19,12 +19,34 @@ fn runtime_with(surface: FakeSurface) -> PodRuntime {
 #[test]
 fn enter_arranges_own_windows_veils_foreign_and_books_a_lease() {
     let mut surface = FakeSurface::base();
-    surface.apps = vec![app(1, "Editor", false), app(2, "Mail", false), app(900, "Evo", false)];
+    surface.apps = vec![
+        app(1, "Editor", false),
+        app(2, "Mail", false),
+        app(900, "Evo", false),
+    ];
     surface.windows = vec![
-        window_with_frame(1, 10, "main.ts", Some("/repo/main.ts"), Frame::new(0.0, 0.0, 300.0, 300.0)),
-        window_with_frame(1, 11, "api", Some("https://docs.example/api"), Frame::new(0.0, 0.0, 300.0, 300.0)),
+        window_with_frame(
+            1,
+            10,
+            "main.ts",
+            Some("/repo/main.ts"),
+            Frame::new(0.0, 0.0, 300.0, 300.0),
+        ),
+        window_with_frame(
+            1,
+            11,
+            "api",
+            Some("https://docs.example/api"),
+            Frame::new(0.0, 0.0, 300.0, 300.0),
+        ),
         window_with_frame(2, 20, "Inbox", None, Frame::new(50.0, 50.0, 300.0, 300.0)),
-        window_with_frame(900, 99, "Evo Home", None, Frame::new(0.0, 0.0, 200.0, 200.0)),
+        window_with_frame(
+            900,
+            99,
+            "Evo Home",
+            None,
+            Frame::new(0.0, 0.0, 200.0, 200.0),
+        ),
     ];
     let mut rt = runtime_with(surface);
     rt.set_mode(ContainMode::Dim); // this test proves the veil vocabulary
@@ -35,7 +57,11 @@ fn enter_arranges_own_windows_veils_foreign_and_books_a_lease() {
     assert!(rt.is_active());
 
     let lease = rt.lease().unwrap();
-    assert_eq!(lease.moved_windows.len(), 2, "both pod windows got recipe frames");
+    assert_eq!(
+        lease.moved_windows.len(),
+        2,
+        "both pod windows got recipe frames"
+    );
     assert_eq!(lease.veils.len(), 1, "exactly one foreign window veiled");
     assert!(lease.hidden_apps.is_empty(), "Dim never hides");
 }
@@ -78,7 +104,10 @@ fn double_enter_refuses_switch_then_enter_leaves_no_stale_state() {
     rt.set_pods(vec![pod_fixture(), other]);
 
     rt.enter(0, 1).unwrap();
-    assert!(matches!(rt.enter(1, 2), Err(PodError::AlreadyActive { .. })));
+    assert!(matches!(
+        rt.enter(1, 2),
+        Err(PodError::AlreadyActive { .. })
+    ));
     let note = rt.switch(1, 3).unwrap();
     assert!(note.contains("Entered"));
     assert_eq!(rt.active().unwrap().id, evo_pods::PodId(8));
@@ -89,7 +118,13 @@ fn leave_replays_the_veils_removed_and_frames_restored() {
     let mut surface = FakeSurface::base();
     surface.apps = vec![app(1, "Editor", false), app(2, "Mail", false)];
     surface.windows = vec![
-        window_with_frame(1, 10, "main.ts", Some("/repo/main.ts"), Frame::new(1.0, 1.0, 300.0, 300.0)),
+        window_with_frame(
+            1,
+            10,
+            "main.ts",
+            Some("/repo/main.ts"),
+            Frame::new(1.0, 1.0, 300.0, 300.0),
+        ),
         window_with_frame(2, 20, "Inbox", None, Frame::new(2.0, 2.0, 300.0, 300.0)),
     ];
     let mut rt = runtime_with(surface);
@@ -151,11 +186,16 @@ fn mothball_refuses_while_unsaved_work_would_be_eaten_unless_forced() {
     surface.windows = vec![window(1, 10, "main.ts", Some("/repo/main.ts"))];
     let mut rt = runtime_with(surface);
     let mut pod = pod_fixture();
-    pod.bundle.open_deltas = vec![Delta::UnsavedEdits { resource: "main.ts".into() }];
+    pod.bundle.open_deltas = vec![Delta::UnsavedEdits {
+        resource: "main.ts".into(),
+    }];
     pod.badges = evo_pods::pod::badges_from_bundle(&pod.bundle);
     rt.set_pods(vec![pod]);
 
-    assert!(matches!(rt.mothball(0, false), Err(PodError::UnsafeMothball { .. })));
+    assert!(matches!(
+        rt.mothball(0, false),
+        Err(PodError::UnsafeMothball { .. })
+    ));
     let note = rt.mothball(0, true).unwrap();
     assert!(note.contains("Mothballed"));
     assert_eq!(rt.pods()[0].state, PodState::Mothballed);
@@ -168,28 +208,41 @@ fn isolated_launch_is_none_without_policy_and_well_formed_with_one() {
     rt.set_pods(vec![pod_fixture()]);
     let pod_id = evo_pods::PodId(7);
 
-    assert!(rt.isolated_launch("Unknown App", "/Applications/U.app", pod_id, "/pods").is_none());
+    assert!(
+        rt.isolated_launch("Unknown App", "/Applications/U.app", pod_id, "/pods")
+            .is_none()
+    );
 
     rt.set_policies(vec![evo_pods::policy::InstancePolicy {
         app: "Fancy".into(),
         data_dir_flag: "--user-data-dir=".into(),
         extra_flag: None,
     }]);
-    let spec = rt.isolated_launch("Fancy", "/Applications/F.app", pod_id, "/pods").unwrap();
+    let spec = rt
+        .isolated_launch("Fancy", "/Applications/F.app", pod_id, "/pods")
+        .unwrap();
     assert_eq!(spec.program, "/usr/bin/open");
     assert!(spec.args.iter().any(|a| a == "-na"));
-    assert!(spec.args.iter().any(|a| a == &"--user-data-dir=/pods/pod-7".to_string()));
+    assert!(
+        spec.args
+            .iter()
+            .any(|a| a == &"--user-data-dir=/pods/pod-7".to_string())
+    );
 }
 
 #[test]
-fn learn_frame_records_user_choreography_and_export_roundTrips_it() {
+fn learn_frame_records_user_choreography_and_export_round_trips_it() {
     let mut surface = FakeSurface::base();
     surface.apps = vec![app(1, "Editor", false)];
     surface.windows = vec![window(1, 10, "main.ts", Some("/repo/main.ts"))];
     let mut rt = runtime_with(surface);
     rt.set_pods(vec![pod_fixture()]);
     rt.enter(0, 1).unwrap();
-    rt.learn_frame(evo_pods::PodId(7), "file:///repo/main.ts", Frame::new(100.0, 100.0, 500.0, 400.0));
+    rt.learn_frame(
+        evo_pods::PodId(7),
+        "file:///repo/main.ts",
+        Frame::new(100.0, 100.0, 500.0, 400.0),
+    );
     let text = rt.export_recipes();
     assert!(text.contains("pod-7"));
     let mut rt2 = runtime_with(FakeSurface::base());
@@ -216,13 +269,14 @@ fn badges_cover_contested_and_delta_kinds_in_rank_order() {
         resume_point: "x".into(),
         resume_reason: "x".into(),
         restore_set: vec![],
-        open_deltas: vec![Delta::DownloadedNotYetUsed { path: "pkg.zip".into() }],
+        open_deltas: vec![Delta::DownloadedNotYetUsed {
+            path: "pkg.zip".into(),
+        }],
     };
     let pod = Pod::from_views(&view, &bundle, "n", "r", 1.0, vec![], Default::default());
     let kinds: Vec<BadgeKind> = pod.badges.iter().map(|b| b.kind).collect();
     assert_eq!(kinds, vec![BadgeKind::DownloadReady, BadgeKind::Contested]);
 }
-
 
 #[test]
 fn stage_enter_resurrects_members_parks_split_windows_hides_aliens_then_leave_returns_exactly() {
@@ -232,7 +286,11 @@ fn stage_enter_resurrects_members_parks_split_windows_hides_aliens_then_leave_re
     // whole — and leaving replays the precise inverse, ending with the
     // space's window going back into the space.
     let mut surface = FakeSurface::base();
-    surface.apps = vec![app(1, "Editor", false), app(2, "Browser", false), app(3, "Mail", false)];
+    surface.apps = vec![
+        app(1, "Editor", false),
+        app(2, "Browser", false),
+        app(3, "Mail", false),
+    ];
     let mut parked_member = window(1, 10, "main.ts", Some("/repo/main.ts"));
     parked_member.minimized = true;
     surface.windows = vec![
@@ -263,7 +321,10 @@ fn stage_enter_resurrects_members_parks_split_windows_hides_aliens_then_leave_re
     let log = rt.surface_log();
     assert!(log.contains(&"unhide:3".to_string()), "{log:?}");
     assert!(log.contains(&"unpark:2:41".to_string()), "{log:?}");
-    let repark = log.iter().rposition(|line| line == "park:1:10").expect("repark missing");
+    let repark = log
+        .iter()
+        .rposition(|line| line == "park:1:10")
+        .expect("repark missing");
     let unhide = log.iter().rposition(|line| line == "unhide:3").unwrap();
     let unpark_foreign = log.iter().rposition(|line| line == "unpark:2:41").unwrap();
     assert!(
@@ -271,7 +332,6 @@ fn stage_enter_resurrects_members_parks_split_windows_hides_aliens_then_leave_re
         "reversal order: unhide -> restore -> repark-member last: {log:?}"
     );
 }
-
 
 #[test]
 fn claim_window_merges_evidence_and_survives_an_engine_refresh() {
@@ -288,28 +348,34 @@ fn claim_window_merges_evidence_and_survives_an_engine_refresh() {
     let win = rt.open_windows()[0].clone();
     let note = rt.claim_window(0, &win).unwrap();
     assert!(note.contains("Added"), "{note}");
-    assert!(rt.pods()[0]
-        .surfaces
-        .documents
-        .contains(&"/repo/inbox.md".to_string()));
+    assert!(
+        rt.pods()[0]
+            .surfaces
+            .documents
+            .contains(&"/repo/inbox.md".to_string())
+    );
 
     // Engine refresh wipes the pod projection; the claim re-attaches.
     rt.set_pods(vec![pod_fixture()]);
-    assert!(rt.pods()[0]
-        .surfaces
-        .documents
-        .contains(&"/repo/inbox.md".to_string()),
-        "refresh must not un-own the claim");
+    assert!(
+        rt.pods()[0]
+            .surfaces
+            .documents
+            .contains(&"/repo/inbox.md".to_string()),
+        "refresh must not un-own the claim"
+    );
 
     // Export/import hand the ledger across a restart.
     let text = rt.export_addons();
     let mut rt2 = runtime_with(FakeSurface::base());
     rt2.import_addons(&text);
     rt2.set_pods(vec![pod_fixture()]);
-    assert!(rt2.pods()[0]
-        .surfaces
-        .documents
-        .contains(&"/repo/inbox.md".to_string()));
+    assert!(
+        rt2.pods()[0]
+            .surfaces
+            .documents
+            .contains(&"/repo/inbox.md".to_string())
+    );
 }
 
 #[test]

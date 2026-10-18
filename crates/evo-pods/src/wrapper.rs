@@ -39,7 +39,9 @@ pub fn normalize_bundle_id(host_bundle_prefix: &str, pod_name: &str) -> String {
 
 /// A minimal, explicit executable shell stub.
 pub fn launcher_script(spec: &WrapperSpec) -> String {
-    let mut s = String::from("#!/bin/sh\n# Evo pod launcher — execs the canonical app with this pod's isolation.\nexec");
+    let mut s = String::from(
+        "#!/bin/sh\n# Evo pod launcher — execs the canonical app with this pod's isolation.\nexec",
+    );
     s.push_str(&format!(" \"{}\"", spec.target_binary));
     for arg in &spec.target_args {
         s.push_str(&format!(" \"{arg}\""));

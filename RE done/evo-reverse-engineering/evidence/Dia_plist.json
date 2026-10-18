@@ -1,0 +1,166 @@
+evidence_id: ev_575e012dc5e3bba0941befd97400905d6456a932ad0c774bccfd24e5daf3f678
+subject:
+  name: Dia
+  digest:
+    sha256: 2700437a38de13a026f7bfa5419fc9a63f1641c9a083457e4ba55857648ebaf3
+  format: mach-o
+  architecture: arm64
+  local_path: /Applications/Dia.app/Contents/MacOS/Dia
+provider:
+  id: native-macos
+  name: macOS native inspection utilities
+  version: null
+predicate_type: rea.analysis
+operation: inspect_plist
+parameters:
+  relative_path: Contents/Info.plist
+raw_result:
+  provenance[2]:
+    - tool: file
+      command[3]: /usr/bin/file,"-b",$PLIST
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: a4ba66d26a9cfdc70637c78cdacef920f94147f6aa45ccc73858e493589ef94d
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 48
+      stderr_bytes: 0
+    - tool: plutil
+      command[7]: /usr/bin/plutil,"-convert",json,"-o","-","--",$PLIST
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 9d2296746d4519a8094738e7570972d44791793a072767b8bcbf0ea82af90358
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 4042
+      stderr_bytes: 0
+normalized_result:
+  format: xml
+  value:
+    CFBundleURLTypes[1]:
+      - CFBundleTypeRole: Editor
+        CFBundleURLName: Website URL
+        CFBundleURLSchemes[2]: http,https
+    NSAppleScriptEnabled: true
+    CFBundleInfoDictionaryVersion: "6.0"
+    BCNYBuildDate: "7 Oct 2026, 19:07"
+    DTPlatformVersion: "26.4"
+    CFBundleIconFile: AppIcon
+    CFBundleName: Dia
+    DTSDKName: macosx26.4
+    NSDownloadsFolderUsageDescription: "Access to \"Downloads\" is required for downloading files from the web and to make files accessible from Dia."
+    NSHumanReadableCopyright: Copyright © 2026 The Browser Company. All rights reserved.
+    NSUserActivityTypes[1]: NSUserActivityTypeBrowsingWeb
+    NSBluetoothAlwaysUsageDescription: Websites may use your bluetooth for features on their site.
+    SUScheduledCheckInterval: 28800
+    SUFeedURL: "https://releases.diabrowser.com/BoostBrowser-updates.xml"
+    SUEnableAutomaticChecks: true
+    NSDesktopFolderUsageDescription: "Access to \"Desktop\" is required to make files accessible from Dia."
+    NSLocationAlwaysAndWhenInUseUsageDescription: Websites may use your location for features on their site.
+    NSLocationWhenInUseUsageDescription: Websites may use your location for features on their site.
+    CFBundleDocumentTypes[5]:
+      - CFBundleTypeName: Dia Artifact
+        CFBundleTypeRole: Viewer
+        LSItemContentTypes[1]: engineering.diabrowser.diaart
+        LSHandlerRank: Owner
+      - CFBundleTypeRole: Viewer
+        LSItemContentTypes[1]: com.adobe.pdf
+        CFBundleTypeName: PDF document
+      - CFBundleTypeName: HTML document
+        CFBundleTypeRole: Viewer
+        CFBundleTypeIconSystemGenerated: 1
+        LSItemContentTypes[1]: public.html
+        LSHandlerRank: Default
+      - CFBundleTypeName: XHTML document
+        CFBundleTypeRole: Viewer
+        CFBundleTypeIconSystemGenerated: 1
+        LSItemContentTypes[1]: public.xhtml
+        LSHandlerRank: Default
+      - CFBundleTypeName: Plain text document
+        CFBundleTypeRole: Viewer
+        LSItemContentTypes[1]: public.text
+        CFBundleTypeIconFile: document.icns
+    DTSDKBuild: "25E251"
+    NSCameraUsageDescription: Websites may use your camera for features on their site.
+    CFBundleShortVersionString: 1.52.0
+    CFBundleSupportedPlatforms[1]: MacOSX
+    NSLocationAlwaysUsageDescription: Websites may use your location for features on their site.
+    BuildMachineOSBuild: 25F71
+    DTPlatformBuild: "25E251"
+    CFBundlePackageType: APPL
+    DTXcodeBuild: "17E202"
+    CFBundleDevelopmentRegion: en
+    NSBonjourServices[1]: _googlecast._tcp
+    CFBundleVersion: "88431"
+    NSSpeechRecognitionUsageDescription: Dictate assistant queries.
+    SUAutomaticallyUpdate: true
+    UTExportedTypeDeclarations[2]:
+      - UTTypeIdentifier: company.thebrowser.supertab
+        UTTypeDescription: Supertab
+        UTTypeConformsTo[1]: public.text
+        UTTypeTagSpecification:
+          "public.mime-type"[1]: text/company.thebrowser.supertab
+          "public.filename-extension"[1]: supertab
+      - UTTypeIdentifier: engineering.diabrowser.diaart
+        UTTypeDescription: Dia Artifact
+        UTTypeConformsTo[3]: public.data,public.composite-content,com.pkware.zip-archive
+        UTTypeTagSpecification:
+          "public.mime-type"[1]: application/x-diaart
+          "public.filename-extension"[1]: diaart
+    BCNYCommitInfo: Release-88431-67adf4c5cad49ea1a625f0c9fd564cb70b2fca9e
+    BCNYReleaseType: Release
+    LSFileQuarantineEnabled: true
+    OSAScriptingDefinition: Dia.sdef
+    NSMicrophoneUsageDescription: Websites may use your microphone for features on their site.
+    CFBundleIdentifier: company.thebrowser.dia
+    DTXcode: "2641"
+    CFBundleIconName: AppIcon
+    NSLocationUsageDescription: Websites may use your location for features on their site.
+    CFBundleExecutable: Dia
+    NSAppTransportSecurity:
+      NSAllowsArbitraryLoads: true
+    LSMinimumSystemVersion: "14.0"
+    SUPublicEDKey: PuVxvsbwitqWEvMPriVhNzmiMiVp2AqD8psqG/qcS98=
+    DTPlatformName: macosx
+    NSAppDataUsageDescription: Dia needs access to your previous browser's data to import your profiles and logins.
+    NSDockTilePlugIn: DiaDockTilePlugIn.plugin
+    NSLocalNetworkUsageDescription: This will allow you to select from available devices and display content on them.
+    DTCompiler: com.apple.compilers.llvm.clang.1_0
+  bundle:
+    identifier: company.thebrowser.dia
+    executable: Dia
+    name: Dia
+    version: "88431"
+    short_version: 1.52.0
+  source_path: /Applications/Dia.app/Contents/Info.plist
+  provenance[2]:
+    - tool: file
+      command[3]: /usr/bin/file,"-b",$PLIST
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: a4ba66d26a9cfdc70637c78cdacef920f94147f6aa45ccc73858e493589ef94d
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 48
+      stderr_bytes: 0
+    - tool: plutil
+      command[7]: /usr/bin/plutil,"-convert",json,"-o","-","--",$PLIST
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 9d2296746d4519a8094738e7570972d44791793a072767b8bcbf0ea82af90358
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 4042
+      stderr_bytes: 0
+  limitations: []
+confidence: observed
+authority: shipped-artifact
+environment: null
+limitations: []
+locations[1]{kind,path}:
+  artifact-path,/Applications/Dia.app/Contents/Info.plist
+evidence_links: []

@@ -8,7 +8,12 @@ fn main() {
     println!("threads minted: {}", threads.len());
     for t in &threads {
         let b = engine.resume_bundle(t.id);
-        println!("thread {:>3}: episodes={} anchors={}", t.id, t.episodes.len(), t.anchors.len());
+        println!(
+            "thread {:>3}: episodes={} anchors={}",
+            t.id,
+            t.episodes.len(),
+            t.anchors.len()
+        );
         println!("   resume: {}", b.resume_point);
         println!("   reason: {}", b.resume_reason);
         println!("   restore_set: {:?}", b.restore_set);

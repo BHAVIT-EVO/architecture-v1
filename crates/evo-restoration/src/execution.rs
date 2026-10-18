@@ -45,8 +45,8 @@
 use evo_artifact::artifact_id::ArtifactId;
 
 use crate::derivation::DerivationOutcome;
-use crate::resume_point::ResumePoint;
 use crate::restoration_plan::RestorationPlan;
+use crate::resume_point::ResumePoint;
 
 // ── ExecutionRequest ──────────────────────────────────────────────────────────
 
@@ -220,17 +220,17 @@ pub fn execute(request: &ExecutionRequest) -> ExecutionResult {
 mod tests {
     use super::*;
 
+    use evo_workspace::WorkspaceId;
     use evo_workspace::attachment::{Attachment, ResourceRole};
     use evo_workspace::confidence::ConfidenceScore;
     use evo_workspace::lifecycle::WorkspaceLifecycle;
     use evo_workspace::snapshot::Snapshot;
     use evo_workspace::workspace::Workspace;
-    use evo_workspace::WorkspaceId;
 
+    use crate::RestorationInput;
     use crate::context_chain::ContextChain;
     use crate::derivation::derive_restoration_plan;
     use crate::next_step::NextStep;
-    use crate::RestorationInput;
 
     use std::time::UNIX_EPOCH;
 
@@ -319,10 +319,7 @@ mod tests {
         let outcome = multi_artifact_outcome();
         let error = ExecutionRequest::from_derivation(&outcome)
             .expect_err("no Resume Point means no valid execution request");
-        assert!(matches!(
-            error,
-            ExecutionError::NoDerivedResumePoint { .. }
-        ));
+        assert!(matches!(error, ExecutionError::NoDerivedResumePoint { .. }));
         assert!(error.to_string().contains("25.2"));
     }
 
@@ -347,21 +344,23 @@ mod tests {
     fn execute_never_returns_executed_under_the_current_model() {
         // Both valid request shapes — a derived Resume Point and a complete
         // Plan — are refused. Evo never pretends that execution occurred.
-        let resume_request =
-            ExecutionRequest::from_derivation(&single_artifact_outcome()).unwrap();
-        assert!(matches!(execute(&resume_request), ExecutionResult::Refused { .. }));
+        let resume_request = ExecutionRequest::from_derivation(&single_artifact_outcome()).unwrap();
+        assert!(matches!(
+            execute(&resume_request),
+            ExecutionResult::Refused { .. }
+        ));
 
-        let plan_request = ExecutionRequest::from_derivation(&DerivationOutcome::Complete(
-            valid_plan(),
-        ))
-        .unwrap();
-        assert!(matches!(execute(&plan_request), ExecutionResult::Refused { .. }));
+        let plan_request =
+            ExecutionRequest::from_derivation(&DerivationOutcome::Complete(valid_plan())).unwrap();
+        assert!(matches!(
+            execute(&plan_request),
+            ExecutionResult::Refused { .. }
+        ));
     }
 
     #[test]
     fn execute_is_deterministic() {
-        let request =
-            ExecutionRequest::from_derivation(&single_artifact_outcome()).unwrap();
+        let request = ExecutionRequest::from_derivation(&single_artifact_outcome()).unwrap();
         let first = execute(&request);
         let second = execute(&request);
         assert_eq!(first, second);
@@ -410,7 +409,11 @@ mod tests {
         let error = ExecutionError::NoDerivedResumePoint {
             reason: "no Resume Point was derived".to_string(),
         };
-        assert!(error.to_string().contains("no valid derived execution request"));
+        assert!(
+            error
+                .to_string()
+                .contains("no valid derived execution request")
+        );
         assert!(error.to_string().contains("no Resume Point was derived"));
     }
 }

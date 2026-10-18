@@ -1,0 +1,11 @@
+total 0
+drwxr-xr-x@ 10 bhavitsaini  admin  320 Oct 14 07:57 .
+drwxr-xr-x@  9 bhavitsaini  admin  288 Oct 14 08:01 ..
+drwxr-xr-x@  7 bhavitsaini  admin  224 Oct 14 07:57 Electron Framework.framework
+drwxr-xr-x@  5 bhavitsaini  admin  160 Oct 14 07:57 Mantle.framework
+drwxr-xr-x@  3 bhavitsaini  admin   96 Oct 14 07:57 Rambox Helper (GPU).app
+drwxr-xr-x@  3 bhavitsaini  admin   96 Oct 14 07:57 Rambox Helper (Plugin).app
+drwxr-xr-x@  3 bhavitsaini  admin   96 Oct 14 07:57 Rambox Helper (Renderer).app
+drwxr-xr-x@  3 bhavitsaini  admin   96 Oct 14 07:57 Rambox Helper.app
+drwxr-xr-x@  5 bhavitsaini  admin  160 Oct 14 07:57 ReactiveObjC.framework
+drwxr-xr-x@  5 bhavitsaini  admin  160 Oct 14 07:57 Squirrel.framework

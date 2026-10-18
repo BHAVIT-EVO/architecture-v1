@@ -1,0 +1,69 @@
+import SwiftUI
+
+struct HudExpandedDetailedContentView: View {
+    @Environment(\.notchScale) private var scale
+    @Environment(\.isNotchlessScreen) private var isNotchlessScreen
+    
+    let image: String
+    let text: String
+    let level: Int
+    let indicatorTintStyle: HudIndicatorTintStyle
+    let showsIndicatorGlow: Bool
+    
+    var body: some View {
+        VStack {
+            Spacer()
+            
+            VStack(spacing: 10) {
+                MarqueeText(
+                    .constant(text),
+                    font: .system(size: 15, design: .rounded),
+                    nsFont: .body,
+                    textColor: .white.opacity(0.9),
+                    backgroundColor: .clear,
+                    minDuration: 1.5,
+                    frameWidth: 175
+                )
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                
+                ZStack {
+                    HudLevelIndicatorView(
+                        level: clampedLevel,
+                        indicatorStyle: .bar,
+                        tintStyle: indicatorTintStyle,
+                        showsGlow: showsIndicatorGlow,
+                        barWidth: 90.scaled(by: scale),
+                        barHeight: 8
+                    )
+                    
+                    HStack {
+                        Image(systemName: image)
+                            .font(.system(size:  16))
+                            .foregroundColor(.white)
+                        
+                        Spacer()
+                        
+                        AnimatedLevelText(
+                            level: clampedLevel,
+                            fontSize: 14
+                        )
+                    }
+                }
+            }
+        }
+        .padding(.bottom, bottomPadding)
+        .padding(.horizontal, horizontalPadding)
+    }
+    
+    private var bottomPadding: CGFloat {
+        isNotchlessScreen ? 14 : 14
+    }
+    
+    private var horizontalPadding: CGFloat {
+        isNotchlessScreen ? 24 : 34
+    }
+    
+    private var clampedLevel: Int {
+        max(0, min(100, level))
+    }
+}

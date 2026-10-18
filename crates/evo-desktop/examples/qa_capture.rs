@@ -21,7 +21,7 @@ use egui::{UserData, ViewportCommand};
 
 use evo_daemon::cache::CanonicalIndex;
 use evo_desktop::daemon::{DaemonManager, DaemonStatus};
-use evo_desktop::{detail, home, shell, state, theme, ui};
+use evo_desktop::{detail, dock, home, shell, state, theme, ui};
 use evo_engagement::Standing;
 use evo_execution::{
     ExecutionReport, Locator, PreflightOutcome, RestorationSelection, preflight_selection,
@@ -66,6 +66,13 @@ enum Body {
     Home { query: &'static str },
     /// Workspace Detail for the nth remembered body of work.
     Detail(usize),
+    /// Workspace Detail with the nth stage panel pre-expanded, injected
+    /// through the same egui temp-data seam the headless pins use — the
+    /// harness photographs the expanded state without a synthetic click.
+    DetailOpen(usize, usize),
+    /// Home with the dock's transport mid-restoration: one of two steps
+    /// done, so the teal hairline fraction and the pill are both showing.
+    ExecutingDock,
     /// Home with the Settings sheet fully open above it.
     Settings,
     /// The first-run gate at the given step, which owns the whole window.
@@ -208,6 +215,27 @@ fn shots() -> Vec<Shot> {
             cap: Cap::Running,
             body: Body::StorageError,
         },
+        Shot {
+            name: "18-detail-open-overview",
+            w: 980.0,
+            h: 720.0,
+            cap: Cap::Running,
+            body: Body::DetailOpen(0, 0),
+        },
+        Shot {
+            name: "19-detail-open-record",
+            w: 980.0,
+            h: 720.0,
+            cap: Cap::Running,
+            body: Body::DetailOpen(0, 2),
+        },
+        Shot {
+            name: "20-dock-executing",
+            w: 980.0,
+            h: 720.0,
+            cap: Cap::Running,
+            body: Body::ExecutingDock,
+        },
     ]
 }
 
@@ -228,7 +256,14 @@ struct Canon {
 }
 
 fn load(root: &Path) -> Canon {
-    let index = CanonicalIndex::new(root.to_path_buf()).expect("build canonical index");
+    // Capture-only replay: tail the log without recomputing the engagement
+    // understanding — the same fast path the live daemon uses between
+    // reconstructions. Full replay cost minutes on today's log size; the
+    // harness photographs screens, not engagement params.
+    let index = match CanonicalIndex::new_capture_only(root.to_path_buf()) {
+        Ok(index) => index,
+        Err(_) => CanonicalIndex::new(root.to_path_buf()).expect("build canonical index"),
+    };
     let display = state::display_state_from_index(&index);
     let evidence = index.locators();
 
@@ -283,9 +318,6 @@ struct Qa {
 
     // The user-authored transient state the screens borrow mutably.
     query: String,
-    kind_filter: state::WorkKindFilter,
-    period_filter: state::WorkPeriodFilter,
-    memo: home::Memo,
     selected: Option<WorkspaceId>,
     designation_status: Option<(String, bool)>,
     continuation_draft: Option<BTreeSet<String>>,
@@ -298,8 +330,8 @@ struct Qa {
 }
 
 impl Qa {
+    #[allow(dead_code)]
     fn new(cc: &eframe::CreationContext<'_>, out: PathBuf) -> Self {
-        theme::install(&cc.egui_ctx);
         let storage_root = state::canonical_storage_root();
         let canon = load(&storage_root);
         eprintln!(
@@ -307,6 +339,12 @@ impl Qa {
             storage_root.display(),
             canon.workspaces.len()
         );
+        Self::with_canon(cc, canon, out)
+    }
+
+    fn with_canon(cc: &eframe::CreationContext<'_>, canon: Canon, out: PathBuf) -> Self {
+        theme::install(&cc.egui_ctx);
+        let storage_root = state::canonical_storage_root();
         Self {
             out,
             storage_root: storage_root.clone(),
@@ -318,9 +356,6 @@ impl Qa {
             canon,
             daemon: DaemonManager::new(storage_root),
             query: String::new(),
-            kind_filter: state::WorkKindFilter::All,
-            period_filter: state::WorkPeriodFilter::All,
-            memo: home::Memo::default(),
             selected: None,
             designation_status: None,
             continuation_draft: None,
@@ -394,8 +429,41 @@ impl eframe::App for Qa {
             _ => None,
         };
         self.selected = match shot.body {
-            Body::Detail(n) => self.canon.workspaces.get(n).map(|w| w.id().clone()),
+            Body::Detail(n) | Body::DetailOpen(n, _) => {
+                self.canon.workspaces.get(n).map(|w| w.id().clone())
+            }
             _ => None,
+        };
+        // The executing shot composes the dock mid-restoration: one of two
+        // steps done, exactly the state the headless pin holds.
+        self.continue_phase = match shot.body {
+            Body::ExecutingDock => {
+                use evo_artifact::artifact_id::ArtifactId;
+                use evo_execution::StepPlan;
+                detail::ContinuePhase::Executing {
+                    steps: vec![
+                        evo_execution::RestorationStep::new(
+                            ArtifactId::new("artifact-aa").unwrap(),
+                            StepPlan::Attempt(evo_execution::LocatorKind::FilePath(
+                                "/tmp/evo-qa-synth/annapurna.md".into(),
+                            )),
+                        ),
+                        evo_execution::RestorationStep::new(
+                            ArtifactId::new("artifact-bb").unwrap(),
+                            StepPlan::Attempt(evo_execution::LocatorKind::FilePath(
+                                "/tmp/evo-qa-synth/baggage.md".into(),
+                            )),
+                        ),
+                    ],
+                    done: vec![evo_execution::TargetAttempt::new(
+                        ArtifactId::new("artifact-aa").unwrap(),
+                        evo_execution::TargetStatus::Opened {
+                            detail: "/tmp/evo-qa-synth/annapurna.md".to_string(),
+                        },
+                    )],
+                }
+            }
+            _ => detail::ContinuePhase::Idle,
         };
 
         let status = shot.cap.status();
@@ -422,10 +490,7 @@ impl eframe::App for Qa {
                 storage_root,
                 canon,
                 daemon,
-                query,
-                kind_filter,
-                period_filter,
-                memo,
+                query: _,
                 selected,
                 designation_status,
                 continuation_draft,
@@ -452,29 +517,45 @@ impl eframe::App for Qa {
                     }
 
                     match shot.body {
+                        // The dock-executing shot: the home body beneath,
+                        // with the dock composed over it exactly as the
+                        // shell does — pill, mono counter, teal hairline.
+                        Body::ExecutingDock => {
+                            home::empty(ui, true);
+                            let dock_rect = egui::Rect::from_min_max(
+                                egui::pos2(max.min.x, max.max.y - theme::ACTION_BAR_HEIGHT),
+                                egui::pos2(max.max.x, max.max.y),
+                            );
+                            let ctx_data = dock::DockContext {
+                                active_pod: None,
+                                in_focus: false,
+                                continuable: true,
+                            };
+                            dock::show(
+                                ui,
+                                dock_rect,
+                                &ctx_data,
+                                &*continue_phase,
+                                execution_result.as_ref(),
+                            );
+                        }
                         Body::Empty => home::empty(ui, true),
                         Body::Permission => home::permission_required(ui, None, || {}),
                         Body::StorageError => shell::storage_error(
                             ui,
                             "canonical storage could not be read: observation.log is unreadable",
                         ),
-                        Body::Home { .. } | Body::Settings => {
-                            let mut retrieval = home::Retrieval {
-                                query,
-                                kind: kind_filter,
-                                period: period_filter,
-                                memo,
-                            };
-                            home::screen(
-                                ui,
-                                canon.workspaces.as_slice(),
-                                canon.cards.as_slice(),
-                                &canon.subjects,
-                                &canon.kinds,
-                                false,
-                                selected,
-                                &mut retrieval,
-                            );
+                        Body::Home { .. } => {
+                            // The QA harness photographs the rack's empty
+                            // composition; the live rack itself needs an
+                            // engine corpus, which this canonical-only
+                            // harness does not carry.
+                            home::empty(ui, true);
+                        }
+                        Body::Settings => {
+                            // The sheet itself is opened by the flag above;
+                            // the body beneath it is the plain Home state.
+                            home::empty(ui, true);
                         }
                         Body::Detail(n) => {
                             let Some(workspace) = canon.workspaces.get(n) else {
@@ -510,6 +591,52 @@ impl eframe::App for Qa {
                             };
                             detail::screen(ui, &canonical, canon.cards.as_slice(), &mut transient);
                         }
+                        Body::DetailOpen(n, panel) => {
+                            let Some(workspace) = canon.workspaces.get(n) else {
+                                home::empty(ui, true);
+                                return;
+                            };
+                            let outcome = canon.outcomes.get(&workspace.id().to_string());
+                            let canonical = detail::Canonical {
+                                workspace,
+                                outcome,
+                                selection: canon.selections.get(n).and_then(Option::as_ref),
+                                preflight: canon
+                                    .preflights
+                                    .get(n)
+                                    .map(Vec::as_slice)
+                                    .unwrap_or(&[]),
+                                subjects: &canon.subjects,
+                                kinds: &canon.kinds,
+                                titles: &canon.titles,
+                                standings: &canon.standings,
+                                locators: &canon.locators,
+                                designation: canon.designation.as_ref(),
+                            };
+                            let mut transient = detail::Transient {
+                                storage_root: storage_root.as_path(),
+                                selected,
+                                designation_status,
+                                continuation_draft,
+                                continuation_status,
+                                grouping_status,
+                                execution_result,
+                                continue_phase,
+                            };
+                            // The pre-expanded panel, injected through the
+                            // same temp-data key the screen itself owns —
+                            // identical to what a real strip click writes.
+                            ui.data_mut(|data| {
+                                data.insert_temp(
+                                    egui::Id::new((
+                                        "evo-stage-open-panel",
+                                        workspace.id().to_string(),
+                                    )),
+                                    panel,
+                                );
+                            });
+                            detail::screen(ui, &canonical, canon.cards.as_slice(), &mut transient);
+                        }
                         Body::FirstRun(_) => {}
                     }
                 },
@@ -536,6 +663,19 @@ impl Drop for Qa {
 }
 
 fn main() -> eframe::Result {
+    // The real canonical corpus replays the whole Observation log — minutes
+    // on today's machine — before the first window can open. `EVO_QA_SYNTH=1`
+    // photographs the screens against a small in-memory corpus instead:
+    // same screen functions, same composition, honest about which corpus
+    // produced the pixels.
+    if std::env::var("EVO_QA_SYNTH").is_ok() {
+        return run(synth::canon());
+    }
+    let storage_root = state::canonical_storage_root();
+    run(load(&storage_root))
+}
+
+fn run(canon: Canon) -> eframe::Result {
     let out = std::env::temp_dir().join("evo-qa-shots");
     std::fs::create_dir_all(&out).expect("create output directory");
     eprintln!("QA-CAPTURE out={}", out.display());
@@ -552,6 +692,165 @@ fn main() -> eframe::Result {
     eframe::run_native(
         "Evo QA",
         options,
-        Box::new(|cc| Ok(Box::new(Qa::new(cc, out)))),
+        Box::new(move |cc| Ok(Box::new(Qa::with_canon(cc, canon, out)))),
     )
+}
+
+/// A small in-memory corpus for `EVO_QA_SYNTH`: two bodies of work with a
+/// real derivation each — enough for the stage, the panel-cards, and the
+/// Record tabs to photograph with true derived content.
+mod synth {
+    use super::Canon;
+
+    use evo_desktop::state;
+    use evo_engagement::Standing;
+    use evo_execution::{Locator, LocatorKind, preflight_selection};
+    use evo_restoration::DerivationOutcome;
+    use evo_workspace::workspace::Workspace;
+    use evo_workspace::workspace_id::WorkspaceId;
+
+    use std::collections::HashMap;
+
+    pub fn canon() -> Canon {
+        let mut workspaces = Vec::new();
+        let mut outcomes = HashMap::new();
+        let mut subjects_map: HashMap<String, String> = HashMap::new();
+        let mut kinds: HashMap<String, String> = HashMap::new();
+        let mut titles: HashMap<String, String> = HashMap::new();
+        let mut locators: HashMap<String, Locator> = HashMap::new();
+
+        let seeds: [(UuidSeed, &str, &str, &str); 2] = [
+            (
+                UuidSeed::A,
+                "Revisiting Annapurna",
+                "artifact-aa",
+                "/tmp/evo-qa-synth/annapurna.md",
+            ),
+            (
+                UuidSeed::B,
+                "Baggage Battles",
+                "artifact-bb",
+                "/tmp/evo-qa-synth/baggage.md",
+            ),
+        ];
+        for (seed, title, artifact, path) in seeds {
+            let (workspace, outcome) = fixture(seed, title, artifact, path);
+            subjects_map.insert(artifact.to_string(), format!("{title} — notes"));
+            kinds.insert(artifact.to_string(), "saved file".to_string());
+            titles.insert(workspace.id().to_string(), title.to_string());
+            locators.insert(
+                artifact.to_string(),
+                Locator::new(
+                    evo_artifact::artifact_id::ArtifactId::new(artifact).unwrap(),
+                    LocatorKind::FilePath(path.into()),
+                ),
+            );
+            outcomes.insert(workspace.id().to_string(), outcome);
+            workspaces.push(workspace);
+        }
+
+        // `selection_for` reads the *evidence* map (kind, witness detail);
+        // the locator map feeds the plan announcements separately.
+        let mut evidence: HashMap<String, (String, String)> = HashMap::new();
+        for artifact in locators.keys() {
+            evidence.insert(
+                artifact.clone(),
+                ("OBS-FILE-SAVED".to_string(), artifact.clone()),
+            );
+        }
+        let mut selections = Vec::new();
+        let mut preflights = Vec::new();
+        let mut cards = Vec::new();
+        let standings: HashMap<String, Standing> = HashMap::new();
+        for workspace in &workspaces {
+            let outcome = outcomes.get(&workspace.id().to_string());
+            let selection =
+                outcome.map(|outcome| state::selection_for(workspace, outcome, &evidence));
+            let preflight = match &selection {
+                Some(selection) => {
+                    preflight_selection(selection, &evo_execution::MacOSExecutor::new())
+                }
+                None => Vec::new(),
+            };
+            cards.push(state::workspace_card(
+                workspace,
+                outcome,
+                selection.as_ref(),
+                &subjects_map,
+                &kinds,
+                &titles,
+                &standings,
+            ));
+            selections.push(selection);
+            preflights.push(preflight);
+        }
+
+        Canon {
+            workspaces,
+            cards,
+            outcomes,
+            subjects: subjects_map,
+            kinds,
+            titles,
+            standings,
+            locators,
+            designation: None,
+            selections,
+            preflights,
+        }
+    }
+
+    enum UuidSeed {
+        A,
+        B,
+    }
+
+    impl UuidSeed {
+        fn id(self) -> WorkspaceId {
+            use std::str::FromStr;
+            match self {
+                UuidSeed::A => {
+                    WorkspaceId::from_str("123e4567-e89b-12d3-a456-426614174961").unwrap()
+                }
+                UuidSeed::B => {
+                    WorkspaceId::from_str("123e4567-e89b-12d3-a456-426614174962").unwrap()
+                }
+            }
+        }
+    }
+
+    fn fixture(
+        seed: UuidSeed,
+        title: &str,
+        artifact: &str,
+        _path: &str,
+    ) -> (Workspace, DerivationOutcome) {
+        use evo_artifact::artifact_id::ArtifactId;
+        use evo_restoration::{RestorationInput, derive_restoration_plan};
+        use evo_workspace::attachment::{Attachment, ResourceRole};
+        use evo_workspace::confidence::ConfidenceScore;
+        use evo_workspace::lifecycle::WorkspaceLifecycle;
+        use evo_workspace::snapshot::Snapshot;
+
+        let _ = title;
+        let attachment = Attachment::new(
+            ArtifactId::new(artifact).unwrap(),
+            ConfidenceScore::new(1.0).unwrap(),
+            ResourceRole::Primary,
+        );
+        let snapshot = Snapshot::new(
+            std::time::UNIX_EPOCH,
+            WorkspaceLifecycle::Active,
+            vec![attachment.clone()],
+        );
+        let ws = Workspace::new(
+            seed.id(),
+            WorkspaceLifecycle::Active,
+            vec![attachment],
+            vec![snapshot],
+        );
+        let input = RestorationInput::new(&ws, ws.snapshots().last().unwrap()).unwrap();
+        let outcome = derive_restoration_plan(&input);
+        (ws, outcome)
+    }
 }

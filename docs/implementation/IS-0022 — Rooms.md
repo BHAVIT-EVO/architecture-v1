@@ -1,6 +1,13 @@
 # IS-0022 — Rooms
 
-Status: Frozen
+Status: Historical — superseded for web surfaces
+
+> **Current Evo behavior (2026-10):** Evo does not embed work links or create
+> per-work WebKit/browser sessions. URLs, files, folders, and applications are
+> dispatched to the normal macOS opener, then the pod stage arranges the live
+> windows and records a reversible lease. Sections 3–4 below document the old
+> Rooms proposal only; they are retained as design history, not as a product
+> contract.
 
 Depends On:
 
@@ -27,10 +34,9 @@ This specification defines:
 
 * Room semantics: enter, leave, switch, cycle;
 * the lease: the honest ledger of what Enter changed;
-* browser worlds: per-work isolated browser sessions (Stage 2);
-* web surfaces: the work's pages hosted inside Evo's window (Stage 3);
-* hibernation: the RAM contract — a work's web presence is paid for only
-  while occupied;
+* external resource opening: the OS owns handlers and browser sessions;
+* hibernation: the RAM contract — Evo-owned overlays and containment receipts
+  exist only while a work is occupied;
 * the runtime: where room state lives so commands never wait on a window.
 
 This specification does not define:

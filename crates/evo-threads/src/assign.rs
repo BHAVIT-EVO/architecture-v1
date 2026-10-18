@@ -65,17 +65,14 @@ impl Engine {
         if let Some(&(best_t, best_s)) = anchor_order.first() {
             let second_s = anchor_order.get(1).map(|x| x.1).unwrap_or(0);
             let dominates = (best_s as f64) >= cfg.anchor_margin_ratio * (second_s as f64).max(1.0)
-                && (best_s as f64)
-                    >= cfg.anchor_margin_ratio * (c.new_production as f64).max(1.0);
+                && (best_s as f64) >= cfg.anchor_margin_ratio * (c.new_production as f64).max(1.0);
             if dominates && !c.forbidden.contains(&best_t) {
                 let w = c.witnesses.get(&best_t).cloned().unwrap_or_default();
                 self.finish_assign(&ep, best_t, w);
                 return;
             }
             // A genuine tie between anchor-backed works: retain, never guess.
-            if second_s > 0
-                && (second_s as f64) * cfg.anchor_margin_ratio >= best_s as f64
-            {
+            if second_s > 0 && (second_s as f64) * cfg.anchor_margin_ratio >= best_s as f64 {
                 let candidates: Vec<ThreadId> = anchor_order.iter().map(|x| x.0).collect();
                 let all_w = flatten_witnesses(&c.witnesses);
                 self.fork_episode(&ep, candidates, all_w);
@@ -84,11 +81,21 @@ impl Engine {
         }
 
         // 3. Configuration may carry an assignment — but only for a
-        //    production-free episode. A productive episode's own production
-        //    always outranks borrowed context; otherwise one shared browser
-        //    could drag tomorrow's new work into yesterday's thread.
+        //    production-free episode, and only when the episode's substance
+        //    is territory the work already knows. A productive episode's own
+        //    production always outranks borrowed context; otherwise one
+        //    shared browser could drag tomorrow's new work into yesterday's
+        //    thread. And a production-free episode whose dominant attention
+        //    sits on a resource the candidate has never carried is not a
+        //    fragment of that work: interleave attaches fragments
+        //    (establishment precedence — the ledger's
+        //    INTERLEAVE_DWELL_CAP_MS rule), substantive engagement stays its
+        //    own work (or unassigned), never auto-merged into another.
         if c.total_production == 0 {
-            if let Some((t, ws)) = self.best_config_candidate(&ep, &c) {
+            if let Some((t, ws)) = self
+                .best_config_candidate(&ep, &c)
+                .filter(|(t, _)| self.episode_is_fragment_of(&ep, *t))
+            {
                 if !c.forbidden.contains(&t) {
                     self.finish_assign(&ep, t, ws);
                     return;
@@ -127,7 +134,11 @@ impl Engine {
             return;
         }
         if c.total_production > 0 {
-            self.park_episode(&ep, ParkReason::WeakProduction, flatten_witnesses(&c.witnesses));
+            self.park_episode(
+                &ep,
+                ParkReason::WeakProduction,
+                flatten_witnesses(&c.witnesses),
+            );
             return;
         }
 
@@ -138,50 +149,14 @@ impl Engine {
             return;
         }
 
-        // 5b. **Workspace setup**: the person deliberately opened a set of
-        //     surfaces — sustained attention (>3s) on each of several
-        //     distinct resources in one sitting — intending to work later.
-        //     The research (Recall's design, TaskTracer): this pattern is a
-        //     setup, not consumption, and the system should recognize it
-        //     immediately rather than waiting for production that hasn't
-        //     happened yet. The engagement floor prevents the false
-        //     positive: tabs bounced past in under 3 seconds are not setup,
-        //     they are navigation.
-        if self.is_workspace_setup(&ep) {
-            let surfaces: Vec<String> = ep
-                .participants
-                .iter()
-                .filter(|(_, p)| p.attention >= 3000.0)
-                .map(|(r, _)| r.clone())
-                .collect();
-            self.spawn_recurrence_thread(&ep, surfaces);
-            return;
-        }
-
-        // 6. Attention alone is not a work. Retained; never minted.
-        self.park_episode(&ep, ParkReason::ConsumptionOnly, flatten_witnesses(&c.witnesses));
-    }
-
-    /// Whether an episode matches the workspace-setup pattern: several
-    /// distinct surfaces, each with sustained attention (≥3s), in one
-    /// sitting, with no production. This is "the person arranged their
-    /// tools and intends to work" — the pattern that a 1-minute app-opening
-    /// spree produces. The threshold: at least 3 distinct surfaces at ≥3s
-    /// each (below that, it's just reading or navigation).
-    fn is_workspace_setup(&self, ep: &EpisodeState) -> bool {
-        // Production already handled upstream (rule 4): setup has none.
-        if !ep.credits.is_empty() {
-            return false;
-        }
-        let sustained: Vec<&String> = ep
-            .participants
-            .iter()
-            .filter(|(_, p)| p.attention >= 3000.0)
-            .map(|(r, _)| r)
-            .collect();
-        // At least 3 distinct surfaces with sustained attention each:
-        // opening 2 things is a glance; 3+ arranged surfaces is a setup.
-        sustained.len() >= 3
+        // 6. Attention alone is not a work, regardless of how many surfaces
+        //    were attended or for how long. Intent and co-membership were not
+        //    observed. Retain the episode rather than inventing a setup.
+        self.park_episode(
+            &ep,
+            ParkReason::ConsumptionOnly,
+            flatten_witnesses(&c.witnesses),
+        );
     }
 
     fn compute_candidates(&self, ep: &EpisodeState) -> Candidates {
@@ -329,13 +304,47 @@ impl Engine {
     /// Configuration rule, factored for reuse by the parked-episode fixpoint.
     /// Returns the winning thread with its witnesses when configuration alone
     /// clears both the weight floor and the margin.
+    /// Establishment precedence, engine-side: is this production-free episode
+    /// a *fragment* of the candidate work? Ground the work already carries is
+    /// free — returning to one's own territory is what resumption means. But
+    /// each participant the work has NEVER carried is judged on its own dwell,
+    /// exactly as the ledger judges each group's dwell in a sitting: brief
+    /// (sub-floor) presence may attach — a fragment; substantive attention is
+    /// not a fragment and may not be swallowed by a neighboring work — the
+    /// episode re-forms, parks, or stands unassigned instead.
+    fn episode_is_fragment_of(&self, ep: &EpisodeState, tid: ThreadId) -> bool {
+        let cfg = &self.st.cfg;
+        let Some(t) = self.st.threads.get(&tid) else {
+            return false;
+        };
+        for (r, p) in &ep.participants {
+            let known = t.anchors.contains_key(r)
+                || t.companions.contains_key(r)
+                || t.episodes.iter().any(|id| {
+                    self.st
+                        .episodes
+                        .get(id)
+                        .map(|past| past.participants.contains_key(r))
+                        .unwrap_or(false)
+                });
+            if known {
+                continue;
+            }
+            if p.attention >= cfg.establishment_dwell_floor as f64 {
+                return false;
+            }
+        }
+        true
+    }
+
     fn best_config_candidate(
         &self,
         _ep: &EpisodeState,
         c: &Candidates,
     ) -> Option<(ThreadId, Vec<Witness>)> {
         let cfg = &self.st.cfg;
-        let mut order: Vec<(ThreadId, f64)> = c.config_support.iter().map(|(t, w)| (*t, *w)).collect();
+        let mut order: Vec<(ThreadId, f64)> =
+            c.config_support.iter().map(|(t, w)| (*t, *w)).collect();
         order.sort_by(|a, b| {
             b.1.partial_cmp(&a.1)
                 .unwrap_or(std::cmp::Ordering::Equal)
@@ -343,9 +352,7 @@ impl Engine {
         });
         let &(bt, bw) = order.first()?;
         let second = order.get(1).map(|x| x.1).unwrap_or(0.0);
-        if bw >= cfg.config_min_weight
-            && bw >= cfg.config_margin_ratio * second.max(1.0)
-        {
+        if bw >= cfg.config_min_weight && bw >= cfg.config_margin_ratio * second.max(1.0) {
             Some((bt, c.witnesses.get(&bt).cloned().unwrap_or_default()))
         } else {
             None
@@ -384,7 +391,12 @@ impl Engine {
         let _ = witnesses;
     }
 
-    fn fork_episode(&mut self, ep: &EpisodeState, candidates: Vec<ThreadId>, witnesses: Vec<Witness>) {
+    fn fork_episode(
+        &mut self,
+        ep: &EpisodeState,
+        candidates: Vec<ThreadId>,
+        witnesses: Vec<Witness>,
+    ) {
         if let Some(e) = self.st.episodes.get_mut(&ep.id) {
             e.parked = true;
             e.fork_candidates = Some(candidates.clone());
@@ -460,7 +472,10 @@ impl Engine {
             at: ep.span.0,
             witnesses: witnesses.clone(),
         });
-        let strengths: Vec<f64> = qualified.iter().map(|r| self.recurrence_strength(r)).collect();
+        let strengths: Vec<f64> = qualified
+            .iter()
+            .map(|r| self.recurrence_strength(r))
+            .collect();
         if let Some(t) = self.st.threads.get_mut(&tid) {
             for (r, s) in qualified.iter().zip(strengths.iter()) {
                 t.anchors.insert(
@@ -551,6 +566,10 @@ impl Engine {
             if ep.credits.contains_key(r) || p.attention < cfg.min_meaningful_attention as f64 {
                 continue;
             }
+            // A classified surface never founds a work by recurrence.
+            if self.st.classified.contains_key(r) {
+                continue;
+            }
             if self
                 .st
                 .ledger
@@ -571,8 +590,7 @@ impl Engine {
                     o.id != ep.id
                         && !o.open
                         && o.assigned.is_none()
-                        && o
-                            .participants
+                        && o.participants
                             .get(r)
                             .map(|q| q.attention >= cfg.min_meaningful_attention as f64)
                             .unwrap_or(false)
@@ -600,11 +618,7 @@ impl Engine {
             None => return,
         };
         let (span_end, parts, credits) = match self.st.episodes.get(&ep_id) {
-            Some(ep) => (
-                ep.span.1,
-                ep.participants.clone(),
-                ep.credits.clone(),
-            ),
+            Some(ep) => (ep.span.1, ep.participants.clone(), ep.credits.clone()),
             None => return,
         };
 
@@ -664,6 +678,21 @@ impl Engine {
             if delta == 0 {
                 continue;
             }
+            // A classified surface founds nothing. Its production is still
+            // consumed (the watermark advances so it is not re-attempted on
+            // every commit) and remembered as context, but no anchor — no
+            // identity — is ever minted from it.
+            if self.st.classified.contains_key(r) {
+                if let Some(t) = self.st.threads.get_mut(&tid) {
+                    *t.companions.entry(r.clone()).or_insert(0.0) += delta as f64;
+                }
+                if let Some(ep) = self.st.episodes.get_mut(&ep_id) {
+                    if let Some(cc) = ep.credits.get_mut(r) {
+                        cc.committed = c.amount;
+                    }
+                }
+                continue;
+            }
             let mut promoted_now = false;
             let mut new_strength = 0.0;
             if let Some(t) = self.st.threads.get_mut(&tid) {
@@ -683,12 +712,7 @@ impl Engine {
                 }
             }
             let (was_size, new_size, holders) = {
-                let was = self
-                    .st
-                    .anchor_index
-                    .get(r)
-                    .map(|s| s.len())
-                    .unwrap_or(0);
+                let was = self.st.anchor_index.get(r).map(|s| s.len()).unwrap_or(0);
                 let set = self.st.anchor_index.entry(r.clone()).or_default();
                 set.insert(tid);
                 let holders: Vec<ThreadId> = set.iter().copied().collect();
@@ -742,6 +766,10 @@ impl Engine {
         }
         for (r, (count, total)) in counts {
             if count < cfg.min_anchor_recurrence {
+                continue;
+            }
+            // A classified surface never becomes an anchor by re-forming.
+            if self.st.classified.contains_key(&r) {
                 continue;
             }
             let already = self
@@ -830,14 +858,25 @@ impl Engine {
                     progressed = true;
                     continue;
                 }
-                let production: u64 = ep.credits.values().map(|x| x.amount).sum();
+                // Production that would found a work is production that is not
+                // classified away: a class'd surface's credits count for the
+                // work it attends, never for minting a new one.
+                let production: u64 = ep
+                    .credits
+                    .iter()
+                    .filter(|(r, _)| !self.st.classified.contains_key(*r))
+                    .map(|(_, x)| x.amount)
+                    .sum();
                 if production >= self.st.cfg.thread_birth_min_production {
                     self.spawn_thread_for_episode(&ep, birth_witnesses(&ep, &c));
                     progressed = true;
                     continue;
                 }
                 if production == 0 {
-                    if let Some((t, ws)) = self.best_config_candidate(&ep, &c) {
+                    if let Some((t, ws)) = self
+                        .best_config_candidate(&ep, &c)
+                        .filter(|(t, _)| self.episode_is_fragment_of(&ep, *t))
+                    {
                         if !c.forbidden.contains(&t) {
                             self.finish_assign(&ep, t, ws);
                             progressed = true;
@@ -880,7 +919,39 @@ impl Engine {
                 self.st.sweep_dirty = true;
             }
             Declaration::NotMine { resource } => self.quarantine(&resource),
+            Declaration::Classified { resource, class } => {
+                self.classify_surface(resource, class)
+            }
+            Declaration::WorkDismissed { work } => self.dismiss_work(work),
+            Declaration::MemberState {
+                work,
+                member,
+                state,
+            } => self.set_member_state(work, member, state),
         }
+    }
+
+    fn dismiss_work(&mut self, work: String) {
+        if work.trim().is_empty() {
+            return;
+        }
+        self.st.dismissed.insert(work.clone());
+        self.st.push(Decision::WorkDismissed { work });
+    }
+
+    fn set_member_state(&mut self, work: String, member: String, state: MemberState) {
+        if work.trim().is_empty() || member.trim().is_empty() {
+            return;
+        }
+        self.st
+            .member_states
+            .insert((work.clone(), member.clone()), state);
+        self.st.push(Decision::MemberStateChanged {
+            work,
+            member,
+            state,
+        });
+        self.st.sweep_dirty = true;
     }
 
     fn declare_same_work(&mut self, a: String, b: String) {
@@ -922,7 +993,7 @@ impl Engine {
                         episodes: BTreeSet::new(),
                         anchors: BTreeMap::new(),
                         companions: BTreeMap::new(),
-                in_flow_companions: BTreeSet::new(),
+                        in_flow_companions: BTreeSet::new(),
                         fork: None,
                     },
                 );
@@ -939,6 +1010,16 @@ impl Engine {
     }
 
     fn declare_anchor(&mut self, tid: ThreadId, resource: String, _at: Option<u64>) {
+        // A classified surface cannot be declared into identity: the class
+        // already said this is not work.
+        if self.st.classified.contains_key(&resource) {
+            self.st.push(Decision::DeclarationApplied {
+                summary: format!(
+                    "`{resource}` is classified, so it cannot anchor a work; your classification stands."
+                ),
+            });
+            return;
+        }
         let strength = self.st.cfg.declared_anchor_strength;
         if let Some(t) = self.st.threads.get_mut(&tid) {
             let entry = t.anchors.entry(resource.clone()).or_insert(Anchor {
@@ -991,6 +1072,10 @@ impl Engine {
         if let Some(s) = self.st.threads.get_mut(&survivor) {
             s.episodes.extend(absorbed_state.episodes.iter().copied());
             for (r, anch) in &absorbed_state.anchors {
+                // A classified surface never re-enters identity through a merge.
+                if self.st.classified.contains_key(r) {
+                    continue;
+                }
                 let entry = s.anchors.entry(r.clone()).or_insert(Anchor {
                     resource: r.clone(),
                     kind: anch.kind,
@@ -1042,7 +1127,8 @@ impl Engine {
         self.st.quarantined.insert(resource.to_string());
         let mut stripped_threads = Vec::new();
         for (tid, t) in self.st.threads.iter_mut() {
-            let had = t.anchors.remove(resource).is_some() | t.companions.remove(resource).is_some();
+            let had =
+                t.anchors.remove(resource).is_some() | t.companions.remove(resource).is_some();
             if had {
                 stripped_threads.push(*tid);
             }
@@ -1060,6 +1146,32 @@ impl Engine {
         let _ = stripped_threads;
         self.st.push(Decision::ResourceQuarantined {
             resource: resource.to_string(),
+        });
+        self.st.sweep_dirty = true;
+    }
+
+    /// The person classified a surface. It may no longer found a work (anchor)
+    /// or name one. Any anchor it already carried is demoted back to context,
+    /// because a classification is retroactive over the whole log. Nothing is
+    /// deleted: every episode, participant, and ledger fact it earned stays
+    /// exactly where it was — the non-deletion guarantee holds, and this is the
+    /// difference between a class and a quarantine.
+    fn classify_surface(&mut self, resource: String, class: String) {
+        self.st.classified.insert(resource.clone(), class.clone());
+        for t in self.st.threads.values_mut() {
+            if let Some(anchor) = t.anchors.remove(&resource) {
+                // The subject keeps the weight it earned; it just stops
+                // carrying identity.
+                *t.companions.entry(resource.clone()).or_insert(0.0) += anchor.strength;
+            }
+        }
+        if let Some(set) = self.st.anchor_index.get_mut(&resource) {
+            set.retain(|_| false);
+        }
+        self.st.anchor_index.remove(&resource);
+        self.st.push(Decision::SurfaceClassified {
+            resource,
+            class,
         });
         self.st.sweep_dirty = true;
     }

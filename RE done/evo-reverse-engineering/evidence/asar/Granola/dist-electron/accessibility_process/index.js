@@ -1,0 +1,2 @@
+require("../main/rolldown-runtime-CPUxUITh.js");const e=require("../main/utility-CLxbunsj.js"),t=require("../main/utils-C1M_xHyn.js");e.t(),process.title=t.n(`Accessibility`);var n=null;process.parentPort.on(`message`,e=>{let t=e.data;switch(t.event){case`ping`:r({event:`pong`,requestId:t.requestId});break;case`connect`:{let[t]=e.ports;if(!t)break;n?.close(),n=t,n.start(),i({type:`connected`,protocolVersion:1});break}}}),r({event:`ready`});function r(e){process.parentPort.postMessage(e)}function i(e){n?.postMessage(e)}
+//# sourceMappingURL=index.js.map

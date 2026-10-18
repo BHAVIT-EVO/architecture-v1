@@ -55,6 +55,11 @@
 //! - a log that shrank below the tracked offset (the writer recovered a torn
 //!   tail at startup) triggers a full rebuild from the beginning, so no record
 //!   is ever missed.
+//! - a removed log clears every derived view; an unreadable log clears them
+//!   and reports an error, rather than serving evidence no longer accessible.
+//! - a delete-and-recreate replacement is detected by filesystem identity even
+//!   when its byte length matches the old log, so a stale cursor cannot retain
+//!   views derived from deleted evidence.
 //!
 //! # Recovery semantics
 //!
@@ -70,18 +75,21 @@ use crate::persistence::{
 use crate::understanding::{self, Evidence, ObservedStateOccurrence, Understanding};
 use evo_artifact::artifact_id::ArtifactId;
 use evo_artifact::derive_artifact_id_from_observations;
+use evo_engagement::WorkId;
 use evo_engagement::{Act, Declarations, EngagementParams, Standing};
 use evo_observation::evidence::FactValue;
 use evo_observation::observation::Observation;
 use evo_observation::observation_schema::ObservationSchema;
 use evo_observation::observed_state::ObservedState;
 use evo_restoration::DerivationOutcome;
+use evo_retrieval::WorkResolution;
 use evo_storage::{Storage, StorageObjectKind};
 use evo_workspace::workspace::Workspace;
-use evo_engagement::WorkId;
-use evo_retrieval::WorkResolution;
 
 use std::collections::HashMap;
+use std::fs;
+#[cfg(unix)]
+use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
@@ -91,6 +99,11 @@ pub struct CanonicalIndex {
     root: PathBuf,
     /// Byte offset of the first not-yet-read Observation record.
     observation_offset: u64,
+    /// Filesystem identity of the Observation log at the last successful
+    /// refresh. A replacement log can have the same length as the old one,
+    /// so length alone is not enough to protect the cursor from replaying
+    /// private history from the previous file.
+    observation_log_identity: Option<ObservationLogIdentity>,
     /// The number of Observations ingested, in append order. Used only as the
     /// deterministic append-order tie-break for declaration currency
     /// (RFC-0011 §5: where times are equal, the later append-order record is
@@ -137,6 +150,24 @@ pub struct CanonicalIndex {
     suppress_until: Option<SystemTime>,
 }
 
+/// Stable identity for the on-disk Observation log, independent of its
+/// current byte length. Unix's device/inode plus creation metadata detects
+/// delete-and-recreate replacement even when the replacement happens to have
+/// identical bytes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct ObservationLogIdentity {
+    #[cfg(unix)]
+    device: u64,
+    #[cfg(unix)]
+    inode: u64,
+    #[cfg(unix)]
+    created: Option<SystemTime>,
+    #[cfg(not(unix))]
+    created: Option<SystemTime>,
+    #[cfg(not(unix))]
+    length: u64,
+}
+
 impl CanonicalIndex {
     /// Builds the index from canonical state by full replay.
     ///
@@ -151,6 +182,7 @@ impl CanonicalIndex {
         let mut index = Self {
             root: root.into(),
             observation_offset: 0,
+            observation_log_identity: None,
             observation_count: 0,
             subjects: HashMap::new(),
             locators: HashMap::new(),
@@ -182,6 +214,7 @@ impl CanonicalIndex {
         let mut index = Self {
             root: root.into(),
             observation_offset: 0,
+            observation_log_identity: None,
             observation_count: 0,
             subjects: HashMap::new(),
             locators: HashMap::new(),
@@ -205,10 +238,16 @@ impl CanonicalIndex {
     /// minutes from now. The index remains stale until something settles
     /// it explicitly.
     pub fn refresh_capture_only(&mut self) -> Result<(), DaemonError> {
-        if self.any_log_shrank() {
+        if self.observation_log_replaced() || self.any_log_shrank() {
             self.reset();
         }
-        self.tail_observations()?;
+        if let Err(error) = self.tail_observations() {
+            // No derived view is safe to serve when its canonical evidence
+            // cannot be read. A later successful refresh rebuilds from zero.
+            self.reset();
+            return Err(error);
+        }
+        self.observation_log_identity = observation_log_identity(&self.root);
         Ok(())
     }
 
@@ -219,13 +258,7 @@ impl CanonicalIndex {
     ///
     /// Returns a [`DaemonError`] when the log is genuinely corrupted.
     pub fn refresh(&mut self) -> Result<(), DaemonError> {
-        if self.any_log_shrank() {
-            // The writer recovered a torn tail, so the tracked offset no longer
-            // points at a record boundary. Re-derive from the beginning rather
-            // than risk a skipped or duplicated record.
-            self.reset();
-        }
-        self.tail_observations()?;
+        self.refresh_capture_only()?;
         self.reconstruct();
         Ok(())
     }
@@ -276,6 +309,14 @@ impl CanonicalIndex {
         self.understanding.workspaces()
     }
 
+    /// The live Reconstruction the understanding was derived from.
+    ///
+    /// The voice loop resolves triggers against this — the same understanding
+    /// the daemon derived — not a stale copy.
+    pub fn reconstruction(&self) -> &evo_engagement::Reconstruction {
+        self.understanding.reconstruction()
+    }
+
     /// Artifact identity → the subject its content Observations witnessed.
     pub fn subjects(&self) -> &HashMap<String, String> {
         &self.subjects
@@ -324,7 +365,8 @@ impl CanonicalIndex {
     /// Finds the projected Workspace carrying one stable work identity.
     pub fn workspace_for_work_id(&self, work_id: WorkId) -> Option<&Workspace> {
         self.workspaces().iter().find(|workspace| {
-            workspace.id().to_string() == evo_workspace::WorkspaceId::from_work_id(work_id.as_u128()).to_string()
+            workspace.id().to_string()
+                == evo_workspace::WorkspaceId::from_work_id(work_id.as_u128()).to_string()
         })
     }
 
@@ -484,6 +526,13 @@ impl CanonicalIndex {
         for (member, container) in declarations.containments() {
             self.declarations.contain(member.clone(), container.clone());
         }
+        // RFC-0014: the person's own name for a body of work. Names arrive
+        // keyed by Workspace identity; the later record replaces the held
+        // one (append order is the canonical tie-break), which is exactly
+        // what the BTreeMap insert does.
+        for (subject, name) in declarations.names() {
+            self.declarations.name(subject.clone(), name.clone());
+        }
         self.stale = true;
     }
 
@@ -500,6 +549,22 @@ impl CanonicalIndex {
         }
     }
 
+    /// Whether the path now names a different Observation log than the one
+    /// from which the cursor and derived views were built. Treat an identity
+    /// transition as a full rebuild boundary when cached evidence exists;
+    /// this also covers a daemon-side ingest that populated the cache before
+    /// the first successful refresh recorded the file identity.
+    fn observation_log_replaced(&self) -> bool {
+        match (
+            self.observation_log_identity,
+            observation_log_identity(&self.root),
+        ) {
+            (Some(previous), Some(current)) => previous != current,
+            (Some(_), None) | (None, Some(_)) => self.observation_count > 0,
+            (None, None) => false,
+        }
+    }
+
     /// Whether the Observation log is shorter than the last-read offset (a torn
     /// tail was recovered by the writer), requiring a full rebuild.
     fn any_log_shrank(&self) -> bool {
@@ -509,6 +574,7 @@ impl CanonicalIndex {
     /// Clears all derived state so a full rebuild starts from a clean slate.
     fn reset(&mut self) {
         self.observation_offset = 0;
+        self.observation_log_identity = None;
         self.observation_count = 0;
         self.subjects.clear();
         self.locators.clear();
@@ -528,6 +594,12 @@ impl CanonicalIndex {
         let storage = Storage::new();
         let (records, offset) =
             storage.read_from(StorageObjectKind::Observation, self.observation_offset)?;
+        if offset < self.observation_offset || (offset == 0 && self.observation_count > 0) {
+            // Storage resets the cursor when the log disappears. Also cover
+            // daemon-side ingest, whose read cursor can still be zero, and a
+            // removal between the metadata check and the actual read.
+            self.reset();
+        }
         for record in records {
             let observation = decode_observation_record(&record)?;
             self.ingest_observation(observation);
@@ -539,9 +611,28 @@ impl CanonicalIndex {
 
 /// The current byte length of one storage log, when it exists.
 fn log_len(root: &Path, filename: &str) -> Option<u64> {
-    std::fs::metadata(root.join(filename))
+    fs::metadata(root.join(filename))
         .ok()
         .map(|metadata| metadata.len())
+}
+
+fn observation_log_identity(root: &Path) -> Option<ObservationLogIdentity> {
+    let metadata = fs::metadata(root.join("observation.log")).ok()?;
+    #[cfg(unix)]
+    {
+        Some(ObservationLogIdentity {
+            device: metadata.dev(),
+            inode: metadata.ino(),
+            created: metadata.created().ok(),
+        })
+    }
+    #[cfg(not(unix))]
+    {
+        Some(ObservationLogIdentity {
+            created: metadata.created().ok(),
+            length: metadata.len(),
+        })
+    }
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -605,6 +696,7 @@ mod tests {
             process_identifier: None,
             owning_process_name: None,
             observed_state: None,
+            window_id: None,
         }
     }
 
@@ -726,7 +818,10 @@ mod tests {
         // work threshold, so Home (which filters by standing) shows none of it.
         assert!(
             !index.standings().is_empty()
-                && index.standings().values().all(|standing| !standing.is_work()),
+                && index
+                    .standings()
+                    .values()
+                    .all(|standing| !standing.is_work()),
             "repeated focus alone is attention, not work"
         );
         // The evidence is still fully recorded.
@@ -911,10 +1006,300 @@ mod tests {
         assert_eq!(index.workspaces(), fresh.workspaces());
         assert_eq!(index.outcomes(), fresh.outcomes());
         assert_eq!(
-            index.observation_count,
-            fresh.observation_count,
+            index.observation_count, fresh.observation_count,
             "the rebuild replayed every record exactly once"
         );
+    }
+
+    /// Populate every cached view using only accepted synthetic signals. The
+    /// paths are subject strings, never files read from the person's machine.
+    fn drive_private_fixture() {
+        let first = "/synthetic/privacy/secret-plan.md";
+        let second = "/synthetic/privacy/secret-notes.md";
+        drive(saved(first, 1));
+        drive(saved(second, 2));
+        drive(MacOSSignal::WorkGrouped {
+            first: first.into(),
+            second: second.into(),
+            observed_at: secs(3),
+        });
+        drive(MacOSSignal::WorkDesignated {
+            subject: first.into(),
+            observed_at: secs(4),
+        });
+        drive(MacOSSignal::ContinuationSurface {
+            subjects: vec![first.into(), second.into()],
+            observed_at: secs(5),
+        });
+    }
+
+    /// Recreates the same five-record shape as `drive_private_fixture`, but
+    /// with a public synthetic vocabulary and exactly matching subject lengths.
+    /// The replacement log therefore has the same byte length as the deleted
+    /// log, which is the boundary a length-only cursor check cannot detect.
+    fn drive_public_replacement_fixture() {
+        let first = "/synthetic/archive/shared-plan.md";
+        let second = "/synthetic/archive/shared-notes.md";
+        drive(saved(first, 1));
+        drive(saved(second, 2));
+        drive(MacOSSignal::WorkGrouped {
+            first: first.into(),
+            second: second.into(),
+            observed_at: secs(3),
+        });
+        drive(MacOSSignal::WorkDesignated {
+            subject: first.into(),
+            observed_at: secs(4),
+        });
+        drive(MacOSSignal::ContinuationSurface {
+            subjects: vec![first.into(), second.into()],
+            observed_at: secs(5),
+        });
+    }
+
+    fn assert_private_fixture_is_cached(index: &CanonicalIndex) {
+        assert!(!index.subjects().is_empty());
+        assert!(!index.locators().is_empty());
+        assert!(index.current_designated_artifact().is_some());
+        assert_eq!(index.current_continuation_surface_artifacts().len(), 2);
+        assert!(!index.workspaces().is_empty());
+        assert!(!index.outcomes().is_empty());
+        assert!(!index.titles().is_empty());
+        assert!(!index.standings().is_empty());
+        assert_ne!(index.resolve_work("secret"), WorkResolution::NotFound);
+    }
+
+    fn assert_no_derived_evidence(index: &CanonicalIndex) {
+        assert!(
+            index.subjects().is_empty(),
+            "deleted subjects must not survive"
+        );
+        assert!(index.locators().is_empty());
+        assert!(index.designation().is_none());
+        assert!(index.current_designated_artifact().is_none());
+        assert!(index.current_continuation_surface().is_none());
+        assert!(index.current_continuation_surface_artifacts().is_empty());
+        assert!(index.workspaces().is_empty());
+        assert!(index.outcomes().is_empty());
+        assert!(index.titles().is_empty());
+        assert!(index.standings().is_empty());
+        assert_eq!(index.resolve_work("secret"), WorkResolution::NotFound);
+        assert!(index.reconstruction().set().engagements().is_empty());
+        // No hidden inputs may resurrect the deleted views on reconstruction.
+        assert!(index.acts.is_empty());
+        assert!(index.subject_to_artifacts.is_empty());
+        assert!(index.observed_states.is_empty());
+        assert_eq!(index.declarations, Declarations::new());
+        assert_eq!(index.observation_count, 0);
+        assert_eq!(index.observation_offset, 0);
+    }
+
+    #[test]
+    fn privacy_log_deletion_clears_all_derived_views() {
+        for (capture_only, daemon_ingest) in
+            [(false, false), (true, false), (false, true), (true, true)]
+        {
+            let root = unique_root("privacy-deletion");
+            let _guard = Storage::with_thread_root(root.clone());
+            let mut index = CanonicalIndex::new(&root).expect("empty synthetic index");
+            drive_private_fixture();
+            if daemon_ingest {
+                for observation in crate::persistence::load_persisted_observations(&root)
+                    .expect("synthetic observations")
+                {
+                    index.ingest_observation(observation);
+                }
+                index.reconstruct();
+                assert_eq!(index.observation_offset, 0);
+            } else {
+                index.refresh().expect("refresh synthetic index");
+            }
+            assert_private_fixture_is_cached(&index);
+            index.suppress_reconstruction(Duration::from_secs(3600));
+
+            std::fs::remove_file(root.join("observation.log")).expect("delete synthetic log");
+            if capture_only {
+                index.refresh_capture_only().expect("refresh deleted log");
+            } else {
+                index.refresh().expect("refresh deleted log");
+            }
+            assert_no_derived_evidence(&index);
+            index.reconstruct();
+            assert_no_derived_evidence(&index);
+
+            // Recreating the log must not skip the new record at an old offset,
+            // nor bring back any of the deleted private vocabulary.
+            drive(saved("/synthetic/public/memo.md", 100));
+            index.refresh().expect("refresh recreated log");
+            assert_eq!(index.subjects().len(), 1);
+            assert_eq!(index.resolve_work("secret"), WorkResolution::NotFound);
+            assert!(index.designation().is_none());
+            assert!(index.current_continuation_surface().is_none());
+            assert_matches(&root, &index);
+            std::fs::remove_file(root.join("observation.log")).expect("remove synthetic log");
+            std::fs::remove_dir(root).expect("remove empty synthetic root");
+        }
+    }
+
+    #[test]
+    fn privacy_same_length_log_replacement_clears_stale_derived_views() {
+        let root = unique_root("privacy-same-length-replacement");
+        let _guard = Storage::with_thread_root(root.clone());
+        let mut index = CanonicalIndex::new(&root).expect("empty synthetic index");
+        drive_private_fixture();
+        index.refresh().expect("refresh private fixture");
+        assert_private_fixture_is_cached(&index);
+        let old_len = std::fs::metadata(root.join("observation.log"))
+            .expect("private synthetic log")
+            .len();
+
+        std::fs::remove_file(root.join("observation.log")).expect("delete private log");
+        drive_public_replacement_fixture();
+        let replacement_len = std::fs::metadata(root.join("observation.log"))
+            .expect("replacement synthetic log")
+            .len();
+        assert_eq!(
+            replacement_len, old_len,
+            "the regression must not be detectable from length alone"
+        );
+
+        index
+            .refresh()
+            .expect("refresh same-length replacement log");
+        let public_subjects = [
+            "/synthetic/archive/shared-plan.md",
+            "/synthetic/archive/shared-notes.md",
+        ];
+        assert_eq!(index.subjects().len(), 2);
+        assert!(
+            index
+                .subjects()
+                .values()
+                .all(|subject| public_subjects.contains(&subject.as_str()))
+        );
+        assert!(
+            index
+                .locators()
+                .values()
+                .all(|(_, subject)| public_subjects.contains(&subject.as_str()))
+        );
+        assert_eq!(
+            index.designation().map(|(subject, _)| subject),
+            Some(public_subjects[0].to_string())
+        );
+        assert_eq!(
+            index.current_continuation_surface(),
+            Some(vec![public_subjects[1].into(), public_subjects[0].into()])
+        );
+        assert_eq!(index.resolve_work("secret"), WorkResolution::NotFound);
+
+        // A fresh replay over the replacement log is the independent oracle
+        // for every derived view, including the non-empty public understanding.
+        let fresh = CanonicalIndex::new(&root).expect("fresh replacement replay");
+        assert_eq!(index.subjects(), fresh.subjects());
+        assert_eq!(index.locators(), fresh.locators());
+        assert_eq!(index.designation(), fresh.designation());
+        assert_eq!(
+            index.current_continuation_surface(),
+            fresh.current_continuation_surface()
+        );
+        assert_eq!(index.workspaces(), fresh.workspaces());
+        assert_eq!(index.outcomes(), fresh.outcomes());
+        assert_eq!(index.titles(), fresh.titles());
+        assert_eq!(index.standings(), fresh.standings());
+
+        std::fs::remove_file(root.join("observation.log")).expect("remove synthetic log");
+        std::fs::remove_dir(root).expect("remove empty synthetic root");
+    }
+
+    #[test]
+    fn privacy_truncation_removes_deleted_tail_without_losing_surviving_evidence() {
+        let root = unique_root("privacy-truncation");
+        let _guard = Storage::with_thread_root(root.clone());
+        drive(saved("/synthetic/public/memo.md", 0));
+        let path = root.join("observation.log");
+        let retained_bytes = std::fs::metadata(&path).expect("synthetic log").len();
+        drive_private_fixture();
+        let mut index = CanonicalIndex::new(&root).expect("synthetic index");
+        assert_private_fixture_is_cached(&index);
+        index.suppress_reconstruction(Duration::from_secs(3600));
+
+        // Storage has no retention API. Exercise the supported shrink/rebuild
+        // boundary by removing only a complete synthetic tail at its boundary.
+        std::fs::OpenOptions::new()
+            .write(true)
+            .open(&path)
+            .expect("synthetic log")
+            .set_len(retained_bytes)
+            .expect("truncate synthetic tail");
+        index.refresh().expect("refresh shortened log");
+
+        assert_eq!(index.subjects().len(), 1);
+        assert!(
+            index
+                .subjects()
+                .values()
+                .all(|subject| subject == "/synthetic/public/memo.md")
+        );
+        assert_eq!(index.resolve_work("secret"), WorkResolution::NotFound);
+        assert!(index.designation().is_none());
+        assert!(index.current_continuation_surface().is_none());
+        assert_eq!(index.observation_count, 1);
+        assert_matches(&root, &index);
+        let fresh = CanonicalIndex::new(&root).expect("fresh surviving index");
+        assert_eq!(index.workspaces(), fresh.workspaces());
+        assert_eq!(index.outcomes(), fresh.outcomes());
+        assert_eq!(index.titles(), fresh.titles());
+        assert_eq!(index.standings(), fresh.standings());
+        index.refresh().expect("idle refresh after truncation");
+        assert_eq!(
+            index.observation_count, 1,
+            "retained records are not duplicated"
+        );
+        std::fs::remove_file(path).expect("remove synthetic log");
+        std::fs::remove_dir(root).expect("remove empty synthetic root");
+    }
+
+    #[test]
+    fn privacy_unreadable_store_clears_cached_evidence_and_reports_an_error() {
+        for capture_only in [false, true] {
+            let root = unique_root("privacy-unreadable");
+            let _guard = Storage::with_thread_root(root.clone());
+            drive_private_fixture();
+            let mut index = CanonicalIndex::new(&root).expect("synthetic index");
+            assert_private_fixture_is_cached(&index);
+
+            // A file in place of the store makes reads fail deterministically,
+            // without changing filesystem permissions or requesting OS access.
+            std::fs::remove_file(root.join("observation.log")).expect("remove synthetic log");
+            std::fs::remove_dir(&root).expect("remove empty synthetic root");
+            std::fs::write(&root, b"synthetic inaccessible store").expect("synthetic blocker");
+            let result = if capture_only {
+                index.refresh_capture_only()
+            } else {
+                index.refresh()
+            };
+            assert!(
+                result.is_err(),
+                "an inaccessible store is not empty history"
+            );
+            assert_no_derived_evidence(&index);
+            index.reconstruct();
+            assert_no_derived_evidence(&index);
+            std::fs::remove_file(&root).expect("remove synthetic blocker");
+
+            // Once canonical storage is readable again, a successful refresh
+            // must rebuild, not retain an old cursor or duplicate cached acts.
+            drive_private_fixture();
+            index.refresh().expect("refresh recovered synthetic store");
+            assert_private_fixture_is_cached(&index);
+            assert_matches(&root, &index);
+            let fresh = CanonicalIndex::new(&root).expect("fresh recovered index");
+            assert_eq!(index.observation_count, fresh.observation_count);
+            assert_eq!(index.outcomes(), fresh.outcomes());
+            std::fs::remove_file(root.join("observation.log")).expect("remove synthetic log");
+            std::fs::remove_dir(root).expect("remove empty synthetic root");
+        }
     }
 
     /// Absorbing records one at a time must equal interpreting the whole log at

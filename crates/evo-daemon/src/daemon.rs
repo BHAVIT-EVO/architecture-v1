@@ -29,8 +29,13 @@ impl Daemon {
     /// Starts the macOS WindowFocusGained runtime spine.
     pub fn start_window_focus_runtime(
         &self,
-    ) -> Result<(WindowFocusRuntimeHandle, std::sync::mpsc::Receiver<evo_observation::observation::Observation>), DaemonError>
-    {
+    ) -> Result<
+        (
+            WindowFocusRuntimeHandle,
+            std::sync::mpsc::Receiver<evo_observation::observation::Observation>,
+        ),
+        DaemonError,
+    > {
         self.runtime.start_window_focus_runtime()
     }
 

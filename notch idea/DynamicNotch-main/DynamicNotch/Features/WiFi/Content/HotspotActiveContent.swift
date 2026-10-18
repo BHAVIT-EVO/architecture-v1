@@ -1,0 +1,36 @@
+//
+//  HotspotNotch.swift
+//  DynamicNotch
+//
+//  Created by Евгений Петрукович on 2/27/26.
+//
+
+import SwiftUI
+
+struct HotspotActiveContent: NotchContentProtocol, DynamicIslandCustomizable {
+    let id = NotchContentRegistry.Wifi.hotspot.id
+    let settingsViewModel: SettingsViewModel
+    var wifiViewModel: WifiViewModel? = nil
+    
+    var appearanceStyle: HotspotAppearanceStyle { settingsViewModel.connectivity.hotspotAppearanceStyle}
+    var priority: Int { NotchContentRegistry.Wifi.hotspot.priority }
+    var strokeColor: Color {
+        .green.opacity(0.3)
+    }
+    
+    func size(baseWidth: CGFloat, baseHeight: CGFloat) -> CGSize {
+        let extraWidth: CGFloat = appearanceStyle == .battery ? 100 : 80
+        return .init(width: baseWidth + extraWidth, height: baseHeight)
+    }
+    
+    @MainActor
+    func makeView() -> AnyView {
+        AnyView(
+            HotspotActiveNotchView(
+                style: appearanceStyle,
+                wifiViewModel: wifiViewModel,
+                batteryLevel: wifiViewModel?.hotspotBatteryLevel
+            )
+        )
+    }
+}

@@ -51,7 +51,10 @@ pub fn parse_policies(text: &str) -> Result<Vec<InstancePolicy>, String> {
         let mut fields: BTreeMap<&str, &str> = BTreeMap::new();
         for pair in line.split('|') {
             let Some((key, value)) = pair.split_once('=') else {
-                return Err(format!("line {}: expected key=value, got {pair:?}", lineno + 1));
+                return Err(format!(
+                    "line {}: expected key=value, got {pair:?}",
+                    lineno + 1
+                ));
             };
             fields.insert(key.trim(), value.trim());
         }
@@ -65,8 +68,15 @@ pub fn parse_policies(text: &str) -> Result<Vec<InstancePolicy>, String> {
             .filter(|s| !s.is_empty())
             .ok_or_else(|| format!("line {}: missing data_dir_flag=", lineno + 1))?
             .to_string();
-        let extra_flag = fields.remove("extra_flag").filter(|s| !s.is_empty()).map(str::to_string);
-        policies.push(InstancePolicy { app, data_dir_flag, extra_flag });
+        let extra_flag = fields
+            .remove("extra_flag")
+            .filter(|s| !s.is_empty())
+            .map(str::to_string);
+        policies.push(InstancePolicy {
+            app,
+            data_dir_flag,
+            extra_flag,
+        });
     }
     Ok(policies)
 }
@@ -92,6 +102,9 @@ pub fn default_policies() -> Vec<InstancePolicy> {
 
 /// Policy lookup by witnessed app name (exact match — the capture layer's
 /// own string, no fuzzy guessing).
-pub fn policy_for<'a>(policies: &'a [InstancePolicy], app_name: &str) -> Option<&'a InstancePolicy> {
+pub fn policy_for<'a>(
+    policies: &'a [InstancePolicy],
+    app_name: &str,
+) -> Option<&'a InstancePolicy> {
     policies.iter().find(|p| p.app == app_name)
 }

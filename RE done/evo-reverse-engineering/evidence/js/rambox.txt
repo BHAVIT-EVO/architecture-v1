@@ -1,0 +1,12 @@
+
+=====  (2580462 unique) =====
+  [popup.js] "use strict";const t=require("electron");function e(t){return t&&t.__esModule&&Object.prot
+  [popup.js] "use strict";const t=require("electron");function e(t){return t&&t.__esModule&&Object.proto
+  [popup.js] "use strict";const t=require("electron");function e(t){return t&&t.__esModule&&Object.protot
+  [popup.js] "use strict";const t=require("electron");function e(t){return t&&t.__esModule&&Object.prototy
+
+===== partition (159 unique) =====
+  [index.js] ({security:[{scheme:"bearer",type:"http"}],url:"/me/password-setup",...e}),meControllerGetPartitions=e=>(e?.client??client$1).get({security:[{scheme:"bearer",type:"http"}],url:"/me/partitio
+  [index.js] artitions=e=>(e?.client??client$1).get({security:[{scheme:"bearer",type:"http"}],url:"/me/partitions",...e}),meControllerGetSettings=e=>(e?.client??client$1).get({security:[{scheme:"bearer"
+  [index.js] swordSetup(e){return meControllerSendPasswordSetup({client:this._clients.client,...e})}getPartitions(e){return meControllerGetPartitions({client:this._clients.client,...e})}getSettings(e){r
+  [index.js] dPasswordSetup({client:this._clients.client,...e})}getPartitions(e){return meControllerGetPartitions({client:this._clients.client,...e})}getSettings(e){return meControllerGetSettings({clien

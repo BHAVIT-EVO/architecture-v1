@@ -1,0 +1,24 @@
+total 5744
+drwxr-xr-x@ 23 bhavitsaini  admin      736 Oct  7 00:29 .
+drwxr-xr-x@ 10 bhavitsaini  admin      320 Oct  7 00:29 ..
+lrwxr-xr-x@  1 bhavitsaini  admin       70 Oct  7 00:29 AppIcon.icns -> ../Library/LoginItems/TimingHelper.app/Contents/Resources/AppIcon.icns
+-rw-r--r--@  1 bhavitsaini  admin  2917672 Oct  7 00:25 Assets.car
+drwxr-xr-x@ 12 bhavitsaini  admin      384 Oct  7 00:25 Base.lproj
+lrwxr-xr-x@  1 bhavitsaini  admin       82 Oct  7 00:29 DGCharts_DGCharts.bundle -> ../Library/LoginItems/TimingHelper.app/Contents/Resources/DGCharts_DGCharts.bundle
+-rw-r--r--@  1 bhavitsaini  admin     7375 Oct  7 00:25 DashboardViewController.nib
+-rw-r--r--@  1 bhavitsaini  admin     3382 Oct  7 00:25 DashboardViewItem.nib
+lrwxr-xr-x@  1 bhavitsaini  admin       96 Oct  7 00:29 DateRangePicker_DateRangePicker.bundle -> ../Library/LoginItems/TimingHelper.app/Contents/Resources/DateRangePicker_DateRangePicker.bundle
+lrwxr-xr-x@  1 bhavitsaini  admin       88 Oct  7 00:29 MASShortcut_MASShortcut.bundle -> ../Library/LoginItems/TimingHelper.app/Contents/Resources/MASShortcut_MASShortcut.bundle
+lrwxr-xr-x@  1 bhavitsaini  admin       89 Oct  7 00:29 SQLite.swift_SQLiteSwift.bundle -> ../Library/LoginItems/TimingHelper.app/Contents/Resources/SQLite.swift_SQLiteSwift.bundle
+drwxr-xr-x@  6 bhavitsaini  admin      192 Oct  7 00:25 SidebarViewController.storyboardc
+lrwxr-xr-x@  1 bhavitsaini  admin       92 Oct  7 00:29 SwiftProtobuf_SwiftProtobuf.bundle -> ../Library/LoginItems/TimingHelper.app/Contents/Resources/SwiftProtobuf_SwiftProtobuf.bundle
+-rw-r--r--@  1 bhavitsaini  admin     5655 Oct  7 00:25 Timing2.sdef
+drwxr-xr-x@ 18 bhavitsaini  admin      576 Oct  7 00:25 Videos
+lrwxr-xr-x@  1 bhavitsaini  admin       92 Oct  7 00:29 ZIPFoundation_ZIPFoundation.bundle -> ../Library/LoginItems/TimingHelper.app/Contents/Resources/ZIPFoundation_ZIPFoundation.bundle
+drwxr-xr-x@ 14 bhavitsaini  admin      448 Oct  7 00:25 de.lproj
+drwxr-xr-x@  6 bhavitsaini  admin      192 Oct  7 00:25 en.lproj
+drwxr-xr-x@ 14 bhavitsaini  admin      448 Oct  7 00:25 es.lproj
+drwxr-xr-x@ 14 bhavitsaini  admin      448 Oct  7 00:25 fr.lproj
+lrwxr-xr-x@  1 bhavitsaini  admin       85 Oct  7 00:29 swift-nio-ssl_NIOSSL.bundle -> ../Library/LoginItems/TimingHelper.app/Contents/Resources/swift-nio-ssl_NIOSSL.bundle
+lrwxr-xr-x@  1 bhavitsaini  admin       83 Oct  7 00:29 swift-nio_NIOPosix.bundle -> ../Library/LoginItems/TimingHelper.app/Contents/Resources/swift-nio_NIOPosix.bundle
+drwxr-xr-x@ 14 bhavitsaini  admin      448 Oct  7 00:25 zh-Hans.lproj

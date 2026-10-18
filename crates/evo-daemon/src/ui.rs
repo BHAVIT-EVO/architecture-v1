@@ -38,11 +38,7 @@ fn render_workspace_screen(workspace: &Workspace, total_workspaces: usize) -> St
     let latest_snapshot = workspace.snapshots().last();
 
     writeln!(&mut out, "Evo remembers this body of work").unwrap();
-    writeln!(
-        &mut out,
-        "State source: durable Workspace/Snapshot storage"
-    )
-    .unwrap();
+    writeln!(&mut out, "State source: durable Workspace/Snapshot storage").unwrap();
     writeln!(&mut out).unwrap();
 
     writeln!(&mut out, "Current work").unwrap();
@@ -52,7 +48,12 @@ fn render_workspace_screen(workspace: &Workspace, total_workspaces: usize) -> St
         workspace_display_name(workspace.id())
     )
     .unwrap();
-    writeln!(&mut out, "  Identity: {}", short_workspace_id(workspace.id())).unwrap();
+    writeln!(
+        &mut out,
+        "  Identity: {}",
+        short_workspace_id(workspace.id())
+    )
+    .unwrap();
     writeln!(&mut out, "  Lifecycle: {:?}", workspace.lifecycle()).unwrap();
     writeln!(
         &mut out,
@@ -76,8 +77,7 @@ fn render_workspace_screen(workspace: &Workspace, total_workspaces: usize) -> St
             writeln!(
                 &mut out,
                 "  Snapshot: {} of {}",
-                snapshot_count,
-                snapshot_count
+                snapshot_count, snapshot_count
             )
             .unwrap();
             writeln!(
@@ -173,7 +173,11 @@ fn render_workspace_html(workspace: &Workspace, total_workspaces: usize) -> Stri
         total_workspaces.saturating_sub(1)
     )
     .unwrap();
-    writeln!(&mut out, "<article class=\"card\" id=\"latest\"><h2>Latest known state</h2>").unwrap();
+    writeln!(
+        &mut out,
+        "<article class=\"card\" id=\"latest\"><h2>Latest known state</h2>"
+    )
+    .unwrap();
     match latest_snapshot {
         Some(snapshot) => {
             writeln!(
@@ -191,7 +195,11 @@ fn render_workspace_html(workspace: &Workspace, total_workspaces: usize) -> Stri
         }
     }
     writeln!(&mut out, "</article>").unwrap();
-    writeln!(&mut out, "<article class=\"card\"><h2>Snapshot history</h2>").unwrap();
+    writeln!(
+        &mut out,
+        "<article class=\"card\"><h2>Snapshot history</h2>"
+    )
+    .unwrap();
     if snapshot_count == 0 {
         writeln!(&mut out, "<p>No historical snapshots yet.</p>").unwrap();
     } else {
@@ -208,11 +216,7 @@ fn render_workspace_html(workspace: &Workspace, total_workspaces: usize) -> Stri
         }
         writeln!(&mut out, "</ol>").unwrap();
     }
-    writeln!(
-        &mut out,
-        "</article></section></main></body></html>"
-    )
-    .unwrap();
+    writeln!(&mut out, "</article></section></main></body></html>").unwrap();
 
     out
 }
@@ -318,13 +322,13 @@ fn escape_html(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use evo_artifact::artifact_id::ArtifactId;
     use evo_workspace::attachment::{Attachment, ResourceRole};
     use evo_workspace::confidence::ConfidenceScore;
     use evo_workspace::lifecycle::WorkspaceLifecycle;
     use evo_workspace::snapshot::Snapshot;
     use evo_workspace::workspace::Workspace;
     use evo_workspace::workspace_id::WorkspaceId;
-    use evo_artifact::artifact_id::ArtifactId;
 
     use std::str::FromStr;
     use std::time::Duration;
@@ -342,7 +346,9 @@ mod tests {
 
     fn snapshot(offset_secs: u64, attachments: Vec<Attachment>) -> Snapshot {
         Snapshot::new(
-            UNIX_EPOCH.checked_add(Duration::from_secs(offset_secs)).unwrap(),
+            UNIX_EPOCH
+                .checked_add(Duration::from_secs(offset_secs))
+                .unwrap(),
             WorkspaceLifecycle::Active,
             attachments,
         )
@@ -365,7 +371,10 @@ mod tests {
             "123e4567-e89b-12d3-a456-426614174000",
             vec![
                 snapshot(10, vec![first_attachment.clone()]),
-                snapshot(20, vec![first_attachment.clone(), second_attachment.clone()]),
+                snapshot(
+                    20,
+                    vec![first_attachment.clone(), second_attachment.clone()],
+                ),
             ],
             vec![first_attachment.clone(), second_attachment.clone()],
         );

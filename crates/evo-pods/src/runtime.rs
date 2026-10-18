@@ -19,6 +19,9 @@ use crate::surface::{CommandSpec, Frame, PodApp, PodSurface, PodWindow};
 use crate::wrapper;
 use std::collections::BTreeMap;
 
+/// The inventoried platform state: running apps, their windows, and frames.
+type Inventory = (Vec<PodApp>, Vec<PodWindow>, Vec<Frame>);
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum PodError {
     /// A pod is active — leave or switch first.
@@ -44,7 +47,10 @@ impl std::fmt::Display for PodError {
             PodError::NoSuchPod => write!(f, "no such pod"),
             PodError::Surface(reason) => write!(f, "the desktop could not be read: {reason}"),
             PodError::EmptySurface => {
-                write!(f, "this pod has no apps, documents, pages, or titles to contain")
+                write!(
+                    f,
+                    "this pod has no apps, documents, pages, or titles to contain"
+                )
             }
             PodError::UnsafeMothball { subjects } => write!(
                 f,
@@ -152,14 +158,17 @@ impl PodRuntime {
 
     // ---- inventory -----------------------------------------------------
 
-    fn gather_inventory(&mut self) -> Result<(Vec<PodApp>, Vec<PodWindow>, Vec<Frame>), PodError> {
+    fn gather_inventory(&mut self) -> Result<Inventory, PodError> {
         let apps = self.surface.running_apps().map_err(PodError::Surface)?;
         let mut windows = Vec::new();
         for app in &apps {
             if self.protected.contains(&app.pid) || !app.regular {
                 continue;
             }
-            let mut ws = self.surface.windows_of(app.pid).map_err(PodError::Surface)?;
+            let mut ws = self
+                .surface
+                .windows_of(app.pid)
+                .map_err(PodError::Surface)?;
             windows.append(&mut ws);
         }
         let screens = self.surface.screens();
@@ -206,7 +215,11 @@ impl PodRuntime {
         };
         let plan = dim::plan_activation(
             &pod.surfaces,
-            if recipe.roles.is_empty() { None } else { Some(&recipe) },
+            if recipe.roles.is_empty() {
+                None
+            } else {
+                Some(&recipe)
+            },
             &windows,
             &apps,
             &self.protected,
@@ -219,7 +232,13 @@ impl PodRuntime {
         let id = pod.id;
 
         let mut lease = PodLease::new(name.clone(), now_ms);
-        apply_plan(&mut *self.surface, &plan, &windows, self.config.veil_alpha, &mut lease);
+        apply_plan(
+            &mut *self.surface,
+            &plan,
+            &windows,
+            self.config.veil_alpha,
+            &mut lease,
+        );
 
         self.recipes.insert(id.0, recipe);
         self.active = Some(index);
@@ -244,10 +263,10 @@ impl PodRuntime {
             return Err(PodError::NothingActive);
         };
         self.apply_reversal(&lease)?;
-        if let Some(i) = self.active {
-            if let Some(pod) = self.pods.get_mut(i) {
-                pod.state = PodState::Inactive;
-            }
+        if let Some(i) = self.active
+            && let Some(pod) = self.pods.get_mut(i)
+        {
+            pod.state = PodState::Inactive;
         }
         self.active = None;
         Ok(format!(
@@ -291,7 +310,11 @@ impl PodRuntime {
                 LeaseStep::ReparkWindow { pid, window_id } => {
                     let _ = self.surface.minimize_window(pid, window_id);
                 }
-                LeaseStep::MoveWindowBack { pid, window_id, frame } => {
+                LeaseStep::MoveWindowBack {
+                    pid,
+                    window_id,
+                    frame,
+                } => {
                     let _ = self.surface.move_window(pid, window_id, frame);
                 }
             }
@@ -328,7 +351,7 @@ impl PodRuntime {
                 return Ok(format!(
                     "That window exposes nothing to claim (pid {}).",
                     window.pid
-                ))
+                ));
             }
         };
         let id = self.pods[pod_index].id;
@@ -359,7 +382,11 @@ impl PodRuntime {
 
     /// Save an app/file/folder/URL so the pod can re-open it at entry or
     /// on demand. Dedupe-safe (same kind + same value = one line).
-    pub fn add_resource(&mut self, pod_index: usize, resource: PodResource) -> Result<Note, PodError> {
+    pub fn add_resource(
+        &mut self,
+        pod_index: usize,
+        resource: PodResource,
+    ) -> Result<Note, PodError> {
         if pod_index >= self.pods.len() {
             return Err(PodError::NoSuchPod);
         }
@@ -389,7 +416,11 @@ impl PodRuntime {
     }
 
     /// Open one saved resource now (/usr/bin/open; the OS picks handlers).
-    pub fn open_resource(&mut self, pod_index: usize, resource_index: usize) -> Result<Note, PodError> {
+    pub fn open_resource(
+        &mut self,
+        pod_index: usize,
+        resource_index: usize,
+    ) -> Result<Note, PodError> {
         let Some(pod) = self.pods.get(pod_index) else {
             return Err(PodError::NoSuchPod);
         };
@@ -398,11 +429,7 @@ impl PodRuntime {
         };
         let name = pod.name.clone();
         match self.surface.run(resource.open_spec()) {
-            Ok(()) => Ok(format!(
-                "Opened {} for \\\"{}\\\".",
-                resource.value(),
-                name
-            )),
+            Ok(()) => Ok(format!("Opened {} for \\\"{}\\\".", resource.value(), name)),
             Err(err) => Ok(format!("Could not open {}: {err}", resource.value())),
         }
     }
@@ -495,7 +522,11 @@ impl PodRuntime {
         profile_root: &str,
     ) -> Option<CommandSpec> {
         let policy = crate::policy::policy_for(&self.policies, app_name)?;
-        let mut args = vec!["-na".to_string(), app_path.to_string(), "--args".to_string()];
+        let mut args = vec![
+            "-na".to_string(),
+            app_path.to_string(),
+            "--args".to_string(),
+        ];
         args.extend(policy.launch_args(&Self::profile_dir(pod_id, profile_root)));
         Some(CommandSpec {
             program: "/usr/bin/open".into(),
@@ -638,13 +669,15 @@ fn apply_plan(
                 .find(|w| w.pid == home.pid && w.window_id == home.window_id)
                 .map(|w| w.frame)
             {
-                lease.moved_windows.push((home.pid, home.window_id, current));
+                lease
+                    .moved_windows
+                    .push((home.pid, home.window_id, current));
             }
             let _ = surface.move_window(home.pid, home.window_id, target);
         }
         let _ = surface.raise_window(home.pid, home.window_id);
     }
-    for (pid, window_id, frame) in &plan.veil {
+    for (pid, _window_id, frame) in &plan.veil {
         let _ = pid;
         if let Ok(handle) = surface.veil_open(*frame, veil_alpha) {
             lease.veils.push(handle);

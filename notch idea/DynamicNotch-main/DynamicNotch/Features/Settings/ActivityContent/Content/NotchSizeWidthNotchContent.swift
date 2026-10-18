@@ -1,0 +1,35 @@
+//
+//  NotchSizeNotch.swift
+//  DynamicNotch
+//
+//  Created by Евгений Петрукович on 3/10/26.
+//
+
+import SwiftUI
+
+enum NotchSizeEvent: Equatable {
+    case width
+    case height
+    case strokeOpacity
+}
+
+struct NotchSizeWidthNotchContent: NotchContentProtocol, DynamicIslandCustomizable {
+    let id = NotchContentRegistry.NotchSize.width.id
+    let settingsViewModel: SettingsViewModel
+    
+    var priority: Int { NotchContentRegistry.NotchSize.width.priority }
+    var strokeColor: Color { .red }
+    
+    func size(baseWidth: CGFloat, baseHeight: CGFloat) -> CGSize {
+        return .init(width: baseWidth, height: baseHeight + 40)
+    }
+    
+    func dynamicIslandCornerRadius(baseHeight: CGFloat) -> CGFloat {
+        baseHeight * 0.2
+    }
+    
+    @MainActor
+    func makeView() -> AnyView {
+        AnyView(NotchSizeWidthNotchView(settingsViewModel: settingsViewModel))
+    }
+}

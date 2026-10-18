@@ -285,8 +285,9 @@ fn main() {
     // player alt-tabbed through a work afternoon earns a presence-only edge to
     // the work and fuses with it. This reproduces clustering as the docstring
     // says it should behave: an edge counts only if it is corroborated.
-    let corroborated_components =
-        connected_components_where(&seeds, &params, |a, b| corroborated_edge(graph, a, b, &params));
+    let corroborated_components = connected_components_where(&seeds, &params, |a, b| {
+        corroborated_edge(graph, a, b, &params)
+    });
     println!();
     println!("================================================================");
     println!(
@@ -300,7 +301,10 @@ fn main() {
             continue;
         }
         println!();
-        println!("  corroborated component #{index}: {} seeds", component.len());
+        println!(
+            "  corroborated component #{index}: {} seeds",
+            component.len()
+        );
         for seed in component {
             println!("    {}", trim(seed, 60));
         }
@@ -357,9 +361,8 @@ fn main() {
     // few k so the choice is read off the data, not asserted.
     for k in [1usize, 2, 3] {
         let ranked = ranked_neighbours(&seeds, graph, &params);
-        let comps = connected_components_where(&seeds, &params, |a, b| {
-            reciprocal(&ranked, a, b, k)
-        });
+        let comps =
+            connected_components_where(&seeds, &params, |a, b| reciprocal(&ranked, a, b, k));
         let multi: Vec<&Vec<String>> = comps.iter().filter(|c| c.len() > 1).collect();
         println!();
         println!("================================================================");
@@ -402,7 +405,10 @@ fn ranked_neighbours(
                 .unwrap_or(std::cmp::Ordering::Equal)
                 .then_with(|| a.0.cmp(&b.0))
         });
-        ranked.insert(seed.clone(), neighbours.into_iter().map(|(s, _)| s).collect());
+        ranked.insert(
+            seed.clone(),
+            neighbours.into_iter().map(|(s, _)| s).collect(),
+        );
     }
     ranked
 }

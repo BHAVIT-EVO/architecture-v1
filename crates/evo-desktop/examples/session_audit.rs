@@ -43,7 +43,8 @@ fn main() {
                 .find(|value| value != "inspect" && value != "continue");
             continue_mode(&state, target.as_deref());
         }
-        "inspect" | _ => inspect_mode(&storage_root, &state),
+        "inspect" => inspect_mode(&storage_root, &state),
+        _ => inspect_mode(&storage_root, &state),
     }
 }
 

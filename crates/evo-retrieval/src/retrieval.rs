@@ -105,7 +105,10 @@ impl Resolution<'_> {
 
     /// Stable identity of the resolved body of work, when unambiguous.
     pub fn work_id(&self) -> Option<WorkId> {
-        match self { Resolution::Resolved(work) => Some(work.work_id()), _ => None }
+        match self {
+            Resolution::Resolved(work) => Some(work.work_id()),
+            _ => None,
+        }
     }
 }
 
@@ -121,7 +124,11 @@ impl Retrieval {
     /// what was merely remembered alike — and returns the clear winner, the set
     /// of candidates it cannot separate, or nothing. See the module documentation
     /// for the scoring and [`Resolution`] for the outcomes.
-    pub fn retrieve<'a>(&self, trigger: &str, reconstruction: &'a Reconstruction) -> Resolution<'a> {
+    pub fn retrieve<'a>(
+        &self,
+        trigger: &str,
+        reconstruction: &'a Reconstruction,
+    ) -> Resolution<'a> {
         resolve(
             trigger,
             reconstruction.set().engagements(),
@@ -131,7 +138,11 @@ impl Retrieval {
 
     /// Resolves a trigger and returns the stable body-of-work identity when the
     /// evidence clearly separates one candidate from the others.
-    pub fn retrieve_work_id(&self, trigger: &str, reconstruction: &Reconstruction) -> Option<WorkId> {
+    pub fn retrieve_work_id(
+        &self,
+        trigger: &str,
+        reconstruction: &Reconstruction,
+    ) -> Option<WorkId> {
         self.retrieve(trigger, reconstruction).work_id()
     }
 }
@@ -142,14 +153,22 @@ impl RetrievalIndex {
             .set()
             .engagements()
             .iter()
-            .map(|work| IndexedWork { id: work.work_id(), vocabulary: thread_vocabulary(work) })
+            .map(|work| IndexedWork {
+                id: work.work_id(),
+                vocabulary: thread_vocabulary(work),
+            })
             .collect();
-        Self { works, margin: reconstruction.params().retrieval_margin }
+        Self {
+            works,
+            margin: reconstruction.params().retrieval_margin,
+        }
     }
 
     pub fn resolve(&self, trigger: &str) -> WorkResolution {
         let query = tokenize_subject(trigger);
-        if query.is_empty() || self.works.is_empty() { return WorkResolution::NotFound; }
+        if query.is_empty() || self.works.is_empty() {
+            return WorkResolution::NotFound;
+        }
 
         let mut document_frequency: BTreeMap<&str, usize> = BTreeMap::new();
         for work in &self.works {
@@ -158,23 +177,42 @@ impl RetrievalIndex {
             }
         }
         let total = self.works.len() as f64;
-        let mut scored: Vec<(WorkId, f64)> = self.works.iter().filter_map(|work| {
-            let score = query.iter().filter_map(|term| {
-                let weight = work.vocabulary.get(term)?;
-                let df = *document_frequency.get(term.as_str())?;
-                Some(((total + 1.0) / df as f64).ln() * weight)
-            }).sum::<f64>();
-            (score > 0.0).then_some((work.id, score))
-        }).collect();
-        if scored.is_empty() { return WorkResolution::NotFound; }
-        scored.sort_by(|left, right| right.1.partial_cmp(&left.1)
-            .unwrap_or(std::cmp::Ordering::Equal).then_with(|| left.0.cmp(&right.0)));
+        let mut scored: Vec<(WorkId, f64)> = self
+            .works
+            .iter()
+            .filter_map(|work| {
+                let score = query
+                    .iter()
+                    .filter_map(|term| {
+                        let weight = work.vocabulary.get(term)?;
+                        let df = *document_frequency.get(term.as_str())?;
+                        Some(((total + 1.0) / df as f64).ln() * weight)
+                    })
+                    .sum::<f64>();
+                (score > 0.0).then_some((work.id, score))
+            })
+            .collect();
+        if scored.is_empty() {
+            return WorkResolution::NotFound;
+        }
+        scored.sort_by(|left, right| {
+            right
+                .1
+                .partial_cmp(&left.1)
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| left.0.cmp(&right.0))
+        });
         let best = scored[0].1;
-        let contenders: Vec<WorkId> = scored.iter()
+        let contenders: Vec<WorkId> = scored
+            .iter()
             .filter(|(_, score)| *score > self.margin * best)
-            .map(|(id, _)| *id).collect();
-        if contenders.len() == 1 { WorkResolution::Resolved(contenders[0]) }
-        else { WorkResolution::Ambiguous(contenders) }
+            .map(|(id, _)| *id)
+            .collect();
+        if contenders.len() == 1 {
+            WorkResolution::Resolved(contenders[0])
+        } else {
+            WorkResolution::Ambiguous(contenders)
+        }
     }
 }
 

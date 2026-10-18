@@ -1,0 +1,531 @@
+evidence_id: ev_ad1b6357b87c6300f16377a721e3a7b6762a444e790e14853c22909661e5dbf0
+subject:
+  name: Rambox
+  digest:
+    sha256: a1503e2fc64ae9ca6aafe5b7ee69df4ac871c2dde565ba67cd56c172f4d6aea1
+  format: mach-o
+  architecture: arm64
+  local_path: /Applications/Rambox.app/Contents/MacOS/Rambox
+provider:
+  id: native-macos
+  name: macOS native inspection utilities
+  version: null
+predicate_type: rea.analysis
+operation: inspect_macho
+parameters:
+raw_result:
+  provenance[8]:
+    - tool: file
+      command[3]: /usr/bin/file,"-b",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: a4ba66d26a9cfdc70637c78cdacef920f94147f6aa45ccc73858e493589ef94d
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 336
+      stderr_bytes: 0
+    - tool: lipo
+      command[3]: /Library/Developer/CommandLineTools/usr/bin/lipo,"-detailed_info",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 751c4a4636efc5f4015999dc7d41be6e2552b39f8949d6eb971e958fccf0e386
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 430
+      stderr_bytes: 0
+    - tool: otool
+      command[6]: /Library/Developer/CommandLineTools/usr/bin/llvm-otool,"-h","-l","-arch",arm64,$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 7febe4f134f15c4ef414413499003605e42aac955c6192ab7ab6139b79a77ace
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 3814
+      stderr_bytes: 0
+    - tool: nm
+      command[5]: /Library/Developer/CommandLineTools/usr/bin/llvm-nm,"-gjU","-arch",arm64,$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 93d97ad8918dec796007159bdfe3ee60a3f4814eb80e6bd56b6012a0f5c57753
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 20
+      stderr_bytes: 0
+    - tool: dyld_info
+      command[5]: /Library/Developer/CommandLineTools/usr/bin/dyld_info,"-imports","-arch",arm64,$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 68ea34828d32464d4c754962d355dcf212d49ffb4aef71266852aab5953654ad
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 573
+      stderr_bytes: 0
+    - tool: dyld_info
+      command[5]: /Library/Developer/CommandLineTools/usr/bin/dyld_info,"-exports","-arch",arm64,$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 68ea34828d32464d4c754962d355dcf212d49ffb4aef71266852aab5953654ad
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 137
+      stderr_bytes: 0
+    - tool: dwarfdump
+      command[4]: /Library/Developer/CommandLineTools/usr/bin/llvm-dwarfdump,"--uuid","--arch=arm64",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 1dd077fc25a9a8f4ba61f62483be226515ee7f18776b2fa97ac6191dc6fa47de
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 98
+      stderr_bytes: 0
+    - tool: vtool
+      command[5]: /Library/Developer/CommandLineTools/usr/bin/vtool,"-show-build","-arch",arm64,$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: e98bb965cb748669b515a3a963e3687fab7762de1d914053e0ccbb31d998a024
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 210
+      stderr_bytes: 0
+normalized_result:
+  format: mach-o
+  endian: null
+  word_size: 64
+  file_type: "2"
+  flags[1]: 0x00200085
+  uuid: 4C4C44B8-5555-3144-A128-CD77F9F6307C
+  entrypoints:
+    items[1]{file_offset}:
+      1120
+    total: 1
+    exhaustive: true
+    limitations: []
+  architectures:
+    items[2]{name,cpu_type,cpu_subtype,file_offset,size,alignment}:
+      x86_64,CPU_TYPE_X86_64,CPU_SUBTYPE_X86_64_ALL,16384,33072,16384
+      arm64,CPU_TYPE_ARM64,CPU_SUBTYPE_ARM64_ALL,65536,53696,16384
+    total: 2
+    exhaustive: true
+    limitations: []
+  build_metadata:
+    items[1]:
+      - platform: "1"
+        minimum_os: "12.0"
+        sdk: "26.5"
+        tools[1]{name,version}:
+          "4","23.0"
+    total: 1
+    exhaustive: true
+    limitations: []
+  load_commands:
+    items[16]:
+      - index: 0
+        kind: LC_SEGMENT_64
+        fields:
+          cmd: LC_SEGMENT_64
+          cmdsize: 72
+          segname: __PAGEZERO
+          vmaddr: 0
+          vmsize: 4294967296
+          fileoff: 0
+          filesize: 0
+          maxprot: 0
+          initprot: 0
+          nsects: 0
+          flags: 0
+      - index: 1
+        kind: LC_SEGMENT_64
+        fields:
+          cmd: LC_SEGMENT_64
+          cmdsize: 312
+          segname: __TEXT
+          vmaddr: 4294967296
+          vmsize: 16384
+          fileoff: 0
+          filesize: 16384
+          maxprot: 5
+          initprot: 5
+          nsects: 3
+          flags: 0
+      - index: 2
+        kind: LC_SEGMENT_64
+        fields:
+          cmd: LC_SEGMENT_64
+          cmdsize: 152
+          segname: __DATA_CONST
+          vmaddr: 4294983680
+          vmsize: 16384
+          fileoff: 16384
+          filesize: 16384
+          maxprot: 3
+          initprot: 3
+          nsects: 1
+          flags: 16
+      - index: 3
+        kind: LC_SEGMENT_64
+        fields:
+          cmd: LC_SEGMENT_64
+          cmdsize: 72
+          segname: __LINKEDIT
+          vmaddr: 4295000064
+          vmsize: 32768
+          fileoff: 32768
+          filesize: 20928
+          maxprot: 1
+          initprot: 1
+          nsects: 0
+          flags: 0
+      - index: 4
+        kind: LC_DYLD_CHAINED_FIXUPS
+        fields:
+          cmd: LC_DYLD_CHAINED_FIXUPS
+          cmdsize: 16
+          dataoff: 32768
+          datasize: 280
+      - index: 5
+        kind: LC_DYLD_EXPORTS_TRIE
+        fields:
+          cmd: LC_DYLD_EXPORTS_TRIE
+          cmdsize: 16
+          dataoff: 33048
+          datasize: 32
+      - index: 6
+        kind: LC_SYMTAB
+        fields:
+          cmd: LC_SYMTAB
+          cmdsize: 24
+          symoff: 33080
+          nsyms: 12
+          stroff: 33340
+          strsize: 200
+      - index: 7
+        kind: LC_DYSYMTAB
+        fields:
+          cmd: LC_DYSYMTAB
+          cmdsize: 80
+          ilocalsym: 0
+          nlocalsym: 0
+          iextdefsym: 0
+          nextdefsym: 1
+          iundefsym: 1
+          nundefsym: 11
+          tocoff: 0
+          ntoc: 0
+          modtaboff: 0
+          nmodtab: 0
+          extrefsymoff: 0
+          nextrefsyms: 0
+          indirectsymoff: 33272
+          nindirectsyms: 17
+          extreloff: 0
+          nextrel: 0
+          locreloff: 0
+          nlocrel: 0
+      - index: 8
+        kind: LC_RPATH
+        fields:
+          cmd: LC_RPATH
+          cmdsize: 48
+          path: @executable_path/../Frameworks (offset 12)
+      - index: 9
+        kind: LC_LOAD_DYLINKER
+        fields:
+          cmd: LC_LOAD_DYLINKER
+          cmdsize: 32
+          name: /usr/lib/dyld (offset 12)
+      - index: 10
+        kind: LC_UUID
+        fields:
+          cmd: LC_UUID
+          cmdsize: 24
+          uuid: 4C4C44B8-5555-3144-A128-CD77F9F6307C
+      - index: 11
+        kind: LC_BUILD_VERSION
+        fields:
+          cmd: LC_BUILD_VERSION
+          cmdsize: 32
+          platform: 1
+          minos: "12.0"
+          sdk: "26.5"
+          ntools: 1
+          tool: 4
+          version: "23.0"
+      - index: 12
+        kind: LC_MAIN
+        fields:
+          cmd: LC_MAIN
+          cmdsize: 24
+          entryoff: 1120
+          stacksize: 0
+      - index: 13
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 80
+          name: @rpath/Electron Framework.framework/Electron Framework (offset 24)
+          "time stamp": "0 Thu Jan  1 05:30:00 1970"
+          "current version": 0.0.0
+          "compatibility version": 0.0.0
+      - index: 14
+        kind: LC_LOAD_DYLIB
+        fields:
+          cmd: LC_LOAD_DYLIB
+          cmdsize: 56
+          name: /usr/lib/libSystem.B.dylib (offset 24)
+          "time stamp": "0 Thu Jan  1 05:30:00 1970"
+          "current version": 1356.0.0
+          "compatibility version": 1.0.0
+      - index: 15
+        kind: LC_CODE_SIGNATURE
+        fields:
+          cmd: LC_CODE_SIGNATURE
+          cmdsize: 16
+          dataoff: 33552
+          datasize: 20144
+    total: 16
+    exhaustive: true
+    limitations: []
+  dependencies:
+    items[3]{path,kind,current_version,compatibility_version}:
+      /usr/lib/dyld,LC_LOAD_DYLINKER,null,null
+      @rpath/Electron Framework.framework/Electron Framework,LC_LOAD_DYLIB,0.0.0,0.0.0
+      /usr/lib/libSystem.B.dylib,LC_LOAD_DYLIB,1356.0.0,1.0.0
+    total: 3
+    exhaustive: true
+    limitations: []
+  imports:
+    items[10]{name,address,weak,reexport,source}:
+      _ElectronInitializeICUandStartNode,null,null,null,Electron Framework
+      _ElectronMain,null,null,null,Electron Framework
+      _getenv,null,null,null,libSystem
+      __ZN8electron5fuses18IsRunAsNodeEnabledEv,null,null,null,Electron Framework
+      _freopen,null,null,null,libSystem
+      ___stderrp,null,null,null,libSystem
+      ___error,null,null,null,libSystem
+      ___stdoutp,null,null,null,libSystem
+      ___stdinp,null,null,null,libSystem
+      _fstat,null,null,null,libSystem
+    total: null
+    exhaustive: false
+    limitations[1]: dyld_info textual imports may omit chained or toolchain-unsupported metadata.
+  exports:
+    items[1]{name,address,weak,reexport,source}:
+      __mh_execute_header,0x100000000,null,false,null
+    total: null
+    exhaustive: false
+    limitations[1]: Merged nm/dyld_info results may be incomplete for stripped binaries.
+  segments:
+    items[4]:
+      - name: __PAGEZERO
+        vm_address: 0x0
+        vm_size: 4294967296
+        file_offset: 0
+        file_size: 0
+        maximum_permissions:
+          read: false
+          write: false
+          execute: false
+          raw: "0"
+        initial_permissions:
+          read: false
+          write: false
+          execute: false
+          raw: "0"
+        sections:
+          items: []
+          total: 0
+          exhaustive: true
+          limitations: []
+      - name: __TEXT
+        vm_address: 0x100000000
+        vm_size: 16384
+        file_offset: 0
+        file_size: 16384
+        maximum_permissions:
+          read: true
+          write: false
+          execute: true
+          raw: "5"
+        initial_permissions:
+          read: true
+          write: false
+          execute: true
+          raw: "5"
+        sections:
+          items[3]:
+            - segment: __TEXT
+              name: __text
+              address: 0x100000460
+              size: 348
+              file_offset: 1120
+              alignment: 4
+              flags[1]: "2147484672"
+            - segment: __TEXT
+              name: __stubs
+              address: 0x1000005bc
+              size: 84
+              file_offset: 1468
+              alignment: 4
+              flags[1]: "2147484680"
+            - segment: __TEXT
+              name: __cstring
+              address: 0x100000610
+              size: 35
+              file_offset: 1552
+              alignment: 1
+              flags[1]: "2"
+          total: 3
+          exhaustive: true
+          limitations: []
+      - name: __DATA_CONST
+        vm_address: 0x100004000
+        vm_size: 16384
+        file_offset: 16384
+        file_size: 16384
+        maximum_permissions:
+          read: true
+          write: true
+          execute: false
+          raw: "3"
+        initial_permissions:
+          read: true
+          write: true
+          execute: false
+          raw: "3"
+        sections:
+          items[1]:
+            - segment: __DATA_CONST
+              name: __got
+              address: 0x100004000
+              size: 80
+              file_offset: 16384
+              alignment: 8
+              flags[1]: "6"
+          total: 1
+          exhaustive: true
+          limitations: []
+      - name: __LINKEDIT
+        vm_address: 0x100008000
+        vm_size: 32768
+        file_offset: 32768
+        file_size: 20928
+        maximum_permissions:
+          read: true
+          write: false
+          execute: false
+          raw: "1"
+        initial_permissions:
+          read: true
+          write: false
+          execute: false
+          raw: "1"
+        sections:
+          items: []
+          total: 0
+          exhaustive: true
+          limitations: []
+    total: 4
+    exhaustive: true
+    limitations: []
+  provenance[8]:
+    - tool: file
+      command[3]: /usr/bin/file,"-b",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: a4ba66d26a9cfdc70637c78cdacef920f94147f6aa45ccc73858e493589ef94d
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 336
+      stderr_bytes: 0
+    - tool: lipo
+      command[3]: /Library/Developer/CommandLineTools/usr/bin/lipo,"-detailed_info",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 751c4a4636efc5f4015999dc7d41be6e2552b39f8949d6eb971e958fccf0e386
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 430
+      stderr_bytes: 0
+    - tool: otool
+      command[6]: /Library/Developer/CommandLineTools/usr/bin/llvm-otool,"-h","-l","-arch",arm64,$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 7febe4f134f15c4ef414413499003605e42aac955c6192ab7ab6139b79a77ace
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 3814
+      stderr_bytes: 0
+    - tool: nm
+      command[5]: /Library/Developer/CommandLineTools/usr/bin/llvm-nm,"-gjU","-arch",arm64,$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 93d97ad8918dec796007159bdfe3ee60a3f4814eb80e6bd56b6012a0f5c57753
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 20
+      stderr_bytes: 0
+    - tool: dyld_info
+      command[5]: /Library/Developer/CommandLineTools/usr/bin/dyld_info,"-imports","-arch",arm64,$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 68ea34828d32464d4c754962d355dcf212d49ffb4aef71266852aab5953654ad
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 573
+      stderr_bytes: 0
+    - tool: dyld_info
+      command[5]: /Library/Developer/CommandLineTools/usr/bin/dyld_info,"-exports","-arch",arm64,$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 68ea34828d32464d4c754962d355dcf212d49ffb4aef71266852aab5953654ad
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 137
+      stderr_bytes: 0
+    - tool: dwarfdump
+      command[4]: /Library/Developer/CommandLineTools/usr/bin/llvm-dwarfdump,"--uuid","--arch=arm64",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 1dd077fc25a9a8f4ba61f62483be226515ee7f18776b2fa97ac6191dc6fa47de
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 98
+      stderr_bytes: 0
+    - tool: vtool
+      command[5]: /Library/Developer/CommandLineTools/usr/bin/vtool,"-show-build","-arch",arm64,$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: e98bb965cb748669b515a3a963e3687fab7762de1d914053e0ccbb31d998a024
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 210
+      stderr_bytes: 0
+  limitations[2]: Imports and exports combine dyld_info and nm; stripped or toolchain-hidden symbols may be absent.,vtool output is retained as provenance but only otool build metadata is normalized.
+confidence: observed
+authority: shipped-artifact
+environment: null
+limitations[2]: Imports and exports combine dyld_info and nm; stripped or toolchain-hidden symbols may be absent.,vtool output is retained as provenance but only otool build metadata is normalized.
+locations[6]{kind,start,end}:
+  file-offset-range,16384,49456
+  file-offset-range,65536,119232
+  file-offset-range,0,0
+  file-offset-range,0,16384
+  file-offset-range,16384,32768
+  file-offset-range,32768,53696
+evidence_links: []

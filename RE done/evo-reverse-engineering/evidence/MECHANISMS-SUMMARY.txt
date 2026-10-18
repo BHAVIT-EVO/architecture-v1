@@ -1,0 +1,120 @@
+===== Timing =====
+  ProjectRule                    10
+  keyword                        8
+  AutoAssign                     0
+  hierarch                       24
+  suggest                        10
+  rule                           88
+  Productiv                      130
+  tolerance                      0
+  -- ProjectRule examples:
+     ProjectRuleOrderViewController
+     Timing/ProjectRuleOrderViewController.swift
+     info.eurocomp.Timing2.preferences.projectRuleOrder
+  -- keyword examples:
+     hideClickedOrSelectedKeywords:
+     paramDescriptorForKeyword:
+     ActivityListController.hideClickedOrSelectedKeywords
+  -- hierarch examples:
+     HierarchicalActivityListController
+     PerProjectHierarchicalActivityListController
+     hierarchicalActivityListControllers
+  -- suggest examples:
+     TimerSuggestion
+     Charts: Productivity Score: Suggestion text shown when many projects have neutral productivity scores, part 1.
+     Charts: Productivity Score: Suggestion text shown when many projects have neutral productivity scores, part 2.
+  -- rule examples:
+     Rule OrdH
+     Rule OrdH
+      (1 ruleH
+  -- Productiv examples:
+     ProductivityScoreValueFormatter
+     ProductivityScoreControllerDelegate
+     ProductivityScoreController
+===== Bunch =====
+  closeOn                        16
+  openAt                         12
+  waitingSnippet                 4
+  launchPath                     24
+  forceOpen                      10
+  ignoreInSingleBunchMode        10
+  delay                          28
+  -- closeOn examples:
+     closeOn
+     T@"NSTimer",&,V_closeOn
+     initWithFileDescriptor:closeOnDealloc:
+  -- openAt examples:
+     scheduleOpenAt:
+     T@"NSTimer",&,V_openAt
+     openAt
+  -- waitingSnippet examples:
+     importWaitingSnippets:
+     importWaitingSnippets:
+  -- launchPath examples:
+     T@"NSString",C,V_launchPath
+     initWithLaunchPath:
+     initWithLaunchPath:arguments:
+  -- forceOpen examples:
+     Tc,N,V_forceOpenClose
+     forceOpenClose
+     setForceOpenClose:
+  -- ignoreInSingleBunchMode examples:
+     Tc,N,V_ignoreInSingleBunchMode
+     ignoreInSingleBunchMode
+     setIgnoreInSingleBunchMode:
+  -- delay examples:
+     TQ,V_delay
+     delay
+     performSelector:withObject:afterDelay:
+===== ManicTime =====
+  Absorb                         0
+  AutoFill                       0
+  autotag                        0
+  wildcard                       0
+  Regex                          0
+  TagTimeline                    0
+  gap                            3
+  -- gap examples:
+     SCRunningApplication
+     NSRunningApplication
+     renderingAPI
+===== Rize =====
+  focus                          0
+  blocked                        0
+  categor                        0
+  calendar                       0
+===== Toggl =====
+  suggest                        0
+  autotrack                      0
+  idle                           0
+  project                        0
+===== Granola =====
+  title                          0
+  summar                         0
+  note                           0
+===== Dia =====
+  Space                          1879
+  Archive                        300
+  Pinned                         561
+  profile                        2003
+  sync                           2195
+  -- Space examples:
+     CoordinateSpaceConvertible
+     ColorSpace
+     ExpandingScrollViewCoordinateSpace
+  -- Archive examples:
+     Archive
+     ArchiveError
+     ArchiveIcon
+  -- Pinned examples:
+     PinnedTabNavigationProfile
+     InstagramDirectClientPinnedTabNavigationProfile
+     PinnedTabNavigationProfiles
+  -- profile examples:
+     ArcImportSourceProfileLoadAccess
+     ADKImportSourceProfileLoadResult
+     ImporterProfile
+  -- sync examples:
+     PublisherAsyncError
+     AsyncAlgorithms
+     AsyncAdjacentPairsSequence

@@ -1,0 +1,2 @@
+try{let e=typeof window<`u`?window:typeof global<`u`?global:typeof globalThis<`u`?globalThis:typeof self<`u`?self:{},t=new e.Error().stack;t&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[t]=`92948c5f-efc5-41e2-b39f-e911d6e9903e`,e._sentryDebugIdIdentifier=`sentry-dbid-92948c5f-efc5-41e2-b39f-e911d6e9903e`)}catch{}import"./_sentry-release-injection-file-DZROVGkF.js";import{r as e}from"./router-B6PMPlQC.js";var t=e({v5Compat:!0});export{t};
+//# sourceMappingURL=hashHistory-C2-z9jB4.js.map

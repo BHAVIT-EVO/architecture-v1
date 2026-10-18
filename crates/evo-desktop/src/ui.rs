@@ -55,10 +55,16 @@ fn veil(color: Color32, t: f32) -> Color32 {
     )
 }
 
-/// A neutral shade at a fraction of the given alpha. Black is safe to build
-/// this way because premultiplication leaves its components at zero.
-fn shade(alpha: u8, t: f32) -> Color32 {
-    Color32::from_rgba_unmultiplied(0, 0, 0, (alpha as f32 * t.clamp(0.0, 1.0)).round() as u8)
+/// The dark theme's counterpart to [`shade`]: a white wash at a fraction of
+/// the given alpha. On charcoal, a black wash is invisible — light is what
+/// reads as interaction here.
+fn glow(alpha: u8, t: f32) -> Color32 {
+    Color32::from_rgba_unmultiplied(
+        0xFF,
+        0xFF,
+        0xFF,
+        (alpha as f32 * t.clamp(0.0, 1.0)).round() as u8,
+    )
 }
 
 // ────────────────────────────────────────────────────────────────────────
@@ -546,11 +552,12 @@ fn wrapped_control(ui: &mut egui::Ui, spec: Control<'_>) -> Response {
 /// The fill, ink and border a control shows at rest.
 fn resting_colors(spec: &Control<'_>) -> (Color32, Color32, Stroke) {
     match (spec.emphasis, spec.enabled) {
-        (Emphasis::Primary, true) => (theme::ACCENT, Color32::WHITE, Stroke::NONE),
+        (Emphasis::Primary, true) => (theme::ACCENT, theme::ON_ACCENT, Stroke::NONE),
         (Emphasis::Primary, false) => (
             // A disabled primary keeps its shape so the screen's structure
-            // does not shift when it becomes available.
-            shade(theme::border().a(), 1.0),
+            // does not shift when it becomes available. On charcoal the
+            // ghost fill is light, not dark.
+            glow(10, 1.0),
             theme::TERTIARY,
             Stroke::NONE,
         ),
@@ -588,13 +595,13 @@ fn paint_control(ui: &mut egui::Ui, spec: &Control<'_>, rect: Rect, hover: f32, 
         }
         Emphasis::Quiet => {
             if hover > 0.0 {
-                painter.rect_filled(rect, radius, shade(theme::hover_wash().a(), hover));
+                painter.rect_filled(rect, radius, glow(theme::hover_wash().a(), hover));
             }
         }
         _ => {
             painter.rect_filled(rect, radius, fill);
             if hover > 0.0 {
-                painter.rect_filled(rect, radius, shade(theme::hover_wash().a(), hover * 0.6));
+                painter.rect_filled(rect, radius, glow(theme::hover_wash().a(), hover * 0.6));
             }
             if stroke.width > 0.0 {
                 painter.rect_stroke(rect, radius, stroke, egui::StrokeKind::Inside);
@@ -761,17 +768,17 @@ pub fn origin_mark(ui: &mut egui::Ui, id: egui::Id, chosen: bool) -> Response {
     let painter = ui.painter();
     if chosen {
         painter.circle_filled(center, 8.0, theme::ACCENT);
-        painter.circle_filled(center, 3.0, Color32::WHITE);
+        painter.circle_filled(center, 3.0, theme::ON_ACCENT);
     } else {
-        painter.circle_filled(center, 8.0, shade(theme::hover_wash().a(), hover));
+        painter.circle_filled(center, 8.0, glow(theme::hover_wash().a(), hover));
         painter.circle_stroke(
             center,
             7.5,
             Stroke::new(
                 1.5,
                 mix(
-                    Color32::from_rgb(0xB0, 0xAE, 0xAA),
-                    Color32::from_rgb(0x7A, 0x78, 0x74),
+                    Color32::from_rgb(0x6A, 0x6E, 0x70),
+                    Color32::from_rgb(0xB9, 0xBD, 0xBD),
                     hover,
                 ),
             ),
@@ -805,7 +812,7 @@ pub fn set_mark(ui: &mut egui::Ui, id: egui::Id, member: bool, draft: bool) -> R
                 egui::Align2::CENTER_CENTER,
                 "✓",
                 theme::strong_font(11.0),
-                Color32::WHITE,
+                theme::ON_ACCENT,
             );
         }
         (true, true) => {
@@ -813,12 +820,12 @@ pub fn set_mark(ui: &mut egui::Ui, id: egui::Id, member: bool, draft: bool) -> R
             painter.rect_filled(
                 box_rect,
                 radius,
-                Color32::from_rgba_unmultiplied(10, 94, 88, 38),
+                Color32::from_rgba_unmultiplied(0xC8, 0x9B, 0x6B, 38),
             );
             painter.rect_stroke(
                 box_rect,
                 radius,
-                Stroke::new(1.5, Color32::from_rgba_unmultiplied(10, 94, 88, 96)),
+                Stroke::new(1.5, Color32::from_rgba_unmultiplied(0xC8, 0x9B, 0x6B, 96)),
                 egui::StrokeKind::Inside,
             );
             painter.text(
@@ -826,19 +833,19 @@ pub fn set_mark(ui: &mut egui::Ui, id: egui::Id, member: bool, draft: bool) -> R
                 egui::Align2::CENTER_CENTER,
                 "✓",
                 theme::strong_font(11.0),
-                Color32::from_rgba_unmultiplied(10, 94, 88, 150),
+                Color32::from_rgba_unmultiplied(0xC8, 0x9B, 0x6B, 150),
             );
         }
         _ => {
-            painter.rect_filled(box_rect, radius, shade(theme::hover_wash().a(), hover));
+            painter.rect_filled(box_rect, radius, glow(theme::hover_wash().a(), hover));
             painter.rect_stroke(
                 box_rect,
                 radius,
                 Stroke::new(
                     1.5,
                     mix(
-                        Color32::from_rgb(0xB0, 0xAE, 0xAA),
-                        Color32::from_rgb(0x7A, 0x78, 0x74),
+                        Color32::from_rgb(0x6A, 0x6E, 0x70),
+                        Color32::from_rgb(0xB9, 0xBD, 0xBD),
                         hover,
                     ),
                 ),
@@ -872,7 +879,7 @@ pub fn row<R>(
         theme::RESPONSE_TOUCH,
     );
     let inner = egui::Frame::new()
-        .fill(shade(theme::hover_wash().a(), wash))
+        .fill(glow(theme::hover_wash().a(), wash))
         .corner_radius(CornerRadius::same(theme::CORNER_SMALL))
         .inner_margin(Margin::symmetric(theme::M3, theme::M2))
         .show(ui, |ui| {
@@ -898,7 +905,7 @@ pub fn disclosure(ui: &mut egui::Ui, id: egui::Id, label_text: &str) -> bool {
     let response = ui.add(
         egui::Label::new(theme::text(
             Role::Caption,
-            &format!("{marker}  {label_text}"),
+            format!("{marker}  {label_text}"),
             theme::MUTED,
         ))
         .sense(Sense::click()),
@@ -970,17 +977,19 @@ mod tests {
                 "veil() shifted a channel: {restored} is not {original}"
             );
         }
-        // And it has not drifted toward neutral: this is a warm white, so the
-        // channels stay in their warm order rather than converging on grey.
-        assert!(r >= g && g >= b, "veil() flattened the hue to {r},{g},{b}");
+        // And it has not drifted toward neutral: this is a cool charcoal, so
+        // the channels stay in their cool order rather than converging on
+        // grey.
+        assert!(b > r, "veil() flattened the hue to {r},{g},{b}");
     }
 
     #[test]
-    fn shading_scales_alpha_and_stays_neutral() {
-        let full = shade(20, 1.0);
+    fn glowing_scales_alpha_and_stays_light() {
+        // The dark theme's wash is light: it must never darken toward black.
+        let full = glow(20, 1.0);
         assert_eq!(full.a(), 20);
-        assert_eq!(shade(20, 0.0).a(), 0);
-        assert_eq!(shade(20, 0.5).a(), 10);
+        assert_eq!(glow(20, 0.0).a(), 0);
+        assert_eq!(glow(20, 0.5).a(), 10);
     }
 
     #[test]
@@ -1020,7 +1029,10 @@ mod tests {
         assert_ne!(fill, theme::ACCENT);
         let (fill, ink, _) = resting_colors(&Control::primary("Continue"));
         assert_eq!(fill, theme::ACCENT);
-        assert_eq!(ink, Color32::WHITE);
+        // The caramel fill is a light color: its label is the dark on-accent
+        // ink, never white.
+        assert_eq!(ink, theme::ON_ACCENT);
+        assert_ne!(ink, Color32::WHITE);
     }
 
     #[test]

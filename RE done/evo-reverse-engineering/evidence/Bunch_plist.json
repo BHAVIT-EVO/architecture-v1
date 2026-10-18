@@ -1,0 +1,132 @@
+evidence_id: ev_5399546ecb62d95dc206e7c55fb131022ff810a22d5c55e61bfaaa4e1247c2b2
+subject:
+  name: Bunch
+  digest:
+    sha256: 5b12dadb22f001fb04a9cc37d53be3465e635008af730d28588a8443e65f814b
+  format: mach-o
+  architecture: arm64
+  local_path: /Applications/Bunch.app/Contents/MacOS/Bunch
+provider:
+  id: native-macos
+  name: macOS native inspection utilities
+  version: null
+predicate_type: rea.analysis
+operation: inspect_plist
+parameters:
+  relative_path: Contents/Info.plist
+raw_result:
+  provenance[2]:
+    - tool: file
+      command[3]: /usr/bin/file,"-b",$PLIST
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: a4ba66d26a9cfdc70637c78cdacef920f94147f6aa45ccc73858e493589ef94d
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 48
+      stderr_bytes: 0
+    - tool: plutil
+      command[7]: /usr/bin/plutil,"-convert",json,"-o","-","--",$PLIST
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 9d2296746d4519a8094738e7570972d44791793a072767b8bcbf0ea82af90358
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 1958
+      stderr_bytes: 0
+normalized_result:
+  format: xml
+  value:
+    DTCompiler: com.apple.compilers.llvm.clang.1_0
+    NSAppleScriptEnabled: true
+    CFBundleInfoDictionaryVersion: "6.0"
+    CFBundleURLTypes[1]:
+      - CFBundleTypeRole: Editor
+        CFBundleURLName: Bunch Protocol
+        CFBundleURLSchemes[1]: x-bunch
+    DTPlatformVersion: "26.5"
+    CFBundleIconFile: AppIcon
+    CFBundleName: Bunch
+    DTSDKName: macosx26.5
+    NSPrincipalClass: BTApplication
+    LSApplicationCategoryType: public.app-category.productivity
+    SUFeedURL: "https://brettterpstra.com/updates/bunch/appcast.xml"
+    DTSDKBuild: 25F70
+    CFBundleSupportedPlatforms[1]: MacOSX
+    CFBundleShortVersionString: 1.4.19
+    INIntentsSupported[1]: OpenBunch
+    BuildMachineOSBuild: 25G83
+    DTPlatformBuild: 25F70
+    CFBundlePackageType: APPL
+    DTXcodeBuild: 17F113
+    CFBundleDevelopmentRegion: en
+    UTExportedTypeDeclarations[1]:
+      - UITagTypeSpecification:
+          "public.filename-extension"[1]: bunch
+        UTTypeIcons:
+          UTTypeIconBackgroundName: BunchDocFill
+          UTTypeIconText: Bunch
+          UTTypeIconBadgeName: BunchDocCenter
+        UTTypeIconFile: ""
+        UTTypeConformsTo[1]: public.data
+        UTTypeIdentifier: com.brettterpstra.bunch.bunchfile
+        UTTypeDescription: Bunch File
+        UTTypeTagSpecification:
+          "public.mime-type"[2]: public.plain-text,public.text
+          "public.filename-extension"[1]: bunch
+    CFBundleVersion: "188"
+    LSUIElement: true
+    OSAScriptingDefinition: Bunch.sdef
+    NSMainNibFile: MainMenu
+    CFBundleIdentifier: com.brettterpstra.Bunch
+    DTXcode: "2660"
+    CFBundleIconName: AppIcon
+    NSAppTransportSecurity:
+      NSAllowsArbitraryLoads: true
+      NSAllowsLocalNetworking: true
+      NSAllowsArbitraryLoadsInWebContent: true
+      NSAllowsArbitraryLoadsForMedia: true
+    CFBundleExecutable: Bunch
+    LSMinimumSystemVersion: "11.0"
+    SUPublicEDKey: sXc1IzbIMlkqtEMTQEUp/aXj1zWdpQyjeZSM1J0Yj4c=
+    DTPlatformName: macosx
+    NSAppleEventsUsageDescription: Bunch uses AppleScript to show and hide other apps.
+    NSHumanReadableCopyright: Copyright © 2021 Brett Terpstra. All rights reserved.
+  bundle:
+    identifier: com.brettterpstra.Bunch
+    executable: Bunch
+    name: Bunch
+    version: "188"
+    short_version: 1.4.19
+  source_path: /Applications/Bunch.app/Contents/Info.plist
+  provenance[2]:
+    - tool: file
+      command[3]: /usr/bin/file,"-b",$PLIST
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: a4ba66d26a9cfdc70637c78cdacef920f94147f6aa45ccc73858e493589ef94d
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 48
+      stderr_bytes: 0
+    - tool: plutil
+      command[7]: /usr/bin/plutil,"-convert",json,"-o","-","--",$PLIST
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 9d2296746d4519a8094738e7570972d44791793a072767b8bcbf0ea82af90358
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 1958
+      stderr_bytes: 0
+  limitations: []
+confidence: observed
+authority: shipped-artifact
+environment: null
+limitations: []
+locations[1]{kind,path}:
+  artifact-path,/Applications/Bunch.app/Contents/Info.plist
+evidence_links: []

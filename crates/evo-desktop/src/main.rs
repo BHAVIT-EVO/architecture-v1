@@ -10,6 +10,16 @@ fn main() -> eframe::Result {
         viewport: eframe::egui::ViewportBuilder::default()
             .with_title("Evo")
             .with_inner_size([980.0, 720.0])
+            // The dark chrome: the environment runs edge to edge, under the
+            // traffic lights, so the window is one material (DESIGN.md:
+            // Environment). `with_titlebar_shown(false)` makes the bar
+            // transparent in egui 0.35; combined with the full-size content
+            // view the header shares its top band with the traffic lights.
+            .with_titlebar_shown(false)
+            .with_fullsize_content_view(true)
+            // Evo's header carries the wordmark; the native title text would
+            // duplicate it under the traffic lights.
+            .with_title_shown(false)
             // The declared floor is the one the layout is actually designed to
             // degrade to: below `theme::STACK_BREAKPOINT` the detail view stacks
             // its contextual column under the main column instead of splitting.

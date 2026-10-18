@@ -1,0 +1,11 @@
+total 52912
+drwxr-xr-x@ 10 bhavitsaini  admin       320 Oct  8 01:11 .
+drwxr-xr-x@ 10 bhavitsaini  admin       320 Oct  8 01:11 ..
+drwxr-xr-x@  9 bhavitsaini  admin       288 Oct  8 01:06 ArcCore.framework
+drwxr-xr-x@  5 bhavitsaini  admin       160 Oct  8 01:04 GRDB.framework
+drwxr-xr-x@  5 bhavitsaini  admin       160 Oct  8 01:04 Lottie.framework
+drwxr-xr-x@  5 bhavitsaini  admin       160 Oct  8 01:04 Sentry.framework
+drwxr-xr-x@  8 bhavitsaini  admin       256 Oct  8 01:04 Sparkle.framework
+-rwxr-xr-x@  1 bhavitsaini  admin  18562688 Oct  8 01:11 libAIInfra.dylib
+-rwxr-xr-x@  1 bhavitsaini  admin   8338672 Oct  8 01:11 libContentConversion.dylib
+-rwxr-xr-x@  1 bhavitsaini  admin    188096 Oct  8 01:11 libswiftCompatibilitySpan.dylib

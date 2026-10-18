@@ -1,0 +1,16 @@
+{
+  "error": "JavaScript application analysis failed",
+  "code": "artifact_integrity_mismatch",
+  "category": "integrity_mismatch",
+  "message": "Artifact is invalid or has changed. Get a fresh copy and try again.",
+  "retryable": false,
+  "remediation": {
+    "action": "Artifact is invalid or has changed. Get a fresh copy and try again."
+  },
+  "details": {
+    "logical_path": "node_modules/@koromix/koffi-darwin-arm64/darwin_arm64/koffi.node",
+    "declared_sha256": "01bc6a2830e1e98dd4d1cc3a8b33bb34a87c862bebea6b03b7c049ef8bd282e7",
+    "calculated_sha256": "30a6c4b4631dae334fa2b8f80f01ccf2b03c48f020abc88a315dec0aba26529e",
+    "unpacked": true
+  }
+}

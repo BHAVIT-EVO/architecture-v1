@@ -1,0 +1,16 @@
+{
+  "error": "JavaScript application analysis failed",
+  "code": "artifact_integrity_mismatch",
+  "category": "integrity_mismatch",
+  "message": "Artifact is invalid or has changed. Get a fresh copy and try again.",
+  "retryable": false,
+  "remediation": {
+    "action": "Artifact is invalid or has changed. Get a fresh copy and try again."
+  },
+  "details": {
+    "logical_path": ".vite/build/node_modules/better-sqlite3/build/Release/better_sqlite3.node",
+    "declared_sha256": "81e77e8b57ccb12e946c6430abf876c6e3a64d8bc27895894046c6d1ccefc669",
+    "calculated_sha256": "46344a37c6faa9251a566ac5e703c54f971b4b4e4a3435924e54fddb22d1f02e",
+    "unpacked": true
+  }
+}

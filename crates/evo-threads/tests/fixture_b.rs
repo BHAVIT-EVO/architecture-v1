@@ -35,6 +35,9 @@ const PROVIDER_A: &str = "https://providers.example/resend";
 const PROVIDER_B: &str = "https://providers.example/loops";
 const MSG: &str = "app:messaging";
 
+// Push-per-line is intentional: section comments between pushes tell the
+// fixture's story, which `vec![]` would collapse into noise.
+#[allow(clippy::vec_init_then_push)]
 fn fixture_b_events() -> Vec<Event> {
     let mut v = Vec::new();
     // 09:30–09:55 — browsing laptop icons. Context; nobody's production.
@@ -134,7 +137,10 @@ fn fixture_b_ground_truth_day() {
     assert!(!leaks_into_work(&e, "https://movies.example"));
     assert!(trace_has(&e, |d| matches!(
         d,
-        Decision::EpisodeParked { reason: ParkReason::ConsumptionOnly, .. }
+        Decision::EpisodeParked {
+            reason: ParkReason::ConsumptionOnly,
+            ..
+        }
     )));
     // Neither does the shopping, nor the pre-work icon browsing.
     assert!(!leaks_into_work(&e, "https://shop.example"));
@@ -156,10 +162,7 @@ fn fixture_b_ground_truth_day() {
     // The pitch surface, returning across occasions, stays inside the
     // waitlist work's identity — as a recurrence anchor or as company; what
     // it must never be is its own work, or the demo's.
-    let pitch_in_waitlist = waitlist
-        .companions
-        .iter()
-        .any(|(r, _)| r == PITCH)
+    let pitch_in_waitlist = waitlist.companions.iter().any(|(r, _)| r == PITCH)
         || waitlist.anchors.iter().any(|a| a.resource == PITCH);
     assert!(pitch_in_waitlist);
     assert!(!demo.anchors.iter().any(|a| a.resource == PITCH));
@@ -176,7 +179,16 @@ fn fixture_b_ground_truth_day() {
     let bw = e.resume_bundle(waitlist.id);
     assert!(bw.restore_set.len() <= 5);
     assert_eq!(bw.resume_point, FRAMER);
-    assert!(bw.restore_set.contains(&NOTION.to_string()));
+    // NOTION was left stale while FRAMER returned in a later episode, so the
+    // lifecycle projection marks it inferred Completed rather than reopening
+    // it by historical association.
+    assert!(!bw.restore_set.contains(&NOTION.to_string()));
+    let plan = e.activation_plan(waitlist.id, false);
+    assert!(plan.skipped.iter().any(|member| {
+        member.resource == NOTION
+            && member.state == MemberState::Completed
+            && member.source == MemberStateSource::Inferred
+    }));
     assert!(!bw.restore_set.contains(&MOVIE.to_string()));
 
     // The messaging burst hijacked nothing: no work's resume point, no work's
@@ -197,12 +209,12 @@ fn fixture_b_ground_truth_day() {
     }
 
     // Open deltas report witnessed state only.
-    assert!(bd
-        .open_deltas
-        .contains(&Delta::DownloadedNotYetUsed { path: GEN_ZIP.to_string() }));
-    assert!(bd
-        .open_deltas
-        .contains(&Delta::UncommittedChanges { root: CLI.to_string() }));
+    assert!(bd.open_deltas.contains(&Delta::DownloadedNotYetUsed {
+        path: GEN_ZIP.to_string()
+    }));
+    assert!(bd.open_deltas.contains(&Delta::UncommittedChanges {
+        root: CLI.to_string()
+    }));
     // The sent messages leave no dangling delta anywhere.
     for tv in &threads {
         assert!(!e.resume_bundle(tv.id).open_deltas.iter().any(|d| matches!(
@@ -230,7 +242,10 @@ fn fixture_b_settles_without_surprises() {
     assert_eq!(threads.len(), 2, "settling mints nothing new");
     assert!(trace_has(&e, |d| matches!(
         d,
-        Decision::EpisodeParked { reason: ParkReason::WeakProduction, .. }
+        Decision::EpisodeParked {
+            reason: ParkReason::WeakProduction,
+            ..
+        }
     )));
     for tv in &threads {
         assert_ne!(e.resume_bundle(tv.id).resume_point, MSG);

@@ -68,7 +68,11 @@ fn main() {
     println!("================================================================");
     println!("EVO PHASE 0 — WORK MODEL AUDIT");
     println!("root: {}", root.display());
-    println!("observations: {}  sittings: {}", observations.len(), episodes.len());
+    println!(
+        "observations: {}  sittings: {}",
+        observations.len(),
+        episodes.len()
+    );
     println!("================================================================");
 
     // Every group the reconstruction produced: bodies of work, and what was
@@ -116,7 +120,10 @@ fn main() {
     for count in all_groups_per_subject.values() {
         *distribution.entry(*count).or_insert(0) += 1;
     }
-    println!("      resources placed in a group (claimed or refused): {}", all_groups_per_subject.len());
+    println!(
+        "      resources placed in a group (claimed or refused): {}",
+        all_groups_per_subject.len()
+    );
     for (groups, resources) in &distribution {
         println!("        {resources:>4} resource(s) appear in exactly {groups} group(s)");
     }
@@ -144,10 +151,14 @@ fn main() {
         *breadth.entry(live.len()).or_insert(0) += 1;
     }
     for (count, sittings) in &breadth {
-        println!("        {sittings:>4} sitting(s) had {count} claimed body/bodies of work live in them");
+        println!(
+            "        {sittings:>4} sitting(s) had {count} claimed body/bodies of work live in them"
+        );
     }
-    let interleaved: Vec<&(usize, Vec<&str>)> =
-        live_per_sitting.iter().filter(|(_, live)| live.len() > 1).collect();
+    let interleaved: Vec<&(usize, Vec<&str>)> = live_per_sitting
+        .iter()
+        .filter(|(_, live)| live.len() > 1)
+        .collect();
     println!(
         "      sittings in which the person interleaved two or more claimed bodies of work: {}",
         interleaved.len()
@@ -242,7 +253,9 @@ fn main() {
     let attended_in: BTreeMap<usize, BTreeSet<&String>> = {
         let mut map: BTreeMap<usize, BTreeSet<&String>> = BTreeMap::new();
         for subject in ledger.subjects() {
-            let Some(record) = ledger.get(subject) else { continue };
+            let Some(record) = ledger.get(subject) else {
+                continue;
+            };
             for (sitting, attention) in &record.per_episode {
                 if *attention > Duration::ZERO {
                     map.entry(*sitting).or_default().insert(subject);
@@ -269,7 +282,9 @@ fn main() {
             .map(|p| p.subject())
             .collect();
         for participant in engagement.participants() {
-            let Some(record) = ledger.get(participant.subject()) else { continue };
+            let Some(record) = ledger.get(participant.subject()) else {
+                continue;
+            };
             let dwelling: Vec<usize> = record
                 .per_episode
                 .iter()
@@ -316,7 +331,9 @@ fn main() {
                 outside.len()
             );
             if fatal.is_empty() {
-                println!("            nothing outside was contested — exclusivity was not denied here");
+                println!(
+                    "            nothing outside was contested — exclusivity was not denied here"
+                );
             } else {
                 for (sitting, others) in &fatal {
                     println!(
@@ -419,7 +436,9 @@ fn main() {
         if claimed_members.contains(subject.as_str()) {
             continue;
         }
-        let Some(record) = ledger.get(subject) else { continue };
+        let Some(record) = ledger.get(subject) else {
+            continue;
+        };
         if record.human_acts == 0 {
             continue;
         }
@@ -459,7 +478,11 @@ fn main() {
         }
         println!(
             "      {}  {}",
-            if by_vocabulary { "shared wording " } else { "one member's name" },
+            if by_vocabulary {
+                "shared wording "
+            } else {
+                "one member's name"
+            },
             trim(engagement.title(), 68)
         );
     }
@@ -471,13 +494,18 @@ fn main() {
     // ---- 6. residual identity fragmentation -----------------------------
     println!();
     println!("[F] RESIDUAL IDENTITY FRAGMENTATION");
-    println!("      canonical resources that share a long leading prefix — plainly one thing under several names");
+    println!(
+        "      canonical resources that share a long leading prefix — plainly one thing under several names"
+    );
     let canonical: Vec<&String> = ledger.subjects().collect();
     let mut families: BTreeMap<String, Vec<&String>> = BTreeMap::new();
     for subject in &canonical {
         // Purely structural: the leading run of non-digit characters, at least
         // eight long. No application, domain, or category is named.
-        let stem: String = subject.chars().take_while(|c| !c.is_ascii_digit()).collect();
+        let stem: String = subject
+            .chars()
+            .take_while(|c| !c.is_ascii_digit())
+            .collect();
         if stem.chars().count() >= 8 {
             families.entry(stem).or_default().push(subject);
         }
@@ -561,7 +589,9 @@ fn main() {
         100.0 * with_context as f64 / observations.len() as f64
     );
     if context_keys.is_empty() {
-        println!("      context keys present: NONE — the attribution link is absent from the corpus");
+        println!(
+            "      context keys present: NONE — the attribution link is absent from the corpus"
+        );
     } else {
         for (key, count) in &context_keys {
             println!("        {key}: {count}");
@@ -588,7 +618,10 @@ fn main() {
     let mut long_gaps = 0usize;
     let mut widest = Duration::ZERO;
     for pair in boundaries.windows(2) {
-        let gap = pair[1].1.duration_since(pair[0].2).unwrap_or(Duration::ZERO);
+        let gap = pair[1]
+            .1
+            .duration_since(pair[0].2)
+            .unwrap_or(Duration::ZERO);
         if gap >= Duration::from_secs(86_400) {
             long_gaps += 1;
         }

@@ -47,12 +47,15 @@
 //!
 //! # Honest capability boundaries
 //!
-//! Two limits are recorded in the type system rather than hidden:
+//! Capability limits are recorded in the type system rather than hidden:
 //!
 //! - **A file may be open in more than one window.** Evo does not choose
-//!   between them ([`WitnessedOpen::SeveralWindows`]); it hands the file to the
-//!   system, which decides — the same act as opening it from the Finder. Evo
-//!   never claims to have focused "the" window.
+//!   between them or delegate that choice to the system. Binding fails with
+//!   [`BindingFailure::SeveralDocumentWindows`] and performs no action.
+//! - **Document inspection may fail.** Evo reports
+//!   [`BindingFailure::CannotInspectWindows`] rather than reopening blindly.
+//!   A successful inspection reporting no document windows still permits
+//!   opening the exact path, including when applications expose no AXDocument.
 //! - **No supported generic API reports which window or tab is displaying a
 //!   URL.** Accessibility exposes no URL attribute for browser tabs, and the
 //!   only mechanisms that do are per-application scripting integrations, which
@@ -76,8 +79,8 @@ pub enum BoundResource {
     /// displaying this exact file (Accessibility `AXDocument`). It is raised,
     /// not reopened, so the user does not get a second view of their own file.
     FocusDocumentWindow { window: WindowInfo, path: String },
-    /// Tier 2 — the file is handed to the system to open, because it is not
-    /// (or cannot be witnessed as) already open in a single window.
+    /// Tier 2 — the file is handed to the system to open, because successful
+    /// inspection reported no window displaying it.
     OpenFile {
         path: String,
         witnessed: WitnessedOpen,
@@ -89,39 +92,37 @@ pub enum BoundResource {
 
 /// Why a file is being opened rather than focused.
 ///
-/// This exists so the reason a file took the second tier is *reported*, not
-/// assumed. "Evo could not tell" and "Evo could tell it was closed" are
-/// different facts and are kept different.
+/// Current bindings only produce `NotOpen`. The other variants retain legacy
+/// metadata for source compatibility, not supported execution policy.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum WitnessedOpen {
-    /// The system reports no window displaying the file: it is genuinely
-    /// closed, and opening it is the correct act.
+    /// Inspection succeeded and reported no window displaying the file.
+    /// Applications may omit AXDocument; this is not proof the file is closed.
     NotOpen,
-    /// More than one live window displays the file. Evo does not choose
-    /// between them; the system decides which receives the open request.
+    /// Unsupported legacy metadata. Current binding returns
+    /// `BindingFailure::SeveralDocumentWindows` instead of delegating a choice.
     SeveralWindows { count: usize },
-    /// The platform cannot report which windows display a file, so Evo does
-    /// not know whether it is already open — and does not claim to.
+    /// Unsupported legacy metadata. Current binding returns
+    /// `BindingFailure::CannotInspectWindows` instead of opening blindly.
     CannotWitness { reason: String },
 }
 
 impl WitnessedOpen {
     /// What Evo could not establish about this file, if anything.
     ///
-    /// `None` means the answer was clear — the file is closed, and opening it
-    /// is simply the right act, with nothing to qualify. The other two carry a
-    /// caveat that belongs in the result the user reads, because "Evo opened
-    /// this" and "Evo opened this and could not tell whether it was already
-    /// open" are different claims.
+    /// `None` means inspection reported no document window. The other variants
+    /// explicitly describe unsupported legacy metadata; `bind_resource` never
+    /// emits them as permission to open a file.
     pub fn reason(&self) -> Option<String> {
         match self {
             WitnessedOpen::NotOpen => None,
             WitnessedOpen::SeveralWindows { count } => Some(format!(
-                "{count} live windows are showing this file, so Evo left the \
-                 choice of which one receives it to the system"
+                "unsupported legacy binding metadata: {count} live windows are showing \
+                 this file; current binding refuses to choose between them"
             )),
             WitnessedOpen::CannotWitness { reason } => Some(format!(
-                "Evo could not tell whether this was already open: {reason}"
+                "unsupported legacy binding metadata: document inspection failed: \
+                 {reason}; current binding refuses to open without inspection"
             )),
         }
     }
@@ -200,6 +201,9 @@ pub enum BindingFailure {
     /// Several live windows carry the exact witnessed title; Evo does not
     /// choose between them.
     SeveralLiveWindows { title: String, count: usize },
+    /// Several live windows display the exact file; Evo neither chooses a
+    /// window nor hands that choice to the system by reopening the file.
+    SeveralDocumentWindows { path: String, count: usize },
     /// The live window list itself could not be read — typically because
     /// Accessibility permission has not been granted.
     CannotInspectWindows { reason: String },
@@ -216,6 +220,10 @@ impl BindingFailure {
             BindingFailure::SeveralLiveWindows { title, count } => format!(
                 "{count} open windows are titled “{title}”; Evo cannot choose between them \
                  without more canonical evidence"
+            ),
+            BindingFailure::SeveralDocumentWindows { path, count } => format!(
+                "{count} open windows are showing the file “{path}”; Evo cannot choose \
+                 between them without more canonical evidence"
             ),
             BindingFailure::CannotInspectWindows { reason } => {
                 format!("cannot inspect open windows: {reason}")
@@ -262,13 +270,10 @@ pub fn bind_resource(
 
         // A file asks the OS the one question that answers the tier: "is any
         // window already displaying exactly this path?" Exactly one → raise
-        // it. None → open it. Several, or no answer → hand it to the system
-        // and say why, rather than choosing a window Evo has no basis to pick.
+        // it. None reported → open the exact path. Several, or an inspection
+        // error → refuse, without delegating an uncertain choice to the system.
         LocatorKind::FilePath(path) => match source.windows_showing_document(path) {
-            Err(reason) => bound(BoundResource::OpenFile {
-                path: path.clone(),
-                witnessed: WitnessedOpen::CannotWitness { reason },
-            }),
+            Err(reason) => Err(BindingFailure::CannotInspectWindows { reason }),
             Ok(windows) => match windows.len() {
                 1 => bound(BoundResource::FocusDocumentWindow {
                     window: windows[0].clone(),
@@ -278,9 +283,9 @@ pub fn bind_resource(
                     path: path.clone(),
                     witnessed: WitnessedOpen::NotOpen,
                 }),
-                count => bound(BoundResource::OpenFile {
+                count => Err(BindingFailure::SeveralDocumentWindows {
                     path: path.clone(),
-                    witnessed: WitnessedOpen::SeveralWindows { count },
+                    count,
                 }),
             },
         },
@@ -499,7 +504,7 @@ mod tests {
             &LocatorKind::FilePath("/w/report.md".into()),
             &live,
         )
-        .expect("a file always binds");
+        .expect("a uniquely witnessed document binds to its window");
         assert_eq!(binding.capability(), BindingCapability::Focus);
         assert_eq!(
             binding.resource(),
@@ -511,7 +516,7 @@ mod tests {
     }
 
     #[test]
-    fn a_closed_file_binds_to_opening_it() {
+    fn a_file_with_no_reported_document_windows_binds_to_opening_it() {
         let live = Live {
             files: vec!["/w/report.md".into()],
             ..Live::default()
@@ -521,7 +526,7 @@ mod tests {
             &LocatorKind::FilePath("/w/report.md".into()),
             &live,
         )
-        .expect("a file always binds");
+        .expect("a successful empty inspection permits opening the exact path");
         assert_eq!(binding.capability(), BindingCapability::Open);
         assert_eq!(
             binding.resource(),
@@ -533,7 +538,7 @@ mod tests {
     }
 
     #[test]
-    fn a_file_open_in_several_windows_is_delegated_to_the_system_with_its_reason() {
+    fn a_file_open_in_several_windows_refuses_to_delegate_the_choice() {
         let live = Live {
             documents: Ok(vec![
                 window("report.md — Editor", 501, "Editor"),
@@ -542,45 +547,49 @@ mod tests {
             files: vec!["/w/report.md".into()],
             ..Live::default()
         };
-        let binding = bind_resource(
+        let failure = bind_resource(
             &artifact("a1"),
             &LocatorKind::FilePath("/w/report.md".into()),
             &live,
         )
-        .expect("a file always binds");
-        // Evo does not pick one of the two windows; it hands the file to the
-        // system and records that it could not choose.
-        assert_eq!(binding.capability(), BindingCapability::Open);
+        .expect_err("several document windows cannot safely bind");
         assert_eq!(
-            binding.resource(),
-            &BoundResource::OpenFile {
+            failure,
+            BindingFailure::SeveralDocumentWindows {
                 path: "/w/report.md".into(),
-                witnessed: WitnessedOpen::SeveralWindows { count: 2 }
+                count: 2
             }
+        );
+        assert_eq!(
+            failure.reason(),
+            "2 open windows are showing the file “/w/report.md”; Evo cannot choose \
+             between them without more canonical evidence"
         );
     }
 
     #[test]
-    fn a_platform_that_cannot_witness_documents_degrades_to_opening_and_says_so() {
+    fn a_document_inspection_error_refuses_to_open_and_says_why() {
         let live = Live {
             documents: Err("this platform cannot report document windows".into()),
             files: vec!["/w/report.md".into()],
             ..Live::default()
         };
-        let binding = bind_resource(
+        let failure = bind_resource(
             &artifact("a1"),
             &LocatorKind::FilePath("/w/report.md".into()),
             &live,
         )
-        .expect("a file always binds");
-        assert_eq!(binding.capability(), BindingCapability::Open);
-        match binding.resource() {
-            BoundResource::OpenFile {
-                witnessed: WitnessedOpen::CannotWitness { reason },
-                ..
-            } => assert!(reason.contains("cannot report")),
-            other => panic!("expected an unwitnessed open, got {other:?}"),
-        }
+        .expect_err("inspection errors cannot produce permission to reopen");
+        assert_eq!(
+            failure,
+            BindingFailure::CannotInspectWindows {
+                reason: "this platform cannot report document windows".into()
+            }
+        );
+        assert_eq!(
+            failure.reason(),
+            "cannot inspect open windows: this platform cannot report document windows"
+        );
     }
 
     #[test]

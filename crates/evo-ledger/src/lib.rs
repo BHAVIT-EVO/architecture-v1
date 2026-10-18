@@ -41,18 +41,24 @@ pub mod gate;
 pub mod hypotheses;
 pub mod identity;
 pub mod intervals;
+pub mod metrics;
 pub mod observation_log;
 pub mod pages;
 pub mod production;
 pub mod schema;
 pub mod search;
 pub mod source;
+pub mod thread_gate;
 pub mod works;
 
 pub use identity::{IdentityChain, TaskKey};
 pub use intervals::{IntervalStatus, WorkInterval};
+pub use metrics::ObservationMetrics;
 pub use search::SearchResult;
 pub use works::{works_from_database, IdentityKind, Work};
+
+/// A merge proposal row: (subject_a, subject_b, name_a, name_b, shared_sittings).
+type MergeProposalRow = (String, String, String, String, usize);
 
 /// The ledger: owns a SQLite database with the activity schema.
 pub struct Ledger {
@@ -193,9 +199,7 @@ impl Ledger {
     /// The engine's current merge proposals: (subject_a, subject_b,
     /// name_a, name_b, shared sittings). Subjects are representative
     /// resources of each work — what a confirmed merge declares.
-    pub fn merge_proposals(
-        &self,
-    ) -> Result<Vec<(String, String, String, String, usize)>, LedgerError> {
+    pub fn merge_proposals(&self) -> Result<Vec<MergeProposalRow>, LedgerError> {
         let mut stmt = self
             .db
             .prepare(
@@ -544,9 +548,9 @@ mod tests {
             .unwrap();
         // Prune events older than 30 days
         let pruned = ledger.prune(30).unwrap();
-        assert!(pruned >= 0, "prune should succeed");
+        assert_eq!(pruned, 1, "prune should remove the one old event");
         // Intervals should still be queryable (they're derived, not raw events)
-        let intervals = ledger.intervals(10).unwrap();
+        ledger.intervals(10).unwrap();
         // The interval may or may not survive pruning depending on implementation
         // (intervals reference events; if events are pruned, intervals go too)
         // This is the correct behavior: pruned data is gone.

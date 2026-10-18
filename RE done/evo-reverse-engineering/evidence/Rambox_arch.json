@@ -1,0 +1,55 @@
+evidence_id: ev_f89ad245b9d74797006268e456f3db17d491ec0384ebc5a7c617483868c6fc24
+subject:
+  name: Rambox
+  digest:
+    sha256: a1503e2fc64ae9ca6aafe5b7ee69df4ac871c2dde565ba67cd56c172f4d6aea1
+  format: mach-o
+  architecture: arm64
+  local_path: /Applications/Rambox.app/Contents/MacOS/Rambox
+provider:
+  id: native-macos
+  name: macOS native inspection utilities
+  version: null
+predicate_type: rea.analysis
+operation: list_architectures
+parameters:
+raw_result:
+  provenance[1]:
+    - tool: lipo
+      command[3]: /Library/Developer/CommandLineTools/usr/bin/lipo,"-detailed_info",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 751c4a4636efc5f4015999dc7d41be6e2552b39f8949d6eb971e958fccf0e386
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 430
+      stderr_bytes: 0
+normalized_result:
+  architectures:
+    items[2]{name,cpu_type,cpu_subtype,file_offset,size,alignment}:
+      x86_64,CPU_TYPE_X86_64,CPU_SUBTYPE_X86_64_ALL,16384,33072,16384
+      arm64,CPU_TYPE_ARM64,CPU_SUBTYPE_ARM64_ALL,65536,53696,16384
+    total: 2
+    exhaustive: true
+    limitations: []
+  provenance[1]:
+    - tool: lipo
+      command[3]: /Library/Developer/CommandLineTools/usr/bin/lipo,"-detailed_info",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 751c4a4636efc5f4015999dc7d41be6e2552b39f8949d6eb971e958fccf0e386
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 430
+      stderr_bytes: 0
+  limitations: []
+confidence: observed
+authority: shipped-artifact
+environment: null
+limitations: []
+locations[2]{kind,start,end}:
+  file-offset-range,16384,49456
+  file-offset-range,65536,119232
+evidence_links: []

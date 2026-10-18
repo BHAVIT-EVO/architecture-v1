@@ -55,6 +55,11 @@ pub const ATTACH_SHARE: f64 = 0.08;
 /// an input-carrying group, even below the share floor.
 pub const ATTACH_SWITCHES: usize = 3;
 pub const ATTACH_SWITCH_WINDOW_MS: u64 = 5 * 60 * 1000;
+/// Maximum dwell (ms) in a sitting for the interleave attachment rule.
+/// A group with more dwell is substantive — a work in its own right or
+/// unattached — never a fragment to auto-merge. Establishment precedence:
+/// substantive engagement is not a fragment of another work.
+pub const INTERLEAVE_DWELL_CAP_MS: u64 = 120 * 1000;
 
 /// Cleaned-title Jaccard at which two pages are structurally linked.
 pub const TITLE_LINK_JACCARD: f64 = 0.25;
@@ -94,7 +99,6 @@ pub struct MergeProposal {
 /// The page-level resource record the grouping runs over.
 #[derive(Debug, Clone, Default)]
 struct PageRecord {
-    key: String,
     total_dwell_ms: u64,
     keys: u64,
     clicks: u64,
@@ -182,7 +186,6 @@ fn title_tokens(title: &str) -> BTreeSet<String> {
 /// the corpus, deterministic, never a word list.
 fn specific_tokens(
     titles: &[&BTreeSet<String>],
-    all_titles: &[String],
     chrome: &BTreeSet<String>,
     title: &str,
 ) -> BTreeSet<String> {
@@ -291,7 +294,7 @@ impl Union {
     }
     fn find(&mut self, key: &str) -> String {
         let existing = self.parent.get(key).cloned();
-        let root = match existing {
+        match existing {
             None => {
                 self.parent.insert(key.to_string(), key.to_string());
                 key.to_string()
@@ -302,8 +305,7 @@ impl Union {
                 self.parent.insert(key.to_string(), root.clone());
                 root
             }
-        };
-        root
+        }
     }
     fn union_reason(&mut self, a: &str, b: &str, reason: &str) {
         let (ra, rb) = (self.find(a), self.find(b));
@@ -351,7 +353,6 @@ pub fn group_works_traced(
         let record = pages.entry(key.clone()).or_insert_with(|| {
             page_order.push(key.clone());
             PageRecord {
-                key: key.clone(),
                 first_active_ms: interval.start_ms,
                 ..PageRecord::default()
             }
@@ -438,7 +439,7 @@ pub fn group_works_traced(
                 pages[key]
                     .titles
                     .iter()
-                    .map(|t| specific_tokens(&title_sets, &all_titles, &title_chrome, t))
+                    .map(|t| specific_tokens(&title_sets, &title_chrome, t))
                     .collect(),
             )
         })
@@ -626,9 +627,37 @@ pub fn group_works_traced(
                     })
                 })
                 .unwrap_or(false);
-            if share >= ATTACH_SHARE || (group_keys > 0 && interleave) {
+            // Establishment precedence: a group with substantive dwell
+            // (≥ INTERLEAVE_DWELL_CAP_MS) in this sitting is not a fragment —
+            // it does not attach via interleave, even if it carries input
+            // and switches frequently. Interleave attachment is for tiny
+            // fragments; substantive engagement stays its own work (or
+            // unattached), never auto-merged into another.
+            //
+            // Temporal adjacency alone is not enough to attach a typed
+            // fragment into the dominant work. Three unrelated automations
+            // that happen to interleave inside the same sitting — all within
+            // 120s of the dominant window's pages — must not be bridged into
+            // one work. The interleave path now requires CONTENT ADJACENCY:
+            // at least one page of the attaching group must share a
+            // structural signal with at least one page of the dominant work
+            // (a declared same-work pair, or a near-duplicate cleaned title
+            // at the same Jaccard threshold the structural layer uses).
+            // That keeps interleave attach on the same evidence basis as the
+            // rest of the module and prevents a dominant work from vacuuming
+            // unrelated typed fragments into a mega-work.
+            let content_adjacent =
+                content_adjacent_to_dominant(root, &dominant, &pages, &mut union, declarations);
+            if share >= ATTACH_SHARE
+                || (group_keys > 0
+                    && interleave
+                    && content_adjacent
+                    && *dwell < INTERLEAVE_DWELL_CAP_MS)
+            {
                 let reason = if share >= ATTACH_SHARE {
                     format!("share {:.0}%", share * 100.0)
+                } else if content_adjacent {
+                    "input interleave, content-adjacent".to_string()
                 } else {
                     "input interleave".to_string()
                 };
@@ -716,7 +745,7 @@ pub fn group_works_traced(
             }
         }
     }
-    let proposals: Vec<MergeProposal> = co_sittings
+    let mut proposals: Vec<MergeProposal> = co_sittings
         .into_iter()
         .filter(|(_, count)| *count >= PROPOSAL_SITTINGS)
         .filter_map(|((a, b), count)| {
@@ -733,7 +762,7 @@ pub fn group_works_traced(
     // ── Aggregate works ────────────────────────────────────────────────
     // A work = its established structural group's pages + every page
     // attached to it. Quarantined pages join nothing.
-    let mut works: Vec<Work> = Vec::new();
+    let mut works: Vec<(String, Work)> = Vec::new();
     for root in &work_groups {
         let mut member_keys: BTreeSet<String> = BTreeSet::new();
         for (key, record) in pages.iter() {
@@ -845,16 +874,129 @@ pub fn group_works_traced(
         };
         // Sessions: sittings where this work held a meaningful presence.
         work.session_count_override = Some(session_sittings.len());
-        works.push(work);
+        works.push((root.clone(), work));
     }
 
     works.sort_by(|a, b| {
-        b.last_active_ms
-            .cmp(&a.last_active_ms)
-            .then(b.total_time_ms.cmp(&a.total_time_ms))
-            .then(a.identity.cmp(&b.identity))
+        b.1.last_active_ms
+            .cmp(&a.1.last_active_ms)
+            .then(b.1.total_time_ms.cmp(&a.1.total_time_ms))
+            .then(a.1.identity.cmp(&b.1.identity))
     });
-    (works, proposals, union.trace)
+    // Proposals were computed in structural-root order. The public indices
+    // must refer to the final, recency-sorted vector consumed by callers.
+    let sorted_indices: BTreeMap<&str, usize> = works
+        .iter()
+        .enumerate()
+        .map(|(index, (root, _))| (root.as_str(), index))
+        .collect();
+    proposals.retain_mut(|proposal| {
+        let Some(a) = root_order
+            .get(proposal.work_a)
+            .and_then(|r| sorted_indices.get(r.as_str()))
+        else {
+            return false;
+        };
+        let Some(b) = root_order
+            .get(proposal.work_b)
+            .and_then(|r| sorted_indices.get(r.as_str()))
+        else {
+            return false;
+        };
+        proposal.work_a = *a;
+        proposal.work_b = *b;
+        true
+    });
+    (
+        works.into_iter().map(|(_, work)| work).collect(),
+        proposals,
+        union.trace,
+    )
+}
+
+/// Whether a non-established group is content-adjacent to the dominant
+/// established work in this sitting — i.e. at least one of the group's pages
+/// shares a structural signal with at least one of the dominant work's pages.
+///
+/// Uses the same evidence basis as the structural hard-link layer: a declared
+/// same-work pair between any two pages, or a near-duplicate cleaned title at
+/// the module's Jaccard threshold over specific tokens. Temporal adjacency is
+/// deliberately NOT a signal here: that is what the old interleave rule bridged,
+/// and what swells one work into a mega-work when unrelated automations interleave
+/// inside the same app window.
+///
+/// Document-family adjacency (same parent directory of any `document_path`, or the
+/// same `doc:` page key) is intentionally left out of this first cut: it is the
+/// project-local case, and whether it is needed is a real-log question to decide
+/// against a `group_works_traced` attachment trace, not an assumption to bake in.
+fn content_adjacent_to_dominant(
+    group_root: &str,
+    dominant_root: &str,
+    pages: &BTreeMap<String, PageRecord>,
+    union: &mut Union,
+    declarations: &Declarations,
+) -> bool {
+    if group_root == dominant_root {
+        return true;
+    }
+    // Reconstruct root -> page keys from the live pages (PageRecord does not
+    // store its own key).
+    let mut group_keys: Vec<&String> = Vec::new();
+    let mut dominant_keys: Vec<&String> = Vec::new();
+    for (key, _record) in pages {
+        match union.find(key.as_str()) {
+            r if r == group_root => group_keys.push(key),
+            r if r == dominant_root => dominant_keys.push(key),
+            _ => {}
+        }
+    }
+    if group_keys.is_empty() || dominant_keys.is_empty() {
+        return false;
+    }
+    // Declared same-work pairs are ground truth: any declared link between
+    // a group page and a dominant-page makes them content-adjacent.
+    for gk in &group_keys {
+        for dk in &dominant_keys {
+            for (a, b) in &declarations.same_work {
+                let ca = canonical_subject(a);
+                let cb = canonical_subject(b);
+                if (ca == **gk && cb == **dk) || (ca == **dk && cb == **gk) {
+                    return true;
+                }
+            }
+        }
+    }
+    // Near-duplicate cleaned titles at the same threshold the structural
+    // layer uses. Computed over specific tokens so hub tokens ("page", "pdf")
+    // do not fuse unrelated works.
+    let title_sets: Vec<&BTreeSet<String>> = pages.values().map(|p| &p.titles).collect();
+    let all_titles: Vec<String> = pages
+        .values()
+        .flat_map(|p| p.titles.iter().cloned())
+        .collect();
+    let title_chrome = recurring_title_chrome(&all_titles);
+    for gk in group_keys {
+        let g_specific: Vec<BTreeSet<String>> = pages[gk.as_str()]
+            .titles
+            .iter()
+            .map(|t| specific_tokens(&title_sets, &title_chrome, t))
+            .collect();
+        for dk in &dominant_keys {
+            let d_specific: Vec<BTreeSet<String>> = pages[dk.as_str()]
+                .titles
+                .iter()
+                .map(|t| specific_tokens(&title_sets, &title_chrome, t))
+                .collect();
+            let best = g_specific
+                .iter()
+                .flat_map(|ta| d_specific.iter().map(move |tb| jaccard_sets(ta, tb)))
+                .fold(0.0_f64, f64::max);
+            if best >= TITLE_LINK_JACCARD {
+                return true;
+            }
+        }
+    }
+    false
 }
 
 #[cfg(test)]
@@ -1181,6 +1323,50 @@ mod tests {
         assert_eq!(proposals[0].shared_sittings, 2);
     }
 
+    #[test]
+    fn proposal_indices_follow_sorted_works_not_structural_root_order() {
+        let base = 1_000_000_u64;
+        let mut events = Vec::new();
+        for day in 0..2 {
+            let start = base + day * 40 * 60 * 60 * 1000;
+            events.push(event(
+                start,
+                Some("https://example.test/a"),
+                "Alpha",
+                "Browser",
+                400_000,
+                1,
+            ));
+            events.push(event(
+                start + 450_000,
+                Some("https://example.test/b"),
+                "Bravo",
+                "Browser",
+                400_000,
+                1,
+            ));
+        }
+        // A later, unrelated work changes the display order, not the pair.
+        events.push(event(
+            base + 3 * 40 * 60 * 60 * 1000,
+            Some("https://example.test/z"),
+            "Zulu",
+            "Browser",
+            400_000,
+            1,
+        ));
+        let (works, proposals) = group_works(&compute_intervals(&events), &Declarations::default());
+        assert_eq!(proposals.len(), 1);
+        let proposal = &proposals[0];
+        let pair = [
+            &works[proposal.work_a].identity,
+            &works[proposal.work_b].identity,
+        ];
+        assert!(pair.iter().any(|name| name.contains("Alpha")), "{pair:?}");
+        assert!(pair.iter().any(|name| name.contains("Bravo")), "{pair:?}");
+        assert!(!pair.iter().any(|name| name.contains("Zulu")), "{pair:?}");
+    }
+
     /// Sittings split at the 30-minute boundary.
     #[test]
     fn sittings_split_at_thirty_minutes() {
@@ -1199,7 +1385,7 @@ mod tests {
     #[test]
     fn a_substantial_interleaved_chat_stays_its_own_work() {
         let base = 1_000_000_u64;
-        let mut events = vec![
+        let events = vec![
             // Arc'teryx browsing, the sitting's dominant work.
             event(
                 base,
@@ -1251,6 +1437,59 @@ mod tests {
         assert_ne!(
             chat_works[0].identity, gear_works[0].identity,
             "2-second adjacency must not merge them"
+        );
+    }
+
+    /// Establishment precedence: a substantive-but-not-established chat
+    /// (150s dwell, real typing, 2-second adjacency switches) interleaved
+    /// with a dominant shopping work must NOT attach via the interleave
+    /// rule. The interleave rule is for tiny fragments (<120s); a 2.5-minute
+    /// chat is substantive engagement, not a fragment of the shopping.
+    #[test]
+    fn a_minor_interleaved_chat_does_not_attach_to_shopping() {
+        let base = 2_000_000_u64;
+        // 10 cycles of rapid alternation (the 2-second adjacency shape):
+        // 180s gear, 15s chat, 180s gear, 15s chat, ...
+        // Gear total: 1800s (92% share, established).
+        // Chat total: 150s (7.7% share, <8% so no share-attach; 150s > 120s
+        // cap so no interleave-attach with the fix; <300s so no establishment).
+        // Chat has real typing (keys) and many switches (interleave=true).
+        let mut events = Vec::new();
+        let mut t = base;
+        for _ in 0..10 {
+            events.push(event(
+                t,
+                Some("https://www.arcteryx.com/us/en/c/boots"),
+                "Boots | Arc'teryx",
+                "Chrome",
+                180_000,
+                5,
+            ));
+            t += 180_000;
+            events.push(event(
+                t,
+                Some("https://claude.ai/chat/f5c116b5-5fea-4f64-bfda-ef61c96c886e"),
+                "Kundli Analysis",
+                "Chrome",
+                15_000,
+                40,
+            ));
+            t += 15_000;
+        }
+        let intervals = compute_intervals(&events);
+        let (works, _) = group_works(&intervals, &Declarations::default());
+        // The chat (150s, >120s cap) must not be in the gear work.
+        let gear_work = works
+            .iter()
+            .find(|w| w.urls.iter().any(|u| u.contains("arcteryx.com")))
+            .expect("gear work exists");
+        let chat_in_gear = gear_work
+            .urls
+            .iter()
+            .any(|u| u.contains("claude.ai/chat/f5c116b5"));
+        assert!(
+            !chat_in_gear,
+            "the 150s chat must not attach to the gear work via interleave"
         );
     }
 
@@ -1350,7 +1589,7 @@ mod tests {
     #[test]
     fn work_members_are_sticky_across_sittings() {
         let day2 = 40 * 60 * 60 * 1000_u64;
-        let mut events = vec![
+        let events = vec![
             // Two playlist videos, 240 s and 60 s in separate sittings: the
             // group qualifies structurally (2 pages, 300 s total), never by
             // sitting establishment.
@@ -1452,7 +1691,7 @@ mod tests {
     #[test]
     fn quarantine_spares_shared_ground_and_same_work_presence() {
         let day2 = 40 * 60 * 60 * 1000_u64;
-        let mut events = vec![
+        let events = vec![
             // Sitting 1: work A (an editor) + a chat the person types in —
             // briefly (dwell below the 300 s establishment floor, so the
             // chat attaches rather than founding its own work).

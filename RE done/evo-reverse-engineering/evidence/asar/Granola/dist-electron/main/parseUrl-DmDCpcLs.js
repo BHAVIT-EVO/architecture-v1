@@ -1,0 +1,2 @@
+function e(e){let t={};if(e=e.replace(/^\?/,``),e)for(let n of e.split(`&`)){let[e,r=null]=n.split(`=`);e=decodeURIComponent(e),r&&=decodeURIComponent(r),e in t?Array.isArray(t[e])?t[e].push(r):t[e]=[t[e],r]:t[e]=r}return t}var t=n=>{if(typeof n==`string`)return t(new URL(n));let{hostname:r,pathname:i,port:a,protocol:o,search:s}=n,c;return s&&(c=e(s)),{hostname:r,port:a?parseInt(a):void 0,protocol:o,path:i,query:c}};Object.defineProperty(exports,"t",{enumerable:!0,get:function(){return t}});
+//# sourceMappingURL=parseUrl-DmDCpcLs.js.map

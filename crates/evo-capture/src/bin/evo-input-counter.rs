@@ -8,25 +8,23 @@
 //! Usage: `evo-input-counter` (runs until killed; requires Input Monitoring
 //! permission, requested on first run).
 
-
 #[cfg(target_os = "macos")]
 mod platform_ref {
     #![allow(unused_imports, dead_code)]
-    use evo_capture::adapters::macos::{MacOSAdapter, MacOSSignal};
-    use evo_capture::macos_input_counter::{MacOSInputCounter, SubjectResolver};
-    use evo_capture::raw_event::RawEvent;
-    use evo_observation::accept::accept;
-    use evo_observation::observation::Observation;
-    use evo_observation::provenance::ObservationSource;
-    use evo_storage::{Storage, StorageObjectKind};
+    pub use evo_capture::adapters::macos::{MacOSAdapter, MacOSSignal};
+    pub use evo_capture::macos_input_counter::{MacOSInputCounter, SubjectResolver};
+    pub use evo_capture::raw_event::RawEvent;
+    pub use evo_observation::accept::accept;
+    pub use evo_observation::observation::Observation;
+    pub use evo_observation::provenance::ObservationSource;
+    pub use evo_storage::{Storage, StorageObjectKind};
 
-    use std::sync::{Arc, Mutex};
-    use std::time::SystemTime;
+    pub use std::sync::{Arc, Mutex};
+    pub use std::time::SystemTime;
 }
 
 #[cfg(target_os = "macos")]
 use platform_ref::*;
-
 
 #[cfg(target_os = "macos")]
 fn main() {
@@ -37,7 +35,9 @@ fn main() {
     if !evo_capture::accessibility_permission_granted() {
         println!("EVO-INPUT-COUNTER requesting Accessibility permission...");
         evo_capture::prompt_for_accessibility_permission();
-        println!("EVO-INPUT-COUNTER grant Accessibility in System Settings, then restart this binary.");
+        println!(
+            "EVO-INPUT-COUNTER grant Accessibility in System Settings, then restart this binary."
+        );
     }
 
     // The shared current-subject slot, updated by the AX focus source.
@@ -45,16 +45,14 @@ fn main() {
 
     // Start the AX focus source to track what the person is on.
     let focus_subject = current_subject.clone();
-    let focus_source = evo_capture::MacOSEventSource::new(
-        evo_capture::desktop_shell_pid(),
-        move |signal| {
-            if let MacOSSignal::WindowFocusGained { subject, .. } = signal {
-                if let Ok(mut slot) = focus_subject.lock() {
-                    *slot = Some(subject);
-                }
+    let focus_source =
+        evo_capture::MacOSEventSource::new(evo_capture::desktop_shell_pid(), move |signal| {
+            if let MacOSSignal::WindowFocusGained { subject, .. } = signal
+                && let Ok(mut slot) = focus_subject.lock()
+            {
+                *slot = Some(subject);
             }
-        },
-    );
+        });
     match focus_source {
         Ok(_source) => println!("EVO-INPUT-COUNTER focus source: active"),
         Err(evo_capture::MacOSEventSourceError::AccessibilityPermissionRequired) => {
@@ -72,9 +70,8 @@ fn main() {
     // Start the input counter. Its flush buckets attribute to the focused
     // surface through the shared slot.
     let counter_subject: Arc<Mutex<Option<String>>> = current_subject.clone();
-    let resolver: SubjectResolver = Box::new(move || {
-        counter_subject.lock().ok().and_then(|slot| slot.clone())
-    });
+    let resolver: SubjectResolver =
+        Box::new(move || counter_subject.lock().ok().and_then(|slot| slot.clone()));
 
     let counter = MacOSInputCounter::start(
         resolver,
@@ -96,14 +93,15 @@ fn main() {
                 };
 
                 // Project onto the engine's contract and persist.
-                let concept = evo_observation::observation_language::ObservationConcept::InputActivity {
-                    subject,
-                    keys,
-                    clicks,
-                    scrolls,
-                };
-                let source = ObservationSource::new("macos_input_counter")
-                    .expect("source name is valid");
+                let concept =
+                    evo_observation::observation_language::ObservationConcept::InputActivity {
+                        subject,
+                        keys,
+                        clicks,
+                        scrolls,
+                    };
+                let source =
+                    ObservationSource::new("macos_input_counter").expect("source name is valid");
                 let raw_event = RawEvent::new(
                     source,
                     observed_at,
@@ -113,12 +111,16 @@ fn main() {
                 let schema = raw_event.schema();
                 if let Ok(observation) = accept(raw_event.into_candidate_observation(), &schema) {
                     let encoded = encode_observation(&observation);
-                    if let Err(err) = storage.append(StorageObjectKind::Observation, encoded.as_bytes()) {
+                    if let Err(err) =
+                        storage.append(StorageObjectKind::Observation, encoded.as_bytes())
+                    {
                         eprintln!("EVO-INPUT-COUNTER append failed: {err}");
                     } else {
                         println!(
                             "EVO-INPUT-COUNTER bucket: keys={keys} clicks={clicks} scrolls={scrolls} subject={}",
-                            observation.evidence().fact("InputActivity")
+                            observation
+                                .evidence()
+                                .fact("InputActivity")
                                 .map(|f| format!("{:?}", f.value()))
                                 .unwrap_or_default()
                         );
@@ -168,9 +170,24 @@ fn encode_observation(observation: &Observation) -> String {
     let mut record = String::new();
     use std::fmt::Write;
     writeln!(&mut record, "observation-v1").unwrap();
-    writeln!(&mut record, "id_hex={}", hex(observation.id().to_string().as_bytes())).unwrap();
-    writeln!(&mut record, "schema_name_hex={}", hex(observation.schema().name().as_bytes())).unwrap();
-    writeln!(&mut record, "schema_version={}", observation.schema().version()).unwrap();
+    writeln!(
+        &mut record,
+        "id_hex={}",
+        hex(observation.id().to_string().as_bytes())
+    )
+    .unwrap();
+    writeln!(
+        &mut record,
+        "schema_name_hex={}",
+        hex(observation.schema().name().as_bytes())
+    )
+    .unwrap();
+    writeln!(
+        &mut record,
+        "schema_version={}",
+        observation.schema().version()
+    )
+    .unwrap();
     let source = observation.provenance().source().as_str();
     writeln!(&mut record, "source_hex={}", hex(source.as_bytes())).unwrap();
     // Timestamp: +{secs}:{nanos} — the canonical format the decoder's

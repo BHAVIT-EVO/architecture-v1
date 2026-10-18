@@ -8,6 +8,13 @@
 //! projection to be recomputed from the canonical history and produce exactly
 //! what it produced live (§19).
 
+// Not yet wired into the projection: this module is the designed mechanism for
+// stable workspace identity across restarts and replay (W-2, W-3, §19), but
+// `project_workspace` currently derives identity from the engagement's work id
+// instead. Kept — with its tests — as the intended mechanism for the resume
+// work, not deleted as cruft.
+#![allow(dead_code)]
+
 use crate::attachment::Attachment;
 use crate::lifecycle::WorkspaceLifecycle;
 use crate::snapshot::Snapshot;
@@ -287,7 +294,11 @@ mod tests {
                     WorkspaceLifecycle::Active,
                     vec![attachment("a", 0.9), attachment("b", 0.5)],
                 ),
-                Snapshot::new(at(100), WorkspaceLifecycle::Active, vec![attachment("a", 0.9)]),
+                Snapshot::new(
+                    at(100),
+                    WorkspaceLifecycle::Active,
+                    vec![attachment("a", 0.9)],
+                ),
             ],
         );
         assert!(workspace_is_valid(&workspace));
@@ -317,8 +328,16 @@ mod tests {
             WorkspaceLifecycle::Active,
             vec![attachment("a", 0.9)],
             vec![
-                Snapshot::new(at(100), WorkspaceLifecycle::Active, vec![attachment("a", 0.9)]),
-                Snapshot::new(at(0), WorkspaceLifecycle::Active, vec![attachment("a", 0.9)]),
+                Snapshot::new(
+                    at(100),
+                    WorkspaceLifecycle::Active,
+                    vec![attachment("a", 0.9)],
+                ),
+                Snapshot::new(
+                    at(0),
+                    WorkspaceLifecycle::Active,
+                    vec![attachment("a", 0.9)],
+                ),
             ],
         );
         assert!(!workspace_is_valid(&workspace));
@@ -390,7 +409,10 @@ mod tests {
             )],
         );
         assert_ne!(understanding_digest(&one), understanding_digest(&two));
-        assert_eq!(understanding_digest(&one), understanding_digest(&one.clone()));
+        assert_eq!(
+            understanding_digest(&one),
+            understanding_digest(&one.clone())
+        );
     }
 
     /// A role change is a change in what Evo asserts, so it must change the

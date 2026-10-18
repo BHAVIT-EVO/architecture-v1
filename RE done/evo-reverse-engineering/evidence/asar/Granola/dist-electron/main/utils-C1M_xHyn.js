@@ -1,0 +1,2 @@
+let e=require("electron");function t(e){return`Granola Helper (${e})`}function n(t){let n=JSON.stringify(t),r=process.env.VERBOSE_LOGGING===`1`||process.env.VERBOSE_LOGGING===`true`,i=e.app?.isPackaged??!1;return r||i||n.length<=400?n:n.slice(0,400)+`... (truncated)`}Object.defineProperty(exports,"n",{enumerable:!0,get:function(){return t}}),Object.defineProperty(exports,"t",{enumerable:!0,get:function(){return n}});
+//# sourceMappingURL=utils-C1M_xHyn.js.map

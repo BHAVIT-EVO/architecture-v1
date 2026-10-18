@@ -9,15 +9,31 @@ use crate::surface::Frame;
 /// One undoable unit of a deactivation.
 #[derive(Debug, Clone, PartialEq)]
 pub enum LeaseStep {
-    MoveWindowBack { pid: i32, window_id: u32, frame: Frame },
-    UnparkWindow { pid: i32, window_id: u32 },
+    MoveWindowBack {
+        pid: i32,
+        window_id: u32,
+        frame: Frame,
+    },
+    UnparkWindow {
+        pid: i32,
+        window_id: u32,
+    },
     /// A pod member we resurrected at entry goes back to minimized so the
     /// desktop returns EXACTLY as it was (Stage mode's space keeps its
     /// own windows parked inside it).
-    ReparkWindow { pid: i32, window_id: u32 },
-    CloseVeil { handle: u64 },
-    RehideApp { pid: i32 },
-    UnhideApp { pid: i32 },
+    ReparkWindow {
+        pid: i32,
+        window_id: u32,
+    },
+    CloseVeil {
+        handle: u64,
+    },
+    RehideApp {
+        pid: i32,
+    },
+    UnhideApp {
+        pid: i32,
+    },
 }
 
 /// The receipt from one activation.
@@ -96,10 +112,10 @@ impl PodLease {
     /// Bookkeeps one applied arrangement: remember the pre-move frame if
     /// the window was actually repositioned.
     pub fn record_arrangement(&mut self, a: &Arrangement, prior: Option<Frame>) {
-        if let Some(prior) = prior {
-            if a.frame.is_some() {
-                self.moved_windows.push((a.pid, a.window_id, prior));
-            }
+        if let Some(prior) = prior
+            && a.frame.is_some()
+        {
+            self.moved_windows.push((a.pid, a.window_id, prior));
         }
     }
 }

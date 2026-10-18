@@ -1,0 +1,165 @@
+{
+  "evidence_id": "ev_a5378e54cc425aa3ed4f67bd0dba4f481caca7425301b37c6eacff912ffe29d8",
+  "subject": {
+    "name": "Rize",
+    "digest": {
+      "sha256": "bb416030c26d99c23bfd7471b1e5441eda0d5522ff479183ab086e4e99b741cc"
+    },
+    "format": "mach-o",
+    "architecture": "arm64",
+    "local_path": "/Applications/Rize.app/Contents/MacOS/Rize"
+  },
+  "provider": {
+    "id": "native-macos",
+    "name": "macOS native inspection utilities",
+    "version": null
+  },
+  "predicate_type": "rea.analysis",
+  "operation": "inspect_plist",
+  "parameters": {
+    "relative_path": "Contents/Info.plist"
+  },
+  "raw_result": {
+    "provenance": [
+      {
+        "tool": "file",
+        "command": [
+          "/usr/bin/file",
+          "-b",
+          "$PLIST"
+        ],
+        "tool_version": null,
+        "version_reason": "Tool exposes no uniform stable version flag; executable digest identifies it.",
+        "executable_sha256": "a4ba66d26a9cfdc70637c78cdacef920f94147f6aa45ccc73858e493589ef94d",
+        "exit": {
+          "code": 0,
+          "signal": null
+        },
+        "stdout_bytes": 34,
+        "stderr_bytes": 0
+      },
+      {
+        "tool": "plutil",
+        "command": [
+          "/usr/bin/plutil",
+          "-convert",
+          "json",
+          "-o",
+          "-",
+          "--",
+          "$PLIST"
+        ],
+        "tool_version": null,
+        "version_reason": "Tool exposes no uniform stable version flag; executable digest identifies it.",
+        "executable_sha256": "9d2296746d4519a8094738e7570972d44791793a072767b8bcbf0ea82af90358",
+        "exit": {
+          "code": 0,
+          "signal": null
+        },
+        "stdout_bytes": 1464,
+        "stderr_bytes": 0
+      }
+    ]
+  },
+  "normalized_result": {
+    "format": "xml",
+    "value": {
+      "CFBundleName": "Rize",
+      "DTXcode": "1540",
+      "DTSDKName": "macosx14.5",
+      "NSScreenCaptureUsageDescription": "Rize needs Screen Recording access to capture window titles and extract text from your screen for accurate time tracking.",
+      "DTSDKBuild": "23F73",
+      "CFBundleVersion": "3.0.45",
+      "NSCameraUsageDescription": "This app needs access to the camera",
+      "NSPrincipalClass": "AtomApplication",
+      "NSMainNibFile": "MainMenu",
+      "CFBundlePackageType": "APPL",
+      "CFBundleIconFile": "electron.icns",
+      "NSBluetoothPeripheralUsageDescription": "This app needs access to Bluetooth",
+      "CFBundleShortVersionString": "3.0.45",
+      "NSHighResolutionCapable": true,
+      "NSMicrophoneUsageDescription": "This app needs access to the microphone",
+      "NSAppTransportSecurity": {
+        "NSAllowsArbitraryLoads": true
+      },
+      "CFBundleInfoDictionaryVersion": "6.0",
+      "CFBundleExecutable": "Rize",
+      "DTCompiler": "com.apple.compilers.llvm.clang.1_0",
+      "NSPrefersDisplaySafeAreaCompatibilityMode": false,
+      "NSQuitAlwaysKeepsWindows": false,
+      "CFBundleIdentifier": "io.rize",
+      "LSApplicationCategoryType": "public.app-category.developer-tools",
+      "DTXcodeBuild": "15F31d",
+      "LSMinimumSystemVersion": "12.0",
+      "CFBundleDisplayName": "Rize",
+      "LSEnvironment": {
+        "MallocNanoZone": "0"
+      },
+      "NSRequiresAquaSystemAppearance": false,
+      "NSSupportsAutomaticGraphicsSwitching": true,
+      "NSUserNotificationAlertStyle": "alert",
+      "NSBluetoothAlwaysUsageDescription": "This app needs access to Bluetooth",
+      "NSAppleEventsUsageDescription": "Rize needs access to titles and URLs to track and categorize web activity."
+    },
+    "bundle": {
+      "identifier": "io.rize",
+      "executable": "Rize",
+      "name": "Rize",
+      "version": "3.0.45",
+      "short_version": "3.0.45"
+    },
+    "source_path": "/Applications/Rize.app/Contents/Info.plist",
+    "provenance": [
+      {
+        "tool": "file",
+        "command": [
+          "/usr/bin/file",
+          "-b",
+          "$PLIST"
+        ],
+        "tool_version": null,
+        "version_reason": "Tool exposes no uniform stable version flag; executable digest identifies it.",
+        "executable_sha256": "a4ba66d26a9cfdc70637c78cdacef920f94147f6aa45ccc73858e493589ef94d",
+        "exit": {
+          "code": 0,
+          "signal": null
+        },
+        "stdout_bytes": 34,
+        "stderr_bytes": 0
+      },
+      {
+        "tool": "plutil",
+        "command": [
+          "/usr/bin/plutil",
+          "-convert",
+          "json",
+          "-o",
+          "-",
+          "--",
+          "$PLIST"
+        ],
+        "tool_version": null,
+        "version_reason": "Tool exposes no uniform stable version flag; executable digest identifies it.",
+        "executable_sha256": "9d2296746d4519a8094738e7570972d44791793a072767b8bcbf0ea82af90358",
+        "exit": {
+          "code": 0,
+          "signal": null
+        },
+        "stdout_bytes": 1464,
+        "stderr_bytes": 0
+      }
+    ],
+    "limitations": []
+  },
+  "confidence": "observed",
+  "authority": "shipped-artifact",
+  "environment": null,
+  "limitations": [],
+  "locations": [
+    {
+      "kind": "artifact-path",
+      "path": "/Applications/Rize.app/Contents/Info.plist"
+    }
+  ],
+  "evidence_links": []
+}

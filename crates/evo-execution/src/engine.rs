@@ -26,9 +26,9 @@
 //!   prevents another independently executable target from being attempted.
 //! - A READY target is then **bound** to the live resource it names right now
 //!   ([`crate::binding`]) and acted on in capability order: something the user
-//!   already has open is raised, and only something they do not have open is
-//!   opened. The binding is non-canonical, rebuilt per execution, and never
-//!   flows back into understanding.
+//!   already has open is raised, and a file is opened only after inspection
+//!   reports no document windows. The binding is non-canonical, rebuilt per
+//!   execution, and never flows back into understanding.
 //! - When a target cannot be resolved or executed, the engine reports
 //!   [`TargetStatus::Unavailable`] / [`TargetStatus::Ambiguous`] /
 //!   [`TargetStatus::Unsupported`] / [`TargetStatus::Failed`] — it never
@@ -56,7 +56,7 @@ use crate::binding::{BindingFailure, BoundResource, bind_resource};
 use crate::locator::{Locator, LocatorKind};
 use crate::preflight::{PreflightSource, PreflightStatus, preflight_identity, preflight_selection};
 use crate::resource::ResourceIdentity;
-use crate::selection::RestorationSelection;
+use crate::selection::{RestorationSelection, SelectedResource};
 
 /// The per-target outcome of one execution attempt.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -288,16 +288,19 @@ impl RestorationStep {
 }
 
 /// The one step-resolution rule shared by every execution path: a READY
-/// preflight with a recorded locator becomes an attempt; anything else becomes
-/// an honest refusal.
+/// preflight with a locator owned by the same Artifact becomes an attempt;
+/// selection execution also requires that locator to match the selected
+/// resource identity. Anything else becomes an honest refusal. This prevents
+/// a caller from preflighting one resource and substituting another in the
+/// action map.
 fn step_for(
     artifact_id: ArtifactId,
     status: PreflightStatus,
     locators: &HashMap<String, Locator>,
+    expected_kind: Option<&LocatorKind>,
 ) -> RestorationStep {
     let plan = match status {
         PreflightStatus::Ready => match locators.get(&artifact_id.to_string()) {
-            Some(locator) => StepPlan::Attempt(locator.kind().clone()),
             None => StepPlan::Refuse(TargetStatus::Unavailable {
                 reason: format!(
                     "no canonical executable target is recorded for Artifact {}; \
@@ -305,6 +308,24 @@ fn step_for(
                     artifact_id.as_str()
                 ),
             }),
+            Some(locator) if locator.artifact_id() != &artifact_id => {
+                StepPlan::Refuse(TargetStatus::Unavailable {
+                    reason: format!(
+                        "the canonical locator is attached to Artifact {}, not {}; no action was performed",
+                        locator.artifact_id().as_str(),
+                        artifact_id.as_str()
+                    ),
+                })
+            }
+            Some(locator) if expected_kind.is_some_and(|expected| locator.kind() != expected) => {
+                StepPlan::Refuse(TargetStatus::Unavailable {
+                    reason: format!(
+                        "the canonical locator does not match the selected resource identity for Artifact {}; no action was performed",
+                        artifact_id.as_str()
+                    ),
+                })
+            }
+            Some(locator) => StepPlan::Attempt(locator.kind().clone()),
         },
         PreflightStatus::Unavailable { reason } => {
             StepPlan::Refuse(TargetStatus::Unavailable { reason })
@@ -336,10 +357,16 @@ pub fn plan_selection<P: PreflightSource>(
     let mut steps: Vec<RestorationStep> = preflight_selection(selection, preflight)
         .into_iter()
         .map(|outcome| {
+            let expected_kind = selection
+                .restore_worthy()
+                .iter()
+                .find(|selected| selected.artifact_id() == outcome.artifact_id())
+                .and_then(SelectedResource::executable_target);
             step_for(
                 outcome.artifact_id().clone(),
                 outcome.status().clone(),
                 locators,
+                expected_kind.as_ref(),
             )
         })
         .collect();
@@ -373,7 +400,7 @@ pub fn plan_request<P: PreflightSource>(
                     ),
                 },
             };
-            step_for(artifact_id, status, locators)
+            step_for(artifact_id, status, locators, None)
         })
         .collect()
 }
@@ -388,9 +415,9 @@ pub fn plan_request<P: PreflightSource>(
 ///
 /// The capability order lives here: a READY target is first **bound** to the
 /// live resource it names right now ([`crate::binding::bind_resource`]), and
-/// only then acted on — raised if the user already has it, opened if they do
-/// not. A target that cannot be bound is reported honestly and nothing is
-/// performed for it.
+/// only then acted on — raised if uniquely witnessed; files open only when
+/// inspection reports no document windows. An unbound target is reported and
+/// nothing is performed for it.
 pub fn execute_step<E: PlatformExecutor, P: PreflightSource>(
     step: &RestorationStep,
     binding_source: &P,
@@ -403,10 +430,12 @@ pub fn execute_step<E: PlatformExecutor, P: PreflightSource>(
                 Err(failure) => match failure {
                     // Several equally valid live windows is an ambiguity, not a
                     // failure of the machine: Evo declines to choose.
-                    BindingFailure::SeveralLiveWindows { .. } => TargetStatus::Ambiguous {
+                    BindingFailure::SeveralLiveWindows { .. }
+                    | BindingFailure::SeveralDocumentWindows { .. } => TargetStatus::Ambiguous {
                         reason: failure.reason(),
                     },
-                    _ => TargetStatus::Unavailable {
+                    BindingFailure::NoLiveWindow { .. }
+                    | BindingFailure::CannotInspectWindows { .. } => TargetStatus::Unavailable {
                         reason: failure.reason(),
                     },
                 },
@@ -416,10 +445,9 @@ pub fn execute_step<E: PlatformExecutor, P: PreflightSource>(
                     | BoundResource::FocusDocumentWindow { window, .. } => {
                         executor.focus_bound_window(window)
                     }
-                    // Tier 2 — hand it to the system. Where the binding could
-                    // not establish that the file was closed, the caveat rides
-                    // along with the result: Evo says what it did *and* what it
-                    // could not verify, rather than reporting a bare success.
+                    // Tier 2 — successful inspection reported no document
+                    // windows. Legacy caveat metadata is retained for source
+                    // compatibility but is never emitted by current binding.
                     BoundResource::OpenFile { path, witnessed } => {
                         qualify(executor.open_file(path), witnessed.reason())
                     }
@@ -614,6 +642,12 @@ mod tests {
         }
         fn windows(&self) -> Result<Vec<crate::macos::WindowInfo>, String> {
             Ok(self.windows.clone())
+        }
+        fn windows_showing_document(
+            &self,
+            _path: &str,
+        ) -> Result<Vec<crate::macos::WindowInfo>, String> {
+            Ok(Vec::new())
         }
     }
 
@@ -935,6 +969,124 @@ mod tests {
     }
 
     #[test]
+    fn selection_locator_for_a_different_resource_is_refused_before_action() {
+        // Resource kind and exact subject both matter. A successful preflight
+        // of the selected identity cannot authorize the substituted locator.
+        for (identity, kind) in [
+            (
+                ResourceIdentity::FilePath("/repo/canonical.md".into()),
+                LocatorKind::Url("https://unrelated.example/resource".into()),
+            ),
+            (
+                ResourceIdentity::FilePath("/repo/canonical.md".into()),
+                LocatorKind::FilePath("/repo/other.md".into()),
+            ),
+            (
+                ResourceIdentity::Url("https://example.test/exact?revision=1".into()),
+                LocatorKind::Url("https://example.test/exact?revision=2".into()),
+            ),
+            (
+                ResourceIdentity::WindowTitle("Report".into()),
+                LocatorKind::WindowTitle("report".into()),
+            ),
+            (
+                ResourceIdentity::WindowTitle("https://example.test/exact".into()),
+                LocatorKind::Url("https://example.test/exact".into()),
+            ),
+        ] {
+            let selection = RestorationSelection::new(
+                WorkspaceId::new(),
+                vec![selected("artifact-target", identity)],
+                vec![],
+                vec![],
+            );
+            let locs = locators(&[("artifact-target", kind)]);
+            let preflight =
+                ReadyPreflight::with_windows(&["Report", "report", "https://example.test/exact"]);
+            let planned = plan_selection(&selection, &locs, &preflight);
+            assert!(matches!(
+                planned[0].plan(),
+                StepPlan::Refuse(TargetStatus::Unavailable { reason })
+                    if reason.contains("does not match the selected resource identity")
+            ));
+
+            let executor = RecordingExecutor::default();
+            let report = execute_selection(&selection, &locs, &preflight, &executor);
+            assert!(matches!(
+                report.attempts()[0].status(),
+                TargetStatus::Unavailable { reason }
+                    if reason.contains("does not match the selected resource identity")
+            ));
+            assert!(
+                executor.calls.lock().unwrap().is_empty(),
+                "a locator mismatch must not open or focus the substituted resource"
+            );
+        }
+    }
+
+    #[test]
+    fn locator_stored_under_the_wrong_artifact_is_refused_before_action() {
+        let selection = RestorationSelection::new(
+            WorkspaceId::new(),
+            vec![selected(
+                "artifact-file",
+                ResourceIdentity::FilePath("/repo/canonical.md".into()),
+            )],
+            vec![],
+            vec![],
+        );
+        let mut locs = HashMap::new();
+        locs.insert(
+            "artifact-file".to_string(),
+            Locator::new(
+                ArtifactId::new("artifact-other").unwrap(),
+                LocatorKind::FilePath("/repo/canonical.md".into()),
+            ),
+        );
+        let preflight = FixturePreflight::new(&["/repo/canonical.md"]);
+        let executor = RecordingExecutor::default();
+        let report = execute_selection(&selection, &locs, &preflight, &executor);
+        assert!(matches!(
+            report.attempts()[0].status(),
+            TargetStatus::Unavailable { reason }
+                if reason.contains("attached to Artifact artifact-other")
+        ));
+        // The canonical request path must not trust the map key either.
+        let report = execute(
+            &request_with_chain("artifact-file", &[]),
+            &locs,
+            &preflight,
+            &executor,
+        );
+        assert!(matches!(
+            report.attempts()[0].status(),
+            TargetStatus::Unavailable { reason }
+                if reason.contains("attached to Artifact artifact-other")
+        ));
+        assert!(executor.calls.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn locator_mismatch_does_not_block_an_independent_matching_target() {
+        let selection = fixture_selection();
+        let locs = locators(&[
+            (
+                "artifact-file",
+                LocatorKind::FilePath("/repo/other.md".into()),
+            ),
+            ("artifact-url", LocatorKind::Url("https://a.dev".into())),
+        ]);
+        let executor = RecordingExecutor::default();
+        let report = execute_selection(&selection, &locs, &ReadyPreflight::default(), &executor);
+        assert!(matches!(
+            report.attempts()[1].status(),
+            TargetStatus::Unavailable { reason }
+                if reason.contains("does not match the selected resource identity")
+        ));
+        assert_eq!(*executor.calls.lock().unwrap(), ["url:https://a.dev"]);
+    }
+
+    #[test]
     fn execute_selection_empty_selection_attempts_nothing() {
         let selection = RestorationSelection::new(
             WorkspaceId::new(),
@@ -1028,6 +1180,12 @@ mod tests {
                 Some(reason) => Err(reason.clone()),
                 None => Ok(self.windows.clone()),
             }
+        }
+        fn windows_showing_document(
+            &self,
+            _path: &str,
+        ) -> Result<Vec<crate::macos::WindowInfo>, String> {
+            Ok(Vec::new())
         }
     }
 

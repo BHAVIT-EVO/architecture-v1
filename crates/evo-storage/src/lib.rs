@@ -40,8 +40,8 @@ mod storage;
 
 pub use errors::StorageError;
 pub use root::{
-    canonical_storage_root, default_storage_root, fabrication_root, legacy_storage_root,
-    migrate_legacy_root, prepare_storage_root, MigrationOutcome,
+    MigrationOutcome, canonical_storage_root, default_storage_root, fabrication_root,
+    legacy_storage_root, migrate_legacy_root, prepare_storage_root,
 };
 pub use storage::Storage;
 pub use storage::StorageObjectKind;
