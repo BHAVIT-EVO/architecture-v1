@@ -35,15 +35,25 @@ impl Transcriber {
     /// Downloads are the caller's responsibility — fetch once from
     /// HuggingFace (e.g. `https://huggingface.co/ggerganov/whisper.cpp`).
     pub fn load(model_path: impl AsRef<std::path::Path>) -> Result<Self, String> {
+        let mut context_params = WhisperContextParameters::default();
+        context_params.use_gpu(true).flash_attn(true);
         let ctx = WhisperContext::new_with_params(
             model_path.as_ref().to_str().ok_or("non-UTF8 model path")?,
-            WhisperContextParameters::default(),
+            context_params,
         )
         .map_err(|e| format!("failed to load whisper model: {e}"))?;
         Ok(Self {
             ctx,
             state: Mutex::new(None),
         })
+    }
+
+    /// Initializes Whisper's reusable CPU state before the first user
+    /// command. Without this warm-up, the first post-wake partial pays the
+    /// state-allocation and backend-initialization cost while the notch is
+    /// already counting down its listening tenure.
+    pub fn warm_up(&self) -> Result<(), String> {
+        self.transcribe(&vec![0.0; SAMPLE_RATE as usize]).map(|_| ())
     }
 
     /// Transcribes 16kHz mono f32 audio samples to text.
@@ -71,17 +81,17 @@ impl Transcriber {
         }
         let state = state_guard.as_mut().expect("just initialized");
 
-        // A small beam gives base Whisper a better chance on short names and
-        // accented speech than greedy decoding, while keeping the local CPU
-        // cost bounded. The model and all inference remain on-device.
-        let mut params = FullParams::new(SamplingStrategy::BeamSearch {
-            beam_size: 3,
-            patience: -1.0,
-        });
+        // Greedy decoding is materially faster than beam search on the
+        // CPU-only base model and keeps final command latency bounded. The
+        // acoustic wake model already handles phrase detection; Whisper's
+        // job here is fast command text, not offline-quality beam rescoring.
+        let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
         params.set_n_threads(num_cpus());
         // English; whisper auto-detects if None, but pinning avoids confusion
-        // on short utterances.
+        // on short utterances. Bias the product name so wake/command
+        // transcripts do not turn "Evo" into a common homophone.
         params.set_language(Some("en"));
+        params.set_initial_prompt("Hey Evo.");
         // Don't translate — transcribe in the spoken language.
         params.set_translate(false);
         // State buffers are reused, but one utterance must never inherit the

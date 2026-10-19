@@ -60,6 +60,10 @@ pub const RELOAD_PERIOD: Duration = Duration::from_secs(15);
 /// and the transition can present a frame before `run_execution` blocks the
 /// thread, and so a future asynchronous binding layer replaces only this step.
 pub const CONTINUE_DWELL: Duration = Duration::from_millis(650);
+/// Native applications create their windows asynchronously. Keep observing
+/// long enough for a multi-app work to settle, while still finishing quickly
+/// for a single-app restore.
+const WORKSPACE_ARRANGEMENT_WINDOW: Duration = Duration::from_secs(5);
 
 /// The Evo desktop shell state.
 pub struct EvoApp {
@@ -1028,7 +1032,7 @@ impl EvoApp {
                             self.execution_result = Some(report);
                             if self.workspace_before.is_some() {
                                 self.workspace_arrangement_deadline =
-                                    Some(Instant::now() + Duration::from_secs(2));
+                                    Some(Instant::now() + WORKSPACE_ARRANGEMENT_WINDOW);
                             }
                             // Suppress workspace re-derivation for a short period after
                             // execution. The OS actions (opening URLs, raising windows)
@@ -1058,14 +1062,18 @@ impl EvoApp {
                     std::process::id() as i32,
                     self.workspace_layout_preference,
                 );
-                if arranged.is_some() || Instant::now() >= deadline {
+                if Instant::now() >= deadline {
                     if arranged.is_none() {
                         eprintln!("EVO workspace: no new native windows observed before timeout");
                     }
                     self.workspace_before = None;
                     self.workspace_arrangement_deadline = None;
                 } else {
-                    ctx.request_repaint_after(Duration::from_millis(50));
+                    // Keep polling after the first window. Each pass
+                    // re-plans all newly appeared windows, so a second or
+                    // third app joins the same workspace instead of being
+                    // left in the desktop's default cascade.
+                    ctx.request_repaint_after(Duration::from_millis(75));
                 }
             } else {
                 self.workspace_arrangement_deadline = None;
@@ -1561,50 +1569,29 @@ impl EvoApp {
                             }
                             Some(rack::RackAction::Merge(_)) => {} // No inferred proposals on Home.
                             Some(rack::RackAction::Continue(index)) => {
-                                // Continuing a work IS entering its pod:
-                                // containment hides everything not of this
-                                // work, restoration opens every artifact
-                                // (files through their witnessed apps, URLs
-                                // through the normal macOS handler), and the
-                                // pod
-                                // report says what happened. One path, one
-                                // note; the menu-bar Enter does the same.
+                                // Continue remains the direct restore action.
+                                // Resources are opened through the normal
+                                // macOS handler and then grouped by the
+                                // native workspace arranger; it must not
+                                // enter the legacy pod/containment surface.
                                 let mut surface = crate::pod_surface::MacPodSurface::new();
                                 *workspace_before = Some(crate::unified_workspace::snapshot(
                                     &mut surface,
                                     std::process::id() as i32,
                                 ));
-                                if let Some(note) =
-                                    lock_pods(&self.pods).enter_at(index, crate::pods::epoch_ms())
-                                {
+                                if let Some(note) = lock_pods(&self.pods).restore_at(index) {
                                     self.restore_note = Some(note);
                                 }
                                 *workspace_arrangement_deadline =
-                                    Some(Instant::now() + Duration::from_secs(2));
+                                    Some(Instant::now() + WORKSPACE_ARRANGEMENT_WINDOW);
                             }
                             Some(rack::RackAction::Open(index)) => {
-                                // Opening a card enters its pod: containment,
-                                // restoration, and the pod report — the same
-                                // path the menu bar takes.
-                                let mut surface = crate::pod_surface::MacPodSurface::new();
-                                *workspace_before = Some(crate::unified_workspace::snapshot(
-                                    &mut surface,
-                                    std::process::id() as i32,
-                                ));
-                                if let Some(note) =
-                                    lock_pods(&self.pods).enter_at(index, crate::pods::epoch_ms())
-                                {
-                                    self.restore_note = Some(note);
-                                }
-                                *workspace_arrangement_deadline =
-                                    Some(Instant::now() + Duration::from_secs(2));
-                                // The centre stage: the same work opened as
-                                // the canonical Workspace, so the detail
-                                // screen's derivation, marks, and Continue
-                                // lifecycle are all in play. The bridge is
-                                // witnessed membership; when the record has
-                                // not yet linked them, the work still enters
-                                // (engine truth) and Evo says so.
+                                // Open is navigation only. It must not launch
+                                // resources or enter the legacy pod surface;
+                                // the explicit Continue action owns native
+                                // restoration and workspace arrangement.
+                                // The centre stage still uses the canonical
+                                // Workspace when the engine record is linked.
                                 if let Some(work) = self.engine_threads.get(index) {
                                     let bridged = state::workspace_for_thread(
                                         &work.member_subjects,

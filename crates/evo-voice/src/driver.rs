@@ -27,6 +27,7 @@
 //! opens a fresh capture. Timing constants are physical audio parameters, not
 //! app behavior.
 
+use std::collections::HashSet;
 use std::sync::Arc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::time::{Duration, Instant};
@@ -68,8 +69,8 @@ const WAKE_PREROLL: Duration = Duration::from_millis(2_000);
 
 /// Trailing silence that ends a command capture early. Once speech has
 /// started, 1 second of quiet means the person finished; the configured
-/// `command_capture` (10 s) stays as the hard wall-clock ceiling.
-const COMMAND_ENDPOINT_SILENCE: Duration = Duration::from_millis(1_000);
+/// `command_capture` (6 s by default) stays as the hard wall-clock ceiling.
+const COMMAND_ENDPOINT_SILENCE: Duration = Duration::from_millis(350);
 
 /// Cumulative speech a window must carry before it is sent to whisper.
 /// The old "any 30 ms frame above threshold" gate let a single click (or
@@ -80,9 +81,24 @@ const COMMAND_ENDPOINT_SILENCE: Duration = Duration::from_millis(1_000);
 const MIN_SPEECH: Duration = Duration::from_millis(300);
 
 /// Live partials: never more often than this...
-const PARTIAL_INTERVAL: Duration = Duration::from_millis(900);
+const PARTIAL_INTERVAL: Duration = Duration::from_millis(700);
 /// ...and only when at least this much new audio arrived since the last.
-const PARTIAL_MIN_NEW_AUDIO: Duration = Duration::from_millis(400);
+const PARTIAL_MIN_NEW_AUDIO: Duration = Duration::from_millis(500);
+
+/// Keep live captions opt-in until they have a dedicated transcription
+/// worker. A partial decode sharing Whisper state with the final decode can
+/// otherwise delay the command result by many seconds on CPU.
+const LIVE_PARTIALS: bool = false;
+
+/// Do not let the wake phrase itself end a newly opened capture. The acoustic
+/// spotter confirms on wake audio, so the endpoint needs a short grace period
+/// before it is allowed to inspect post-wake silence.
+const COMMAND_ENDPOINT_GRACE: Duration = Duration::from_millis(900);
+
+/// Whisper latency grows with the amount of audio. Final commands are
+/// intentionally bounded to a recent window; the wake phrase is removed
+/// after decoding and the command resolver only needs the spoken request.
+const MAX_FINAL_AUDIO: Duration = Duration::from_secs(4);
 
 /// Prevents a completed/no-command round from immediately re-opening on the
 /// same acoustic tail or a late model spike. A fresh deliberate wake after
@@ -157,7 +173,8 @@ pub struct VoiceLoopConfig {
     pub scan_interval: Duration,
     /// How much audio each scan covers (the keyword-spot window).
     pub scan_window: Duration,
-    /// After a bare "hey evo", how long to capture the follow-up command.
+    /// After a bare "hey evo", how long to capture the follow-up command
+    /// before submitting whatever audio was heard.
     pub command_capture: Duration,
     /// Rolling buffer cap; older audio is dropped.
     pub max_buffer: Duration,
@@ -177,7 +194,7 @@ impl Default for VoiceLoopConfig {
             scan_window: Duration::from_secs(12),
             // A bare wake buys the person enough time for a natural command
             // with a pause. This is only paid after wake, not on the idle path.
-            command_capture: Duration::from_secs(10),
+            command_capture: Duration::from_secs(6),
             max_buffer: Duration::from_secs(30),
             // Conservative: misses whisper nothing but saves hours of
             // transcribing room tone. Speech at normal mic distance has
@@ -241,15 +258,26 @@ fn transcription_worker<Tr: UtteranceTranscriber>(
     results: Sender<TranscriptionResult>,
 ) {
     while let Ok(job) = jobs.recv() {
+        let started = std::time::Instant::now();
         let result = match job {
-            TranscriptionJob::Partial { capture, audio } => TranscriptionResult::Partial {
-                capture,
-                result: transcriber.transcribe_utterance(&audio),
-            },
-            TranscriptionJob::Final { capture, audio } => TranscriptionResult::Final {
-                capture,
-                result: transcriber.transcribe_utterance(&audio),
-            },
+            TranscriptionJob::Partial { capture, audio } => {
+                let result = transcriber.transcribe_utterance(&audio);
+                eprintln!(
+                    "EVO voice: partial transcription capture {capture} ({:.2}s audio) finished in {:.2}s",
+                    audio.len() as f64 / f64::from(NATIVE_SAMPLE_RATE),
+                    started.elapsed().as_secs_f64()
+                );
+                TranscriptionResult::Partial { capture, result }
+            }
+            TranscriptionJob::Final { capture, audio } => {
+                let result = transcriber.transcribe_utterance(&audio);
+                eprintln!(
+                    "EVO voice: final transcription capture {capture} ({:.2}s audio) finished in {:.2}s",
+                    audio.len() as f64 / f64::from(NATIVE_SAMPLE_RATE),
+                    started.elapsed().as_secs_f64()
+                );
+                TranscriptionResult::Final { capture, result }
+            }
         };
         if results.send(result).is_err() {
             // The driver is gone; stop without touching the model again.
@@ -286,6 +314,8 @@ pub struct VoiceDriver<Tr, Tp> {
     capture_open: bool,
     /// Capture id whose final transcription is outstanding.
     awaiting_final: Option<u64>,
+    /// Final captures that may complete while a newer capture is active.
+    pending_finals: HashSet<u64>,
     /// A partial transcription is on the worker right now.
     partial_inflight: bool,
     /// Acoustic spotter, when one is loaded. Checked on every poll with
@@ -340,6 +370,7 @@ impl<Tr: UtteranceTranscriber + Send + Sync + 'static, Tp: TriggerTransport> Voi
             capture_id: 0,
             capture_open: false,
             awaiting_final: None,
+            pending_finals: HashSet::new(),
             partial_inflight: false,
             acoustic: None,
             acoustic_fed: 0,
@@ -369,13 +400,15 @@ impl<Tr: UtteranceTranscriber + Send + Sync + 'static, Tp: TriggerTransport> Voi
     fn begin_command_capture(&mut self, score: Option<f32>) -> bool {
         self.capture_id = self.capture_id.wrapping_add(1);
         self.capture_open = true;
-        // Everything in the buffer right now is pre-roll (the wake phrase
-        // and, at most, word onsets already spoken); post-wake audio is
-        // whatever grows past this mark.
+        // Only audio arriving after wake confirmation can end the capture.
+        // The retained tail still goes to Whisper, so a command spoken in
+        // the same breath is preserved without allowing the wake phrase to
+        // satisfy the silence endpoint.
         self.capture_start_len = self.buffer.len();
         self.partial_transcribed_at = Instant::now();
         self.partial_audio_len = self.buffer.len();
         self.last_partial = None;
+        self.partial_inflight = false;
         self.command_capture_started = Some(Instant::now());
         if let Some(acoustic) = self.acoustic.as_mut() {
             acoustic.reset();
@@ -425,15 +458,19 @@ impl<Tr: UtteranceTranscriber + Send + Sync + 'static, Tp: TriggerTransport> Voi
             return false;
         }
         if self.command_capture_started.is_some() {
-            // Keep the streaming spotter's context current, but disarm wake
-            // transitions until this command has been finalized.
-            self.poll_acoustic_wake(false);
+            // Keep wake detection live during a command. A fresh wake starts
+            // a new capture immediately and supersedes stale partial state.
+            if self.poll_acoustic_wake(true) {
+                return true;
+            }
             return self.poll_command_capture();
         }
         if self.awaiting_final.is_some() {
-            // A final transcription is still in flight. Feed and disarm the
-            // spotter, otherwise a second wake can overlap the first result.
-            self.poll_acoustic_wake(false);
+            // Keep the acoustic wake path live while an older final is in
+            // flight. The next capture has its own id and final result.
+            if self.poll_acoustic_wake(true) {
+                return true;
+            }
             return true;
         }
         if self.poll_acoustic_wake(true) {
@@ -553,8 +590,18 @@ impl<Tr: UtteranceTranscriber + Send + Sync + 'static, Tp: TriggerTransport> Voi
         self.command_capture_started = None;
         self.capture_open = false;
         self.wake_rearm_at = Instant::now() + WAKE_REARM_COOLDOWN;
-        let audio = std::mem::take(&mut self.buffer);
+        let audio = trim_final_audio(
+            std::mem::take(&mut self.buffer),
+            self.samples(MAX_FINAL_AUDIO),
+        );
         self.acoustic_fed = 0;
+        // A completed command must not remain in the streaming wake model's
+        // feature history. Keeping those rows lets the next live audio form
+        // a cross-capture window and can reproduce the wake several seconds
+        // after the notch closed.
+        if let Some(acoustic) = self.acoustic.as_mut() {
+            acoustic.reset();
+        }
         // Truncation must be visible: samples against wall-clock tells
         // whether the endpoint (or a stall) cut the utterance short.
         eprintln!(
@@ -571,6 +618,7 @@ impl<Tr: UtteranceTranscriber + Send + Sync + 'static, Tp: TriggerTransport> Voi
             dropped_input_chunks_this_session()
         );
         self.last_partial = None;
+        self.partial_inflight = false;
         // Silence and click-only captures are rejected before whisper so
         // it cannot hallucinate a command, and the final pass is the only
         // one that can dispatch: a partial is display-only feedback and is
@@ -578,12 +626,15 @@ impl<Tr: UtteranceTranscriber + Send + Sync + 'static, Tp: TriggerTransport> Voi
         if !self.window_has_speech(&audio)
             || !self.has_min_speech(&audio, self.config.command_capture)
         {
+            // Keep the re-arm protection even when the capture contains no
+            // usable speech; the residual wake tail must not reopen it.
             return self.emit(VoiceEvent::Outcome(VoiceOutcome::NoCommand));
         }
         // The final runs on the worker: `poll` returns immediately and
         // `drain_transcriptions` emits HeardCommand/NoCommand when the
         // result arrives.
         self.awaiting_final = Some(self.capture_id);
+        self.pending_finals.insert(self.capture_id);
         if self
             .job_sender
             .send(TranscriptionJob::Final {
@@ -594,7 +645,8 @@ impl<Tr: UtteranceTranscriber + Send + Sync + 'static, Tp: TriggerTransport> Voi
         {
             // The worker is gone (spawn succeeded, so this is a poison
             // case): report honestly instead of hanging the capture.
-            self.awaiting_final = None;
+            self.pending_finals.remove(&self.capture_id);
+            self.awaiting_final = self.pending_finals.iter().next().copied();
             return self.emit(VoiceEvent::Outcome(VoiceOutcome::Failed {
                 reason: "transcription worker unavailable".to_string(),
             }));
@@ -613,7 +665,9 @@ impl<Tr: UtteranceTranscriber + Send + Sync + 'static, Tp: TriggerTransport> Voi
                     // no result can ever arrive. An outstanding final must
                     // fail honestly instead of leaving its command silently
                     // unresolved forever.
-                    if self.awaiting_final.take().is_some() {
+                    if !self.pending_finals.is_empty() {
+                        self.pending_finals.clear();
+                        self.awaiting_final = None;
                         return self.emit(VoiceEvent::Outcome(VoiceOutcome::Failed {
                             reason: "transcription worker unavailable".to_string(),
                         }));
@@ -623,7 +677,9 @@ impl<Tr: UtteranceTranscriber + Send + Sync + 'static, Tp: TriggerTransport> Voi
             };
             match result {
                 TranscriptionResult::Partial { capture, result } => {
-                    self.partial_inflight = false;
+                    if capture == self.capture_id {
+                        self.partial_inflight = false;
+                    }
                     if !self.capture_open || capture != self.capture_id {
                         // A partial from a closed or replaced capture is
                         // stale display data; drop it.
@@ -648,14 +704,12 @@ impl<Tr: UtteranceTranscriber + Send + Sync + 'static, Tp: TriggerTransport> Voi
                     }
                 }
                 TranscriptionResult::Final { capture, result } => {
-                    if self.awaiting_final != Some(capture) || capture != self.capture_id {
-                        // A final whose capture was replaced by a newer
-                        // wake, or whose generation is no longer current, is
-                        // stale input; never dispatch it to a newer notch
-                        // session.
+                    if !self.pending_finals.remove(&capture) {
                         continue;
                     }
-                    self.awaiting_final = None;
+                    if self.awaiting_final == Some(capture) {
+                        self.awaiting_final = self.pending_finals.iter().next().copied();
+                    }
                     self.wake_rearm_at = Instant::now() + WAKE_REARM_COOLDOWN;
                     let final_text = match result {
                         Ok(text) => text,
@@ -682,7 +736,18 @@ impl<Tr: UtteranceTranscriber + Send + Sync + 'static, Tp: TriggerTransport> Voi
     /// and the throttle elapsed. The transcription happens on the worker,
     /// so the poll loop never waits on whisper.
     fn maybe_submit_partial(&mut self) {
+        if !LIVE_PARTIALS {
+            return;
+        }
+        // Partials are an early caption, not a second full decode. Limit
+        // them to the first two seconds of a turn so a slow local Whisper
+        // pass cannot sit in front of the final command transcription.
+        let capture_age = self
+            .command_capture_started
+            .map(|started| started.elapsed())
+            .unwrap_or_default();
         if self.partial_inflight
+            || capture_age > Duration::from_secs(2)
             || self.partial_transcribed_at.elapsed() < PARTIAL_INTERVAL
             || self.buffer.len() < self.samples(Duration::from_millis(750))
             || self.buffer.len().saturating_sub(self.partial_audio_len)
@@ -695,11 +760,18 @@ impl<Tr: UtteranceTranscriber + Send + Sync + 'static, Tp: TriggerTransport> Voi
         self.partial_transcribed_at = Instant::now();
         self.partial_audio_len = self.buffer.len();
         self.partial_inflight = true;
+        // Partial captions should follow the current words, not repeatedly
+        // decode the entire growing command. The final pass still receives
+        // the complete capture for accuracy.
+        let partial_start = self
+            .buffer
+            .len()
+            .saturating_sub(self.samples(Duration::from_secs(2)));
         if self
             .job_sender
             .send(TranscriptionJob::Partial {
                 capture: self.capture_id,
-                audio: self.buffer.clone(),
+                audio: self.buffer[partial_start..].to_vec(),
             })
             .is_err()
         {
@@ -745,8 +817,18 @@ impl<Tr: UtteranceTranscriber + Send + Sync + 'static, Tp: TriggerTransport> Voi
     /// speech makes the endpointer wait for the command to actually
     /// start.
     fn command_endpoint_reached(&self) -> bool {
+        if self.command_capture_started.is_none() {
+            return false;
+        }
         let start = self.capture_start_len.min(self.buffer.len());
         let post_wake = &self.buffer[start..];
+        // Use audio duration rather than wall-clock time. The mic handoff
+        // can deliver a queued burst after Whisper work, and tests may feed
+        // deterministic audio faster than real time; the endpoint should
+        // depend on what was heard, not scheduler timing.
+        if post_wake.len() < self.samples(COMMAND_ENDPOINT_GRACE) {
+            return false;
+        }
         let silence = self.samples(COMMAND_ENDPOINT_SILENCE);
         match self.last_speech_end(post_wake) {
             Some(end) => post_wake.len().saturating_sub(end) >= silence,
@@ -849,6 +931,15 @@ fn frame_rms(frame: &[f32]) -> f32 {
     }
     let mean = frame.iter().sum::<f32>() / frame.len() as f32;
     (frame.iter().map(|s| (s - mean) * (s - mean)).sum::<f32>() / frame.len() as f32).sqrt()
+}
+
+fn trim_final_audio(mut audio: Vec<f32>, max_samples: usize) -> Vec<f32> {
+    if max_samples == 0 || audio.len() <= max_samples {
+        return audio;
+    }
+    let start = audio.len() - max_samples;
+    audio.drain(..start);
+    audio
 }
 
 /// Mic underruns counted this process (the mic error callback owns it).
@@ -1258,6 +1349,50 @@ mod tests {
             VoiceEvent::Outcome(VoiceOutcome::NoCommand)
         );
         assert!(events.try_recv().is_err());
+    }
+
+    #[test]
+    fn silence_exit_rearms_wake_after_cooldown_instead_of_retriggering_immediately() {
+        let (sink, events) = std::sync::mpsc::channel();
+        let mut driver = VoiceDriver::new(
+            ScriptTranscriber::new(vec!["hey evo"]),
+            FakeTransport::new(restored_outcome()),
+            sink,
+            test_config(),
+        )
+        .with_acoustic_wake(Box::new(ScriptWake {
+            scores: Mutex::new(vec![Some(0.9), None, Some(0.9)]),
+            threshold: 0.5,
+        }));
+
+        driver.ingest(chunk());
+        assert!(driver.poll(), "the first wake opens the capture");
+        driver.ingest(chunk());
+        std::thread::sleep(Duration::from_millis(2));
+        assert!(driver.poll(), "the silent capture closes");
+        assert!(matches!(
+            events.try_recv(),
+            Ok(VoiceEvent::WakeGesture { score: Some(0.9) })
+        ));
+        assert_eq!(
+            events.try_recv(),
+            Ok(VoiceEvent::Listening { partial: None })
+        );
+        assert_eq!(
+            next_event(&mut driver, &events),
+            VoiceEvent::Outcome(VoiceOutcome::NoCommand)
+        );
+        assert!(
+            driver.wake_rearm_at > Instant::now(),
+            "a no-command capture must keep wake re-arm protection"
+        );
+
+        driver.ingest(chunk());
+        assert!(driver.poll(), "the residual tail is ignored during cooldown");
+        assert!(
+            !matches!(events.try_recv(), Ok(VoiceEvent::WakeGesture { .. })),
+            "the same tail must not reopen the notch"
+        );
     }
 
     /// Regression: a wake followed by a pause leaves the retained pre-roll
@@ -1811,7 +1946,7 @@ mod tests {
             GateTranscriber {
                 // The worker's first call (session 1's final) is held until
                 // the test releases it; a second wake arrives while it is
-                // still in flight and must be ignored.
+                // still in flight and must start a new capture.
                 script: Mutex::new(
                     ["open the notes", "close the notes"]
                         .into_iter()
@@ -1829,7 +1964,7 @@ mod tests {
             test_config(),
         )
         .with_acoustic_wake(Box::new(ScriptWake {
-            scores: Mutex::new(vec![Some(0.9), Some(0.9)]),
+            scores: Mutex::new(vec![Some(0.9), None, Some(0.9)]),
             threshold: 0.5,
         }));
 
@@ -1853,12 +1988,19 @@ mod tests {
             .recv_timeout(Duration::from_secs(1))
             .expect("worker picked up session 1's final");
 
-        // A second wake arrives while session 1's final is still in flight,
-        // but the driver keeps the acoustic spotter disarmed.
-        std::thread::sleep(Duration::from_millis(2));
+        // A second wake arrives while session 1's final is still in flight
+        // and starts session 2 immediately after the normal re-arm window.
+        std::thread::sleep(Duration::from_millis(2_100));
         driver.ingest(chunk());
         assert!(driver.poll(), "pending final remains active");
-        assert!(events.try_recv().is_err(), "no second wake session");
+        assert_eq!(
+            events.try_recv(),
+            Ok(VoiceEvent::WakeGesture { score: Some(0.9) })
+        );
+        assert_eq!(
+            events.try_recv(),
+            Ok(VoiceEvent::Listening { partial: None })
+        );
 
         // Release session 1. Its result is the only valid result and is
         // dispatched once; no stale duplicate remains queued.
@@ -1956,6 +2098,11 @@ mod tests {
     /// never emit `HeardCommand`, an `Outcome`, or a stray partial.
     #[test]
     fn a_late_partial_result_is_ignored_after_the_final() {
+        if !LIVE_PARTIALS {
+            // Live partials are disabled in the fast path; there is no
+            // partial result to become stale or delay the final.
+            return;
+        }
         let (entered_tx, entered_rx) = std::sync::mpsc::channel();
         let (release_tx, release_rx) = std::sync::mpsc::channel();
         let (sink, events) = std::sync::mpsc::channel();

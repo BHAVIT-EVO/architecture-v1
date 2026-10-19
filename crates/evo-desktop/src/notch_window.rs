@@ -14,7 +14,8 @@ use crate::notch::{ContentId, NotchEngine, OutcomeState, SurfaceDecision, decide
 pub enum NotchMode {
     /// Skip the notch surface entirely.
     Hidden,
-    /// Auto: own the built-in physical notch; ordinary windows are irrelevant.
+    /// Auto: own the hardware notch when present, or use the same top-center
+    /// overlay on a display without a physical camera cutout.
     Auto,
     /// Always render the floating card (never touch the strip).
     Float,
@@ -174,10 +175,8 @@ pub struct RenderState {
     /// Index of the currently hovered chip (None = no hover).
     /// Used for hover highlight on action chips.
     pub hovered_chip: Option<usize>,
-    /// The hardware notch width/height in points, from the safe-area
-    /// probe (`auxiliaryTopLeftArea` + `auxiliaryTopRightArea`). The
-    /// drawn shape expands from this exact rect so it reads as a
-    /// continuation of the physical notch (the reference app's trick).
+    /// The hardware notch width/height in points when available, otherwise
+    /// the centered synthetic notch dimensions used on external displays.
     pub notch_w: f64,
     pub notch_h: f64,
     /// The notch's left edge in canvas coordinates. This is derived from the
@@ -442,6 +441,23 @@ impl NotchGeometry {
             notch_x: screen_frame.x + (screen_frame.w - notch_w) / 2.0,
             notch_w,
             notch_h: safe_top,
+        })
+    }
+
+    /// Geometry for a display without a physical camera cutout. The surface
+    /// keeps the same visual language and top-center placement, but does not
+    /// pretend that the external display has a hardware notch.
+    pub fn synthetic(screen_frame: ScreenFrame) -> Option<Self> {
+        if screen_frame.w <= 0.0 || screen_frame.h <= 0.0 {
+            return None;
+        }
+        let notch_w = FALLBACK_NOTCH.0.min(screen_frame.w - 24.0);
+        let notch_h = FALLBACK_NOTCH.1;
+        Some(Self {
+            screen_frame,
+            notch_x: screen_frame.x + (screen_frame.w - notch_w) / 2.0,
+            notch_w,
+            notch_h,
         })
     }
 
@@ -1653,8 +1669,8 @@ pub fn spawn() -> Option<NotchSurface> {
         return None;
     }
 
-    // A live surface requires a physical notch in every mode. Synthetic
-    // geometry is only for deterministic verification, never a fallback pill.
+    // A live surface follows the active display. Hardware safe-area geometry
+    // is preferred, with a centered synthetic surface on ordinary displays.
     let geometry = probe_notch_geometry();
     let notch = geometry.map(|g| (g.notch_w, g.notch_h));
     let foreign_notch_windows = if mode == NotchMode::Auto && geometry.is_some() {
@@ -1772,7 +1788,8 @@ fn surface_main(
     // is anchored to this exact rect so expansions read as the notch
     // growing, never as an overlay over it.
     let (notch_w, notch_h) = (geometry.notch_w, geometry.notch_h);
-    eprintln!("EVO notch: hardware notch {notch_w:.0}x{notch_h:.0}pt acquired");
+    eprintln!("EVO notch: display surface {notch_w:.0}x{notch_h:.0}pt acquired");
+    let mut geometry = geometry;
     let mut host = match EvoNotchHost::open_for_geometry(geometry) {
         Ok(host) => Some(host),
         Err(err) => {
@@ -1797,6 +1814,7 @@ fn surface_main(
     // re-render once without touching the animation.
     const PHASE_TRANSITION: Duration = Duration::from_millis(350);
     const ANIM_FRAME: Duration = Duration::from_micros(16_667);
+    const VISIBILITY_HEARTBEAT: Duration = Duration::from_millis(250);
     // The listening equalizer's repaint cadence: 24fps — exactly the
     // reference's `preferredFrameRateRange` for its bars. The loop wakes
     // on this while the engine is Listening even with no input and no
@@ -1844,11 +1862,15 @@ fn surface_main(
                 // behavior: block on input until a deadline exists.
                 let wave_wait = (engine.voice.phase == crate::notch::VoicePhase::Listening)
                     .then_some(WAVE_FRAME);
+                let visibility_wait = host
+                    .as_ref()
+                    .filter(|_| shown.is_visible())
+                    .map(|_| VISIBILITY_HEARTBEAT);
                 match (deadline_wait, wave_wait) {
                     (Some(deadline), Some(wave)) => Some(deadline.min(wave)),
                     (Some(deadline), None) => Some(deadline),
                     (None, Some(wave)) => Some(wave),
-                    (None, None) => None,
+                    (None, None) => visibility_wait,
                 }
             }
         };
@@ -1864,7 +1886,26 @@ fn surface_main(
                 Err(_) => break,
             }
         };
+        if input.is_none() {
+            if let Some(host) = host.as_ref() {
+                if let Some(next_geometry) = probe_notch_geometry() {
+                    if next_geometry != geometry {
+                        host.reanchor(next_geometry);
+                        geometry = next_geometry;
+                    }
+                }
+                host.reassert_visibility();
+            }
+        }
         if let Some(input) = input {
+            if let Some(host) = host.as_ref() {
+                if let Some(next_geometry) = probe_notch_geometry() {
+                    if next_geometry != geometry {
+                        host.reanchor(next_geometry);
+                        geometry = next_geometry;
+                    }
+                }
+            }
             match input {
                 SurfaceInput::Voice(event) => {
                     engine.voice_event(&event, Instant::now());
@@ -2120,7 +2161,6 @@ pub(crate) mod objc {
         );
 
         fn pthread_main_np() -> i32;
-        fn CGDisplayIsBuiltin(display: u32) -> u32;
 
         // CoreText: thread-safe glyph rasterization into our own
         // buffer. Used from the paint path (any thread); no AppKit
@@ -2337,72 +2377,51 @@ pub(crate) mod objc {
         unsafe { objc_getClass(name.as_ptr() as *const c_char) }
     }
 
-    /// Prefers the built-in notched display even when an external monitor is
-    /// currently the macOS main screen. This mirrors the reference app's
-    /// display selection instead of blindly trusting `mainScreen`.
+    /// Uses the display containing the current pointer first. A background
+    /// agent has no key window of its own, so `mainScreen` can otherwise
+    /// resolve to the first display rather than the display being used.
     pub fn preferred_screen() -> Id {
         unsafe {
             let screen_class = class_of(b"NSScreen\0");
             if screen_class.is_null() {
                 return std::ptr::null_mut();
             }
-            let screens: Id = send0(screen_class as Id, sel(b"screens\0"));
-            if !screens.is_null() {
-                let count: usize = send0(screens, sel(b"count\0"));
-                let mut first_notched: Id = std::ptr::null_mut();
-                for index in 0..count {
-                    let screen: Id = send1(screens, sel(b"objectAtIndex:\0"), index);
-                    if screen.is_null() {
-                        continue;
-                    }
-                    let left: NsRect = send0(screen, sel(b"auxiliaryTopLeftArea\0"));
-                    let right: NsRect = send0(screen, sel(b"auxiliaryTopRightArea\0"));
-                    let safe: NsEdgeInsets = send0(screen, sel(b"safeAreaInsets\0"));
-                    if (left.w > 0.0 || right.w > 0.0) && safe.top > 0.0 {
-                        if first_notched.is_null() {
-                            first_notched = screen;
+            let event_class = class_of(b"NSEvent\0");
+            if !event_class.is_null() {
+                let pointer: NsPoint = send0(event_class as Id, sel(b"mouseLocation\0"));
+                let screens: Id = send0(screen_class as Id, sel(b"screens\0"));
+                if !screens.is_null() {
+                    let count: usize = send0(screens, sel(b"count\0"));
+                    for index in 0..count {
+                        let screen: Id = send1(screens, sel(b"objectAtIndex:\0"), index);
+                        if screen.is_null() {
+                            continue;
                         }
-                        if is_builtin_screen(screen) {
+                        let frame: NsRect = send0(screen, sel(b"frame\0"));
+                        if pointer.x >= frame.x
+                            && pointer.x < frame.x + frame.w
+                            && pointer.y >= frame.y
+                            && pointer.y < frame.y + frame.h
+                        {
                             return screen;
                         }
                     }
                 }
-                if !first_notched.is_null() {
-                    return first_notched;
-                }
             }
-            send0(screen_class as Id, sel(b"mainScreen\0"))
-        }
-    }
-
-    /// NSScreen does not expose its display id as a plain Rust field. The
-    /// device description carries `NSScreenNumber`, which lets Auto prefer
-    /// the Mac's built-in notched display when an external notched display is
-    /// also connected.
-    unsafe fn is_builtin_screen(screen: Id) -> bool {
-        unsafe {
-            let description: Id = send0(screen, sel(b"deviceDescription\0"));
-            if description.is_null() {
-                return false;
+            let main: Id = send0(screen_class as Id, sel(b"mainScreen\0"));
+            if !main.is_null() {
+                return main;
             }
-            let string_class = class_of(b"NSString\0");
-            if string_class.is_null() {
-                return false;
+            let screens: Id = send0(screen_class as Id, sel(b"screens\0"));
+            if screens.is_null() {
+                return std::ptr::null_mut();
             }
-            let key: Id = send1(
-                string_class as Id,
-                sel(b"stringWithUTF8String:\0"),
-                b"NSScreenNumber\0".as_ptr() as *const c_char,
-            );
-            if key.is_null() {
-                return false;
+            let count: usize = send0(screens, sel(b"count\0"));
+            if count == 0 {
+                std::ptr::null_mut()
+            } else {
+                send1(screens, sel(b"objectAtIndex:\0"), 0usize)
             }
-            let number: Id = send1(description, sel(b"objectForKey:\0"), key);
-            if number.is_null() {
-                return false;
-            }
-            let display_id: u32 = send0(number, sel(b"unsignedIntValue\0"));
-            CGDisplayIsBuiltin(display_id) != 0
         }
     }
 
@@ -4289,7 +4308,7 @@ impl EvoNotchHost {
     /// transparently (blocking until the construction completes).
     pub fn open() -> Result<Self, String> {
         let geometry = probe_notch_geometry()
-            .ok_or_else(|| "NSScreen preferred display has no hardware notch".to_string())?;
+            .ok_or_else(|| "NSScreen active display is unavailable".to_string())?;
         Self::open_for_geometry(geometry)
     }
 
@@ -4490,6 +4509,37 @@ impl EvoNotchHost {
         }
     }
 
+    /// Reasserts front ordering after macOS changes the active application or
+    /// Space. The panel remains nonactivating, so this never steals focus.
+    pub fn reassert_visibility(&self) {
+        if !self.visible.load(std::sync::atomic::Ordering::SeqCst) {
+            return;
+        }
+        let panel = self.panel;
+        objc::on_main_async(move || unsafe {
+            objc::send0::<()>(panel, objc::sel(b"orderFrontRegardless\0"));
+        });
+    }
+
+    /// Moves the existing overlay to the display that currently owns the
+    /// active Space. The panel remains nonactivating while its screen anchor
+    /// changes, so wake feedback follows the app the person is using.
+    pub fn reanchor(&self, geometry: NotchGeometry) {
+        let screen_frame = geometry.screen_frame;
+        let (w, h) = CANVAS_SIZE;
+        let x = (screen_frame.x + screen_frame.w / 2.0 - w / 2.0).floor();
+        let y = screen_frame.y + screen_frame.h - h;
+        let panel = self.panel;
+        objc::on_main_async(move || unsafe {
+            objc::send2::<(), objc::NsRect, i8>(
+                panel,
+                objc::sel(b"setFrame:display:\0"),
+                objc::NsRect { x, y, w, h },
+                1,
+            );
+        });
+    }
+
     /// Orders the host out without requiring a synthetic render frame.
     /// Used when the input channel closes or the surface quits.
     pub fn order_out(&self) {
@@ -4600,9 +4650,9 @@ impl EvoNotchHost {
 
 // ─── Safe-area probe: the hardware notch's exact rect ─────────────────────
 
-/// Reads the complete hardware notch geometry from the preferred selected
-/// display's safe areas. The same frame is later used for the host window, so
-/// the painted silhouette and its transparent canvas share one anchor.
+/// Reads the selected display's geometry. Hardware safe-area measurements are
+/// used on a MacBook display; external/non-notched displays receive a centered
+/// synthetic top surface so voice feedback remains visible there too.
 #[cfg(target_os = "macos")]
 pub fn probe_notch_geometry() -> Option<NotchGeometry> {
     objc::on_main(|| unsafe {
@@ -4625,6 +4675,14 @@ pub fn probe_notch_geometry() -> Option<NotchGeometry> {
             right.w,
             safe.top,
         )
+        .or_else(|| {
+            NotchGeometry::synthetic(ScreenFrame {
+                x: frame.x,
+                y: frame.y,
+                w: frame.w,
+                h: frame.h,
+            })
+        })
     })
     .flatten()
 }
@@ -6006,12 +6064,27 @@ mod tests {
             assert_eq!(NotchMode::from_env(), NotchMode::Own);
             std::env::remove_var("EVO_NOTCH_MODE");
         }
+
         assert_eq!(NotchMode::from_env(), NotchMode::Auto);
         if let Some(saved) = saved {
             unsafe {
                 std::env::set_var("EVO_NOTCH_MODE", saved);
             }
         }
+    }
+
+    #[test]
+    fn synthetic_geometry_centers_on_an_external_display() {
+        let screen = ScreenFrame {
+            x: 1440.0,
+            y: 0.0,
+            w: 1920.0,
+            h: 1080.0,
+        };
+        let geometry = NotchGeometry::synthetic(screen).expect("valid display");
+        assert_eq!(geometry.notch_w, FALLBACK_NOTCH.0);
+        assert_eq!(geometry.notch_h, FALLBACK_NOTCH.1);
+        assert_eq!(geometry.notch_x, 2325.0);
     }
 
     #[test]

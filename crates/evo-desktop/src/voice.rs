@@ -718,6 +718,11 @@ fn voice_thread_main(
             return;
         }
     };
+    if let Err(err) = transcriber.warm_up() {
+        eprintln!("EVO voice: whisper warm-up failed; first command may be slower: {err}");
+    } else {
+        eprintln!("EVO voice: whisper ready");
+    }
     // Adapt Transcriber to the driver's UtteranceTranscriber trait.
     struct TranscriberAdapter(Transcriber);
     impl UtteranceTranscriber for TranscriberAdapter {
@@ -792,15 +797,17 @@ fn voice_thread_main(
     // Feed audio until the UI goes away. The dedicated capture worker keeps
     // Mic drained while this loop performs model inference.
     loop {
-        if let Ok(mut newest) = audio_rx.recv_timeout(Duration::from_millis(20)) {
-            // Discard queued history and retain the newest slice. A slow model
-            // must recover to live audio, not work through stale microphone
-            // data after the person has stopped speaking.
-            while let Ok(samples) = audio_rx.try_recv() {
-                newest = samples;
+        if let Ok(samples) = audio_rx.recv_timeout(Duration::from_millis(20)) {
+            if !samples.is_empty() {
+                driver.ingest(samples);
             }
-            if !newest.is_empty() {
-                driver.ingest(newest);
+            // The wake model and driver poll are deliberately lightweight;
+            // preserve every queued slice so command audio and wake phrases
+            // are not lost between hardware callbacks.
+            while let Ok(samples) = audio_rx.try_recv() {
+                if !samples.is_empty() {
+                    driver.ingest(samples);
+                }
             }
         }
         if !driver.poll() {

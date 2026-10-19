@@ -104,7 +104,8 @@ validate_ort_provisioning() {
         EVO_ORT_THIRD_PARTY_NOTICES="$ORT_BUNDLE_STAGE/ThirdPartyNotices.txt" \
         python3 "$REPO_ROOT/scripts/evo-doctor.py" --workspace "$REPO_ROOT" --check-ort-inputs
       ORT_LIB_DIR="$ORT_BUNDLE_STAGE"
-      export ORT_LIB_PATH="$ORT_LIB_DIR" ORT_PREFER_DYNAMIC_LINK=1 ORT_SKIP_DOWNLOAD=1
+      export ORT_LIB_PATH="$ORT_LIB_DIR" ORT_LIB_LOCATION="$ORT_LIB_DIR" \
+        ORT_PREFER_DYNAMIC_LINK=1 ORT_SKIP_DOWNLOAD=1
       echo "ONNX Runtime: explicit local bundled snapshot at $ORT_BUNDLE_STAGE; supplied notices only."
       return 0
       ;;
@@ -120,7 +121,9 @@ validate_ort_provisioning() {
     echo "error: ORT_LIB_PATH (or ORT_LIB_LOCATION) must name an existing ONNX Runtime directory." >&2
     return 1
   fi
-  export ORT_LIB_PATH="$ORT_LIB_DIR"
+  # ort-sys has used both names across supported releases. Export both so a
+  # locked build cannot silently fall back to its link-error sentinel.
+  export ORT_LIB_PATH="$ORT_LIB_DIR" ORT_LIB_LOCATION="$ORT_LIB_DIR"
 
   case "${ORT_PREFER_DYNAMIC_LINK:-}" in
     1|[Tt][Rr][Uu][Ee]) ORT_DYNAMIC=1 ;;
