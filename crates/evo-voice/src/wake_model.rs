@@ -76,7 +76,7 @@ struct WakeDebouncer {
 
 impl WakeDebouncer {
     /// Consecutive chunks at/above threshold that confirm a wake.
-    const REQUIRED: u32 = 2;
+    const REQUIRED: u32 = 1;
 
     /// A single chunk at/above this score (and the configured threshold)
     /// fires immediately: no second chunk is needed.
@@ -126,7 +126,7 @@ pub struct CustomWakeSpotter {
     mel_rows: usize,
     /// Most recent embedding rows, capped at 128.
     feature_rows: Vec<[f32; EMBEDDING_ROW]>,
-    /// Two-consecutive-chunk confirmation for the wake gesture.
+    /// Threshold debounce for the wake gesture.
     debouncer: WakeDebouncer,
 }
 
@@ -430,29 +430,22 @@ mod tests {
     }
 
     #[test]
-    fn debouncer_requires_two_consecutive_hits_and_fires_once() {
+    fn debouncer_fires_on_the_first_threshold_hit() {
         let threshold = 0.12;
         let mut debouncer = WakeDebouncer::new();
         assert!(
-            !debouncer.observe(0.30, threshold),
-            "a single spike must not fire"
+            debouncer.observe(0.30, threshold),
+            "a calibrated threshold hit must fire immediately"
         );
         assert!(
             !debouncer.observe(0.01, threshold),
             "a sub-threshold chunk resets the run"
         );
         assert!(
-            !debouncer.observe(0.30, threshold),
-            "a spike after a reset is still a single hit"
+            debouncer.observe(0.30, threshold),
+            "a later threshold hit must also fire immediately"
         );
-        assert!(
-            debouncer.observe(0.15, threshold),
-            "the second consecutive hit fires"
-        );
-        assert!(
-            !debouncer.observe(0.20, threshold),
-            "firing resets the run: one more hit is not a second wake"
-        );
+        assert!(debouncer.observe(0.20, threshold));
     }
 
     /// Regression: the model's wake spike can be a single chunk wide when
@@ -467,13 +460,10 @@ mod tests {
             debouncer.observe(0.55, threshold),
             "a single hit ≥0.5 must fire without a second consecutive chunk"
         );
-        assert!(
-            !debouncer.observe(0.18, threshold),
-            "firing resets the run: a following grazing hit is again a single"
-        );
+        assert!(debouncer.observe(0.18, threshold));
         assert!(
             debouncer.observe(0.20, threshold),
-            "two consecutive grazing hits still fire"
+            "each threshold hit fires immediately"
         );
     }
 

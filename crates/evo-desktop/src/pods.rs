@@ -177,6 +177,17 @@ impl PodHost {
         }
     }
 
+    /// Restores a work's native resources without entering the legacy pod
+    /// containment state. URLs, applications, files, and folders are still
+    /// handed to their normal macOS handlers; callers can arrange the windows
+    /// afterward without hiding or veiling unrelated desktop work.
+    pub fn restore_at(&self, index: usize) -> Option<String> {
+        let pod = self.pods.get(index)?;
+        let mut report = self.restore_work(pod);
+        report.append(self.open_resources(index));
+        Some(report.note())
+    }
+
     /// Leaves the active pod, veils lifted and lease reversed exactly.
     pub fn leave(&mut self) -> Option<String> {
         self.active = None;
@@ -746,6 +757,20 @@ mod tests {
                 .iter()
                 .any(|target| target.resource == "/tmp/notes.md")
         );
+    }
+
+    #[test]
+    fn restore_at_opens_natively_without_entering_containment() {
+        let restorer = Rc::new(FakeRestorer::default());
+        let mut host = fake_host(restorer.clone());
+        host.set_pods(vec![pod_fixture()]);
+
+        let note = host.restore_at(0).expect("pod exists");
+
+        assert!(note.contains("Requests accepted"));
+        assert!(!host.core.is_active());
+        assert!(host.core.surface_log().is_empty());
+        assert_eq!(restorer.targets.borrow().len(), 1);
     }
 
     #[test]

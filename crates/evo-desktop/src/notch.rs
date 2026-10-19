@@ -221,7 +221,7 @@ pub struct NotchEngine {
     pub owns_strip: bool,
 }
 
-const VOICE_LISTENING_TENURE: Duration = Duration::from_secs(12);
+const VOICE_LISTENING_TENURE: Duration = Duration::from_secs(60);
 
 impl Default for NotchEngine {
     fn default() -> Self {
@@ -415,6 +415,14 @@ impl NotchEngine {
                     outcome: None,
                     since: now,
                 };
+                // Keep the expanded surface alive while the final local
+                // Whisper pass and command dispatch complete.
+                self.show_temporary(
+                    ContentId::EvoListening,
+                    priority::LISTENING,
+                    Tenure::For(VOICE_LISTENING_TENURE),
+                    now,
+                );
             }
             evo_voice::VoiceEvent::Outcome(outcome) => {
                 // Any new outcome is fresher than a browse: the result

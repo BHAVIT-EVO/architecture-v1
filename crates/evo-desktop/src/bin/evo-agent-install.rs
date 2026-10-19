@@ -146,7 +146,16 @@ fn install() -> Result<String, String> {
         .join("Application Support")
         .join("Evo")
         .join("embedding");
-    let plist = plist_xml(&agent, &out_log, &err_log, &embedding_dir)?;
+    // The canonical app lives in /Applications and is already signed as a
+    // bundle. Launch that binary directly instead of the copied
+    // Application Support executable, whose post-copy rpath rewrite can
+    // invalidate its code signature before launchd loads it.
+    let launch_agent = if exe.starts_with("/Applications/Evo.app/") {
+        built_agent
+    } else {
+        agent
+    };
+    let plist = plist_xml(&launch_agent, &out_log, &err_log, &embedding_dir)?;
     std::fs::write(&plist_path, plist)
         .map_err(|e| format!("cannot write {}: {e}", plist_path.display()))?;
 
@@ -341,7 +350,29 @@ fn ensure_executable_rpath(binary: &Path) -> Result<(), String> {
         .status()
         .map_err(|e| format!("cannot add rpath to {}: {e}", binary.display()))?;
     if status.success() {
-        Ok(())
+        // install_name_tool changes the Mach-O load commands and invalidates
+        // the bundle signature. Launchd rejects the installed agent before
+        // main() when that signature is stale, so restore the stable signing
+        // identity before registering the LaunchAgent.
+        let sign_status = std::process::Command::new("codesign")
+            .args([
+                "--force",
+                "--sign",
+                "Evo Code Signing",
+                "--timestamp=none",
+                &binary.to_string_lossy(),
+            ])
+            .status()
+            .map_err(|e| format!("cannot sign {}: {e}", binary.display()))?;
+        if sign_status.success() {
+            Ok(())
+        } else {
+            Err(format!(
+                "codesign failed for {} with {}",
+                binary.display(),
+                describe_exit(&sign_status)
+            ))
+        }
     } else {
         Err(format!(
             "install_name_tool failed for {} with {}",

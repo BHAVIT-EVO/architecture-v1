@@ -10,7 +10,7 @@ evo-engagement = { path = "../evo-engagement" }
 evo-execution = { path = "../evo-execution" }
 evo-threads = { path = "../evo-threads" }
 fastembed = { version = "7.1.0", optional = true }
-whisper-rs = { version = "0.16.0", optional = true }
+whisper-rs = { version = "0.16.0", optional = true, features = ["metal"] }
 cpal = { version = "0.18.2", optional = true }
 ort = { version = "2.0.0-rc.10", optional = true }
 
