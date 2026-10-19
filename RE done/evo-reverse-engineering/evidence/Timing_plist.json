@@ -1,0 +1,141 @@
+evidence_id: ev_df53179dfde5e266ac104302d0981aa0b71b5a6036b43b4ece09e01a28d32c42
+subject:
+  name: Timing
+  digest:
+    sha256: 55fe35aa41385c696a8df54f54c0931626bb7fcdc8c0beab57726c4091e965fe
+  format: mach-o
+  architecture: arm64
+  local_path: /Applications/Timing.app/Contents/MacOS/Timing
+provider:
+  id: native-macos
+  name: macOS native inspection utilities
+  version: null
+predicate_type: rea.analysis
+operation: inspect_plist
+parameters:
+  relative_path: Contents/Info.plist
+raw_result:
+  provenance[2]:
+    - tool: file
+      command[3]: /usr/bin/file,"-b",$PLIST
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: a4ba66d26a9cfdc70637c78cdacef920f94147f6aa45ccc73858e493589ef94d
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 48
+      stderr_bytes: 0
+    - tool: plutil
+      command[7]: /usr/bin/plutil,"-convert",json,"-o","-","--",$PLIST
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 9d2296746d4519a8094738e7570972d44791793a072767b8bcbf0ea82af90358
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 3190
+      stderr_bytes: 0
+normalized_result:
+  format: xml
+  value:
+    NSMainStoryboardFile: Main
+    CFBundlePackageType: APPL
+    SUAllowsAutomaticUpdates: false
+    DTPlatformVersion: "27.0"
+    DTSDKBuild: 26A425
+    NSSupportsSuddenTermination: false
+    NSAppleScriptEnabled: true
+    NSPrincipalClass: TRExceptionReportingApplication
+    SUFeedURL: "https://updates.timingapp.com/updates/timing2.xml"
+    CFBundleDisplayName: Timing
+    SUPublicEDKey: lvF9kS9bbzSYZnjgb4kV2XUE6c+WROfcmT/dwrtbfFM=
+    CFBundleDocumentTypes[1]:
+      - CFBundleTypeName: Timings Backup
+        CFBundleTypeExtensions[1]: timingsbackup
+        CFBundleTypeRole: Viewer
+        LSTypeIsPackage: true
+        LSHandlerRank: Alternate
+    DTXcodeBuild: 27A266a
+    NSRemindersUsageDescription: Timing needs access to your reminders in order to show them in the timeline and suggest time entries for them.
+    NSHighResolutionCapable: true
+    CFBundleIdentifier: info.eurocomp.Timing2
+    OSAScriptingDefinition: Timing2.sdef
+    LSApplicationCategoryType: public.app-category.productivity
+    LSEnvironment:
+      MallocNanoZone: "0"
+    CFBundleSignature: ????
+    CFBundleInfoDictionaryVersion: "6.0"
+    CFBundleSupportedPlatforms[1]: MacOSX
+    LSMinimumSystemVersion: "14.0"
+    NSSupportsAutomaticGraphicsSwitching: true
+    SUEnableAutomaticChecks: true
+    CFBundleName: Timing
+    NSHumanReadableCopyright: © 2026 Timing Software GmbH
+    CFBundleShortVersionString: 2026.5.2
+    NSPrefersDisplaySafeAreaCompatibilityMode: false
+    NSAppleEventsUsageDescription: "Timing needs this for a few apps to track e.g. the current website, email mailbox, or document path."
+    CFBundleExecutable: Timing
+    NSRemindersFullAccessUsageDescription: Timing needs access to your reminders in order to show them in the timeline and suggest time entries for them.
+    CFBundleIconName: AppIcon
+    SUScheduledCheckInterval: 86400
+    BuildMachineOSBuild: 25G229
+    NSAccentColorName: globalAccentColor
+    NSUserNotificationsUsageDescription: Timing can remind you to stop running timers or notify you when there’s a problem with your tracking setup. Hover this message and click “Options” to allow notifications.
+    NSSupportsAutomaticTermination: false
+    NSCalendarsUsageDescription: Timing needs access to your calendar to show your calendar events in the timeline and suggest them when creating time entries.
+    DTPlatformName: macosx
+    MDItemKeywords: "Time Tracking, Time Tracker, Productivity, Invoice, Invoicing, Billing, Freelancer, Screen Time, ScreenTime, Timemator, RescueTime, Qbserve, Tool, Timely, Harvest"
+    CFBundleVersion: "587"
+    CFBundleIconFile: AppIcon
+    CFBundleDevelopmentRegion: en
+    DTCompiler: com.apple.compilers.llvm.clang.1_0
+    CFBundleURLTypes[1]:
+      - CFBundleURLName: Timing URL
+        CFBundleURLSchemes[1]: timing2
+    NSCalendarsFullAccessUsageDescription: Timing needs access to your calendar to show your calendar events in the timeline and suggest them when creating time entries.
+    DTSDKName: macosx27.0
+    NSAppTransportSecurity:
+      NSExceptionDomains:
+    NSContactsUsageDescription: Timing needs access to your contacts in order to show which contacts you had phone calls with.
+    NSUpdateSecurityPolicy:
+      AllowProcesses:
+        MEHY5QF425[1]: com.setapp.DesktopClient.SetappAgent
+    DTPlatformBuild: 26A425
+    DTXcode: "2700"
+  bundle:
+    identifier: info.eurocomp.Timing2
+    executable: Timing
+    name: Timing
+    version: "587"
+    short_version: 2026.5.2
+  source_path: /Applications/Timing.app/Contents/Info.plist
+  provenance[2]:
+    - tool: file
+      command[3]: /usr/bin/file,"-b",$PLIST
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: a4ba66d26a9cfdc70637c78cdacef920f94147f6aa45ccc73858e493589ef94d
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 48
+      stderr_bytes: 0
+    - tool: plutil
+      command[7]: /usr/bin/plutil,"-convert",json,"-o","-","--",$PLIST
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 9d2296746d4519a8094738e7570972d44791793a072767b8bcbf0ea82af90358
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 3190
+      stderr_bytes: 0
+  limitations: []
+confidence: observed
+authority: shipped-artifact
+environment: null
+limitations: []
+locations[1]{kind,path}:
+  artifact-path,/Applications/Timing.app/Contents/Info.plist
+evidence_links: []

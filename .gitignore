@@ -33,3 +33,6 @@ __pycache__/
 *.db
 *.db-journal
 *.log
+
+# Archived dead code / stale docs / old pitch material (never part of the build)
+/attic/

@@ -7,7 +7,7 @@
 //! decision. The forensic instrument and the user-facing rationale are the
 //! same artifact.
 
-use crate::types::{AnchorKind, EpisodeId, Interaction, ThreadId};
+use crate::types::{AnchorKind, EpisodeId, Interaction, MemberState, ThreadId};
 use serde::{Deserialize, Serialize};
 
 /// A single named piece of evidence. Witnesses are existentials — "this
@@ -52,28 +52,119 @@ pub enum ParkReason {
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Decision {
-    EpisodeStarted { episode: EpisodeId, at: u64, resource: String },
-    EpisodeClosed { episode: EpisodeId, at: u64 },
-    EpisodeReopened { episode: EpisodeId, at: u64, via: String },
+    EpisodeStarted {
+        episode: EpisodeId,
+        at: u64,
+        resource: String,
+    },
+    EpisodeClosed {
+        episode: EpisodeId,
+        at: u64,
+    },
+    EpisodeReopened {
+        episode: EpisodeId,
+        at: u64,
+        via: String,
+    },
     /// A short production-free detour kept as context; it voted nowhere.
-    DipAbsorbed { episode: EpisodeId, start: u64, end: u64, resources: Vec<String> },
+    DipAbsorbed {
+        episode: EpisodeId,
+        start: u64,
+        end: u64,
+        resources: Vec<String>,
+    },
     /// Something was seen and deliberately not counted, with the reason.
-    EvidenceDropped { resource: String, reason: String },
+    EvidenceDropped {
+        resource: String,
+        reason: String,
+    },
     /// A landing already credited once came down again; the repeat updated
     /// state but minted no new production.
-    RepeatedDownload { resource: String, normalized: String, first_at: u64 },
+    RepeatedDownload {
+        resource: String,
+        normalized: String,
+        first_at: u64,
+    },
     /// An Execution-restored surface received its first real input and flipped
     /// to person evidence from that instant only.
-    Handoff { resource: String, at: u64, via: Interaction },
-    ThreadBorn { thread: ThreadId, at: u64, witnesses: Vec<Witness> },
-    EpisodeAssigned { thread: ThreadId, episode: EpisodeId, witnesses: Vec<Witness> },
-    EpisodeParked { episode: EpisodeId, reason: ParkReason },
-    Fork { episode: EpisodeId, candidates: Vec<ThreadId>, witnesses: Vec<Witness> },
-    AnchorPromoted { thread: ThreadId, resource: String, kind: AnchorKind, strength: f64 },
-    AnchorContested { resource: String, threads: Vec<ThreadId> },
-    ThreadMerged { survivor: ThreadId, absorbed: ThreadId, declaration: String },
-    DeclarationApplied { summary: String },
-    ResourceQuarantined { resource: String },
+    Handoff {
+        resource: String,
+        at: u64,
+        via: Interaction,
+    },
+    ThreadBorn {
+        thread: ThreadId,
+        at: u64,
+        witnesses: Vec<Witness>,
+    },
+    EpisodeAssigned {
+        thread: ThreadId,
+        episode: EpisodeId,
+        witnesses: Vec<Witness>,
+    },
+    EpisodeParked {
+        episode: EpisodeId,
+        reason: ParkReason,
+    },
+    Fork {
+        episode: EpisodeId,
+        candidates: Vec<ThreadId>,
+        witnesses: Vec<Witness>,
+    },
+    AnchorPromoted {
+        thread: ThreadId,
+        resource: String,
+        kind: AnchorKind,
+        strength: f64,
+    },
+    AnchorContested {
+        resource: String,
+        threads: Vec<ThreadId>,
+    },
+    ThreadMerged {
+        survivor: ThreadId,
+        absorbed: ThreadId,
+        declaration: String,
+    },
+    DeclarationApplied {
+        summary: String,
+    },
+    ResourceQuarantined {
+        resource: String,
+    },
+    /// The person classified a surface (OBS-SURFACE-CLASSIFIED). It may no
+    /// longer found a work or name one; it stays in every work it already
+    /// attended, as context.
+    SurfaceClassified {
+        resource: String,
+        class: String,
+    },
+    WorkDismissed {
+        work: String,
+    },
+    MemberStateChanged {
+        work: String,
+        member: String,
+        state: MemberState,
+    },
+    /// A replay-time completion derived from an opaque commit relationship.
+    /// This is not a declaration and is not written to canonical evidence.
+    MemberStateDerived {
+        work: String,
+        member: String,
+        state: MemberState,
+        commit: String,
+        at: u64,
+    },
+    /// A replay-time completion inferred because a stale member did not return
+    /// while a sibling did. This remains visibly weaker than a declaration or
+    /// a commit-derived state.
+    MemberStateInferred {
+        work: String,
+        member: String,
+        state: MemberState,
+        sibling: String,
+    },
 }
 
 /// Render one decision as one plain sentence. Used by `Engine::explain`.
@@ -137,6 +228,39 @@ pub fn render(d: &Decision) -> Option<String> {
         Decision::DeclarationApplied { summary } => Some(summary.clone()),
         Decision::ResourceQuarantined { resource } => Some(format!(
             "`{resource}` was quarantined at your word and will never be evidence again."
+        )),
+        Decision::SurfaceClassified { resource, class } => Some(format!(
+            "`{resource}` was classified `{class}` at your word: it will found no work and name none, and it stays as context."
+        )),
+        Decision::WorkDismissed { work } => Some(format!(
+            "Work identified by `{work}` was dismissed from the default surface at your word; its evidence remains retrievable."
+        )),
+        Decision::MemberStateChanged {
+            work,
+            member,
+            state,
+        } => Some(format!(
+            "Member `{member}` in work `{work}` was marked {} at your word.",
+            state.label()
+        )),
+        Decision::MemberStateDerived {
+            work,
+            member,
+            state,
+            commit,
+            at,
+        } => Some(format!(
+            "Member `{member}` in work `{work}` was derived {} from opaque commit `{commit}` at {at}.",
+            state.label()
+        )),
+        Decision::MemberStateInferred {
+            work,
+            member,
+            state,
+            sibling,
+        } => Some(format!(
+            "Member `{member}` in work `{work}` was inferred {} because sibling `{sibling}` returned while it stayed stale.",
+            state.label()
         )),
     }
 }

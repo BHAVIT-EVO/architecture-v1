@@ -1,0 +1,25 @@
+{
+  "name": "@granola/electron",
+  "private": true,
+  "productName": "Granola",
+  "version": "7.645.2",
+  "author": {
+    "name": "Granola",
+    "email": "hey@granola.so"
+  },
+  "main": "dist-electron/main/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/granola-inc/granola-electron.git"
+  },
+  "dependencies": {
+    "@discoveryjs/json-ext": "^1.0.0",
+    "@mixmark-io/domino": "^2.2.0",
+    "@napi-rs/xattr": "^1.0.3",
+    "better-sqlite3-multiple-ciphers": "^12.9.0",
+    "electron-click-drag-plugin": "^2.0.2",
+    "keyspy": "^1.1.1",
+    "registry-js": "^1.16.1",
+    "win-ca": "^3.5.0"
+  }
+}

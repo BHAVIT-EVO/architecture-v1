@@ -44,5 +44,7 @@
 //! measured. See [`retrieval`] for the scoring.
 
 mod retrieval;
+mod semantic;
 
 pub use retrieval::{Resolution, Retrieval, RetrievalIndex, WorkResolution};
+pub use semantic::SemanticRetrieval;

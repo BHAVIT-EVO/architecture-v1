@@ -10,4 +10,8 @@ pub mod observation_language;
 pub mod observation_schema;
 pub mod observed_state;
 pub mod provenance;
+pub mod surface_identity;
 pub(crate) mod validation;
+pub mod window_registry;
+
+pub use surface_identity::SurfaceIdentity;

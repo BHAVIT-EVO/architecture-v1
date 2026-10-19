@@ -11,6 +11,23 @@ evo-execution = { path = "../evo-execution" }
 evo-observation = { path = "../evo-observation" }
 evo-restoration = { path = "../evo-restoration" }
 evo-retrieval = { path = "../evo-retrieval" }
+evo-semantic = { path = "../evo-semantic" }
 evo-storage = { path = "../evo-storage" }
 evo-threads = { path = "../evo-threads" }
+evo-voice = { path = "../evo-voice" }
 evo-workspace = { path = "../evo-workspace" }
+
+[features]
+default = []
+# Enables the local FastEmbed model used by semantic voice triggers. Without
+# this feature the voice socket remains available, but semantic trigger
+# requests return an honest unavailable outcome.
+embeddings = ["evo-voice/embeddings"]
+
+[[example]]
+name = "measure_fixture_retrieval"
+required-features = ["embeddings"]
+
+[[example]]
+name = "measure_vague_retrieval"
+required-features = ["embeddings"]

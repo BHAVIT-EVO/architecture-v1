@@ -50,7 +50,11 @@ impl Engine {
     }
 
     fn thread_view(&self, tid: ThreadId) -> ThreadView {
-        let t = self.st.threads.get(&tid).expect("thread view of missing thread");
+        let t = self
+            .st
+            .threads
+            .get(&tid)
+            .expect("thread view of missing thread");
         let episodes: Vec<EpisodeView> = t
             .episodes
             .iter()
@@ -106,6 +110,13 @@ impl Engine {
     }
 
     pub fn resume_bundle(&self, thread_id: ThreadId) -> ResumeBundle {
+        self.resume_bundle_with_mode(thread_id, false)
+    }
+
+    /// Derives the activation bundle with an explicit cognitive mode. The
+    /// default remains the historical five-item cap; reduced mode uses the
+    /// configured three-item cap and omits Optional members.
+    pub fn resume_bundle_with_mode(&self, thread_id: ThreadId, reduced_mode: bool) -> ResumeBundle {
         let Some(t) = self.st.threads.get(&thread_id) else {
             return ResumeBundle {
                 resume_point: String::new(),
@@ -148,7 +159,8 @@ impl Engine {
             None => {
                 // A work born of declarations, with no episodes yet.
                 let point = sorted_anchors(t)
-                    .first()
+                    .into_iter()
+                    .find(|anchor| !self.member_is_skipped(t, &anchor.resource, false))
                     .map(|a| a.resource.clone())
                     .unwrap_or_default();
                 (point.clone(), format!("Last seen: {point}."))
@@ -156,7 +168,7 @@ impl Engine {
         };
 
         let restore_set = match last_episode {
-            Some(ep) => self.restore_set_of(t, ep, &resume_point, &open_now),
+            Some(ep) => self.restore_set_of(t, ep, &resume_point, &open_now, reduced_mode),
             None => {
                 let mut v: Vec<String> = Vec::new();
                 if !resume_point.is_empty() {
@@ -174,14 +186,72 @@ impl Engine {
         }
     }
 
+    /// The executable subset of a resume bundle plus lifecycle decisions that
+    /// kept members out. This is the projection consumed by restoration UI and
+    /// execution; the evidence remains in the replay state.
+    pub fn activation_plan(&self, thread_id: ThreadId, reduced_mode: bool) -> ActivationPlan {
+        let bundle = self.resume_bundle_with_mode(thread_id, reduced_mode);
+        let Some(thread) = self.st.threads.get(&thread_id) else {
+            return ActivationPlan {
+                resources: bundle.restore_set,
+                skipped: Vec::new(),
+            };
+        };
+        let mut skipped = Vec::new();
+        for resource in self.thread_resources(thread) {
+            if let Some(state) = self.member_state_for(thread, &resource) {
+                if matches!(
+                    state.state,
+                    MemberState::Completed | MemberState::Superseded
+                ) || (reduced_mode && state.state == MemberState::Optional)
+                {
+                    skipped.push(MemberStateView { resource, ..state });
+                }
+            }
+        }
+        skipped.sort_by(|a, b| a.resource.cmp(&b.resource));
+        ActivationPlan {
+            resources: bundle.restore_set,
+            skipped,
+        }
+    }
+
+    /// Dismissal changes only the default presentation surface. The work and
+    /// all of its evidence remain available through replay and retrieval.
+    pub fn is_dismissed(&self, thread_id: ThreadId) -> bool {
+        self.st
+            .threads
+            .get(&thread_id)
+            .map(|thread| self.thread_is_dismissed(thread))
+            .unwrap_or(false)
+    }
+
+    fn thread_is_dismissed(&self, thread: &crate::state::ThreadState) -> bool {
+        self.st.dismissed.iter().any(|work| {
+            thread.anchors.contains_key(work)
+                || thread.companions.contains_key(work)
+                || thread.episodes.iter().any(|episode| {
+                    self.st
+                        .episodes
+                        .get(episode)
+                        .is_some_and(|ep| ep.participants.contains_key(work))
+                })
+        })
+    }
+
     /// The strongest production of the last episode — with the trap filter:
     /// resources that are brief, terminal, and shared across many works are
     /// never where you "left off", no matter when they happened.
-    fn resume_point_of(&self, t: &crate::state::ThreadState, ep: &EpisodeState) -> (String, String) {
+    fn resume_point_of(
+        &self,
+        t: &crate::state::ThreadState,
+        ep: &EpisodeState,
+    ) -> (String, String) {
         let cfg = &self.st.cfg;
         let mut candidates: Vec<(u64, String, ProdKind)> = ep
             .credits
             .iter()
+            .filter(|(r, _)| !self.member_is_skipped(t, r, false))
             .filter(|(r, _)| !self.is_resume_trap(t, r, cfg.resume_exclusion_ubiquity))
             .map(|(r, c)| (c.amount, r.clone(), c.last_kind))
             .collect();
@@ -193,7 +263,11 @@ impl Engine {
         let mut rec: Vec<(f64, String)> = t
             .anchors
             .values()
-            .filter(|a| a.kind == AnchorKind::Recurrence && ep.participants.contains_key(&a.resource))
+            .filter(|a| {
+                !self.member_is_skipped(t, &a.resource, false)
+                    && a.kind == AnchorKind::Recurrence
+                    && ep.participants.contains_key(&a.resource)
+            })
             .map(|a| (a.strength, a.resource.clone()))
             .collect();
         rec.sort_by(|a, b| {
@@ -211,6 +285,7 @@ impl Engine {
         let mut by_contact: Vec<(u64, String)> = ep
             .participants
             .iter()
+            .filter(|(r, _)| !self.member_is_skipped(t, r, false))
             .map(|(r, p)| (p.last_contact, r.clone()))
             .collect();
         by_contact.sort_by(|a, b| b.0.cmp(&a.0).then(a.1.cmp(&b.1)));
@@ -244,16 +319,23 @@ impl Engine {
         ep: &EpisodeState,
         resume_point: &str,
         open_now: &BTreeSet<String>,
+        reduced_mode: bool,
     ) -> Vec<String> {
         let cfg = &self.st.cfg;
         let total_threads = self.st.threads.len();
+        let cap = if reduced_mode {
+            cfg.reduced_restore_cap
+        } else {
+            cfg.restore_cap
+        };
         let mut out: Vec<String> = Vec::new();
         let push = |out: &mut Vec<String>, r: &str| {
-            if out.len() < cfg.restore_cap
+            if out.len() < cap
                 && !r.is_empty()
                 && !out.iter().any(|x| x == r)
                 && !open_now.contains(r)
                 && !self.st.quarantined.contains(r)
+                && !self.member_is_skipped(t, r, reduced_mode)
             {
                 out.push(r.to_string());
             }
@@ -326,6 +408,229 @@ impl Engine {
         out
     }
 
+    fn member_is_skipped(
+        &self,
+        thread: &crate::state::ThreadState,
+        resource: &str,
+        reduced_mode: bool,
+    ) -> bool {
+        match self.member_state_for(thread, resource) {
+            Some(MemberStateView {
+                state: MemberState::Completed | MemberState::Superseded,
+                ..
+            }) => true,
+            Some(MemberStateView {
+                state: MemberState::Optional,
+                ..
+            }) => reduced_mode,
+            _ => false,
+        }
+    }
+
+    fn thread_resources(&self, thread: &crate::state::ThreadState) -> BTreeSet<String> {
+        let mut resources = BTreeSet::new();
+        resources.extend(thread.anchors.keys().cloned());
+        resources.extend(thread.companions.keys().cloned());
+        for episode in &thread.episodes {
+            if let Some(ep) = self.st.episodes.get(episode) {
+                resources.extend(ep.participants.keys().cloned());
+            }
+        }
+        resources
+    }
+
+    fn member_state_for(
+        &self,
+        thread: &crate::state::ThreadState,
+        resource: &str,
+    ) -> Option<MemberStateView> {
+        let declared = self
+            .st
+            .member_states
+            .iter()
+            .filter(|((work, member), _)| {
+                member == resource
+                    && (thread.anchors.contains_key(work)
+                        || thread.companions.contains_key(work)
+                        || thread.episodes.iter().any(|episode| {
+                            self.st
+                                .episodes
+                                .get(episode)
+                                .is_some_and(|ep| ep.participants.contains_key(work))
+                        }))
+            })
+            .map(|((work, _), state)| (work.clone(), *state))
+            .min_by(|a, b| a.0.cmp(&b.0))
+            .map(|(_, state)| MemberStateView {
+                resource: resource.to_string(),
+                state,
+                source: MemberStateSource::Declared,
+            });
+        if declared.is_some() {
+            return declared;
+        }
+
+        // The projection layer has already established the opaque
+        // commit↔member relationship. The engine only applies the conservative
+        // rule: a commit can complete an anchor whose last witnessed contact
+        // is no later than that commit.
+        if thread.anchors.contains_key(resource) {
+            let last_contact = self.member_last_contact(thread, resource);
+            if self
+                .lifecycle_evidence
+                .commits
+                .iter()
+                .filter(|evidence| evidence.member == resource)
+                .any(|evidence| {
+                    last_contact
+                        .map(|contact| contact <= evidence.observed_at)
+                        .unwrap_or(false)
+                })
+            {
+                return Some(MemberStateView {
+                    resource: resource.to_string(),
+                    state: MemberState::Completed,
+                    source: MemberStateSource::Derived,
+                });
+            }
+        }
+
+        // Promote the existing restore-recency boundary into an explicitly
+        // labelled inference only when a sibling actually returned in a later
+        // episode. A stale member by itself is never enough.
+        if self.inferred_member_completed(thread, resource) {
+            return Some(MemberStateView {
+                resource: resource.to_string(),
+                state: MemberState::Completed,
+                source: MemberStateSource::Inferred,
+            });
+        }
+        None
+    }
+
+    fn member_last_contact(
+        &self,
+        thread: &crate::state::ThreadState,
+        resource: &str,
+    ) -> Option<u64> {
+        thread
+            .episodes
+            .iter()
+            .filter_map(|episode| self.st.episodes.get(episode))
+            .filter_map(|episode| episode.participants.get(resource))
+            .map(|participant| participant.last_contact)
+            .max()
+    }
+
+    fn latest_episode(
+        &self,
+        thread: &crate::state::ThreadState,
+    ) -> Option<&crate::state::EpisodeState> {
+        thread
+            .episodes
+            .iter()
+            .filter_map(|episode| self.st.episodes.get(episode))
+            .max_by(|a, b| a.span.1.cmp(&b.span.1).then(a.id.cmp(&b.id)))
+    }
+
+    fn inferred_member_completed(
+        &self,
+        thread: &crate::state::ThreadState,
+        resource: &str,
+    ) -> bool {
+        let Some(latest) = self.latest_episode(thread) else {
+            return false;
+        };
+        if latest.participants.contains_key(resource) {
+            return false;
+        }
+        let resources = self.thread_resources(thread);
+        let has_returning_sibling = latest
+            .participants
+            .keys()
+            .any(|sibling| sibling != resource && resources.contains(sibling));
+        if !has_returning_sibling {
+            return false;
+        }
+        let Some(last_contact) = self.member_last_contact(thread, resource) else {
+            return false;
+        };
+        latest.span.1.saturating_sub(last_contact) > self.st.cfg.restore_recency
+    }
+
+    /// Lifecycle decisions are read-time projections of the replay and its
+    /// ephemeral evidence. They never append to the event-sourced trace, so
+    /// repeated calls remain deterministic and side-effect free.
+    pub(crate) fn lifecycle_decisions(&self) -> Vec<Decision> {
+        let mut decisions = Vec::new();
+        for thread in self.st.threads.values() {
+            let work = thread
+                .anchors
+                .keys()
+                .next()
+                .cloned()
+                .or_else(|| self.thread_resources(thread).into_iter().next());
+            let Some(work) = work else {
+                continue;
+            };
+            let resources = self.thread_resources(thread);
+            for resource in resources {
+                let Some(state) = self.member_state_for(thread, &resource) else {
+                    continue;
+                };
+                match state.source {
+                    MemberStateSource::Declared => {}
+                    MemberStateSource::Derived => {
+                        let evidence = self
+                            .lifecycle_evidence
+                            .commits
+                            .iter()
+                            .filter(|evidence| {
+                                evidence.member == resource
+                                    && self
+                                        .member_last_contact(thread, &resource)
+                                        .map(|contact| contact <= evidence.observed_at)
+                                        .unwrap_or(false)
+                            })
+                            .min_by(|a, b| {
+                                a.observed_at
+                                    .cmp(&b.observed_at)
+                                    .then(a.commit.cmp(&b.commit))
+                            });
+                        if let Some(evidence) = evidence {
+                            decisions.push(Decision::MemberStateDerived {
+                                work: work.clone(),
+                                member: resource,
+                                state: state.state,
+                                commit: evidence.commit.clone(),
+                                at: evidence.observed_at,
+                            });
+                        }
+                    }
+                    MemberStateSource::Inferred => {
+                        let sibling = self
+                            .latest_episode(thread)
+                            .and_then(|episode| {
+                                episode
+                                    .participants
+                                    .keys()
+                                    .find(|sibling| sibling.as_str() != resource)
+                            })
+                            .cloned()
+                            .unwrap_or_default();
+                        decisions.push(Decision::MemberStateInferred {
+                            work: work.clone(),
+                            member: resource,
+                            state: state.state,
+                            sibling,
+                        });
+                    }
+                }
+            }
+        }
+        decisions
+    }
+
     /// Ambient = can attend but may never be restored: passive surfaces (only
     /// ever focused — an always-on player, a sidebar) or resources that
     /// managed to get into every live work's company. Music links nothing.
@@ -386,7 +691,9 @@ impl Engine {
         let mut downloads = Vec::new();
         let mut drafts = Vec::new();
         for r in &profile {
-            let Some(l) = self.st.ledger.get(r) else { continue };
+            let Some(l) = self.st.ledger.get(r) else {
+                continue;
+            };
             match (l.last_typed, l.last_saved) {
                 (Some(tp), Some(sv)) if tp > sv => unsaved.push(r.clone()),
                 (Some(_), None) => drafts.push(r.clone()),
@@ -404,10 +711,26 @@ impl Engine {
             }
         }
         let mut out = Vec::new();
-        out.extend(unsaved.into_iter().map(|resource| Delta::UnsavedEdits { resource }));
-        out.extend(uncommitted.into_iter().map(|root| Delta::UncommittedChanges { root }));
-        out.extend(downloads.into_iter().map(|path| Delta::DownloadedNotYetUsed { path }));
-        out.extend(drafts.into_iter().map(|resource| Delta::UnfinishedDraftSurface { resource }));
+        out.extend(
+            unsaved
+                .into_iter()
+                .map(|resource| Delta::UnsavedEdits { resource }),
+        );
+        out.extend(
+            uncommitted
+                .into_iter()
+                .map(|root| Delta::UncommittedChanges { root }),
+        );
+        out.extend(
+            downloads
+                .into_iter()
+                .map(|path| Delta::DownloadedNotYetUsed { path }),
+        );
+        out.extend(
+            drafts
+                .into_iter()
+                .map(|resource| Delta::UnfinishedDraftSurface { resource }),
+        );
         out
     }
 
@@ -420,8 +743,7 @@ impl Engine {
             .get(&thread_id)
             .map(|t| t.episodes.clone())
             .unwrap_or_default();
-        self.st
-            .decisions
+        self.trace()
             .iter()
             .filter(|d| match d {
                 Decision::ThreadBorn { thread, .. } => *thread == thread_id,
@@ -429,14 +751,35 @@ impl Engine {
                 Decision::AnchorPromoted { thread, .. } => *thread == thread_id,
                 Decision::AnchorContested { threads, .. } => threads.contains(&thread_id),
                 Decision::Fork { candidates, .. } => candidates.contains(&thread_id),
-                Decision::ThreadMerged { survivor, absorbed, .. } => {
-                    *survivor == thread_id || *absorbed == thread_id
-                }
+                Decision::ThreadMerged {
+                    survivor, absorbed, ..
+                } => *survivor == thread_id || *absorbed == thread_id,
                 Decision::EpisodeReopened { episode, .. } => episodes_of.contains(episode),
+                Decision::WorkDismissed { work } => self.thread_has_subject(thread_id, work),
+                Decision::MemberStateChanged { work, .. } => {
+                    self.thread_has_subject(thread_id, work)
+                }
+                Decision::MemberStateDerived { work, .. }
+                | Decision::MemberStateInferred { work, .. } => {
+                    self.thread_has_subject(thread_id, work)
+                }
                 _ => false,
             })
             .filter_map(render)
             .collect()
+    }
+
+    fn thread_has_subject(&self, thread_id: ThreadId, subject: &str) -> bool {
+        self.st.threads.get(&thread_id).is_some_and(|thread| {
+            thread.anchors.contains_key(subject)
+                || thread.companions.contains_key(subject)
+                || thread.episodes.iter().any(|episode| {
+                    self.st
+                        .episodes
+                        .get(episode)
+                        .is_some_and(|ep| ep.participants.contains_key(subject))
+                })
+        })
     }
 }
 

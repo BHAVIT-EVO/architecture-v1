@@ -6,7 +6,7 @@
 //!
 //! - W-6: Every Attachment SHALL contain exactly one Confidence Score.
 //! - W-7: Confidence SHALL represent evidential strength only.
-//!         Confidence SHALL NEVER represent importance, priority, or value.
+//!   Confidence SHALL NEVER represent importance, priority, or value.
 //!
 //! `ConfidenceScore` is bounded to `[0.0, 1.0]`.
 //!

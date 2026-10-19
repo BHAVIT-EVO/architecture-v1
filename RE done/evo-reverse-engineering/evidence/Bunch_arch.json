@@ -1,0 +1,55 @@
+evidence_id: ev_ec54fd47a63c9fb47d20120a70803b8dae9437ee1e8f535c119c4cccd9fe9ad7
+subject:
+  name: Bunch
+  digest:
+    sha256: 5b12dadb22f001fb04a9cc37d53be3465e635008af730d28588a8443e65f814b
+  format: mach-o
+  architecture: arm64
+  local_path: /Applications/Bunch.app/Contents/MacOS/Bunch
+provider:
+  id: native-macos
+  name: macOS native inspection utilities
+  version: null
+predicate_type: rea.analysis
+operation: list_architectures
+parameters:
+raw_result:
+  provenance[1]:
+    - tool: lipo
+      command[3]: /Library/Developer/CommandLineTools/usr/bin/lipo,"-detailed_info",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 751c4a4636efc5f4015999dc7d41be6e2552b39f8949d6eb971e958fccf0e386
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 420
+      stderr_bytes: 0
+normalized_result:
+  architectures:
+    items[2]{name,cpu_type,cpu_subtype,file_offset,size,alignment}:
+      x86_64,CPU_TYPE_X86_64,CPU_SUBTYPE_X86_64_ALL,16384,1357904,16384
+      arm64,CPU_TYPE_ARM64,CPU_SUBTYPE_ARM64_ALL,1376256,1275440,16384
+    total: 2
+    exhaustive: true
+    limitations: []
+  provenance[1]:
+    - tool: lipo
+      command[3]: /Library/Developer/CommandLineTools/usr/bin/lipo,"-detailed_info",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 751c4a4636efc5f4015999dc7d41be6e2552b39f8949d6eb971e958fccf0e386
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 420
+      stderr_bytes: 0
+  limitations: []
+confidence: observed
+authority: shipped-artifact
+environment: null
+limitations: []
+locations[2]{kind,start,end}:
+  file-offset-range,16384,1374288
+  file-offset-range,1376256,2651696
+evidence_links: []

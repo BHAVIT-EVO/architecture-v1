@@ -78,6 +78,130 @@ pub enum Declaration {
     /// "This is not my work." Permanent quarantine: the resource is stripped
     /// from every view and never becomes evidence again.
     NotMine { resource: String },
+    /// "This surface is of a class." The person's own word about a subject
+    /// other events have already established — "this is not work", "this is
+    /// media". A classification gates *founding and titling only*: the subject
+    /// may never anchor or name a work, and any anchor it already carried is
+    /// demoted back to context. It is never removed from a body of work — the
+    /// non-deletion guarantee holds, and it keeps whatever attention it earned.
+    /// Evo ships no default class; silence produces no classification.
+    Classified { resource: String, class: String },
+    /// "Do not show this body of work on the default surface." Evidence is
+    /// retained and the work remains retrievable.
+    WorkDismissed { work: String },
+    /// The user's lifecycle correction for one member of a body of work.
+    MemberState {
+        work: String,
+        member: String,
+        state: MemberState,
+    },
+}
+
+/// Lifecycle state of one member during restoration. This is deliberately
+/// separate from membership and role: a completed member still belongs to the
+/// body of work, it is simply not opened by default.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub enum MemberState {
+    Active,
+    Completed,
+    Superseded,
+    Optional,
+}
+
+impl MemberState {
+    pub fn parse(label: &str) -> Option<Self> {
+        match label.trim().to_ascii_lowercase().as_str() {
+            "active" => Some(Self::Active),
+            "completed" | "complete" => Some(Self::Completed),
+            "superseded" | "replaced" => Some(Self::Superseded),
+            "optional" => Some(Self::Optional),
+            _ => None,
+        }
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Active => "Active",
+            Self::Completed => "Completed",
+            Self::Superseded => "Superseded",
+            Self::Optional => "Optional",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub enum MemberStateSource {
+    Declared,
+    Derived,
+    Inferred,
+}
+
+/// Replay-time lifecycle evidence supplied by a projection layer.
+///
+/// These relationships are deliberately not part of the event-sourced state:
+/// the canonical Observation log remains the only persisted input, while the
+/// daemon may derive opaque relationships from that log for one in-memory
+/// replay. The engine consumes the relationship, not the meaning of either
+/// subject.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct LifecycleEvidence {
+    /// Commit subjects related to member subjects by an opaque captured
+    /// relationship (currently repository membership in the daemon).
+    pub commits: Vec<CommitEvidence>,
+}
+
+impl LifecycleEvidence {
+    pub fn new(commits: impl IntoIterator<Item = CommitEvidence>) -> Self {
+        let mut commits: Vec<_> = commits
+            .into_iter()
+            .filter(|evidence| {
+                !evidence.commit.trim().is_empty() && !evidence.member.trim().is_empty()
+            })
+            .collect();
+        commits.sort_by(|a, b| {
+            a.member
+                .cmp(&b.member)
+                .then(a.observed_at.cmp(&b.observed_at))
+                .then(a.commit.cmp(&b.commit))
+        });
+        commits.dedup();
+        Self { commits }
+    }
+}
+
+/// One opaque commit-to-member relationship witnessed by a projection layer.
+///
+/// `commit` and `member` are intentionally uninterpreted strings. In
+/// particular, the engine must not parse paths, hashes, repository names, or
+/// application conventions to manufacture this relationship.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CommitEvidence {
+    pub commit: String,
+    pub member: String,
+    pub observed_at: u64,
+}
+
+impl CommitEvidence {
+    pub fn new(commit: impl Into<String>, member: impl Into<String>, observed_at: u64) -> Self {
+        Self {
+            commit: commit.into(),
+            member: member.into(),
+            observed_at,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MemberStateView {
+    pub resource: String,
+    pub state: MemberState,
+    pub source: MemberStateSource,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ActivationPlan {
+    pub resources: Vec<String>,
+    pub skipped: Vec<MemberStateView>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]

@@ -31,7 +31,10 @@ fn invariant_01_determinism_and_fold_equivalence() {
             manual.apply(ev.clone());
         }
         let mut replayed_prefix = Engine::replay(&log[..cut]);
-        assert_eq!(manual, replayed_prefix, "replay != fold(apply) at cut {cut}");
+        assert_eq!(
+            manual, replayed_prefix,
+            "replay != fold(apply) at cut {cut}"
+        );
         for ev in &log[cut..] {
             manual.apply(ev.clone());
             replayed_prefix.apply(ev.clone());
@@ -94,7 +97,12 @@ fn invariant_03_execution_is_silent_until_the_person_touches_it() {
 
     // One second later (not eight), the person types into the restored thing.
     let mut log = prefix.clone();
-    log.push(evw(t(101) + 1_000, Interaction::Typed, "https://restored.example/a", 120));
+    log.push(evw(
+        t(101) + 1_000,
+        Interaction::Typed,
+        "https://restored.example/a",
+        120,
+    ));
     // Hours later an unrelated tap: the sitting closes by the clock and the
     // work inside it stands up.
     log.push(evw(t(400), Interaction::Typed, "file:///unrelated.md", 1));
@@ -124,12 +132,22 @@ fn invariant_03_execution_is_silent_until_the_person_touches_it() {
 fn invariant_04_no_merge_without_declaration() {
     let log = vec![
         ev(t(100), Interaction::Focused, "app:browser"),
-        evw(t(101), Interaction::Focused, "https://shared.example/x", 120_000),
+        evw(
+            t(101),
+            Interaction::Focused,
+            "https://shared.example/x",
+            120_000,
+        ),
         evw(t(102), Interaction::Typed, "file:///doc-a.md", 200),
         ev(t(103), Interaction::Saved, "file:///doc-a.md"),
         // 15 minutes later: same browser, same shared page, *different* work.
         evw(t(500), Interaction::Typed, "file:///doc-b.md", 200),
-        evw(t(501), Interaction::Focused, "https://shared.example/x", 120_000),
+        evw(
+            t(501),
+            Interaction::Focused,
+            "https://shared.example/x",
+            120_000,
+        ),
         ev(t(502), Interaction::Saved, "file:///doc-b.md"),
         // The day ends; the sitting bounds at the clock.
         evw(t(3_000), Interaction::Typed, "file:///next-day.md", 1),
@@ -138,7 +156,10 @@ fn invariant_04_no_merge_without_declaration() {
     assert_eq!(e.threads().len(), 2, "shared resources must not fuse works");
     assert!(thread_with_anchor(&e, "file:///doc-a.md").is_some());
     assert!(thread_with_anchor(&e, "file:///doc-b.md").is_some());
-    assert!(!trace_has(&e, |d| matches!(d, Decision::ThreadMerged { .. })));
+    assert!(!trace_has(&e, |d| matches!(
+        d,
+        Decision::ThreadMerged { .. }
+    )));
 
     // The declaration path — the only merge path in the system — works.
     let mut log2 = log.clone();
@@ -151,7 +172,32 @@ fn invariant_04_no_merge_without_declaration() {
     ));
     let e2 = Engine::replay(&log2);
     assert_eq!(e2.threads().len(), 1);
-    assert!(trace_has(&e2, |d| matches!(d, Decision::ThreadMerged { survivor: 1, absorbed: 2, .. })));
+    assert!(trace_has(&e2, |d| matches!(
+        d,
+        Decision::ThreadMerged {
+            survivor: 1,
+            absorbed: 2,
+            ..
+        }
+    )));
+
+    // A declaration about a resource held by both works does not identify
+    // which occurrence the person intended. It must not turn into a global
+    // rule that can later pull unrelated work across the boundary.
+    let mut ambiguous = log;
+    ambiguous.push(declare(
+        t(3_100),
+        Declaration::SameWork {
+            a: "https://shared.example/x".into(),
+            b: "file:///doc-a.md".into(),
+        },
+    ));
+    let replayed = Engine::replay(&ambiguous);
+    assert_eq!(replayed.threads().len(), 2);
+    assert!(!trace_has(&replayed, |d| matches!(
+        d,
+        Decision::ThreadMerged { .. }
+    )));
 }
 
 // ----------------------------------------------------------------------
@@ -165,7 +211,10 @@ fn invariant_05_machine_churn_is_quarantined_at_birth() {
         ev(t(101), Interaction::Saved, "file:///real/work.md"),
     ];
     for i in 0..40 {
-        log.push(sys(t(102) + i * 1_000, &format!("file:///var/lib/svc/state-{i:02}.json")));
+        log.push(sys(
+            t(102) + i * 1_000,
+            &format!("file:///var/lib/svc/state-{i:02}.json"),
+        ));
     }
     // Even Person-origin Mutated with no adjacent person act on the resource
     // is background, not work.
@@ -186,7 +235,9 @@ fn invariant_05_machine_churn_is_quarantined_at_birth() {
     let real = thread_with_anchor(&e, "file:///real/work.md").unwrap();
     let bundle = e.resume_bundle(real.id);
     assert!(!bundle.restore_set.iter().any(|r| r.contains("svc")));
-    assert!(!all_thread_participants(&e).iter().any(|r| r.contains("svc")));
+    assert!(!all_thread_participants(&e)
+        .iter()
+        .any(|r| r.contains("svc")));
     let churn_drops = e
         .trace()
         .iter()
@@ -230,14 +281,22 @@ fn invariant_06_companion_window_restores_nothing() {
 #[test]
 fn invariant_07_the_47000_second_movie_mints_nothing() {
     let log = vec![
-        evw(t(100), Interaction::Focused, "https://cinema.example/watch/feature", 47_000_000),
+        evw(
+            t(100),
+            Interaction::Focused,
+            "https://cinema.example/watch/feature",
+            47_000_000,
+        ),
         evw(t(800), Interaction::Typed, "file:///scribble.md", 50),
     ];
     let e = Engine::replay(&log);
     assert!(e.threads().is_empty(), "the film must never become a work");
     assert!(trace_has(&e, |d| matches!(
         d,
-        Decision::EpisodeParked { reason: ParkReason::ConsumptionOnly, .. }
+        Decision::EpisodeParked {
+            reason: ParkReason::ConsumptionOnly,
+            ..
+        }
     )));
     assert!(!trace_has(&e, |d| matches!(d, Decision::ThreadBorn { .. })));
     assert!(!leaks_into_work(&e, "cinema.example"));
@@ -250,8 +309,17 @@ fn invariant_07_the_47000_second_movie_mints_nothing() {
 fn invariant_08_restore_is_capped_and_last_episode_only() {
     let mut log = vec![];
     for i in 1..=6u64 {
-        log.push(evw(t(100 + i * 2), Interaction::Typed, &format!("file:///f{i}.md"), 100));
-        log.push(ev(t(101 + i * 2), Interaction::Saved, &format!("file:///f{i}.md")));
+        log.push(evw(
+            t(100 + i * 2),
+            Interaction::Typed,
+            &format!("file:///f{i}.md"),
+            100,
+        ));
+        log.push(ev(
+            t(101 + i * 2),
+            Interaction::Saved,
+            &format!("file:///f{i}.md"),
+        ));
     }
     // Long silence: beyond the resumption window, so what follows is a NEW
     // episode, attributed by the anchor it returns to.
@@ -259,7 +327,11 @@ fn invariant_08_restore_is_capped_and_last_episode_only() {
     log.push(ev(t(401), Interaction::Saved, "file:///g1.md"));
     log.push(evw(t(600), Interaction::Typed, "file:///fleeting.md", 1));
     let e = Engine::replay(&log);
-    assert_eq!(e.threads().len(), 1, "returning to an old anchor continues the work");
+    assert_eq!(
+        e.threads().len(),
+        1,
+        "returning to an old anchor continues the work"
+    );
     let tv = e.threads().remove(0);
     assert_eq!(tv.episodes.len(), 2);
     let b = e.resume_bundle(tv.id);
@@ -311,7 +383,10 @@ fn invariant_09_thread_ids_are_forever() {
     let e = Engine::replay(&log);
     let ids2: Vec<ThreadId> = e.threads().iter().map(|t| t.id).collect();
     assert!(ids2.contains(&1), "the survivor keeps its identity");
-    assert!(!ids2.contains(&2), "the absorbed id is retired, not recycled");
+    assert!(
+        !ids2.contains(&2),
+        "the absorbed id is retired, not recycled"
+    );
     assert!(ids2.contains(&3), "new births take fresh ids");
 }
 
@@ -325,8 +400,16 @@ fn invariant_10_dips_are_absorbed_not_attributed() {
     let log = vec![
         evw(t(100), Interaction::Typed, "file:///deep.md", 300),
         ev(t(110), Interaction::Saved, "file:///deep.md"),
-        ev(detour_start, Interaction::Focused, "https://social.example/feed"),
-        ev(detour_start + 20_000, Interaction::Visited, "https://social.example/feed"),
+        ev(
+            detour_start,
+            Interaction::Focused,
+            "https://social.example/feed",
+        ),
+        ev(
+            detour_start + 20_000,
+            Interaction::Visited,
+            "https://social.example/feed",
+        ),
         evw(back, Interaction::Typed, "file:///deep.md", 20),
         evw(t(400), Interaction::Typed, "file:///fleeting.md", 1),
     ];
@@ -335,7 +418,10 @@ fn invariant_10_dips_are_absorbed_not_attributed() {
     let tv = e.threads().remove(0);
     assert_eq!(tv.episodes.len(), 1, "the episode held through the detour");
     assert_eq!(tv.episodes[0].interruptions, vec![(detour_start, back)]);
-    assert!(!tv.episodes[0].participants.iter().any(|(r, _)| r.contains("social")));
+    assert!(!tv.episodes[0]
+        .participants
+        .iter()
+        .any(|(r, _)| r.contains("social")));
     assert!(!tv.companions.iter().any(|(r, _)| r.contains("social")));
     assert!(!trace_has(&e, |d| matches!(
         d,
@@ -368,7 +454,11 @@ fn invariant_11_contested_anchor_votes_for_neither() {
     let e = Engine::replay(&log);
     let a = thread_with_anchor(&e, "file:///design.md").unwrap();
     let c = thread_with_anchor(&e, "file:///notes.md").unwrap();
-    assert_eq!(e.threads().len(), 2, "contestation must not mint a third work");
+    assert_eq!(
+        e.threads().len(),
+        2,
+        "contestation must not mint a third work"
+    );
     assert!(a.contested.contains(&"file:///shared-repo".to_string()));
     assert!(c.contested.contains(&"file:///shared-repo".to_string()));
     assert!(trace_has(&e, |d| matches!(
@@ -383,15 +473,17 @@ fn invariant_11_contested_anchor_votes_for_neither() {
             if candidates.contains(&a.id) && candidates.contains(&c.id)
     )));
     assert_eq!(a.fork, Some(vec![a.id.min(c.id), a.id.max(c.id)]));
-    assert!(!trace_has(&e, |d| matches!(
-        d,
-        Decision::EpisodeAssigned { witnesses, .. }
-            if witnesses.iter().any(|w| matches!(w, Witness::SharedUncontestedAnchor(r) if r == "file:///shared-repo"))
-                && witnesses.iter().all(|w| !matches!(w, Witness::UserPin))
-    )) || !e
-        .trace()
-        .iter()
-        .any(|d| matches!(d, Decision::EpisodeAssigned { .. })));
+    assert!(
+        !trace_has(&e, |d| matches!(
+            d,
+            Decision::EpisodeAssigned { witnesses, .. }
+                if witnesses.iter().any(|w| matches!(w, Witness::SharedUncontestedAnchor(r) if r == "file:///shared-repo"))
+                    && witnesses.iter().all(|w| !matches!(w, Witness::UserPin))
+        )) || !e
+            .trace()
+            .iter()
+            .any(|d| matches!(d, Decision::EpisodeAssigned { .. }))
+    );
 }
 
 // ----------------------------------------------------------------------
@@ -421,7 +513,10 @@ fn invariant_12_growth_never_rewrites_history() {
         view_before[0].episodes[0], view_after[0].episodes[0],
         "the first episode's record is immutable"
     );
-    assert!(view_after[0].anchors.iter().any(|a| a.resource == "file:///new-appendix.md"));
+    assert!(view_after[0]
+        .anchors
+        .iter()
+        .any(|a| a.resource == "file:///new-appendix.md"));
 }
 
 // ----------------------------------------------------------------------
@@ -432,10 +527,20 @@ fn invariant_13_hidden_labels_do_not_matter() {
     let log = vec![
         evw(t(100), Interaction::Typed, "file:///alpha.md", 200),
         ev(t(101), Interaction::Saved, "file:///alpha.md"),
-        evw(t(102), Interaction::Focused, "https://ref.example/a", 120_000),
+        evw(
+            t(102),
+            Interaction::Focused,
+            "https://ref.example/a",
+            120_000,
+        ),
         evw(t(500), Interaction::Typed, "file:///beta.md", 200),
         ev(t(501), Interaction::Saved, "file:///beta.md"),
-        evw(t(600), Interaction::Focused, "https://film.example/x", 47_000_000),
+        evw(
+            t(600),
+            Interaction::Focused,
+            "https://film.example/x",
+            47_000_000,
+        ),
         evw(t(700), Interaction::Typed, "file:///spacer.md", 1),
     ];
     let renamed: Vec<Event> = log
@@ -467,7 +572,12 @@ fn invariant_14_the_whatsapp_trap() {
     let day = vec![
         evw(t(100), Interaction::Typed, "file:///work/report.md", 400),
         ev(t(101), Interaction::Saved, "file:///work/report.md"),
-        evw(t(105), Interaction::Focused, "https://workdocs.example/spec", 120_000),
+        evw(
+            t(105),
+            Interaction::Focused,
+            "https://workdocs.example/spec",
+            120_000,
+        ),
     ];
     let burst = vec![
         ev(t(1_180), Interaction::Focused, "app:messaging"),
@@ -481,16 +591,16 @@ fn invariant_14_the_whatsapp_trap() {
     full.extend(burst);
     let with = Engine::replay(&full);
 
-    let work = thread_with_anchor(&with, "file:///work/report.md")
-        .expect("the day's real work exists");
+    let work =
+        thread_with_anchor(&with, "file:///work/report.md").expect("the day's real work exists");
     let b = with.resume_bundle(work.id);
     assert_eq!(b.resume_point, "file:///work/report.md");
     assert!(!b.restore_set.contains(&"app:messaging".to_string()));
     assert!(
-        !with.threads().iter().any(|t| t
-            .anchors
+        !with
+            .threads()
             .iter()
-            .any(|a| a.resource == "app:messaging")),
+            .any(|t| t.anchors.iter().any(|a| a.resource == "app:messaging")),
         "a reflex must not mint a work"
     );
     // The burst is nowhere: no work's anchors, companions, restore sets, or
@@ -518,15 +628,29 @@ fn mechanism_config_carries_only_production_free_episodes() {
         ev(t(101), Interaction::Saved, "file:///manuscript.md"),
         // The guide is consulted mid-flow; the return after five minutes
         // keeps it as the working set's company.
-        evw(t(102), Interaction::Focused, "https://ref.example/style-guide", 120_000),
+        evw(
+            t(102),
+            Interaction::Focused,
+            "https://ref.example/style-guide",
+            120_000,
+        ),
         evw(t(107), Interaction::Typed, "file:///manuscript.md", 80),
         // Next session, far beyond resumption: pure reading at the same guide.
-        evw(t(500), Interaction::Focused, "https://ref.example/style-guide", 120_000),
+        evw(
+            t(500),
+            Interaction::Focused,
+            "https://ref.example/style-guide",
+            120_000,
+        ),
         // The day ends; the reading sitting bounds at the clock.
         evw(t(900), Interaction::Typed, "file:///next-day.md", 1),
     ];
     let e = Engine::replay(&log);
-    assert_eq!(e.threads().len(), 1, "the reading belongs to the writing's thread");
+    assert_eq!(
+        e.threads().len(),
+        1,
+        "the reading belongs to the writing's thread"
+    );
     let tv = e.threads().remove(0);
     assert_eq!(tv.episodes.len(), 2);
     assert!(trace_has(&e, |d| matches!(
@@ -540,30 +664,57 @@ fn mechanism_config_carries_only_production_free_episodes() {
 fn mechanism_reformation_founds_work_without_production() {
     // Day one: deep reading, no production. Nothing is minted.
     let day1 = vec![
-        evw(t(100), Interaction::Focused, "https://journal.example/paper-7", 300_000),
-        ev(t(101), Interaction::Visited, "https://journal.example/paper-7"),
+        evw(
+            t(100),
+            Interaction::Focused,
+            "https://journal.example/paper-7",
+            300_000,
+        ),
+        ev(
+            t(101),
+            Interaction::Visited,
+            "https://journal.example/paper-7",
+        ),
         evw(t(150), Interaction::Typed, "file:///spacer.md", 1),
     ];
     let e1 = Engine::replay(&day1);
-    assert!(e1.threads().is_empty(), "one session of reading is still reading");
+    assert!(
+        e1.threads().is_empty(),
+        "one session of reading is still reading"
+    );
 
     // Next day, the same reading returns on a separate occasion: the
     // configuration re-forms, and that *is* a work now — web-research reality.
     let mut day2 = day1.clone();
-    day2.push(evw(t(1_600), Interaction::Focused, "https://journal.example/paper-7", 300_000));
-    day2.push(ev(t(1_601), Interaction::Visited, "https://journal.example/paper-7"));
-    day2.push(ev(t(1_660), Interaction::Visited, "https://journal.example/related-9"));
+    day2.push(evw(
+        t(1_600),
+        Interaction::Focused,
+        "https://journal.example/paper-7",
+        300_000,
+    ));
+    day2.push(ev(
+        t(1_601),
+        Interaction::Visited,
+        "https://journal.example/paper-7",
+    ));
+    day2.push(ev(
+        t(1_660),
+        Interaction::Visited,
+        "https://journal.example/related-9",
+    ));
     day2.push(evw(t(1_700), Interaction::Typed, "file:///spacer2.md", 1));
     let e2 = Engine::replay(&day2);
     let papers = e2.threads();
     assert_eq!(papers.len(), 1, "reformed research becomes a work");
     let tv = papers.into_iter().next().unwrap();
-    assert!(tv
-        .anchors
-        .iter()
-        .any(|a| a.resource == "https://journal.example/paper-7"
-            && a.kind == AnchorKind::Recurrence));
-    assert_eq!(tv.episodes.len(), 2, "both occasions join the reformed work");
+    assert!(tv.anchors.iter().any(
+        |a| a.resource == "https://journal.example/paper-7" && a.kind == AnchorKind::Recurrence
+    ));
+    assert_eq!(
+        tv.episodes.len(),
+        2,
+        "both occasions join the reformed work"
+    );
     let b = e2.resume_bundle(tv.id);
     assert_eq!(b.resume_point, "https://journal.example/paper-7");
 }
@@ -581,7 +732,11 @@ fn mechanism_a_redownload_counts_once() {
         ev(t(102), Interaction::Downloaded, "file:///dl/dataset.csv"),
         ev(t(103), Interaction::Downloaded, "file:///dl/dataset.csv"),
         // The same file again, renamed by the download surface.
-        ev(t(104), Interaction::Downloaded, "file:///dl/dataset (1).csv"),
+        ev(
+            t(104),
+            Interaction::Downloaded,
+            "file:///dl/dataset (1).csv",
+        ),
         // The day ends far later; the sitting bounds at the clock.
         evw(t(2_000), Interaction::Typed, "file:///next-day.md", 1),
     ];
@@ -603,14 +758,19 @@ fn mechanism_a_redownload_counts_once() {
     // Strongest production keeps the resume point; the download corroborates.
     let b = e.resume_bundle(tv.id);
     assert_eq!(b.resume_point, "file:///reports/q3.md");
-    assert!(b.restore_set.contains(&"file:///dl/dataset.csv".to_string()));
+    assert!(b
+        .restore_set
+        .contains(&"file:///dl/dataset.csv".to_string()));
 
     let repeats = e
         .trace()
         .iter()
         .filter(|d| matches!(d, Decision::RepeatedDownload { .. }))
         .count();
-    assert_eq!(repeats, 2, "both repeats are accounted for in the audit log");
+    assert_eq!(
+        repeats, 2,
+        "both repeats are accounted for in the audit log"
+    );
 }
 
 // ----------------------------------------------------------------------
@@ -664,11 +824,20 @@ fn mechanism_settle_parks_a_terminal_burst() {
         ev(t(1_376), Interaction::Saved, "app:messaging"),
     ];
     let mut e = Engine::replay(&burst);
-    assert!(e.threads().is_empty(), "an unsettled burst is simply unseen");
+    assert!(
+        e.threads().is_empty(),
+        "an unsettled burst is simply unseen"
+    );
     e.settle(t(1_376) + 3_600_000);
-    assert!(e.threads().is_empty(), "a settled reflex is still not a work");
+    assert!(
+        e.threads().is_empty(),
+        "a settled reflex is still not a work"
+    );
     assert!(trace_has(&e, |d| matches!(
         d,
-        Decision::EpisodeParked { reason: ParkReason::WeakProduction, .. }
+        Decision::EpisodeParked {
+            reason: ParkReason::WeakProduction,
+            ..
+        }
     )));
 }

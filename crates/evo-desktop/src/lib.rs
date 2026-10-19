@@ -20,19 +20,45 @@
 //!
 //! `ui` and `theme` are the visual foundation: reusable layout, control and
 //! surface primitives, and the single place any measurement, colour, type role
-//! or motion constant is defined. `home`, `detail` and `shell` are the three
-//! screens composed from them. `app` holds state and dispatch only, and `state`
-//! is the read-only projection of canonical understanding they all consume.
+//! or motion constant is defined. `rack`, `dock`, `detail` and `shell` are the
+//! surfaces composed from them (`home` keeps the empty and permission
+//! states). `app` holds state and dispatch only, and `state` is the read-only
+//! projection of canonical understanding they all consume.
 
 pub mod app;
 pub mod daemon;
+pub mod voice;
+pub mod pod_bar_drag;
+pub mod workspace_layout;
+pub mod unified_workspace;
+
+/// A minimal honest `WorkUnderstanding` for interaction tests: only the
+/// fields the rack renders from, with no invented evidence.
+#[cfg(test)]
+pub fn understanding_fixture(name: &str) -> evo_daemon::work_understanding::WorkUnderstanding {
+    evo_daemon::work_understanding::WorkUnderstanding {
+        title: name.to_string(),
+        phase: evo_daemon::work_understanding::WorkPhase::Building,
+        trail: vec![],
+        completed: vec![],
+        pending: vec![],
+        next_step: String::new(),
+        narrative: String::new(),
+    }
+}
 pub mod detail;
+pub mod dock;
 pub mod engine;
 pub mod home;
+pub mod notch;
+pub mod notch_host_verify;
+pub mod notch_window;
+pub mod pod_surface;
+pub mod pods;
 pub mod presence;
-pub mod rooms;
+pub mod rack;
+pub mod scoped_restore;
 pub mod shell;
 pub mod state;
 pub mod theme;
 pub mod ui;
-pub mod websurface;

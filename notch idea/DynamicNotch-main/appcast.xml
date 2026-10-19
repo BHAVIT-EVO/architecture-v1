@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>Dynamic Notch Updates</title>
+    <link>https://raw.githubusercontent.com/jackson-storm/DynamicNotch/main/appcast.xml</link>
+    <description>Most recent updates to Dynamic Notch.</description>
+    <language>en</language>
+    <item>
+      <title>Version 1.6.3</title>
+      <sparkle:releaseNotesLink>https://github.com/jackson-storm/DynamicNotch/releases/tag/v1.6.3</sparkle:releaseNotesLink>
+      <pubDate>Mon, 05 Oct 2026 21:11:38 +0300</pubDate>
+      <enclosure 
+        url="https://github.com/jackson-storm/DynamicNotch/releases/download/v1.6.3/DynamicNotch.zip"
+        sparkle:version="25"
+        sparkle:shortVersionString="1.6.3"
+        length="11142103"
+        type="application/octet-stream"
+        sparkle:edSignature="0gi/211NQ3GNMT3Pw2hdGFdTxBsr03XtyUU9Eg6mKubt+tMJinQwxuj1UYaiiuyMneHOCQDSbq4UmCvaeTwhCg==" />
+    </item>
+    <item>
+      <title>Version 1.6.2</title>
+      <sparkle:releaseNotesLink>https://github.com/jackson-storm/DynamicNotch/releases/tag/v1.6.2</sparkle:releaseNotesLink>
+      <pubDate>Sun, 06 Sep 2026 19:25:00 +0300</pubDate>
+      <enclosure 
+        url="https://github.com/jackson-storm/DynamicNotch/releases/download/v1.6.2/DynamicNotch.zip"
+        sparkle:version="24"
+        sparkle:shortVersionString="1.6.2"
+        length="11897586"
+        type="application/octet-stream"
+        sparkle:edSignature="uF8EhUkCyJ2VuzTVs527BIlVynmFrREhpwUXYpGO1RthEULfV9Ga00SFzjLQj5FMhpyCQNh1thE+/xi2SwzQCQ==" />
+    </item>
+    <item>
+      <title>Version 1.6.1</title>
+      <sparkle:releaseNotesLink>https://github.com/jackson-storm/DynamicNotch/releases/tag/v1.6.1</sparkle:releaseNotesLink>
+      <pubDate>Thu, 13 Aug 2026 21:35:00 +0300</pubDate>
+      <enclosure 
+        url="https://github.com/jackson-storm/DynamicNotch/releases/download/v1.6.1/DynamicNotch.zip"
+        sparkle:version="23"
+        sparkle:shortVersionString="1.6.1"
+        length="12295954"
+        type="application/octet-stream"
+        sparkle:edSignature="upnOkiJCVoFaaWkCOtzkdHRfi6qcS8ljXaYosLp/pH9zvNaufR1JOqKHgc+uWq8XdvIsFFsjW7ccRzrcC1EIBQ==" />
+    </item>
+  </channel>
+</rss>
+

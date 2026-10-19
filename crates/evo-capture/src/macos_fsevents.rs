@@ -81,6 +81,7 @@ mod imp {
         callback: Box<dyn FnMut(MacOSSignal)>,
     }
 
+    #[allow(clippy::duplicated_attributes)]
     #[link(name = "CoreServices", kind = "framework")]
     #[link(name = "CoreFoundation", kind = "framework")]
     unsafe extern "C" {
@@ -309,8 +310,8 @@ mod imp {
                 // This is WITNESSING: the git/filesystem resolution runs only
                 // at capture time; Formation consumes the persisted canonical
                 // Observation.
-                if let Some(repository) = crate::repo_identity::
-                    repository_identity_for_path(std::path::Path::new(&path))
+                if let Some(repository) =
+                    crate::repo_identity::repository_identity_for_path(std::path::Path::new(&path))
                 {
                     (callback)(MacOSSignal::RepositoryMembership {
                         member: path.clone(),
@@ -330,9 +331,9 @@ mod imp {
                 // identifies the repository; resolve its identity at capture
                 // time. The membership witness precedes the commit
                 // Observation for the same reason as above.
-                if let Some(repository) = crate::repo_identity::
-                    repository_identity_from_reflog_path(std::path::Path::new(witnessed_path))
-                {
+                if let Some(repository) = crate::repo_identity::repository_identity_from_reflog_path(
+                    std::path::Path::new(witnessed_path),
+                ) {
                     (callback)(MacOSSignal::RepositoryMembership {
                         member: hash.clone(),
                         repository,
@@ -431,12 +432,11 @@ pub fn classify_event_path(path: &str, flags: u32, home: &str) -> FsSignal {
         // A HEAD reflog append is the platform witness of a HEAD
         // transition. The commit hash and activity are read from the
         // witnessed file itself, never guessed.
-        if let Ok(text) = std::fs::read_to_string(path) {
-            if let Some(line) = text.lines().next_back() {
-                if let Some(hash) = commit_hash_from_reflog_line(line) {
-                    return FsSignal::CommitMade { hash };
-                }
-            }
+        if let Ok(text) = std::fs::read_to_string(path)
+            && let Some(line) = text.lines().next_back()
+            && let Some(hash) = commit_hash_from_reflog_line(line)
+        {
+            return FsSignal::CommitMade { hash };
         }
         return FsSignal::None;
     }
@@ -602,11 +602,7 @@ mod tests {
     #[test]
     fn home_library_paths_produce_no_file_signal() {
         assert_eq!(
-            classify_event_path(
-                "/Users/alice/Library/Caches/app.db",
-                MODIFIED_FILE,
-                HOME
-            ),
+            classify_event_path("/Users/alice/Library/Caches/app.db", MODIFIED_FILE, HOME),
             FsSignal::None
         );
     }
@@ -667,10 +663,16 @@ mod tests {
     #[test]
     fn head_reflog_paths_cover_main_and_worktrees() {
         assert!(is_head_reflog_path("/Users/alice/proj/.git/logs/HEAD"));
-        assert!(is_head_reflog_path("/Users/alice/proj/.git/worktrees/feature/logs/HEAD"));
-        assert!(!is_head_reflog_path("/Users/alice/proj/.git/logs/refs/heads/main"));
+        assert!(is_head_reflog_path(
+            "/Users/alice/proj/.git/worktrees/feature/logs/HEAD"
+        ));
+        assert!(!is_head_reflog_path(
+            "/Users/alice/proj/.git/logs/refs/heads/main"
+        ));
         assert!(!is_head_reflog_path("/Users/alice/proj/src/main.rs"));
-        assert!(!is_head_reflog_path("/Users/alice/proj/.git/worktrees/feature/HEAD"));
+        assert!(!is_head_reflog_path(
+            "/Users/alice/proj/.git/worktrees/feature/HEAD"
+        ));
     }
 
     #[test]
@@ -779,7 +781,11 @@ mod tests {
             &dir.join(".git/logs/HEAD").to_string_lossy(),
             &mut |signal| commit_signals.push(signal),
         );
-        assert_eq!(commit_signals.len(), 2, "membership + commit: {commit_signals:?}");
+        assert_eq!(
+            commit_signals.len(),
+            2,
+            "membership + commit: {commit_signals:?}"
+        );
         assert!(
             matches!(&commit_signals[0], MacOSSignal::RepositoryMembership { .. }),
             "membership must precede the commit: {commit_signals:?}"

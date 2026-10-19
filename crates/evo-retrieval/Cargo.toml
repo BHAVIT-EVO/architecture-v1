@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 evo-engagement = { path = "../evo-engagement" }
+evo-semantic = { path = "../evo-semantic" }
 
 [dev-dependencies]
 evo-observation = { path = "../evo-observation" }

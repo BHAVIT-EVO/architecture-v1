@@ -6,7 +6,9 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::{ActivityContext, AffinityGraph, Declarations, EngagementParams, IdentityIndex, ResourceRole};
+use crate::{
+    ActivityContext, AffinityGraph, Declarations, EngagementParams, IdentityIndex, ResourceRole,
+};
 
 const FNV_OFFSET_A: u64 = 0xcbf29ce484222325;
 const FNV_OFFSET_B: u64 = 0x8422_2325_cbf2_9ce4;
@@ -18,7 +20,9 @@ const FNV_PRIME: u64 = 0x0000_0100_0000_01B3;
 pub struct WorkId(u128);
 
 impl WorkId {
-    pub fn as_u128(self) -> u128 { self.0 }
+    pub fn as_u128(self) -> u128 {
+        self.0
+    }
 
     pub(crate) fn from_nucleus(nucleus: &BTreeSet<String>) -> Self {
         work_id(nucleus)
@@ -43,7 +47,12 @@ pub enum WorkEvidence {
 
 impl WorkEvidence {
     pub fn supports(&self) -> bool {
-        matches!(self, Self::SharedSelectiveSubjects { .. } | Self::CorroboratedAffinity { .. } | Self::ExplicitGrouping)
+        matches!(
+            self,
+            Self::SharedSelectiveSubjects { .. }
+                | Self::CorroboratedAffinity { .. }
+                | Self::ExplicitGrouping
+        )
     }
 }
 
@@ -57,10 +66,18 @@ pub struct WorkContextLink {
 }
 
 impl WorkContextLink {
-    pub fn context(&self) -> usize { self.context }
-    pub fn relevance(&self) -> f64 { self.relevance }
-    pub fn contradiction(&self) -> f64 { self.contradiction }
-    pub fn evidence(&self) -> &[WorkEvidence] { &self.evidence }
+    pub fn context(&self) -> usize {
+        self.context
+    }
+    pub fn relevance(&self) -> f64 {
+        self.relevance
+    }
+    pub fn contradiction(&self) -> f64 {
+        self.contradiction
+    }
+    pub fn evidence(&self) -> &[WorkEvidence] {
+        &self.evidence
+    }
 }
 
 /// One non-exclusive candidate body of work.
@@ -95,22 +112,49 @@ impl WorkArtifactLink {
         role: ResourceRole,
         contexts: BTreeSet<usize>,
     ) -> Self {
-        Self { work_id, subject, relevance, specificity, role, contexts }
+        Self {
+            work_id,
+            subject,
+            relevance,
+            specificity,
+            role,
+            contexts,
+        }
     }
 
-    pub fn work_id(&self) -> WorkId { self.work_id }
-    pub fn subject(&self) -> &str { &self.subject }
-    pub fn relevance(&self) -> f64 { self.relevance }
-    pub fn specificity(&self) -> f64 { self.specificity }
-    pub fn role(&self) -> ResourceRole { self.role }
-    pub fn contexts(&self) -> &BTreeSet<usize> { &self.contexts }
-    pub fn opens_on_restore(&self) -> bool { self.role.opens_on_restore() }
+    pub fn work_id(&self) -> WorkId {
+        self.work_id
+    }
+    pub fn subject(&self) -> &str {
+        &self.subject
+    }
+    pub fn relevance(&self) -> f64 {
+        self.relevance
+    }
+    pub fn specificity(&self) -> f64 {
+        self.specificity
+    }
+    pub fn role(&self) -> ResourceRole {
+        self.role
+    }
+    pub fn contexts(&self) -> &BTreeSet<usize> {
+        &self.contexts
+    }
+    pub fn opens_on_restore(&self) -> bool {
+        self.role.opens_on_restore()
+    }
 }
 
 impl WorkHypothesis {
-    pub fn id(&self) -> WorkId { self.id }
-    pub fn nucleus(&self) -> &BTreeSet<String> { &self.nucleus }
-    pub fn links(&self) -> &[WorkContextLink] { &self.links }
+    pub fn id(&self) -> WorkId {
+        self.id
+    }
+    pub fn nucleus(&self) -> &BTreeSet<String> {
+        &self.nucleus
+    }
+    pub fn links(&self) -> &[WorkContextLink] {
+        &self.links
+    }
     pub fn contexts(&self) -> BTreeSet<usize> {
         self.links.iter().map(WorkContextLink::context).collect()
     }
@@ -127,22 +171,42 @@ pub(crate) fn infer_work_hypotheses(
     params: &EngagementParams,
     identity: &IdentityIndex,
 ) -> Vec<WorkHypothesis> {
-    if contexts.is_empty() { return Vec::new(); }
+    if contexts.is_empty() {
+        return Vec::new();
+    }
 
     let frequency = subject_frequency(contexts);
     let mut candidates = Vec::new();
     for (nucleus_index, context) in contexts.iter().enumerate() {
-        if context.human_subjects().is_empty() { continue; }
+        if context.human_subjects().is_empty() {
+            continue;
+        }
         for nucleus in candidate_nuclei(context, graph, params, &frequency, contexts.len()) {
             let mut links = Vec::new();
             for (index, candidate) in contexts.iter().enumerate() {
-                let link = assess_context(index, candidate, &nucleus, &frequency, contexts.len(), graph, declarations, params);
-                if index == nucleus_index || (link.relevance > params.affinity_floor && link.relevance > link.contradiction) {
+                let link = assess_context(
+                    index,
+                    candidate,
+                    &nucleus,
+                    &frequency,
+                    contexts.len(),
+                    graph,
+                    declarations,
+                    params,
+                );
+                if index == nucleus_index
+                    || (link.relevance > params.affinity_floor
+                        && link.relevance > link.contradiction)
+                {
                     links.push(link);
                 }
             }
             links.sort_by_key(WorkContextLink::context);
-            candidates.push(WorkHypothesis { id: stable_work_id(&nucleus, identity), nucleus, links });
+            candidates.push(WorkHypothesis {
+                id: stable_work_id(&nucleus, identity),
+                nucleus,
+                links,
+            });
         }
     }
 
@@ -150,7 +214,12 @@ pub(crate) fn infer_work_hypotheses(
     // two candidates are the same work. X and Y can be interleaved inside the
     // exact same local contexts; deleting one because their context sets match
     // recreates exclusive clustering at the deduplication boundary.
-    candidates.sort_by(|a, b| b.links.len().cmp(&a.links.len()).then_with(|| a.id.cmp(&b.id)));
+    candidates.sort_by(|a, b| {
+        b.links
+            .len()
+            .cmp(&a.links.len())
+            .then_with(|| a.id.cmp(&b.id))
+    });
     let mut kept: Vec<WorkHypothesis> = Vec::new();
     for candidate in candidates {
         if kept.iter().any(|existing| existing.id == candidate.id) {
@@ -180,10 +249,17 @@ fn candidate_nuclei(
     total: usize,
 ) -> Vec<BTreeSet<String>> {
     let mut ranked: Vec<String> = context.human_subjects().iter().cloned().collect();
-    ranked.sort_by_key(|subject| (frequency.get(subject).copied().unwrap_or(0), subject.clone()));
-    let mut selective: BTreeSet<String> = ranked.iter()
+    ranked.sort_by_key(|subject| {
+        (
+            frequency.get(subject).copied().unwrap_or(0),
+            subject.clone(),
+        )
+    });
+    let mut selective: BTreeSet<String> = ranked
+        .iter()
         .filter(|subject| frequency.get(*subject).copied().unwrap_or(total) * 4 <= total)
-        .cloned().collect();
+        .cloned()
+        .collect();
     if selective.is_empty() {
         selective.extend(ranked.into_iter().take(2));
     }
@@ -207,10 +283,19 @@ fn assess_context(
     params: &EngagementParams,
 ) -> WorkContextLink {
     let shared: Vec<&String> = nucleus.intersection(context.human_subjects()).collect();
-    let shared_weight: f64 = shared.iter().map(|subject| {
-        ((total + 1) as f64 / (frequency.get(*subject).copied().unwrap_or(total) + 1) as f64).ln()
-    }).sum();
-    let declared = nucleus.iter().any(|left| context.human_subjects().iter().any(|right| declarations.is_grouped(left, right)));
+    let shared_weight: f64 = shared
+        .iter()
+        .map(|subject| {
+            ((total + 1) as f64 / (frequency.get(*subject).copied().unwrap_or(total) + 1) as f64)
+                .ln()
+        })
+        .sum();
+    let declared = nucleus.iter().any(|left| {
+        context
+            .human_subjects()
+            .iter()
+            .any(|right| declarations.is_grouped(left, right))
+    });
 
     let mut supported = 0usize;
     let mut support_sum = 0.0;
@@ -219,10 +304,17 @@ fn assess_context(
         let mut best = 0.0_f64;
         let mut is_corroborated = false;
         for core in nucleus {
-            if subject == core { best = 1.0; is_corroborated = true; continue; }
+            if subject == core {
+                best = 1.0;
+                is_corroborated = true;
+                continue;
+            }
             if let Some(evidence) = graph.evidence(subject, core) {
                 let score = evidence.score(params);
-                if score > best { best = score; is_corroborated = evidence.is_corroborated(); }
+                if score > best {
+                    best = score;
+                    is_corroborated = evidence.is_corroborated();
+                }
             }
         }
         if best >= params.affinity_floor {
@@ -231,17 +323,37 @@ fn assess_context(
             corroborated += usize::from(is_corroborated);
         }
     }
-    let mean = if supported == 0 { 0.0 } else { support_sum / supported as f64 };
+    let mean = if supported == 0 {
+        0.0
+    } else {
+        support_sum / supported as f64
+    };
     let ubiquitous_only = !shared.is_empty()
-        && shared.iter().all(|subject| frequency.get(*subject).copied().unwrap_or(total) * 4 > total)
+        && shared
+            .iter()
+            .all(|subject| frequency.get(*subject).copied().unwrap_or(total) * 4 > total)
         && corroborated == 0;
     let unsupported = context.human_subjects().len().saturating_sub(supported);
 
     let mut evidence = Vec::new();
-    if !shared.is_empty() { evidence.push(WorkEvidence::SharedSelectiveSubjects { count: shared.len(), weight: shared_weight }); }
-    if supported > 0 { evidence.push(WorkEvidence::CorroboratedAffinity { pairs: supported, mean }); }
-    if declared { evidence.push(WorkEvidence::ExplicitGrouping); }
-    if ubiquitous_only { evidence.push(WorkEvidence::UbiquitousOnlyBridge); }
+    if !shared.is_empty() {
+        evidence.push(WorkEvidence::SharedSelectiveSubjects {
+            count: shared.len(),
+            weight: shared_weight,
+        });
+    }
+    if supported > 0 {
+        evidence.push(WorkEvidence::CorroboratedAffinity {
+            pairs: supported,
+            mean,
+        });
+    }
+    if declared {
+        evidence.push(WorkEvidence::ExplicitGrouping);
+    }
+    if ubiquitous_only {
+        evidence.push(WorkEvidence::UbiquitousOnlyBridge);
+    }
     if unsupported >= supported && unsupported > 0 && context.human_subjects().len() > 1 {
         evidence.push(WorkEvidence::CompetingSelectiveCore { unsupported });
     }
@@ -256,8 +368,19 @@ fn assess_context(
     };
     let semantic = if corroborated >= 2 { mean } else { 0.0 };
     let relevance = if declared { 1.0 } else { direct.max(semantic) };
-    let contradiction = if ubiquitous_only { 1.0 } else if unsupported >= supported && unsupported > 0 { unsupported as f64 / context.human_subjects().len() as f64 } else { 0.0 };
-    WorkContextLink { context: index, relevance, contradiction, evidence }
+    let contradiction = if ubiquitous_only {
+        1.0
+    } else if unsupported >= supported && unsupported > 0 {
+        unsupported as f64 / context.human_subjects().len() as f64
+    } else {
+        0.0
+    };
+    WorkContextLink {
+        context: index,
+        relevance,
+        contradiction,
+        evidence,
+    }
 }
 
 fn work_id(nucleus: &BTreeSet<String>) -> WorkId {
@@ -275,13 +398,22 @@ fn work_id(nucleus: &BTreeSet<String>) -> WorkId {
 /// names are append-only facts, so repeated contexts converge and later
 /// canonicalization cannot rename the work's identity.
 fn stable_work_id(nucleus: &BTreeSet<String>, identity: &IdentityIndex) -> WorkId {
-    let stable: BTreeSet<String> = nucleus.iter().map(|subject| {
-        identity.founding_name(subject).unwrap_or(subject).to_string()
-    }).collect();
+    let stable: BTreeSet<String> = nucleus
+        .iter()
+        .map(|subject| {
+            identity
+                .founding_name(subject)
+                .unwrap_or(subject)
+                .to_string()
+        })
+        .collect();
     work_id(&stable)
 }
 
 fn hash_bytes(mut hash: u64, bytes: &[u8]) -> u64 {
-    for byte in bytes { hash ^= u64::from(*byte); hash = hash.wrapping_mul(FNV_PRIME); }
+    for byte in bytes {
+        hash ^= u64::from(*byte);
+        hash = hash.wrapping_mul(FNV_PRIME);
+    }
     hash
 }

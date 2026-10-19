@@ -110,7 +110,10 @@ pub fn migrate_legacy_root(
     // scratch space.
     let staging = parent.join(format!(
         ".evo-migrating-{}",
-        canonical.file_name().map(|name| name.to_string_lossy().to_string()).unwrap_or_default()
+        canonical
+            .file_name()
+            .map(|name| name.to_string_lossy().to_string())
+            .unwrap_or_default()
     ));
     // A stale staging directory from a crashed run is this crate's own
     // scratch space, never the user's data; discard it and start clean.
@@ -184,8 +187,7 @@ fn copy_file_verified(from: &Path, to: &Path) -> Result<(), StorageError> {
         fs::create_dir_all(parent)
             .map_err(|err| migration_error(&format!("create {}", parent.display()), &err))?;
     }
-    fs::copy(from, to)
-        .map_err(|err| migration_error(&format!("copy {}", from.display()), &err))?;
+    fs::copy(from, to).map_err(|err| migration_error(&format!("copy {}", from.display()), &err))?;
     let source_len = fs::metadata(from)
         .map_err(|err| migration_error(&format!("read metadata of {}", from.display()), &err))?
         .len();
@@ -411,7 +413,10 @@ mod tests {
             MigrationOutcome::AlreadyPresent
         );
         // Exactly the original records, exactly once.
-        assert_eq!(read(&canonical, "observation.log"), b"record-one\nrecord-two\n");
+        assert_eq!(
+            read(&canonical, "observation.log"),
+            b"record-one\nrecord-two\n"
+        );
         clear_dir(&legacy);
         clear_dir(&canonical);
     }

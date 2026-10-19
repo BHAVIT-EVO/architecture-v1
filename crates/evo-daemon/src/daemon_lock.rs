@@ -32,19 +32,19 @@ impl DaemonLock {
     pub fn acquire(storage_root: &Path) -> Result<Self, DaemonError> {
         let path = storage_root.join(DAEMON_PID_FILENAME);
 
-        if let Some(pid) = read_pid(&path)? {
-            if process_is_alive(pid) {
-                return Err(DaemonError::DaemonAlreadyRunning {
-                    pid,
-                    root: storage_root.display().to_string(),
-                });
-            }
-            // The previous process is gone; its stale lock can be replaced.
+        if let Some(pid) = read_pid(&path)?
+            && process_is_alive(pid)
+        {
+            return Err(DaemonError::DaemonAlreadyRunning {
+                pid,
+                root: storage_root.display().to_string(),
+            });
         }
+        // Either no pid file exists or the previous process is gone; any
+        // stale lock can be replaced below.
 
         fs::create_dir_all(storage_root).map_err(|_| storage_error())?;
-        fs::write(&path, format!("{}\n", std::process::id()))
-            .map_err(|_| storage_error())?;
+        fs::write(&path, format!("{}\n", std::process::id())).map_err(|_| storage_error())?;
         Ok(Self { path })
     }
 

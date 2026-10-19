@@ -109,26 +109,25 @@ mod tests {
         let candidate = test_candidate_with_observations(vec![observation.clone()]);
 
         let pipeline_id = assign_identity(&candidate).expect("pipeline identity succeeds");
-        let public_id =
-            derive_artifact_id_from_observations(&[observation]).expect("public derivation succeeds");
+        let public_id = derive_artifact_id_from_observations(&[observation])
+            .expect("public derivation succeeds");
         assert_eq!(public_id, pipeline_id);
     }
 
     #[test]
     fn public_derivation_is_deterministic_and_subject_scoped() {
         let observation = test_observation_with_subject("subject-a", SystemTime::UNIX_EPOCH);
-        let first =
-            derive_artifact_id_from_observations(&[observation.clone()]).expect("first derivation");
+        let first = derive_artifact_id_from_observations(std::slice::from_ref(&observation))
+            .expect("first derivation");
         let second =
             derive_artifact_id_from_observations(&[observation]).expect("second derivation");
         assert_eq!(first, second);
 
-        let other =
-            derive_artifact_id_from_observations(&[test_observation_with_subject(
-                "subject-b",
-                SystemTime::UNIX_EPOCH,
-            )])
-            .expect("other subject derivation");
+        let other = derive_artifact_id_from_observations(&[test_observation_with_subject(
+            "subject-b",
+            SystemTime::UNIX_EPOCH,
+        )])
+        .expect("other subject derivation");
         assert_ne!(first, other);
     }
 
@@ -136,20 +135,18 @@ mod tests {
     fn public_derivation_ignores_observation_ids_and_timestamps() {
         // Identity is derived only from canonical signatures; differing
         // ObservationIds or observed_at must not change the Artifact.
-        let first =
-            derive_artifact_id_from_observations(&[test_observation_with_subject(
-                "subject-x",
-                SystemTime::UNIX_EPOCH,
-            )])
-            .expect("first");
-        let later =
-            derive_artifact_id_from_observations(&[test_observation_with_subject(
-                "subject-x",
-                SystemTime::UNIX_EPOCH
-                    .checked_add(std::time::Duration::from_secs(999))
-                    .unwrap(),
-            )])
-            .expect("later");
+        let first = derive_artifact_id_from_observations(&[test_observation_with_subject(
+            "subject-x",
+            SystemTime::UNIX_EPOCH,
+        )])
+        .expect("first");
+        let later = derive_artifact_id_from_observations(&[test_observation_with_subject(
+            "subject-x",
+            SystemTime::UNIX_EPOCH
+                .checked_add(std::time::Duration::from_secs(999))
+                .unwrap(),
+        )])
+        .expect("later");
         assert_eq!(first, later);
     }
 }

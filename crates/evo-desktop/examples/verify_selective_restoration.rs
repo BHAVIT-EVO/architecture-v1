@@ -404,6 +404,7 @@ fn focus(subject: &str, secs: u64) -> MacOSSignal {
         process_identifier: None,
         owning_process_name: None,
         observed_state: None,
+        window_id: None,
     }
 }
 

@@ -7,6 +7,10 @@ description = "Deterministic activity ledger: groups observed events into work i
 [dependencies]
 rusqlite = { version = "0.32", features = ["bundled"] }
 serde = { version = "1", features = ["derive"] }
+# The shadow evaluator replays the canonical log through the work engine and
+# scores it by the same behavioral gates as the ledger's own grouping — the
+# parity floor the read-path unification retires the hypothesis layer against.
+evo-threads = { path = "../evo-threads" }
 
 [[bin]]
 name = "ledger_probe"

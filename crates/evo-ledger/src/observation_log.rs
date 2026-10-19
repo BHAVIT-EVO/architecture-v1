@@ -25,16 +25,42 @@ pub fn read_observation_log(
     Vec<crate::ObservedEvent>,
     Vec<crate::ProductionSave>,
     Vec<(String, String)>,
+    Vec<(String, String)>,
+) {
+    let (events, saves, declared, classified, _) = read_observation_log_with_metrics(log_path);
+    (events, saves, declared, classified)
+}
+
+/// Reads the observation log and also counts canonical observations and user
+/// design events in the same record stream.
+pub fn read_observation_log_with_metrics(
+    log_path: &std::path::Path,
+) -> (
+    Vec<crate::ObservedEvent>,
+    Vec<crate::ProductionSave>,
+    Vec<(String, String)>,
+    Vec<(String, String)>,
+    crate::ObservationMetrics,
 ) {
     let data = match std::fs::read(log_path) {
         Ok(d) => d,
-        Err(_) => return (Vec::new(), Vec::new(), Vec::new()),
+        Err(_) => {
+            return (
+                Vec::new(),
+                Vec::new(),
+                Vec::new(),
+                Vec::new(),
+                crate::ObservationMetrics::default(),
+            )
+        }
     };
 
     let mut surfaces: Vec<crate::ObservedEvent> = Vec::new();
     let mut inputs: Vec<crate::ObservedEvent> = Vec::new();
     let mut saves = Vec::new();
     let mut declared: Vec<(String, String)> = Vec::new();
+    let mut classified: Vec<(String, String)> = Vec::new();
+    let mut metrics = crate::ObservationMetrics::default();
     let mut offset = 0usize;
 
     while offset < data.len() {
@@ -56,11 +82,15 @@ pub fn read_observation_log(
         }
 
         let record = String::from_utf8_lossy(&data[record_start..record_end]);
+        if let Some((schema_name, schema_version)) = record_schema(&record) {
+            metrics.observe_schema(&schema_name, schema_version);
+        }
         match parse_observation_record(&record) {
             Some(ParsedRecord::Surface(event)) => surfaces.push(event),
             Some(ParsedRecord::Input(event)) => inputs.push(event),
             Some(ParsedRecord::Production(save)) => saves.push(save),
             Some(ParsedRecord::Declaration(a, b)) => declared.push((a, b)),
+            Some(ParsedRecord::Classified(subject, class)) => classified.push((subject, class)),
             None => {}
         }
 
@@ -68,7 +98,22 @@ pub fn read_observation_log(
     }
 
     let events = attribute_input_to_surfaces(surfaces, inputs);
-    (events, saves, declared)
+    (events, saves, declared, classified, metrics)
+}
+
+/// Reads the schema identity from one length-prefixed log record. Older log
+/// records without an explicit version are v1 by construction.
+fn record_schema(record: &str) -> Option<(String, u32)> {
+    let mut name = None;
+    let mut version = 1;
+    for line in record.lines() {
+        if let Some(value) = line.strip_prefix("schema_name_hex=") {
+            name = Some(unhex(value));
+        } else if let Some(value) = line.strip_prefix("schema_version=") {
+            version = value.trim().parse().ok()?;
+        }
+    }
+    name.map(|name| (name, version))
 }
 
 /// Fuses input evidence onto the attention surface it happened on.
@@ -134,6 +179,9 @@ enum ParsedRecord {
     Production(crate::ProductionSave),
     /// The person declared two subjects the same work (ground truth).
     Declaration(String, String),
+    /// The person classified a surface (OBS-SURFACE-CLASSIFIED): the subject
+    /// and the class they assigned. Ground truth like every declaration.
+    Classified(String, String),
 }
 
 /// Context keys the engine reads from observation records. Written by the
@@ -288,6 +336,19 @@ fn parse_observation_record(record: &str) -> Option<ParsedRecord> {
             }
             Some(ParsedRecord::Declaration(subject.clone(), co_member))
         }
+        "OBS-SURFACE-CLASSIFIED" => {
+            // The person classified a surface: ground truth. The record
+            // carries two text facts — the classified subject and its class.
+            let class = text_facts
+                .iter()
+                .find(|(name, _)| name == "Class")
+                .map(|(_, value)| value.clone())
+                .filter(|v| !v.trim().is_empty())?;
+            if subject.trim().is_empty() {
+                return None;
+            }
+            Some(ParsedRecord::Classified(subject.clone(), class))
+        }
         "OBS-WORK-DESIGNATED" => {
             // A single designated subject: an anchor declaration without a
             // pair. It carries no grouping fact yet — retained for naming
@@ -393,4 +454,56 @@ pub fn unhex(hex: &str) -> String {
         }
     }
     String::from_utf8_lossy(&bytes).into_owned()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn hex(value: &str) -> String {
+        value.bytes().map(|byte| format!("{byte:02x}")).collect()
+    }
+
+    fn record(schema_name: &str) -> String {
+        format!(
+            "schema_name_hex={}\nschema_version=1\nobserved_at=1:0\nfact_value_hex=61\n",
+            hex(schema_name)
+        )
+    }
+
+    fn write_log(records: &[String]) -> std::path::PathBuf {
+        let path = std::env::temp_dir().join(format!(
+            "evo-ledger-metrics-{}-{}.log",
+            std::process::id(),
+            records.len()
+        ));
+        let mut bytes = Vec::new();
+        for record in records {
+            bytes.extend_from_slice(format!("{}\n", record.len()).as_bytes());
+            bytes.extend_from_slice(record.as_bytes());
+            bytes.push(b'\n');
+        }
+        std::fs::write(&path, bytes).unwrap();
+        path
+    }
+
+    #[test]
+    fn log_metrics_count_canonical_records_and_exclude_machine_naming() {
+        let mut records: Vec<String> = crate::metrics::DESIGN_EVENT_SCHEMAS
+            .iter()
+            .map(|schema| record(schema))
+            .collect();
+        records.extend([
+            record("OBS-SURFACE-NAMED"),
+            record("OBS-WINDOW-FOCUS-GAINED"),
+            record("OBS-NOT-CANONICAL"),
+        ]);
+        let path = write_log(&records);
+
+        let (_, _, _, _, metrics) = read_observation_log_with_metrics(&path);
+        std::fs::remove_file(path).unwrap();
+
+        assert_eq!(metrics.observation_count, 9);
+        assert_eq!(metrics.design_event_count, 7);
+    }
 }

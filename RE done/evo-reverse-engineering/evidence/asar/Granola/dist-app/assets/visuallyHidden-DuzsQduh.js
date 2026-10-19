@@ -1,0 +1,2 @@
+try{let e=typeof window<`u`?window:typeof global<`u`?global:typeof globalThis<`u`?globalThis:typeof self<`u`?self:{},t=new e.Error().stack;t&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[t]=`367f7f86-4187-4c3d-a255-043de1f01e35`,e._sentryDebugIdIdentifier=`sentry-dbid-367f7f86-4187-4c3d-a255-043de1f01e35`)}catch{}var e={clipPath:`inset(50%)`,overflow:`hidden`,whiteSpace:`nowrap`,border:0,padding:0,width:1,height:1,margin:-1},t={...e,position:`fixed`,top:0,left:0},n={...e,position:`absolute`};export{n,t};
+//# sourceMappingURL=visuallyHidden-DuzsQduh.js.map

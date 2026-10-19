@@ -19,6 +19,7 @@ use crate::evidence::Evidence;
 use crate::observation_id::ObservationId;
 use crate::observation_schema::ObservationSchema;
 use crate::provenance::Provenance;
+use crate::window_registry::{WINDOW_ID_CONTEXT_KEY, WindowId};
 
 /// The canonical immutable representation of an accepted Observation.
 #[derive(Debug, Clone, PartialEq)]
@@ -72,6 +73,35 @@ impl Observation {
     pub fn evidence(&self) -> &Evidence {
         &self.evidence
     }
+
+    /// The stable window identity capture witnessed for this observation,
+    /// when it recorded one.
+    ///
+    /// The single canonical read path for [`WINDOW_ID_CONTEXT_KEY`]: a focus
+    /// observation whose capture resolved the focused window carries its
+    /// [`WindowId`] here. `None` means the window was not recorded — capture
+    /// predates window-awareness, or the platform could not see windows — not
+    /// that there was no window. A malformed value is read as absent, never
+    /// as an error: provenance must never fail downstream reasoning.
+    pub fn window_id(&self) -> Option<WindowId> {
+        self.provenance
+            .context()
+            .get(WINDOW_ID_CONTEXT_KEY)?
+            .parse()
+            .ok()
+    }
+
+    /// Marks this observation as originating from Evo's own execution
+    /// (restoration), not from the person's acts.
+    ///
+    /// Builder-style: consumes and returns Self so it composes in pipelines.
+    /// The observation remains fully auditable — execution-origin is
+    /// provenance, not deletion — but `evo-engagement::interpret` skips it
+    /// as engagement evidence.
+    pub fn with_execution_origin(mut self) -> Self {
+        self.provenance.set_execution_origin();
+        self
+    }
 }
 
 #[cfg(test)]
@@ -98,12 +128,8 @@ mod tests {
 
         let evidence = Evidence::new(vec![fact]);
 
-        let observation = Observation::new(
-            id.clone(),
-            schema.clone(),
-            provenance.clone(),
-            evidence.clone(),
-        );
+        let observation =
+            Observation::new(id, schema.clone(), provenance.clone(), evidence.clone());
 
         assert_eq!(observation.id(), &id);
         assert_eq!(observation.schema(), &schema);

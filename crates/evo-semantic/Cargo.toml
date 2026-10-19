@@ -1,0 +1,5 @@
+[package]
+name = "evo-semantic"
+version = "0.1.0"
+edition = "2021"
+description = "Meaning-based matching over embedded text: the shared, dependency-free core behind Evo's 'what did the person mean?' questions."

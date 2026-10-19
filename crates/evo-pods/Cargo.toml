@@ -1,0 +1,12 @@
+[package]
+name = "evo-pods"
+version = "0.1.0"
+edition = "2024"
+description = "Evo Pods — works as first-class desktop objects: identity, stage choreography, dim/park containment, gesture declarations (IS-0023)"
+
+[dependencies]
+evo-threads = { path = "../evo-threads" }
+serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+serde_json = "1"

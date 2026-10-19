@@ -11,7 +11,7 @@
 //! `EVO_STORAGE_ROOT` selects the storage root (default: the canonical shared
 //! temp root, the same default the daemon and desktop use).
 
-use evo_daemon::designation::{submit_designation, DesignationResponse};
+use evo_daemon::designation::{DesignationResponse, submit_designation};
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();

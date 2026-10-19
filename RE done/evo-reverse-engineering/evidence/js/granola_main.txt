@@ -1,0 +1,7 @@
+
+===== eventkit (36 unique) =====
+  [index.js] bcamStreamActiveSinceUnixMs=void 0,n.winWebcamCameraState=void 0,delete n.events,delete n.eventKitEvents,delete n.people,delete n.peopleLastFetchedAt,delete n.meetingsMetadata,delete n.mul
+  [index.js] {forward:!0}):I$.setIgnoreMouseEvents(!1))});var W$=null;function Grt(e){W$=e}var Krt=Qy(`eventkit.node`),G$,K$=!1,q$=null;function J$(e){switch(e){case`authorized`:case`denied`:case`restr
+  [index.js] m!==`darwin`)return null;if(G$!==void 0)return G$;try{G$=require(Krt)}catch(e){Y(`error`,`eventkit-native-load-failed`,{error:e}),G$=null}return G$}function qrt(){X(`eventkit:get-authoriza
+  [index.js] e){Y(`error`,`eventkit-native-load-failed`,{error:e}),G$=null}return G$}function qrt(){X(`eventkit:get-authorization-status`,async()=>{let e=Y$();return e?J$(e.getAuthorizationStatus()):nu
+  [index.js] horization-status`,async()=>{let e=Y$();return e?J$(e.getAuthorizationStatus()):null}),X(`eventkit:request-access`,async()=>{let e=Y$();if(!e)return null;let t=J$(e.getAuthorizationStatus(

@@ -13,6 +13,7 @@
 //!
 //! Once assigned, a `WorkspaceId` is immutable.
 
+use std::str::FromStr;
 use uuid::Uuid;
 use std::str::FromStr;
 

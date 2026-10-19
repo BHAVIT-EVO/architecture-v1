@@ -54,21 +54,27 @@
 
 pub mod affinity;
 pub mod declarations;
+pub mod doi;
 pub mod engagement;
 pub mod episode;
-pub mod identity;
 pub mod hypothesis;
+pub mod identity;
 pub mod params;
 pub mod resource;
+pub mod wds;
 
 pub use affinity::{AffinityEvidence, AffinityGraph, EvidenceKind};
 pub use declarations::Declarations;
-pub use engagement::{ActivityContext, Engagement, EngagementSet, Participant, ResourceRole, Standing};
+pub use doi::{DegreeOfInterest, InteractionKind};
+pub use engagement::{
+    ActivityContext, Engagement, EngagementSet, Participant, ResourceRole, Standing,
+};
 pub use episode::{Act, AttentionLedger, AttentionRecord, Episode, segment_episodes};
-pub use identity::IdentityIndex;
 pub use hypothesis::{WorkArtifactLink, WorkContextLink, WorkEvidence, WorkHypothesis, WorkId};
+pub use identity::IdentityIndex;
 pub use params::EngagementParams;
 pub use resource::{ActCharacter, Resource, SubjectShape, tokenize_subject};
+pub use wds::{WindowSegment, filter_for_task_binding, segment_wds};
 
 use evo_observation::evidence::FactValue;
 use evo_observation::observation::Observation;
@@ -120,7 +126,8 @@ impl Reconstruction {
         let ledger = AttentionLedger::build(&episodes, &params);
         let graph = AffinityGraph::build(&episodes, &ledger, &declarations, &params);
         let contexts = engagement::build_activity_contexts(&episodes, &graph, &params);
-        let hypotheses = hypothesis::infer_work_hypotheses(&contexts, &graph, &declarations, &params, &identity);
+        let hypotheses =
+            hypothesis::infer_work_hypotheses(&contexts, &graph, &declarations, &params, &identity);
         let engagements = EngagementSet::build_with_hypotheses(
             &episodes,
             &contexts,
@@ -191,7 +198,9 @@ impl Reconstruction {
     }
 
     /// Overlapping, explainable work hypotheses used to form engagements.
-    pub fn hypotheses(&self) -> &[WorkHypothesis] { &self.hypotheses }
+    pub fn hypotheses(&self) -> &[WorkHypothesis] {
+        &self.hypotheses
+    }
 
     /// The measured attention behind every conclusion.
     pub fn ledger(&self) -> &AttentionLedger {
@@ -253,6 +262,11 @@ pub fn interpret(observations: &[Observation]) -> (Vec<Act>, Declarations) {
             "OBS-WORK-GROUPED" => {
                 if let Some(co_member) = text_fact(observation, "CoMember") {
                     declarations.group(subject, co_member);
+                }
+            }
+            "OBS-WORK-NAMED" => {
+                if let Some(name) = text_fact(observation, "Name") {
+                    declarations.name(subject, name);
                 }
             }
             "OBS-CONTINUATION-SURFACE" => {
@@ -482,23 +496,62 @@ mod tests {
 
 #[cfg(test)]
 mod execution_provenance_regression {
-    use crate::{interpret, Observation};
+    use super::interpret;
+    use evo_observation::observation::Observation;
+    use evo_observation::observation_id::ObservationId;
+    use evo_observation::observation_language::ObservationConcept;
     use evo_observation::provenance::{ObservationSource, Provenance};
     use std::collections::HashMap;
-    use std::time::SystemTime;
+    use std::time::{Duration, SystemTime};
+
+    fn at(secs: u64) -> SystemTime {
+        SystemTime::UNIX_EPOCH + Duration::from_secs(secs)
+    }
+
+    fn observe_with_origin(subject: &str, secs: u64, execution_origin: bool) -> Observation {
+        let source = ObservationSource::new("test").expect("a valid source");
+        let mut provenance = Provenance::new(source, at(secs), HashMap::new());
+        if execution_origin {
+            provenance.set_execution_origin();
+        }
+        Observation::new(
+            ObservationId::new(),
+            ObservationConcept::WindowFocusGained {
+                subject: subject.to_string(),
+            }
+            .schema(),
+            provenance,
+            ObservationConcept::WindowFocusGained {
+                subject: subject.to_string(),
+            }
+            .evidence(),
+        )
+    }
 
     /// Execution-origin observations must not become engagement evidence.
+    ///
+    /// The provenance boundary at `interpret()`: execution-origin observations
+    /// are skipped, user-origin ones are preserved as acts.
     #[test]
     fn execution_cannot_create_engagement() {
-        // User observation that establishes work.
-        // (Fixture uses synthetic provenance; real observation would come from capture.)
-        assert!(true, "execution provenance boundary at interpret(): execution-origin skipped, user-origin preserved");
+        let observations = vec![
+            observe_with_origin("User Work — Editor", 0, false),
+            observe_with_origin("Evo Restored — Browser", 60, true),
+        ];
+        let (acts, _) = interpret(&observations);
+        // Only the user-origin observation becomes an act.
+        assert_eq!(acts.len(), 1);
+        assert_eq!(acts[0].resource().subject(), "User Work — Editor");
     }
 
     /// Restart persistence: execution origin survives reload and stays excluded.
     #[test]
     fn execution_origin_survives_reload() {
-        let mut p = Provenance::new(ObservationSource::new("evo_execution").unwrap(), SystemTime::now(), HashMap::new());
+        let mut p = Provenance::new(
+            ObservationSource::new("evo_execution").unwrap(),
+            SystemTime::now(),
+            HashMap::new(),
+        );
         p.set_execution_origin();
         assert!(p.is_execution_origin());
         // After clone/reload: still execution, still excluded.

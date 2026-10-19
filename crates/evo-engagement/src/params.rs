@@ -336,6 +336,9 @@ impl EngagementParams {
     /// The sum of the evidence weights, used to normalize a combined affinity
     /// back into `0.0..=1.0`.
     pub fn weight_total(&self) -> f64 {
-        self.weight_interleave + self.weight_co_episode + self.weight_lexical + self.weight_structural
+        self.weight_interleave
+            + self.weight_co_episode
+            + self.weight_lexical
+            + self.weight_structural
     }
 }
