@@ -269,8 +269,3 @@ Before opening a pull request:
 For product and architecture context, start with the
 [constitution](docs/constitution/CONSTITUTION.md), [cognitive model](docs/foundation/COGNITIVE_MODEL.md),
 and [architectural laws](docs/foundation/ARCHITECTURAL_LAWS.md).
-
-## License
-
-See [LICENSE](LICENSE) and [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)
-for the applicable project and dependency terms.
