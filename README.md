@@ -1,279 +1,414 @@
-# Evo
+<div align="center">
 
-> **Demo:** Evo's boundary service, running against a synthetic corpus —
-> eight works, two claimed, six refused, and a verifier you can try to break.
-> **[Read the demo document → DEMO.md](DEMO.md)** · or run it in two commands:
->
-> ```bash
-> cd exports/ship-happens && python3 evo_server.py serve   # localhost:8765
-> ```
+# EVO
 
-### A local-first work memory for macOS
+### Every agent today is *told* where its work begins and ends.
+### Evo *derives* it.
 
-Evo helps people return to meaningful work without reconstructing the context they
-lost. It observes the relationships between applications, files, windows, and
-activities, models them as bodies of work, and restores the right working
-surface when it is time to continue.
+<br>
 
-Evo is designed around a simple product promise:
+**[▶ Try the live demo](https://bhavit-evo.github.io/evo-boundary-demo/)** · **[Read the walkthrough](DEMO.md)** · **[How it works](#how-it-works)** · **[What is real](#what-is-real-and-what-is-not)** · **[Run it](#run-it)**
 
-> **Continue your work, not the archaeology required to find it again.**
+<sub>16 Rust crates · deterministic · offline · no model in the decision path · no HTTP client</sub>
 
-The project is intentionally local-first. The desktop shell, activity ledger,
-work reconstruction, native restoration, voice interface, wake word, speech
-transcription, and semantic matching are implemented as local components. No
-cloud speech or intent API is required for the voice path.
+<sub>No sign-up, no API key, no install — the demo runs on a synthetic corpus in your browser.</sub>
 
-> **Project status:** active development. Evo is currently a macOS-focused
-> engineering build, not a finished public release. APIs, storage formats, and
-> product surfaces may change.
+</div>
+
+---
+
+Ask an AI agent to "carry on with what I was doing" and watch what happens. It opens a folder — the one you typed into a box. It has no idea that `draft-v3.docx` belongs to the funding application and `notes.md` belongs to a different client entirely, because that distinction was never written down anywhere a machine could read it.
+
+**That is the boundary problem.** Not memory. Not retrieval. Not context length. The question of *where one body of work ends and the next begins* — which is the question every agent has to answer before it is allowed to touch anything real.
+
+Evo answers it, on the device, without a model, deterministically — and then lets any agent ask.
+
+---
+
+## The problem is measured, not asserted
+
+| Finding | Source |
+|---|---|
+| After an interruption, knowledge workers take **23 minutes and 15 seconds** to return to the original task | Gloria Mark, Daniela Gudith & Ulrich Klocke, UC Irvine — *The Cost of Interrupted Work*, CHI 2008 |
+| Attention on any single screen has fallen from **2.5 minutes (2004) to 75 seconds (2012) to 47 seconds (2023)** | Gloria Mark, UC Irvine — *Attention Span*, 2023 |
+| **68%** of workers say they do not have enough uninterrupted focus time | Microsoft Work Trend Index 2023 — 31,000 workers, 31 markets |
+| Employees spend **57%** of application time communicating and **43%** creating | Microsoft WTI 2023 — Microsoft 365 telemetry, trillions of signals |
+| **48%** of employees and **52%** of leaders describe their work as chaotic | Microsoft WTI 2025 — 31,000 workers, telemetry to Feb 2025 |
+| The most-pinged **20% of users** are interrupted roughly **every 2 minutes — 275 times a day** | Microsoft WTI 2025 — *top 20% by notification volume, not the average worker* |
+| Developers need **10–15 minutes** to resume editing after an interruption; only **10%** resume within a minute | Parnin & Rugaber, *Resumption Strategies for Interrupted Programming Tasks*, 2011 — 10,000 sessions, 86 developers |
+
+Read that last row again, because the detail underneath it is the whole thesis:
+
+> **Only 7% of interrupted programming sessions resumed editing without first navigating through other parts of the code.** The other 93% had to *rebuild the boundary by hand* — file by file, tab by tab — before they could type a single line.
+
+And the work itself was rarely lost: **82% of interrupted work is resumed the same day** (Mark, 2008). You get back to it. You just spend the first ten minutes becoming yourself again.
+
+The work was never lost. **The boundary was.**
+
+---
+
+## Why now
+
+Agents stopped being demos and started being deployments. The protocol that connects them went from experiment to infrastructure in about eighteen months.
+
+| Fact | Source |
+|---|---|
+| **10,000+** active public MCP servers — up from roughly 1,200 a year earlier | Anthropic ecosystem update, Dec 2025 |
+| **~97 million** monthly SDK downloads | MCP ecosystem reports, Q1 2026 |
+| **15,926** public repos on the `mcp-server` GitHub topic | GitHub Search API, May 2026 |
+| **41%** of surveyed software organisations run MCP servers in limited or broad production | Stacklok 2026 State of MCP report |
+| **28%** of Fortune 500 companies run MCP servers | Reported independently by two firms, April 2026 |
+| **40%** of enterprise apps will carry task-specific agents by end of 2026 | Gartner forecast |
+
+And then the number that puts Evo exactly where the next problem is. Same year, a different hundred engineers:
+
+> **86% of MCP usage is still experimentation or local development. Only 5% is governed, enterprise-wide production.**
+> — Stacklok × Linux Foundation AAIF, July 2026, 100 senior engineers
+
+The agents arrived, and they arrived **on the desktop** — where the work is, where the files are, and where every one of them is currently guessing. The same respondents named their blockers in order: **security and compliance (49%), governance (34%)**. Not protocol. Not model quality. **Governance.**
+
+Meanwhile: **88% of organisations reported confirmed or suspected AI-agent incidents in the past year**, and only **23%** have a formal agent-identity strategy (Gravitee 2026; CSA/Strata, Feb 2026).
+
+You cannot give an agent permission to act on a machine it cannot understand. **Jurisdiction comes before capability.** That gap is open right now, and it is the whole reason this exists.
+
+<details>
+<summary><b>On numbers we chose not to use</b></summary>
+
+<br>
+
+A widely circulated *"78% of enterprise AI teams have MCP in production"* figure has no traceable primary source and has been publicly walked back by researchers who tried to verify it. We left it out. Every figure above can be traced to a named report and a date. If a number in this README is not in this section, we do not expect you to believe it.
+
+</details>
+
+---
+
+## The thing that is missing
+
+Everyone is building agents that can *do* things. Nobody is building the thing that tells them **what they are allowed to touch.**
+
+A folder is not a boundary. A folder is a **declaration made in advance from a menu** — you decided, before the work existed, what to call it and where to put it. Real work does not arrive that way. It accumulates: three files in a directory, a tab you kept returning to, a document you only ever read, a branch you made at 2am, and the client's email sitting in another app entirely.
+
+And you cannot recover the boundary from content, because **two people can have identical files open and be doing completely different jobs.** The boundary is not in the bytes. It lives in how the work arrived: what you *made*, what you *returned to*, and what you merely *glanced at*.
+
+That distinction is the entire engine.
+
+---
 
 ## What Evo does
 
-- **Remembers work as a unit** instead of treating every application window as
-  unrelated activity.
-- **Reconstructs context** from local observations, artifacts, threads, and
-  workspace evidence.
-- **Restores native applications** through macOS rather than trapping work inside
-  a custom container.
-- **Organizes multi-window work** into a coherent desktop arrangement.
-- **Provides an always-on voice surface** with the local “Hey Evo” wake word,
-  Whisper transcription, and local semantic intent matching.
-- **Shows a native notch-style interaction surface** that can follow the active
-  display and remain visible across applications and Spaces.
-- **Keeps the core architecture testable** through separate Rust crates and
-  deterministic domain contracts.
+Evo watches ordinary computer use, segments it into episodes of attention, and joins those episodes into **bodies of work** — then exposes that structure so anything can query it.
+
+```
+  observed activity  →  episodes of attention  →  bodies of work  →  a boundary
+                                                                         │
+                                              ┌──────────────────────────┤
+                                              │                          │
+                                        an agent asks              a human asks
+                                        (MCP over stdio)           (the product UI)
+```
+
+Three design commitments, each one the opposite of how this is normally done:
+
+**1. The decision is deterministic.** No model, no embeddings, no sampling. The same event log replayed twice produces the same boundary, bit for bit. An agent cannot be given permission to act on a boundary that would come out differently tomorrow.
+
+**2. Ambiguity is retained, never resolved.** When two works tie for an episode, both are kept and both are shown. When attention produced nothing and recurred nowhere, **nothing is minted** — a 47,000-second film is still not a project.
+
+**3. Merging is sacred; splitting is free.** Two established works fuse only when a person says so. There is no inference path that can reach a merge. A wrong merge is irreversible; a wrong split is one click.
+
+### The honest scoreboard
+
+On the real corpus in this repository — 10,392 events, two days, one machine — the engine **claims 2 of the 8 bodies of work and refuses the other 6.**
+
+That is not a coverage failure. **It is the design.**
+
+> A wrong merge is irreversible. A refusal costs nothing.
+> The engine would rather be silent than fuse a trek with a jacket.
+
+The gate never asserts coverage. It asserts three things, and fails the build when any of them is violated:
+
+- no two labelled works ever fuse
+- no leisure resource ever anchors a work
+- the same log replays to the same threads, twice
+
+Ask the better question: **was it wrong on the two it claimed?**
+
+---
+
+## The jurisdiction layer
+
+This is where Evo stops being "an app that remembers things" and becomes infrastructure.
+
+Evo does not learn. It has no weights, no fine-tuning, no feedback loop. **The person legislates and the engine adjudicates**, permanently.
+
+Every resource is in exactly one of three states. There is no fourth.
+
+```
+  DERIVED    the engine placed it, from evidence it witnessed
+  DECLARED   the person overrode or confirmed it, and the log holds that
+  REFUSED    the engine declined to place it at all
+```
+
+Six kinds of declaration exist in the engine (`crates/evo-threads/src/types.rs`):
+
+| Declaration | The person says | What the engine does |
+|---|---|---|
+| `SameWork` | "These belong together" | **The only merge path in the system.** |
+| `SeparateWork` | "These are separate" | **A standing prohibition** — inference can never rejoin them. |
+| `NotMine` | "This is not my work" | Permanent quarantine. Never evidence again. |
+| `Classified` | "This surface is of a class" | Gates founding and titling only. Keeps the attention it earned. |
+| `WorkDismissed` | "Don't show this work" | Evidence retained; hidden from the rack. |
+| `MemberState` | A lifecycle correction | Applies to that one member. |
+
+`SeparateWork` is the load-bearing one. It is not a preference that tilts a score — it is a **prohibition**, recorded in the log and honoured on every replay:
+
+> *"These are separate works; inference will never put them together."*
+> — `assign.rs`
+
+Learning would make the boundary unreproducible. And an unreproducible boundary is not something you would give an agent permission to act on.
+
+---
+
+## Try it
+
+**[→ bhavit-evo.github.io/evo-boundary-demo](https://bhavit-evo.github.io/evo-boundary-demo/)**
+
+No install. No keys. Nothing to configure. It runs a **synthetic corpus** — eight invented bodies of work for an invented person — so that publishing the demo does not publish anyone's browsing history.
+
+Do these four things, in order:
+
+**1. Ask it something real.**
+`where did I look for flats to rent?`
+→ answers `flat`, prints the evidence that decided it, shows the percentage of evidence, and names the work it *nearly* picked instead. Then look closely at the answer: **`flat` is one of the six the engine refuses to claim.** It will answer your question about the work without asserting the work exists. That restraint is the product.
+
+**2. Ask it something that is not work at all.**
+`what is the capital of france?`
+→ **`Not a job.`** No work matches, and it says so instead of inventing one.
+
+**3. Try to break it.**
+Select two works → **Merge these by inference** →
+> `Refused. No inference path exists. A body of work is a claim about relationships, and only a person can make it. exit 0.`
+
+**4. Then override it — which is allowed.**
+→ **Declare them the same work** → the gate table flips red at `no two works fuse` → `FUSED: {...}` → **`exit code 1` — the build fails.**
+
+Steps 3 and 4 are the pitch. A person can always override the engine. **The engine can never override the person** — and the build refuses to ship when someone tries to let it.
+
+<sub>The two buttons simulate the gate so you can watch it trip. They do not write to the engine. See [what is real](#what-is-real-and-what-is-not).</sub>
+
+---
 
 ## How it works
 
-Evo is a Cargo workspace with a layered architecture:
-
-```text
-macOS observation
+```
+  sample_events.json      10,392 recorded events · two days · one machine
         │
+        │   cargo run -p evo-threads --bin boundary_dump
         ▼
-artifact identity + activity ledger
+  ┌──────────────────────────────────────────────────────────────┐
+  │  evo-threads  —  the engine                                  │
+  │  Rust · deterministic fold over the log · offline            │
+  │  no model · no network · no HTTP client anywhere             │
+  └──────────────────────────────────────────────────────────────┘
         │
+        │   Engine::briefs()  →  Vec<WorkBrief>
         ▼
-work/thread formation and retrieval
+  threads.json            the one contract between engine and everything else
         │
+        │   python3 evo_server.py        one process, two mouths
         ▼
-restoration planning + native app launch
-        │
-        ▼
-desktop shell, workspace arrangement, notch, and voice
+  ┌──────────────────────────────────────────────────────────────┐
+  │  evo_server.py                                               │
+  │    serve :8765  ──▶  evo_ui.html      a human asks           │
+  │    mcp   stdio  ──▶  any MCP agent    an agent asks          │
+  └──────────────────────────────────────────────────────────────┘
 ```
 
-The most important boundaries are:
+The engine decides. The service makes the decision **addressable**. Nothing else is permitted an opinion.
 
-| Layer | Responsibility |
-| --- | --- |
-| `evo-observation` | Local observation contracts and event language |
-| `evo-artifact` | Artifact identity and lifecycle |
-| `evo-ledger` | Deterministic local activity ledger with SQLite/FTS5 |
-| `evo-threads` | Formation of bodies of work from activity evidence |
-| `evo-retrieval` | Retrieval and meaning-based continuation |
-| `evo-restoration` | Platform-neutral restoration planning |
-| `evo-execution` | Native restoration execution |
-| `evo-workspace` | Workspace state and arrangement models |
-| `evo-daemon` | Background coordination and local runtime services |
-| `evo-voice` | Microphone, wake word, Whisper, and local intent pipeline |
-| `evo-desktop` | Native macOS shell, notch, voice agent, and user surface |
+Three MCP tools, and that is the whole surface:
 
-See the [architecture documentation](docs/architecture/ARCHITECTURE.md) and
-[implementation playbook](docs/implementation/IMPLEMENTATION_PLAYBOOK.md) for
-the deeper system model.
+| Tool | What an agent gets |
+|---|---|
+| `list_works` | every body of work on the machine, with the refused ones marked |
+| `find_work` | which work a resource or phrase belongs to, with evidence and what it rejected |
+| `resume_work` | the exact surfaces to reopen — the neighbourhood, not the museum |
 
-## Requirements
+---
 
-- macOS on Apple Silicon
-- Xcode Command Line Tools
-- Rust toolchain with Cargo
-- A working local ONNX Runtime installation for voice-enabled builds
-- macOS permissions appropriate to the features you enable:
-  - Microphone for voice capture
-  - Accessibility for observing and arranging application windows
-  - Input Monitoring or related permissions when requested by macOS
+## Numbers
 
-The default build is passive and does not enable microphone capture. Voice is
-opt-in at build time.
+| | |
+|---|---|
+| **10,392** | recorded events — two days, one machine, one person |
+| **164** | resources labelled by hand |
+| **8** | bodies of work, human-labelled |
+| **2** | claimed by the engine |
+| **6** | refused rather than guessed |
+| **0** | HTTP clients in the whole workspace — enforced by a test, not a promise |
+| **1** | person the boundary is proven on |
 
-## Build Evo
+Performance, measured on this corpus:
 
-Clone the repository and enter the project:
+- 50,000 observations across 1,000 resources → **874 ms** to build the boundary once
+- → **4.2 ms** to reload it from the log, a **~200×** difference
+- the pairwise term is **~2 µs per pair** and is genuinely quadratic — a real ceiling, documented rather than hidden
 
-```sh
-git clone https://github.com/BHAVIT-EVO/architecture-v1.git
-cd architecture-v1
+---
+
+## What is real, and what is not
+
+We would rather you trust the two claimed works than be impressed by eight. So, precisely:
+
+### Real
+
+- **The engine** — 16 Rust crates, a deterministic fold over an event log. No model, no network, no HTTP client.
+- **The local-first guarantee, as code** — `crates/evo-desktop/tests/trust_constraints.rs` walks every `Cargo.toml` and every `.rs` file in the workspace and fails the build if `reqwest`, `hyper`, `ureq`, `attohttpc` or `isahc` ever appears. It is a test, not a claim in a README.
+- **The gate** — `crates/evo-threads/tests/ground_truth.rs` asserts no fusion, no leisure anchor and determinism. It fails the build when violated.
+- **The corpus** — 10,392 events, one machine, one person, 164 resources labelled by hand.
+- **The boundary** — derived by the engine from those events, not written by hand.
+- **The HTTP service, the MCP server, the product UI.**
+
+### Simulated
+
+- **The two buttons** in the demo demonstrate the *gate*. They simulate a fusion so you can watch the verifier reject it. They do not write to the engine.
+- **The public demo's corpus is synthetic.** The real corpus contains one person's actual browsing and is never published.
+
+### Not built yet
+
+- The engine implements all six declaration kinds and honours them on replay. **The service exposes no endpoint for them yet** — today, declarations are made by replaying a log, not by calling an API.
+
+### Not claimed
+
+- No users, no revenue, no retention. **Nobody outside the company has run this.** The boundary is proven on exactly one person, and that is the next thing to fix — not the next feature to add.
+
+---
+
+## Run it
+
+This repository is **private while the corpus is unredacted** — one real person's browsing lives in `boundary.json`, and it stays off the public internet. Ask, and we will add you. The public demo above is the same engine on a synthetic corpus.
+
+```bash
+git clone https://github.com/BHAVIT-EVO/architecture-v1
+cd architecture-v1/exports/ship-happens
+
+# the demo — standard library only, no pip, no keys, no network
+python3 evo_server.py serve            # → http://localhost:8765
 ```
 
-Build the standard macOS application:
+Ask the boundary a question without a browser:
 
-```sh
-bash scripts/build-app.sh
+```bash
+$ python3 mcp_probe.py "where did I look for hiking clothes"
+
+  -> initialize
+  <- evo-boundary 0.1.0
+  -> tools/list
+  <- list_works, find_work, resume_work
+  -> find_work("where did I look for hiking clothes")
+
+  answer
+    work: gear (id 3)
+    evidence: anchor: clothes,hiking; concept: clothes->arcteryx
+    confidence: 58%
+    rejected: trek(3)
+    resume: Last seen: Unisex Hiking & Trekking Clothes | Arc'teryx United States
 ```
 
-This produces and installs the canonical application at
-`/Applications/Evo.app` by default. To build the voice-enabled application with
-the notch and always-on agent:
+That is a real transcript from this repository, not an illustration. `mcp_probe.py` starts the server as a child process, performs the actual `initialize` → `tools/list` → `tools/call` handshake, and prints both directions of the exchange so you can watch the protocol happen.
 
-```sh
-EVO_VOICE=on bash scripts/build-app.sh
+Notice what the answer contains: **the confidence, the evidence that produced it, the work it rejected, and the page to reopen.** No prose. No summary. A decision an agent can act on and a person can audit.
+
+The offline explorer needs no server at all:
+
+```bash
+open boundary.html      # double-click, works with the wifi off
 ```
 
-For a debug build:
+### The engine
 
-```sh
-PROFILE=dev EVO_VOICE=on bash scripts/build-app.sh
+```bash
+cargo run -p evo-threads --bin regression -- \
+  --events tools/threads-regression/sample_events.json \
+  --labels tools/threads-regression/ground_truth_labels.json
+
+cargo run -p evo-threads --bin boundary_dump -- \
+  --events tools/threads-regression/sample_events.json \
+  --out exports/ship-happens/threads.json
 ```
 
-### ONNX Runtime provisioning
+The regression binary is the gate: it exits **1** if two labelled works ever fuse.
 
-Voice builds use ONNX Runtime for the local acoustic wake-word models. The
-build intentionally requires explicit provisioning so the runtime source is
-clear and reproducible.
-
-Use an external local runtime directory:
-
-```sh
-EVO_ORT_PROVISIONING=external \
-ORT_LIB_PATH=/path/to/onnx-runtime \
-ORT_PREFER_DYNAMIC_LINK=1 \
-EVO_VOICE=on \
-bash scripts/build-app.sh
-```
-
-Or provide a local bundled runtime and its notices:
-
-```sh
-EVO_ORT_PROVISIONING=bundled \
-EVO_ORT_DYLIB=/path/to/libonnxruntime.dylib \
-EVO_ORT_LICENSE=/path/to/LICENSE \
-EVO_ORT_THIRD_PARTY_NOTICES=/path/to/ThirdPartyNotices.txt \
-EVO_VOICE=on \
-bash scripts/build-app.sh
-```
-
-Do not commit model files, ONNX Runtime binaries, app bundles, or machine-local
-runtime paths. The repository intentionally excludes those artifacts.
-
-## Enable always-on capture
-
-After building a voice-enabled app, install the macOS LaunchAgents:
-
-```sh
-bash scripts/install-agents.sh
-```
-
-The installer uses `/Applications/Evo.app` by default. To use another bundle:
-
-```sh
-BUNDLE=/path/to/Evo.app bash scripts/install-agents.sh
-```
-
-To remove the installed agents:
-
-```sh
-bash scripts/install-agents.sh --remove
-```
-
-The always-on agent owns the voice/notch runtime. Do not start a second copy of
-the daemon against the same storage root.
-
-## Local voice pipeline
-
-When enabled, the voice path runs locally:
-
-1. The microphone stream is captured and resampled locally.
-2. The acoustic wake-word models detect “Hey Evo”.
-3. A native notch surface provides immediate listening feedback.
-4. Whisper transcribes the bounded utterance locally.
-5. Local embeddings and Evo's semantic layers match the request to an intent.
-6. The execution and restoration layers perform the requested local action.
-
-The voice build expects these runtime assets beside the installed agent:
-
-- `whisper-base.en.bin`
-- `melspectrogram.onnx`
-- `embedding_model.onnx`
-- `hey_evoh.onnx`
-
-These assets are not stored in Git. The build script validates and copies them
-from the local model/runtime locations used by the installation.
-
-More detail is available in [the voice wake-word guide](docs/voice-wakeword.md)
-and [the local model notes](docs/model-local.md).
-
-## Development commands
-
-Check the workspace without enabling voice:
-
-```sh
-cargo check --workspace --offline --locked
-```
-
-Check the desktop and voice integration:
-
-```sh
-cargo check -p evo-desktop \
-  --features voice-wake,evo-notch,embeddings \
-  --offline --locked
-```
-
-Run the workspace tests:
-
-```sh
-cargo test --workspace --offline --locked
-```
-
-Useful operational scripts:
-
-```sh
-bash scripts/evo-consolidation-checklist.sh
-python3 scripts/evo-doctor.py
-bash scripts/verify-live-capture.sh
-```
-
-Some checks require macOS permissions, a running app bundle, or locally
-provisioned model/runtime assets. Treat failures from those checks as environment
-signals rather than automatically as unit-test failures.
+---
 
 ## Repository map
 
-- `crates/` — Rust workspace and domain/runtime implementation
-- `docs/foundation/` — product principles, cognitive model, and architectural laws
-- `docs/architecture/` — system architecture and restoration model
-- `docs/implementation/` — implementation contracts and feature specifications
-- `docs/user/` — user-facing operating notes
-- `docs/voice-wakeword.md` — local voice and wake-word details
-- `scripts/` — build, install, verification, and model tooling
-- `DESIGN.md` — visual and interaction design contract
-- `THIRD-PARTY-NOTICES.md` — third-party software notices
+```
+crates/evo-threads/src/          the engine
+  bin/boundary_dump.rs           events → threads.json
+  bin/regression.rs              the gate: exits 1 on fusion
+  tests/ground_truth.rs          no fusion · no leisure anchor · deterministic
+exports/ship-happens/            everything demoable
+  evo_server.py                  HTTP service + MCP server
+  evo_ui.html                    the product surface
+  mcp_probe.py                   a real MCP client
+  boundary.html                  offline explorer, no server
+site/index.html                  the public demo (synthetic corpus)
+tools/build_site.py              regenerates it
+docs/                            architecture, audits, research
+DEMO.md                          the written walkthrough
+```
 
-## Privacy and data handling
+---
 
-Evo is built to keep its working data on the Mac. Local storage, activity
-observations, voice models, transcription, and semantic matching are intended
-to remain within the local runtime. The application still requires powerful
-macOS permissions for features such as Accessibility and microphone capture.
-Review and grant only the permissions needed for the capabilities you choose to
-use.
+## Roadmap
 
-This repository may contain research and engineering evidence in addition to
-the active implementation. See the applicable file licenses and
-`THIRD-PARTY-NOTICES.md` before redistributing derived or reference material.
+The honest next three things, in order:
 
-## Contributing
+1. **Ten people outside the company, running it for thirty days.** The boundary is proven on one person. Everything else is speculation until that changes.
+2. **A declaration endpoint.** The engine already honours six kinds of human declaration; the service should let a person make one without replaying a log.
+3. **An agent permission model** built on top of the boundary — an agent asks `find_work`, and the boundary answers with what it may touch, not just what it is.
 
-Before opening a pull request:
+---
 
-1. Keep changes within the relevant crate or documented architectural boundary.
-2. Add or update tests for behavior changes.
-3. Run the smallest applicable `cargo check` and test command.
-4. Do not commit secrets, local databases, model binaries, app bundles, logs,
-   ONNX Runtime binaries, or machine-specific paths.
-5. Update directly related documentation.
+## Sources
 
-For product and architecture context, start with the
-[constitution](docs/constitution/CONSTITUTION.md), [cognitive model](docs/foundation/COGNITIVE_MODEL.md),
-and [architectural laws](docs/foundation/ARCHITECTURAL_LAWS.md).
+Every external number in this README, in one place, so it can be checked instead of trusted:
+
+- Gloria Mark, Daniela Gudith & Ulrich Klocke, *The Cost of Interrupted Work: More Speed and Stress*, CHI 2008 — [doi.org/10.1145/1357054.1357072](https://doi.org/10.1145/1357054.1357072)
+- Gloria Mark, *Attention Span* (2023) — the 47-second figure, down from 2.5 minutes in 2004
+- Chris Parnin & Spencer Rugaber, *Resumption Strategies for Interrupted Programming Tasks*, Software Quality Journal, 2011 — [link.springer.com/article/10.1007/s11219-010-9104-9](https://link.springer.com/article/10.1007/s11219-010-9104-9)
+- Microsoft Work Trend Index 2023, *Will AI Fix Work?* — 31,000 workers, 31 markets, trillions of M365 signals — [microsoft.com/worklab](https://www.microsoft.com/en-us/worklab/work-trend-index/will-ai-fix-work)
+- Microsoft Work Trend Index 2025, *The Frontier Firm* — telemetry to Feb 2025, including the top-20%-by-ping-volume cohort — [microsoft.com/worklab](https://www.microsoft.com/en-us/worklab/work-trend-index/2025-the-year-the-frontier-firm-is-born)
+- Stacklok, *State of MCP 2026* (41% in limited or broad production) and the Stacklok × Linux Foundation AAIF survey, July 2026 (86% experimentation or local dev; 5% governed production; 49% cite security and compliance)
+- Anthropic MCP ecosystem update, Dec 2025 — 10,000+ active public servers
+- Gartner, 2026 forecast — 40% of enterprise apps with task-specific agents by end of year
+- Gravitee, 2026 — 88% of organisations reporting confirmed or suspected AI-agent incidents
+- CSA / Strata, Feb 2026 — 23% with a formal agent-identity strategy
+
+*Correction, if you are reading this after the event: if any figure above has since been revised or withdrawn by its source, the source wins, not this README.*
+
+---
+
+## Built at
+
+Ship Happens, Juspay Gurugram · 31 October 2026 · AWS Student Builder Group × ADIGPS.
+
+**Before:** the engine, the corpus, the verifier.
+**At the event:** the boundary service, the MCP server, the product UI, the Kiro integration.
+
+We say that plainly because the architecture is the interesting part, not the timeline.
+
+---
+
+<div align="center">
+
+<br>
+
+> Every agent shipping right now has **memory**.
+> None of them have **jurisdiction**.
+
+<br>
+
+<sub>Evo — derive the boundary, then let anything ask.</sub>
+
+</div>
