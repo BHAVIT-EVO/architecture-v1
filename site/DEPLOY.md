@@ -6,9 +6,9 @@
 https://bhavit-evo.github.io/evo-boundary-demo/
 ```
 
-That repository — `BHAVIT-EVO/evo-boundary-demo`, public — holds four
-artifacts copied from this folder: `index.html`, `demo.html`, `film.html`,
-`fonts/`. The private repository never becomes public, because
+That repository — `BHAVIT-EVO/evo-boundary-demo`, public — holds five
+artifacts copied from this folder: `index.html`, `demo.html`, `source.html`,
+`film.html`, `fonts/`. The private repository never becomes public, because
 `exports/ship-happens/boundary.json` holds one person's real browsing.
 
 ### Updating it
@@ -29,7 +29,7 @@ to that repository. Do it by hand:
 
 ```bash
 git clone https://github.com/BHAVIT-EVO/evo-boundary-demo && cd evo-boundary-demo
-cp ~/Evo-Evolution.nosync/architecture-v1/site/{index,demo,film}.html .
+cp ~/Evo-Evolution.nosync/architecture-v1/site/{index,demo,source,film}.html .
 mkdir -p fonts && cp ~/Evo-Evolution.nosync/architecture-v1/site/fonts/*.woff2 fonts/
 git add -A && git commit -m "site" && git push
 ```

@@ -156,12 +156,20 @@ def tokens(s):
     return [t for t in out if t and t not in STOP]
 
 
+# Where each invented work sits inside the two days, as a fraction of the
+# window, and how long it stays alive. Deliberately overlapping: real work
+# runs concurrently, and a timeline where nothing overlaps is a fiction of
+# its own. Deterministic, so the picture never moves between builds.
+SPAN = 2 * DAY
+START_F = [0.030, 0.100, 0.200, 0.330, 0.460, 0.550, 0.680, 0.800]
+DUR_F = [0.100, 0.090, 0.120, 0.100, 0.110, 0.080, 0.130, 0.090]
+
+
 def build_data():
     works, stream = [], []
-    t = BASE
     for i, w in enumerate(WORKS):
-        dur = w["events"] * 1500
-        first = BASE + i * 420_000
+        first = BASE + int(SPAN * START_F[i])
+        dur = int(SPAN * DUR_F[i])
         last = first + dur
         for k in range(w["events"]):
             ts = first + int(dur * (k / max(1, w["events"] - 1)))
