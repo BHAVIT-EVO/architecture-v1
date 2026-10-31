@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "evo-boundary": {
+      "command": "/usr/bin/env",
+      "args": [
+        "python3",
+        "/Users/bhavitsaini/Desktop/Evo-Evolution.nosync/exports/ship-happens/evo_server.py",
+        "mcp"
+      ],
+      "env": {},
+      "disabled": false,
+      "autoApprove": ["list_works", "find_work", "resume_work"]
+    }
+  }
+}
