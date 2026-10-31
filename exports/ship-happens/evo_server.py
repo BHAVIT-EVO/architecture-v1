@@ -431,7 +431,8 @@ def main():
         run_mcp()
         return
     Handler.boundary = load_boundary()
-    port = 8765
+    # --port beats $PORT (Render and most hosts inject $PORT)
+    port = int(os.environ.get("PORT", 8765))
     if "--port" in sys.argv:
         port = int(sys.argv[sys.argv.index("--port") + 1])
     print(f'\n  Evo boundary service  ->  http://localhost:{port}')
