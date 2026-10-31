@@ -108,64 +108,79 @@ nobody's browsing. Engine, refusal behaviour and verifier are real.
 
 ---
 
-## 5. Video post link — no video
+## 5. Video post link — no video, post instead
 
-The form asks for a social post. If you are not recording, do not leave it
-blank and do not fake it. **Post the demo as screenshots with the caption
-below.** A post with four images and a real writeup is a legitimate submission,
-takes three minutes, and needs no microphone.
+The form will not take prose in a field that wants a URL. So give it a URL:
+post the demo on LinkedIn and paste the post link.
 
-Screenshots to take, in this order — the first one is the one that sells it:
+### The post
 
-1. The cover, full screen — *Every agent is told where its work begins. Evo
-   derives it.* Nothing else looks like this.
-2. Chapter 04, the dark one — eight bodies of work, two claimed, six refused.
-3. The gate: press **Declare them the same work** and capture
-   `exit code 1 — the build fails`.
-4. The ask panel after `where did I look for flats to rent?` — evidence,
-   percentage, and *refused by the engine* on the same card.
-
-Take them at 1440 px wide so the type has room. The dark chapter needs the
-browser window at least 1200 px or the labels crowd.
-
-### Caption
+Attach four screenshots (cover · console · gate failing · ask panel), then
+paste this. It is ~1,720 characters — inside LinkedIn's 3,000 limit, inside the
+1,300–2,500 band that performs best, and the hook lands inside the ~140
+characters visible on mobile before "see more".
 
 ```
-I built the thing AI agents are missing.
+I didn't record a demo video for the hackathon.
+I built a site you can break instead.
+
+Evo has been a repo and a few screenshots on here for a while. Today it was a
+demo table at Ship Happens, Juspay — one day, about six hours to make the case.
+
+The layer every agent is missing is the least glamorous one: jurisdiction.
 
 Every agent today is told where its work begins and ends. You point it at a
-folder. None of them derive it — and you can't get it from content, because two
-people can have identical files and be doing different jobs.
+folder. None of them derive it — and you can't fix that with a bigger context
+window, because the boundary isn't in the content. Two people can have
+identical files open and be doing completely different jobs.
 
-Evo derives that boundary locally, on one machine, deterministically, with no
-model in the decision. Then it lets any agent ask.
+So: derive it locally. Deterministically. No model in the decision. Then let
+any agent ask.
 
-Three things you can do in the demo:
-— Ask it something. It answers with evidence, and tells you which work it
-  nearly picked instead.
-— Ask it something that isn't work. It refuses.
-— Try to merge two bodies of work. Inference can't. When you force it, the
-  build fails on purpose.
+The number I'd defend isn't coverage.
 
-The number I'd defend isn't coverage. It's that the engine claims 2 of the 8
-works on my machine and refuses the other 6. A wrong merge is irreversible; a
-refusal costs nothing. A boundary that guesses is not a boundary.
+On my machine the engine claims 2 of 8 bodies of work.
+It refuses the other 6.
 
-It doesn't learn, either — the person legislates. Declare two works separate
-and nothing in inference can ever put them back together.
+That is not a failure to find them. A wrong merge is irreversible; a refusal
+costs nothing. A boundary that guesses is not a boundary.
 
-Engine: 16 Rust crates, no HTTP client anywhere, deterministic.
-Built at Ship Happens, Juspay Gurugram, with the AWS Student Builder Group.
+Three things I'd point at:
 
-Demo: https://bhavit-evo.github.io/evo-boundary-demo/
-Writeup: DEMO.md
+→ It doesn't learn. The person legislates — declare two works separate, and
+nothing in inference can ever put them back together.
+→ 16 Rust crates, no HTTP client anywhere, enforced by a test that walks every
+manifest so the claim can't quietly rot.
+→ Any agent can ask over MCP: list_works, find_work, resume_work. Kiro was the
+client.
 
-#BuildInPublic #AI #Agents #MCP #Rust
+You can trip the verifier yourself. Select two works, force them together,
+watch the build fail with exit code 1:
+https://bhavit-evo.github.io/evo-boundary-demo/
+
+Ten chapters, a console, and the engine's real assertions. No install, no keys.
+
+Which would you rather ship: an agent that knows more, or one that knows where
+it's allowed to stand?
+
+#BuildInPublic #AI #MCP #Rust #Hackathon
 ```
 
-If the field is genuinely mandatory and you will not post: put the demo URL
-there and note *"written walkthrough in DEMO.md — no video"*. An honest empty
-field costs less than a fabricated link.
+### Getting the link
+
+1. Post with visibility **Anyone** — not connections-only, or judges outside
+   your network hit a login wall.
+2. On the post, the three dots menu → **Copy link to post**.
+3. Paste that into the form. It looks like
+   `https://www.linkedin.com/posts/bhavit-...-activity-7...`.
+4. Open it in a private window to confirm it renders logged out.
+
+### After posting
+
+Reply to every comment in the first hour — comments are weighted far more
+than likes. If the organisers have a page (AWS Student Builder Group, ADIGPS),
+tag them in a comment rather than the post body; a reshare from them puts the
+work in front of judges twice.
 
 ---
 
