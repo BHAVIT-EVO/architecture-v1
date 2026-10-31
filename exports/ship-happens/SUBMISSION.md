@@ -54,7 +54,9 @@ find_work, resume_work.
 Kiro (AWS) — the MCP client used in the demo. The agent asks where it is
 before it acts.
 
-HTML/CSS/JS — a single-file product UI, no build step, no dependencies.
+HTML/CSS/JS — the public field report and the console: a hand-written scroll
+engine, two canvas scenes, a typing transcript, self-hosted type. No
+frameworks, no CDN, no dependencies, no build step.
 
 Data — 10,392 recorded events from one machine over two days, and 164 resources
 labelled by hand. The engine claims 2 of the 8 works and refuses the other 6.
