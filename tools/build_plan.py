@@ -3,9 +3,10 @@
 
     python3 tools/build_plan.py
 
-Revision 2. Sarvam credits never landed, so the track integration is Kiro
-consuming the boundary over MCP. Block D, the demo script, the submission
-and the appendix below reflect that. Everything else is unchanged.
+Revision 3. All five blocks are present, each opening with an
+Open / Run / Paste strip so there is nothing to guess. Sarvam credits
+never landed, so the track integration is Kiro consuming the boundary
+over MCP.
 """
 import os
 from fpdf import FPDF
@@ -44,7 +45,7 @@ class Doc(FPDF):
         self.set_y(-13)
         self.set_font("d", "", 7.2)
         self.set_text_color(*MUT)
-        self.cell(0, 5, "Evo  ·  Ship Happens build plan  ·  31 Oct 2026  ·  rev 2")
+        self.cell(0, 5, "Evo  ·  Ship Happens build plan  ·  31 Oct 2026  ·  rev 3")
         self.set_x(-M - 46)
         self.cell(46, 5, self.sect, align="R")
 
@@ -52,6 +53,30 @@ class Doc(FPDF):
     def need(self, h):
         if self.get_y() + h > A4H - 20:
             self.add_page()
+
+    def strip(self, open_what, run=None, paste=None):
+        """Open / Run / Paste — what to touch before the block starts."""
+        rows = [("OPEN", open_what)]
+        if run:
+            rows.append(("RUN", run))
+        if paste:
+            rows.append(("PASTE", paste))
+        h = 3.2 + len(rows) * 4.9
+        self.need(h + 4)
+        y0 = self.get_y()
+        self.set_fill_color(30, 32, 36)
+        self.rect(M, y0, CW, h, style="F")
+        y = y0 + 2.4
+        for k, v in rows:
+            self.set_xy(M + 4, y)
+            self.set_font("d", "B", 6.6)
+            self.set_text_color(*ACC2)
+            self.cell(13, 4.2, k)
+            self.set_font("m", "", 6.8)
+            self.set_text_color(226, 220, 210)
+            self.multi_cell(CW - 19, 4.2, v, new_x="LMARGIN", new_y="NEXT")
+            y += 4.9
+        self.set_y(y0 + h + 3.5)
 
     def h1(self, title, kicker=None):
         self.need(40)
@@ -106,8 +131,9 @@ class Doc(FPDF):
 
     def code(self, t, size=7.0):
         self.set_font("m", "", size)
-        lines = t.split("\n")
-        h = 2.6 + len(lines) * (size * 0.44 * 1.22)
+        lh = size * 0.44 * 1.22
+        wrapped = self.multi_cell(CW - 6, lh, t, dry_run=True, output="LINES")
+        h = 2.6 + len(wrapped) * lh
         self.need(h + 3)
         y0 = self.get_y()
         self.set_fill_color(*CODBG)
@@ -256,9 +282,8 @@ def cover(d):
     d.set_font("d", "", 7.6)
     d.set_text_color(120, 116, 110)
     d.multi_cell(CW, 4.4,
-                 "Revision 2 — Sarvam credits did not land. The track integration is "
-                 "Kiro consuming the boundary over MCP; Block D, the demo and the "
-                 "submission below reflect that.")
+                 "Revision 3 — every block present. Sarvam credits did not land, so "
+                 "the track integration is Kiro consuming the boundary over MCP.")
 
 
 def thesis(d):
@@ -431,9 +456,9 @@ def sprint_table(d):
         "you still have a demo. That property matters more than finishing.", after=4)
     d.table(["Block", "Time", "You produce", "If it fails"],
             [["A", "10:10 – 10:40", "Kiro open, engine verified, threads.json written.", "Use boundary.json."],
-             ["B", "10:40 – 11:40", "Service on :8765, UI loading real works.", "Fall back to boundary.html."],
-             ["C", "11:40 – 12:40", "Kiro asks Evo and gets evidence back.", "Drop MCP; curl the endpoint."],
-             ["D", "12:40 – 13:40", "Kiro rehearsal + backup recording.", "Drop Render. Never drop the recording."],
+             ["B", "10:40 – 11:40", "Service on :8765, /ask answering, UI loading works.", "Fall back to boundary.html."],
+             ["C", "11:40 – 12:40", "Kiro asks Evo over MCP and gets evidence back.", "Drop Kiro; use mcp_probe.py."],
+             ["D", "12:40 – 13:40", "Timed handoff rehearsal + backup recording.", "Drop Render. Never drop the recording."],
              ["E", "13:40 – 14:00", "Frozen, one full run-through, committed.", "—"]],
             [12, 30, 74, 60])
     d.p("Each block has a twenty-minute overrun limit. Past it, take the failure path, "
@@ -441,10 +466,190 @@ def sprint_table(d):
         "wins. A demo still compiling at 4:10 cannot be submitted.", after=0)
 
 
+def block_a(d):
+    d.sect = "Sprint 01 / A"
+    d.h1("Block A — Setup and the engine proof", "10:10 – 10:40")
+    d.strip("Terminal at the repo root. Kiro in a second window.",
+            "the four commands below, in order",
+            "the steering check and the A3 explain prompt")
+    d.p("Goal: by 10:40 you either have a threads.json from the real engine, or a written "
+        "decision to use the fallback. No ambiguity, no half-built Rust.", after=4)
+
+    d.h3("A1  ·  Prove the engine runs, then write the boundary")
+    d.code("""cd ~/Desktop/Evo-Evolution.nosync
+
+# the corpus path, used three times below — avoids long lines
+E=tools/threads-regression/sample_events.json
+L=tools/threads-regression/ground_truth_labels.json
+
+# 1. the gate — 5-8 min the first time, ~40s after
+cargo run -p evo-threads --bin regression -- --events $E --labels $L
+
+# 2. the bridge — writes the boundary the service will serve
+O=exports/ship-happens/threads.json
+cargo run -p evo-threads --bin boundary_dump -- --events $E --out $O
+
+# 3. look at what it claimed
+python3 -m json.tool exports/ship-happens/threads.json | head -30""")
+
+    d.p("The regression binary prints a report and exits 0. If it exits 1, the gate is "
+        "working — that is worth thirty seconds of understanding, not a rewrite.", after=3)
+
+    d.callout("If the path gets clipped",
+              "You will get a file called ship-hap instead of a folder. Fix it with "
+              "`mv exports/ship-hap exports/ship-happens/threads.json`. The dump binary "
+              "creates the file wherever you point it; it does not create folders.")
+
+    d.h3("A2  ·  Confirm Kiro loaded the steering file")
+    d.p("The steering file is already in the repo at `.kiro/steering/product.md`. You are "
+        "not writing it — you are checking Kiro read it, because rule 4 is the only thing "
+        "stopping an agent from wiring a model into the decision path.", after=2)
+    d.code("""cat .kiro/steering/product.md      # if this is empty, pull the branch:
+
+git fetch origin arena/2873f4c9-architecture-v1
+git checkout origin/arena/2873f4c9-architecture-v1 -- .kiro""")
+    d.prompt("Kiro", "chat, with the repo folder open", """Without reading any files, tell me the hard rules that apply to this
+repository. Quote rule 4 exactly.""")
+
+    d.p("It should recite: external services consume the boundary, they never influence how "
+        "it is computed. If it cannot, quit Kiro (Cmd+Q), reopen the folder, try again. "
+        "Do not spend more than five minutes on this.", after=3)
+
+    d.h3("A3  ·  Learn to defend the design")
+    d.prompt("Kiro", "chat — read-only, writes nothing", """Read crates/evo-threads/src/lib.rs and src/brief.rs. Do not write code.
+Explain in under 250 words, in plain English: what a work is, what a brief
+contains, how resume_point and restore_set are chosen, and why the engine
+has no concept of a filename or an application name.
+
+Then give me three questions a judge might ask about this design and the
+one-sentence answer to each.""")
+
+    d.callout("Why A3 is not optional",
+              "You will be asked \"how does it decide?\". If the answer is \"the AI figures it "
+              "out\", you are every other project in the room. If the answer is \"attention "
+              "is serial, work is not, so it segments episodes and joins them by what you "
+              "made rather than where you were\", you are the only person in the building "
+              "who can say that.")
+
+
+def block_b(d):
+    d.sect = "Sprint 01 / B"
+    d.h1("Block B — The service", "10:40 – 11:40")
+    d.strip("Terminal in exports/ship-happens. A browser tab.",
+            "python3 evo_server.py serve",
+            "the /evidence endpoint prompt, only if you have spare time")
+    d.p("Goal: something running on a port that a stranger could curl. This is the "
+        "difference between a project and a page.", after=4)
+
+    d.h3("B1  ·  Run it before you change it")
+    d.code("""cd exports/ship-happens
+python3 evo_server.py serve
+
+# second terminal — four answers, in this order
+curl -s localhost:8765/health
+curl -s localhost:8765/works | head -c 400
+curl -s "localhost:8765/ask?q=where+did+i+look+for+hiking+clothes"
+curl -s 'localhost:8765/ask?q=capital+of+france'""")
+
+    d.p("You want: a health line saying engine+labels, a list of works with claimed and "
+        "refused marked, \"gear\" with evidence, and a refusal. The refusal is the one that "
+        "must work — if the boundary is guessing, the thesis is broken and nothing "
+        "cosmetic matters.", after=3)
+
+    d.h3("B2  ·  Make it yours, if there is time")
+    d.prompt("Kiro", "exports/ship-happens/evo_server.py", """Read exports/ship-happens/evo_server.py. Do not rewrite it.
+
+Add one endpoint: GET /evidence?q=<question>
+
+It returns the same answer as /ask, plus, for the winning work, the three
+strongest individual pieces of evidence with their weights, in the order
+the scorer produced them - not re-sorted, not summarised.
+
+Standard library only. Do not change the /ask response shape. Do not touch
+load_boundary() or normalise().""")
+
+    d.h3("B3  ·  The line you say while it runs")
+    d.callout("The service line",
+              "\"That is not a screenshot. That is a service on this laptop, reading a file "
+              "the Rust engine wrote twenty minutes ago. Nothing here left the machine, "
+              "which is why it still works with the wifi off — and I will show you that "
+              "later.\"")
+    d.p("Then move on. Do not tour the code. The code is not the demo; the refusal is.",
+        after=0)
+
+
+def block_c(d):
+    d.sect = "Sprint 01 / C"
+    d.h1("Block C — The protocol, and the agent you demo with", "11:40 – 12:40")
+    d.strip("Kiro (quit and reopened). One terminal for the stdio check.",
+            "python3 evo_server.py mcp   —   then python3 mcp_probe.py --tools",
+            "the three MCP prompts, in the order they appear on stage")
+    d.p("This is the new thing. Until today nothing outside the repository could ask Evo "
+        "anything. MCP is how an agent asks — and Kiro is the agent.", after=4)
+
+    d.h3("C1  ·  Confirm the server speaks before Kiro touches it")
+    d.code("""cd exports/ship-happens
+python3 mcp_probe.py --tools        # initialize, then tools/list""")
+    d.p("You should see the handshake and three tool names: list_works, find_work, "
+        "resume_work. Then ask it something real:", after=2)
+    d.code("""python3 mcp_probe.py 'where did I look for hiking clothes'""")
+    d.p("It prints the answer, the evidence, and the work it rejected. If this works, "
+        "everything else in this block is configuration — and you have a demo even if "
+        "Kiro never connects.", after=3)
+
+    d.h3("C2  ·  Register Evo with Kiro")
+    d.p("The config is committed at `.kiro/settings/mcp.json` with your absolute path "
+        "already in it. Verify it, then **fully quit Kiro** — the config is read at "
+        "startup only.", after=2)
+    d.code("""cat .kiro/settings/mcp.json""")
+    d.p("Reopen Kiro on the repo folder. The MCP panel should show `evo-boundary` with "
+        "three tools: list_works, find_work, resume_work. If it shows nothing, run the "
+        "stdio check above — that separates a broken server from a broken config, and "
+        "they have different fixes.", after=3)
+
+    d.callout("The narrowness is the point",
+              "A full agent will happily start exploring your repository, and the moment "
+              "stops being about the boundary. Every prompt below forbids file reads and "
+              "commands for a reason: you want the judge watching a tool call, not an IDE "
+              "doing detective work.")
+
+    d.h3("C3  ·  The three prompts — these go on stage")
+    d.prompt("Kiro", "prompt 1 · list_works", """Use the evo-boundary MCP tool list_works. Only that.
+Do not read files. Do not run commands.
+Show the output exactly as returned.""")
+
+    d.prompt("Kiro", "prompt 2 · find_work", """Call evo-boundary find_work once with exactly:
+where did I look for hiking clothes
+
+Reply with ONLY these three lines, nothing else:
+work: <name> (<confidence>%)
+evidence: <evidence>
+rejected: <rejected list, or none>""")
+
+    d.prompt("Kiro", "prompt 3 · the refusal", """Call evo-boundary find_work once with exactly:
+what is the capital of france
+
+Reply with only the returned text. No commentary.""")
+
+    d.p("Write down how long each call takes. That number paces your 0:55 beat: under two "
+        "seconds and you move, five to ten and you start talking a beat earlier and let "
+        "the pause read as work.", after=2)
+
+    d.h3("C4  ·  The fallback, and why it is not a downgrade")
+    d.code("""python3 mcp_probe.py 'where did I look for hiking clothes'""")
+    d.p("Prints initialize, tools/list, then the answer with evidence and the rejected "
+        "work. If Kiro will not connect on the day, you run this instead and say: \"this is "
+        "the same conversation, in a terminal, so you can see the protocol.\" The judge "
+        "watches the handshake happen. It is arguably clearer.", after=0)
+
+
 def block_d(d):
     d.sect = "Sprint 01 / D"
     d.h1("Block D — Rehearse the handoff, then insure it", "12:40 – 13:40")
 
+    d.strip("Kiro, the service terminal, and QuickTime ready.",
+            "nothing new — you are rehearsing what exists",
+            "the three C3 prompts, timed once each")
     d.p("This block changed. Sarvam credits did not land, so there is no voice to build. "
         "What replaces it is worth more: the ten seconds where an AWS product asks your "
         "engine a question — and the recording that survives if it does not.", after=4)
@@ -504,6 +709,49 @@ Cover, in this order:
 
     d.p("Commit everything. From here you change words, not code. The most common way to "
         "lose a hackathon is a change made after the last rehearsal.", after=0)
+
+
+def block_e(d):
+    d.sect = "Sprint 01 / E"
+    d.h1("Block E — Freeze the machine", "13:40 – 14:00")
+    d.strip("Everything you will show. Nothing you will not.",
+            "git status  ·  git commit -am \"hackathon\"",
+            "nothing. No prompts from here.")
+    d.p("Twenty minutes to make the laptop itself part of the performance. Most demos do "
+        "not fail because the code is wrong — they fail because something on screen "
+        "should not be there.", after=4)
+
+    d.h3("E1  ·  Commit, then stop writing code")
+    d.code("""cd ~/Desktop/Evo-Evolution.nosync
+git add -A && git commit -m "ship happens submission"
+git log --oneline -3""")
+
+    d.h3("E2  ·  The screen, exactly")
+    d.p("One browser window with two tabs, and Kiro behind it. Nothing else.", after=2)
+    d.table(["Order", "What is open", "Why"],
+            [["Tab 1", "localhost:8765 — evo_ui.html", "The product. This is what beat 0:20 shows."],
+             ["Tab 2", "exports/ship-happens/boundary.html", "The break-it. Opened by file, no server, so it cannot fail."],
+             ["Window 2", "Kiro, repo folder, MCP panel visible", "The agent. Beat 0:55."],
+             ["Window 3", "Terminal, server running, scrolled to the startup lines", "The proof. Only used if asked."],
+             ["Closed", "Slack, WhatsApp, mail, every other tab", "One notification over a demo is a lost demo."]],
+            [17, 72, 87], size=7.4)
+
+    d.h3("E3  ·  One complete run-through, out loud, timed")
+    d.p("Not a mental rehearsal. Stand up, screen full, talk, click. You are looking for "
+        "three things: where you stumble, where a window is in the wrong place, and "
+        "whether you finish under 3:00.", after=2)
+    d.code("""Target: 2:40. Cut the works tour if you are over.
+Never cut: the refusal, the break-it, the closing line.""")
+
+    d.callout("The freeze is not a suggestion",
+              "After 13:40 you change words, not code. The single most common way to lose "
+              "a hackathon is a small fix made at 15:50 that does not get re-tested. Your "
+              "demo is good enough. Your delivery is not yet.", BADC)
+
+    d.h3("E4  ·  The two-minute breather")
+    d.p("Eat something. Walk once around the room. You are on at 4:30 and you will be "
+        "speaking to people who have been sitting for seven hours. Energy is part of the "
+        "demo and you cannot fake it at 4:25.", after=0)
 
 
 def sprint2(d):
@@ -700,7 +948,8 @@ def appendix(d):
     d.h1("Everything in one place", "appendix")
     d.h3("Commands")
     d.code("""# engine -> json
-cargo run -p evo-threads --bin boundary_dump -- \\
+O=exports/ship-happens/threads.json
+cargo run -p evo-threads --bin boundary_dump -- --events $E --out $O
   --events tools/threads-regression/sample_events.json \\
   --out exports/ship-happens/threads.json
 
@@ -748,7 +997,11 @@ def build():
     arch(d)
     position(d)
     sprint_table(d)
+    block_a(d)
+    block_b(d)
+    block_c(d)
     block_d(d)
+    block_e(d)
     sprint2(d)
     submission(d)
     demo(d)
