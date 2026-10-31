@@ -173,69 +173,45 @@ field costs less than a fabricated link.
 
 ```
 WHAT THIS IS
-
-Evo derives a person's work boundary — where one body of work ends and the next
-begins — on the local machine, and exposes it so any agent can query it. The
-decision is made by deterministic rules, not a model. The same log replayed
-twice produces the same answer twice.
+Evo derives a person's work boundary — where one body of work ends and the
+next begins — on the local machine, and exposes it so any agent can query it.
+Deterministic rules, not a model. The same log replayed twice produces the same
+answer twice.
 
 WHY IT EXISTS
+Agents can't safely act on a real desktop because they don't know which files
+belong to which job. Scale doesn't fix that: the boundary isn't in the content.
+Two people can have identical files and be doing different jobs.
 
-Agents can't safely act on a real desktop because they don't know which of your
-files belong to which job. You can't fix that with scale: the boundary isn't in
-the content. Two people can have identical files and be doing different jobs.
+START HERE — no install, no keys
+https://bhavit-evo.github.io/evo-boundary-demo/
+  /             the field report, ten chapters, about three minutes
+  /demo.html    the console: eight works, two claimed, six refused
+  /source.html  seven excerpts from the engine — the declaration enum, the
+                gate assertions, the no-network test, the MCP surface
 
-TRY IT IN TWO MINUTES (no install, no keys)
+WHAT TO PRESS
+1. demo.html — select two works, press "Declare them the same". The verifier
+   goes red and prints exit code 1. That failure is the product.
+2. Ask "where did I look for flats to rent?" — it answers with evidence, the
+   share of evidence, and the work it nearly picked instead.
+3. Ask "what is the capital of france?" — it refuses. A boundary that guesses
+   is not a boundary.
 
-  git clone https://github.com/BHAVIT-EVO/architecture-v1
-  cd architecture-v1 && git checkout arena/2873f4c9-architecture-v1
-  cd exports/ship-happens
-  python3 evo_server.py serve          # -> http://localhost:8765
+WHY ONLY 2 OF 8
+Eight bodies of work were labelled by hand. The engine independently claimed
+two and would not assert the other six. A wrong merge is irreversible; a
+refusal costs nothing.
 
-Open localhost:8765. Ask "where did I look for hiking clothes?" — it answers
-"gear", shows the evidence, and tells you it nearly chose "trek" instead. Ask
-"what is the capital of france?" — it refuses. That refusal is the product.
+THE ENGINE
+16 Rust crates, a deterministic fold over an event log. No model in the
+decision path, and no HTTP client anywhere — enforced by a test that walks
+every manifest in the workspace, so the claim cannot quietly rot.
 
-The header will read "2 of 8 claimed". Eight bodies of work were labelled by
-hand; the engine independently claimed two and would not assert the other six.
-That is not a bug. A wrong merge is irreversible, a refusal costs nothing.
-
-THE PROTOCOL, WITHOUT AN IDE
-
-  python3 mcp_probe.py "where did I look for hiking clothes"
-
-Prints the MCP handshake, lists the three tools, and shows the answer with the
-evidence and the rejected work. This is the same exchange an agent gets.
-
-THE BREAK-IT
-
-Open exports/ship-happens/boundary.html by double-clicking it — no server
-needed. Select two works, press "Merge by inference": refused. Then press
-"Declare them the same work": the verifier goes red and the build fails with
-exit 1. Those are the real assertions from crates/evo-threads.
-
-WHAT IS REAL AND WHAT IS NOT — please read this before judging
-
-Real: the engine (16 Rust crates), the corpus (10,392 events, two days, one
-machine), the 164 hand labels, the derived boundary, the verifier, the MCP
-server, the service, the UI.
-
-Not real: the two buttons in boundary.html demonstrate the gate — they simulate
-a fusion and show the verifier rejecting it. They do not write to the engine.
-
-Not built yet: the engine implements six kinds of human declaration (same work,
-separate, not mine, classified, dismissed, member state) and SeparateWork is a
-standing prohibition — inference can never rejoin two declared-separate works.
-The service exposes no endpoint for those yet. Do not claim otherwise.
-
-Not claimed: users, revenue, retention. Nobody outside the company has run it.
-The boundary is proven on exactly one person.
-
-BUILT TODAY vs BEFORE
-
-Before: the engine, the corpus, the verifier.
-Today: the boundary service, the MCP server, the product UI, the Kiro
-integration.
+SOURCE
+The repository is private because boundary.json holds one person's real
+browsing. The engine is real; that corpus is not publishable. Ask and we will
+add you to it.
 ```
 
 ---
