@@ -248,16 +248,22 @@ h1.huge em{font-style:italic;color:var(--signal)}
 .btn:hover{background:var(--ink);color:var(--paper)}
 .btn.p{background:var(--signal);border-color:var(--signal);color:#fff}
 .btn.p:hover{background:var(--signal-2);border-color:var(--signal-2)}
-.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn:disabled{opacity:.38;cursor:not-allowed}
 .btn:disabled:hover{background:none;color:var(--ink)}
+.btn.p:disabled:hover{background:var(--signal);color:#fff}
+:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+.btn:focus-visible,.chip:focus-visible,.wrow:focus-visible{outline:2px solid var(--signal);outline-offset:-2px}
+.askline:focus-within{border-color:var(--signal)}
 .gout{margin-top:14px;font-family:var(--mono);font-size:11px;line-height:1.7;color:var(--ink-55);min-height:3.2em}
 .gout .bad{color:var(--signal);font-weight:500}
 @media(max-width:820px){.gate{grid-template-columns:1fr}}
 
 /* ---------- ledger table ---------- */
-.ledger-t{width:100%;border-collapse:collapse;margin-top:30px;font-family:var(--mono);font-size:11.5px}
+.ledger-t{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:30px;font-family:var(--mono);font-size:11.5px}
+.ledger-t th:nth-child(1),.ledger-t td:nth-child(1){width:21%}
+.ledger-t th:nth-child(2),.ledger-t td:nth-child(2){width:27%}
 .ledger-t th{text-align:left;font-weight:500;font-size:9.5px;letter-spacing:.17em;text-transform:uppercase;color:var(--ink-55);padding:0 14px 9px 0;border-bottom:1px solid var(--ink)}
-.ledger-t td{padding:14px 14px 14px 0;border-bottom:1px solid var(--rule);vertical-align:top;line-height:1.6}
+.ledger-t td{padding:14px 14px 14px 0;border-bottom:1px solid var(--rule);vertical-align:top;line-height:1.6;overflow-wrap:anywhere}
 .ledger-t tr.hot td{border-bottom-color:var(--signal);background:linear-gradient(90deg,rgba(206,69,31,.055),transparent 60%)}
 .ledger-t tr.hot td:first-child{box-shadow:inset 3px 0 0 var(--signal);padding-left:12px}
 .ledger-t .kw{color:var(--signal);font-weight:500}
@@ -383,24 +389,33 @@ h2.display .ln{display:block;overflow:hidden;padding-bottom:.13em;margin-bottom:
 .gantt .track.refused i{background:repeating-linear-gradient(90deg,rgba(20,18,15,.32) 0 2px,transparent 2px 5px);border-top:1px solid rgba(20,18,15,.32);border-bottom:1px solid rgba(20,18,15,.32)}
 .gantt .rule-v{position:absolute;top:44px;bottom:10px;width:1px;background:var(--rule);pointer-events:none}
 
-/* --- ledger table --- */
-.ledgr{width:100%;border-collapse:collapse}
-.ledgr th{text-align:left;font-family:var(--mono);font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-35);padding:0 10px 9px 0;border-bottom:1px solid var(--ink)}
-.ledgr td{padding:13px 10px 13px 0;border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:11.5px;letter-spacing:.02em;vertical-align:middle}
-.ledgr tr.row{cursor:pointer;transition:background .18s}
-.ledgr tr.row:hover td{background:rgba(20,18,15,.035)}
-.ledgr tr.sel td{background:rgba(206,69,31,.07)}
-.ledgr tr.sel td:first-child{box-shadow:inset 3px 0 0 var(--signal);padding-left:11px}
-.ledgr .idx{color:var(--ink-35);width:34px}
-.ledgr .wk{font-family:var(--serif);font-size:21px;letter-spacing:-.012em;line-height:1}
-.ledgr .num{color:var(--ink-70);font-variant-numeric:tabular-nums}
-.ledgr .st{font-size:9px;letter-spacing:.16em;text-transform:uppercase;white-space:nowrap}
-.ledgr .st.c{color:var(--signal)}
-.ledgr .st.r{color:var(--moss)}
-.ledgr .st .dot{display:inline-block;width:5px;height:5px;margin-right:6px;vertical-align:1px;background:currentColor}
-.ledgr .st .dot.o{background:none;border:1px solid currentColor}
-.ledgr .rs{color:var(--ink-35);font-size:10px;max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-@media(max-width:720px){.ledgr .rs,.ledgr th.rs{display:none}}
+/* --- works: a stacked ledger, not a table --- */
+.works-head{display:grid;grid-template-columns:38px minmax(0,1fr) 104px;gap:14px;
+  padding:0 0 9px;font-family:var(--mono);font-size:9px;font-weight:500;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--ink-35);border-bottom:1px solid var(--ink)}
+.works{border-top:0}
+.wrow{display:grid;grid-template-columns:38px minmax(0,1fr) 104px;gap:14px;align-items:baseline;
+  width:100%;text-align:left;padding:16px 0;border-bottom:1px solid var(--rule);
+  background:none;border-left:0;border-right:0;border-top:0;color:var(--ink);
+  transition:background .18s;position:relative;font:inherit}
+.wrow:hover{background:rgba(20,18,15,.035)}
+.wrow.sel{background:rgba(206,69,31,.065)}
+.wrow.sel::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--signal)}
+.wrow .idx{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--ink-35);padding-top:6px}
+.wrow .wk{font-family:var(--serif);font-size:clamp(20px,2.6vw,26px);letter-spacing:-.015em;line-height:1.08;min-width:0}
+.wrow .wk em{display:block;margin-top:6px;font-style:normal;font-family:var(--mono);font-size:10px;
+  letter-spacing:.03em;line-height:1.5;color:var(--ink-55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wrow .st{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;white-space:nowrap;padding-top:6px}
+.wrow .st.c{color:var(--signal)}
+.wrow .st.r{color:var(--moss)}
+.wrow .st i{display:inline-block;width:5px;height:5px;margin-right:6px;vertical-align:1px;background:currentColor}
+.wrow .st i.o{background:none;border:1px solid currentColor}
+@media(max-width:720px){
+  .works-head,.wrow{grid-template-columns:26px minmax(0,1fr) 82px;gap:10px}
+  .wrow .idx{padding-top:4px}
+  .wrow .wk{font-size:20px}
+  .wrow .st{font-size:8px;padding-top:4px}
+}
 
 /* --- gate side --- */
 .gpanel{border:1px solid var(--ink);background:rgba(255,255,255,.22)}
@@ -436,7 +451,8 @@ h2.display .ln{display:block;overflow:hidden;padding-bottom:.13em;margin-bottom:
 
 <div class="top">
   <a class="brand" href="index.html"><i></i>EVO</a>
-  <div class="tw mono" style="margin-left:auto">
+  <span class="mono" style="margin:0 auto;color:var(--ink-35)">Console · synthetic corpus</span>
+  <div class="tw mono">
     <a href="index.html">← the report</a>
     <a href="source.html">Source</a>
   </div>
@@ -465,12 +481,8 @@ h2.display .ln{display:block;overflow:hidden;padding-bottom:.13em;margin-bottom:
       </div>
 
       <h2 class="h4"><span>The boundary map</span><i>select two to test the gate</i></h2>
-      <table class="ledgr">
-        <thead>
-          <tr><th class="idx">#</th><th>Work</th><th>Res.</th><th>Events</th><th>State</th><th class="rs">Nearest resource</th></tr>
-        </thead>
-        <tbody id="wrows"></tbody>
-      </table>
+      <div class="works-head"><span>#</span><span>Work</span><span>State</span></div>
+      <div class="works" id="wrows"></div>
 
       <div class="note"><b>Why so few claimed.</b> A boundary that guesses is not a boundary. The engine refuses six because it has no evidence they are one job — not because it failed to find them.</div>
 
@@ -548,22 +560,20 @@ $('#s-rf').textContent=W.filter(function(w){return !w.claimed;}).length;
   $('#ax2').textContent=f(t1);
 })();
 
-/* ---- ledger ---- */
+/* ---- works ---- */
 var sel=[];
 (function(){
   var body=$('#wrows'); if(!body) return;
   W.forEach(function(w){
-    var tr=document.createElement('tr');
-    tr.className='row'; tr.dataset.id=w.id;
     var near=(w.top&&w.top[0])?w.top[0].r.replace(/^~?.*\//,''):'—';
-    tr.innerHTML='<td class="idx">'+w.id+'</td>'+
-      '<td class="wk">'+w.label+'</td>'+
-      '<td class="num">'+w.resources+'</td>'+
-      '<td class="num">'+w.events.toLocaleString('en-US')+'</td>'+
-      '<td class="st '+(w.claimed?'c':'r')+'"><span class="dot'+(w.claimed?'':' o')+'"></span>'+(w.claimed?'claimed':'refused')+'</td>'+
-      '<td class="rs">'+near+'</td>';
-    tr.addEventListener('click',function(){ toggle(w,tr); });
-    body.appendChild(tr);
+    var b=document.createElement('button');
+    b.type='button';
+    b.className='wrow'; b.dataset.id=w.id;
+    b.innerHTML='<span class="idx">'+w.id+'</span>'+
+      '<span class="wk">'+w.label+'<em>'+w.resources+' resources · '+w.events.toLocaleString('en-US')+' events · nearest '+near+'</em></span>'+
+      '<span class="st '+(w.claimed?'c':'r')+'"><i class="'+(w.claimed?'':'o')+'"></i>'+(w.claimed?'claimed':'refused')+'</span>';
+    b.addEventListener('click',function(){ toggle(w,b); });
+    body.appendChild(b);
   });
 })();
 
@@ -571,7 +581,7 @@ function toggle(w,tr){
   var i=sel.indexOf(w.id);
   if(i>-1){ sel.splice(i,1); tr.classList.remove('sel'); }
   else{
-    if(sel.length>=2){ var first=sel.shift(); var prev=$('tr[data-id="'+first+'"]'); if(prev) prev.classList.remove('sel'); }
+    if(sel.length>=2){ var first=sel.shift(); var prev=$('.wrow[data-id="'+first+'"]'); if(prev) prev.classList.remove('sel'); }
     sel.push(w.id); tr.classList.add('sel');
   }
   paintGate();
@@ -605,7 +615,7 @@ function paintGate(){
     out.innerHTML='<span class="bad">exit code 1</span> — the build fails. A person may always declare two works the same. The engine may never decide it.';
   };
   $('#btnReset').onclick=function(){
-    sel=[]; $$('.ledgr tr.sel').forEach(function(t){t.classList.remove('sel');});
+    sel=[]; $$('.wrow.sel').forEach(function(t){t.classList.remove('sel');});
     rows.innerHTML=base; paintGate();
     out.innerHTML='<span class="dim">Reset.</span> Same log, same boundary. Nothing was written.';
   };
