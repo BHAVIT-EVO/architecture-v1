@@ -362,9 +362,18 @@ TOOLS = [
 
 def mcp_tool_call(b, name, args):
     if name == "list_works":
-        lines = [f'{w["id"]}: {w["name"]} ({w["episodes"]} episodes, {w["status"]})'
-                 for w in b["works"]]
-        return "\n".join(lines) or "no works"
+        lines = []
+        for w in b["works"]:
+            mark = ""
+            if w.get("claimed") is False:
+                mark = "   <- refused: engine would not assert this"
+            lines.append(f'{w["id"]}: {w["name"]} ({w["episodes"]} episodes)'
+                         f'{mark}')
+        head = ""
+        if b.get("claimed") is not None:
+            head = (f'{b["claimed"]} of {len(b["works"])} works claimed by the '
+                    f'engine. The rest it refuses to assert.\n\n')
+        return head + ("\n".join(lines) or "no works")
     if name == "find_work":
         r = find(b, args.get("query", ""))
         if not r["matched"]:
