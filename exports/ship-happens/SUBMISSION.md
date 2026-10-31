@@ -64,32 +64,34 @@ labelled by hand. The engine claims 2 of the 8 works and refuses the other 6.
 
 ## 4. Working website / hosted project link
 
-**Your repo is private — a GitHub link is a 404 to every judge.** The only link
-that works is one that is publicly reachable with no login.
-
-### Do this (2 minutes, free)
-
-1. GitHub → New repository → name `evo-boundary-demo` → **Public** → don't
-   initialise it.
-2. Upload `site/index.html` (drag it in via "uploading an existing file") and
-   the demo README from `site/README-demo.md` if you want one.
-3. Settings → **Pages** → Source: `Deploy from a branch` → Branch: `main` →
-   folder `/ (root)` → Save.
-4. Wait ~60 seconds. Your URL is:
+**This is live. Paste it as is.**
 
 ```
 https://bhavit-evo.github.io/evo-boundary-demo/
 ```
 
-That file is self-contained, has no network calls, no keys, and runs a
-synthetic corpus. Publishing it exposes nothing.
+Public, no login, no install, no keys. Three pages: the field report
+(`index.html`), the full console (`demo.html`), and the concept film
+(`film.html`). All of it runs a synthetic corpus, so publishing it exposes
+nobody's browsing.
 
-### Alternative: Render, from the private repo
+`BHAVIT-EVO/architecture-v1` is **private** — a link to it 404s for every
+judge. Only the Pages URL above works. If a judge asks for source, say so and
+send the file; do not make the repository public, because `boundary.json`
+holds real browsing.
 
-Render can reach a private repo through its GitHub App, so nothing has to
-become public. New → Static Site → build command empty → publish directory
-`site`. You get `something.onrender.com`. Same result, one more permission
-screen.
+### Updating the live site
+
+```bash
+python3 tools/build_site_v2.py     # only after editing site/src/
+bash tools/deploy_site.sh
+```
+
+Pages rebuilds in about a minute. Check with:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" https://bhavit-evo.github.io/evo-boundary-demo/
+```
 
 ### What to paste
 
@@ -97,11 +99,9 @@ screen.
 https://bhavit-evo.github.io/evo-boundary-demo/
 
 No install, no keys. Ask "where did I look for flats to rent?" then ask
-"what is the capital of france?" — it refuses. Then select two works and try
-to merge them by inference, then declare them the same and watch the verifier
-fail the build. Synthetic corpus, so publishing it exposes nobody's browsing.
-Engine, refusal behaviour and verifier are real:
-DEMO.md in github.com/BHAVIT-EVO/architecture-v1
+"what is the capital of france?" — it refuses. Then trip the verifier and
+watch the build fail with exit 1. Synthetic corpus, so publishing it exposes
+nobody's browsing. Engine, refusal behaviour and verifier are real.
 ```
 
 ---
@@ -113,13 +113,18 @@ blank and do not fake it. **Post the demo as screenshots with the caption
 below.** A post with four images and a real writeup is a legitimate submission,
 takes three minutes, and needs no microphone.
 
-Screenshots to take, in this order:
+Screenshots to take, in this order — the first one is the one that sells it:
 
-1. `site/index.html` — the works grid, six greyed out under `2 of 8 claimed`
-2. The result for `where did I look for flats to rent?` — evidence and the
-   rejected work visible
-3. The refusal for `what is the capital of france?`
-4. The red verifier after **Declare them the same work** — `exit code 1`
+1. The cover, full screen — *Every agent is told where its work begins. Evo
+   derives it.* Nothing else looks like this.
+2. Chapter 04, the dark one — eight bodies of work, two claimed, six refused.
+3. The gate: press **Declare them the same work** and capture
+   `exit code 1 — the build fails`.
+4. The ask panel after `where did I look for flats to rent?` — evidence,
+   percentage, and *refused by the engine* on the same card.
+
+Take them at 1440 px wide so the type has room. The dark chapter needs the
+browser window at least 1200 px or the labels crowd.
 
 ### Caption
 
