@@ -37,7 +37,6 @@ h2{font-size:11px;text-transform:uppercase;letter-spacing:.13em;color:var(--car)
 .btn:disabled{opacity:.32;cursor:not-allowed}
 .btn.primary{background:var(--car);border-color:var(--car);color:#14171A}
 .btn.primary:hover:not(:disabled){background:#D6AC7E;border-color:#D6AC7E;color:#14171A}
-.btn.danger{border-color:#5A3833;color:#E0A39A}
 .row{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
 #say{margin-top:13px;padding:12px 14px;border-left:2px solid var(--car);background:#1A1E22;font-size:13px;border-radius:0 6px 6px 0;min-height:44px}
 #say .k{color:var(--car);font-weight:700}
@@ -48,14 +47,25 @@ tr:last-child td{border-bottom:none}
 .pill{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.08em;padding:2px 7px;border-radius:20px}
 .p-ok{background:#1D3229;color:var(--ok)}
 .p-bad{background:#3A201C;color:var(--bad)}
-.p-off{background:#26292D;color:var(--dim)}
 .gname{font-weight:600}
 .gwhy{color:var(--dim);font-size:11px;margin-top:1px}
 #banner{display:none;margin-top:12px;padding:12px 14px;border-radius:7px;background:#3A201C;border:1px solid #6B3A32;color:#F0B8AE;font-size:13px;font-weight:600}
 #banner code{font-family:ui-monospace,monospace;background:#2A1714;padding:1px 5px;border-radius:3px;color:#E0A39A}
 .two{display:grid;grid-template-columns:1fr 340px;gap:14px;align-items:start}
 .foot{margin-top:34px;padding-top:14px;border-top:1px solid var(--rule);color:var(--dim);font-size:11px}
-#askres{width:100%;background:#171B1F;border:1px solid var(--rule);color:var(--ink);border-radius:6px;padding:8px 10px;font-size:12px;font-family:inherit}
+#q{flex:1;min-width:240px;background:#171B1F;border:1px solid var(--rule);color:var(--ink);border-radius:6px;padding:9px 11px;font-size:13px;font-family:inherit}
+#q:focus{outline:none;border-color:var(--car)}
+#ans{margin-top:13px;display:none;border:1px solid var(--rule);border-radius:8px;padding:14px 16px;background:#1A1E22}
+#ans .wk{font-size:17px;font-weight:800;color:var(--car);letter-spacing:-.2px}
+#ans .ev{font-size:12px;color:var(--dim);margin-top:5px}
+#ans .sh{margin-top:9px;height:5px;background:#22282D;border-radius:3px;overflow:hidden;max-width:280px}
+#ans .sh i{display:block;height:100%;background:var(--car)}
+#ans ul{margin:10px 0 0 0;padding-left:0;list-style:none}
+#ans li{font-size:12px;color:#C7C2BA;padding:3px 0;border-bottom:1px solid #23282D;font-family:ui-monospace,monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#ans .rej{margin-top:10px;font-size:11.5px;color:var(--dim)}
+#ans .rej b{color:#B8A99A}
+.chip{display:inline-block;font-size:11px;color:var(--dim);border:1px solid var(--rule);border-radius:20px;padding:3px 10px;margin:0 6px 6px 0;cursor:pointer}
+.chip:hover{color:var(--car);border-color:var(--car)}
 @media(max-width:860px){.two{grid-template-columns:1fr}}
 </style></head><body><div class="wrap">
 
@@ -76,6 +86,21 @@ tr:last-child td{border-bottom:none}
 
 <h2>The boundary map</h2>
 <div class="grid" id="cards"></div>
+
+<h2>Ask the boundary</h2>
+<div class="panel">
+  <div class="row">
+    <input id="q" placeholder="which work was I in — try: where did I look for hiking clothes?" autocomplete="off">
+    <button class="btn primary" id="go">Ask</button>
+  </div>
+  <div style="margin-top:10px">
+    <span class="chip" data-q="arcteryx for the trek">arcteryx for the trek</span>
+    <span class="chip" data-q="which trek was i planning">which trek was i planning</span>
+    <span class="chip" data-q="what did i build">what did i build</span>
+    <span class="chip" data-q="what is the capital of france">something that isn't work</span>
+  </div>
+  <div id="ans"></div>
+</div>
 
 <div class="two" style="margin-top:26px">
   <div>
@@ -98,8 +123,9 @@ tr:last-child td{border-bottom:none}
 
 <div class="foot">
   Real corpus: 10,392 recorded events, 164 hand labels, 13–15 September 2026, one machine.
-  The six assertions below are the actual gate that fails the build in
-  <code>crates/evo-threads</code>. Nothing here is simulated except the two buttons.
+  The assertions in the verifier are the gate that fails the build in
+  <code>crates/evo-threads</code>. The boundary is decided by rules, not a model —
+  so it gives the same answer twice. Nothing here is simulated except the two buttons.
 </div>
 
 <script>
@@ -135,8 +161,7 @@ W.forEach(w=>{
 });
 
 function toggle(id){
-  const w = W.find(x=>x.id===id);
-  if(fused){ return; }
+  if(fused) return;
   if(sel.includes(id)) sel = sel.filter(x=>x!==id);
   else { sel.push(id); if(sel.length>2) sel.shift(); }
   paint();
@@ -168,8 +193,7 @@ function say(html, col){
 
 document.getElementById('btn-infer').onclick = ()=>{
   if(sel.length!==2){ say('Select two works first.'); return; }
-  const a = W.find(x=>x.id===sel[0]), b = W.find(x=>x.id===sel[1]);
-  say(`<span class="k">Refused.</span> No inference path exists. §5 of the architecture: no hard merges of stored state, anywhere — a body of work is a claim about relationships, and only a person can make it. <span class="k">Exit 0.</span>`, '#5FBF8F');
+  say(`<span class="k">Refused.</span> No inference path exists. §5 of the architecture: no hard merges of stored state, anywhere — a body of work is a claim about relationships, and only a person can make it. <span class="k">exit 0</span>.`, '#5FBF8F');
 };
 
 document.getElementById('btn-declare').onclick = ()=>{
@@ -187,6 +211,68 @@ document.getElementById('btn-reset').onclick = ()=>{
   paint();
 };
 
+/* ---- ask the boundary: same rules as ask.py / serve.py ---- */
+const STOP=new Set("a an the i my me we our you your it its is was were be been am do did does doing have has had what which who when where why how this that these those of in on at to for from with about into over after before and or but not no yes can could should would will work works working worked yesterday today tomorrow morning night day days time get got again back start started was there here then than so if as by up down out off all any some please show tell give find".split());
+const SYN={trek:["trek","trekking","annapurna","hike","hiking","mountain","nepal","trail","youtube"],gear:["gear","jacket","arcteryx","hat","cap","clothes","clothing","buy","shopping","boots","nimsdai"],evo:["evo","code","codebase","repo","rust","crate","engine","build","compile","test","capture","zcode"],pitch:["pitch","deck","presentation","slides","investor"],freeai:["free","credits","router","agentrouter","chatgpt","login","account","api"],kundli:["kundli","horoscope","astrology","birth","chart","remedies","claude"],comms:["call","facetime","discord","chat","talk"],noise:["chrome","tab","untitled"]};
+function toks(s){ return (s.toLowerCase().match(/[a-z0-9']+/g)||[]).filter(t=>!STOP.has(t)); }
+function scoreQ(q,w){
+  const qt=new Set(toks(q)); if(!qt.size) return [0,''];
+  let s=0, hits=[];
+  const name=new Set(toks(w.label));
+  const nm=[...qt].filter(t=>name.has(t));
+  if(nm.length){ s+=3; hits.push('name match: '+nm.join(',')); }
+  const syn=new Set(SYN[w.label]||[]);
+  const sy=[...qt].filter(t=>syn.has(t));
+  if(sy.length){ s+=2; hits.push('synonym: '+sy.join(',')); }
+  let rh=new Set();
+  w.top.forEach(r=>{ const rt=new Set(toks(r.r)); [...qt].forEach(t=>{ if(rt.has(t)) rh.add(t); }); });
+  if(rh.size){ s+=Math.min(rh.size,4)*0.75; hits.push('resource text: '+[...rh].sort().slice(0,4).join(',')); }
+  return [s,hits.join('; ')];
+}
+function askLocal(q){
+  const scored=W.map(w=>{ const [s,why]=scoreQ(q,w); return {s,w,why}; }).filter(x=>x.s>0).sort((a,b)=>b.s-a.s);
+  if(!scored.length) return {matched:false,question:q};
+  const tot=scored.reduce((n,x)=>n+x.s,0)||1;
+  const b=scored[0];
+  return {matched:true,question:q,work:b.w.label,resources:b.w.resources,events:b.w.events,
+          evidence:b.why,share:Math.round(b.s/tot*100),excluded:!!b.w.excluded,
+          reopen:b.w.top.slice(0,5).map(r=>r.r),
+          rejected:scored.slice(1).map(x=>({work:x.w.label,points:Math.round(x.s)}))};
+}
+function showAns(a){
+  const box=document.getElementById('ans'); box.style.display='block';
+  if(!a.matched){
+    box.innerHTML=`<div class="wk">Not a job.</div>
+      <div class="ev">No work in the boundary matches that. Refusing is the correct answer — a boundary that guesses is not a boundary.</div>`;
+    return;
+  }
+  box.innerHTML=`<div class="wk">${a.work}</div>
+    <div class="ev">${a.resources} resources · ${a.events} events${a.excluded?' · <b>excluded class</b>':''}</div>
+    <div class="ev">${a.evidence}</div>
+    <div class="sh"><i style="width:${a.share}%"></i></div>
+    <div class="ev" style="margin-top:4px">${a.share}% of the evidence for this question</div>
+    <ul>${a.reopen.map(r=>`<li>${r}</li>`).join('')}</ul>
+    ${a.rejected && a.rejected.length ? `<div class="rej">also considered: <b>${a.rejected.map(r=>r.work+'('+r.points+'pt)').join(', ')}</b></div>` : ''}`;
+}
+async function askBoundary(q){
+  if(!q.trim()) return;
+  let a=null;
+  try{
+    const r=await fetch('/ask?q='+encodeURIComponent(q));
+    if(r.ok) a=await r.json();
+  }catch(e){}
+  if(!a) a=askLocal(q);
+  showAns(a);
+  if(a && a.audio){
+    try{ const au=new Audio('data:audio/wav;base64,'+a.audio); au.play(); }catch(e){}
+  }
+}
+document.getElementById('go').onclick=()=>askBoundary(document.getElementById('q').value);
+document.getElementById('q').addEventListener('keydown',e=>{ if(e.key==='Enter') askBoundary(e.target.value); });
+document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{
+  document.getElementById('q').value=c.dataset.q; askBoundary(c.dataset.q);
+});
+
 function gate(){
   const rows = [
     ['corpus is real', W.reduce((n,w)=>n+w.events,0)+' events parsed', true],
@@ -194,7 +280,7 @@ function gate(){
     ['something is reconstructed', W.length+' threads minted', true],
     ['no two works fuse', fused ? 'FUSED: 2 works in 1 thread' : 'fused 0', !fused],
     ['no leisure anchor', fused ? 'cannot evaluate — gate already failed' : 'leisure anchor false', !fused],
-    ['determinism', fused ? 'halted' : 'same log twice → identical', !fused]
+    ['determinism', fused ? 'halted' : 'same log twice = identical', !fused]
   ];
   document.getElementById('gate').innerHTML = rows.map(([n,w,ok])=>
     `<tr><td>${ok?'<span class="pill p-ok">PASS</span>':'<span class="pill p-bad">FAIL</span>'}</td>
