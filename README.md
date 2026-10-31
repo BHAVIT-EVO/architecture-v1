@@ -352,8 +352,12 @@ exports/ship-happens/            everything demoable
   evo_ui.html                    the product surface
   mcp_probe.py                   a real MCP client
   boundary.html                  offline explorer, no server
-site/index.html                  the public demo (synthetic corpus)
-tools/build_site.py              regenerates it
+site/index.html                  the public field report (synthetic corpus)
+site/demo.html                   the full console — eight works, 2 claimed
+site/film.html                   the cross-device concept film
+site/src/                        the three fragments the report is built from
+tools/build_site_v2.py           regenerates the report
+tools/deploy_site.sh             publishes it to the public demo repository
 docs/                            architecture, audits, research
 DEMO.md                          the written walkthrough
 ```

@@ -1,11 +1,54 @@
-# Deploying the .xyz domain
+# Deploying the site
+
+## The live URL (already done)
+
+```
+https://bhavit-evo.github.io/evo-boundary-demo/
+```
+
+That repository — `BHAVIT-EVO/evo-boundary-demo`, public — holds four
+artifacts copied from this folder: `index.html`, `demo.html`, `film.html`,
+`fonts/`. The private repository never becomes public, because
+`exports/ship-happens/boundary.json` holds one person's real browsing.
+
+### Updating it
+
+```bash
+python3 tools/build_site_v2.py     # only if you changed site/src/
+bash tools/deploy_site.sh          # clones the public repo, copies, pushes
+```
+
+Pages rebuilds in about a minute. To check:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" https://bhavit-evo.github.io/evo-boundary-demo/
+```
+
+If the push is refused, the public pages are behind a token that cannot write
+to that repository. Do it by hand:
+
+```bash
+git clone https://github.com/BHAVIT-EVO/evo-boundary-demo && cd evo-boundary-demo
+cp ~/Evo-Evolution.nosync/architecture-v1/site/{index,demo,film}.html .
+mkdir -p fonts && cp ~/Evo-Evolution.nosync/architecture-v1/site/fonts/*.woff2 fonts/
+git add -A && git commit -m "site" && git push
+```
+
+### What must be true of anything you publish
+
+- Synthetic corpus only. Never `boundary.json`, never `boundary.html`.
+- No keys in the file. The site is static and public.
+- `fonts/` travels with `index.html` — the type is self-hosted, so the folder
+  is part of the artifact.
+
+---
+
+## The .xyz domain
 
 Do not use the apex (`yourname.xyz`) for a hackathon demo. Point a subdomain at
-it and keep the apex free for the real company.
+it and keep the apex free for the real company: `demo.yourname.xyz`.
 
-Use `demo.yourname.xyz`.
-
-## Option A — Render static site (you have $50 of credits)
+### Option A — Render static site (you have credits)
 
 1. render.com → New → **Static Site**
 2. Connect `BHAVIT-EVO/architecture-v1`, branch `arena/2873f4c9-architecture-v1`
@@ -13,41 +56,17 @@ Use `demo.yourname.xyz`.
 4. Publish directory: `site`
 5. Deploy. You get `something.onrender.com` in ~40 seconds.
 6. Settings → Custom Domains → add `demo.yourname.xyz`
-7. Render shows a CNAME target. Add that CNAME at your domain registrar.
+7. Render shows a CNAME target. Add that CNAME at your registrar.
 8. Wait for the certificate (2–10 minutes).
 
-## Option B — GitHub Pages (free, no account)
+### Option B — GitHub Pages + CNAME
 
-Needs the file on a branch GitHub can serve. Fastest path:
-
-1. Copy `site/index.html` to a new repo, or to a `gh-pages` branch.
-2. Repo → Settings → Pages → Source: branch `gh-pages`, folder `/`
-3. Custom domain: `demo.yourname.xyz` → creates a `CNAME` file
-4. At your registrar: CNAME `demo` → `bhavit-evo.github.io`
-
-## What goes in the DNS panel
-
-The registrar gave you a control panel when you claimed the .xyz. Look for **DNS**
-or **Manage DNS**, then **Add record**:
+1. Add the subdomain in the public repo → Settings → Pages → Custom domain.
+2. At your registrar: CNAME `demo` → `bhavit-evo.github.io`
+3. Wait. DNS can take 5 minutes or an hour; it is not broken at minute six.
 
 | Type | Name | Value | TTL |
 |---|---|---|---|
-| CNAME | `demo` | *the target your host shows you* | 3600 |
+| CNAME | `demo` | `bhavit-evo.github.io` | 3600 |
 
-Never point a CNAME at the apex. Apex uses A/ALIAS records, which is a
-different job and will break.
-
-## Checks
-
-```bash
-dig demo.yourname.xyz +short        # should print the host's address
-curl -I https://demo.yourname.xyz   # should be 200
-```
-
-DNS can take 5 minutes or an hour. It is not broken at minute six.
-
-## The rule
-
-The public site uses synthetic data. If you later deploy the real thing, it
-ships an empty boundary and fills itself on the user's own machine — never a
-seat of someone else's corpus.
+Never point a CNAME at the apex. Apex uses A/ALIAS records, a different job.

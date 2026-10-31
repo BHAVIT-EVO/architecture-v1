@@ -178,12 +178,15 @@ h1.huge em{font-style:italic;color:var(--signal)}
 .pin{position:relative;height:260vh}
 .pin .stage{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;display:flex;align-items:center;justify-content:center}
 .pin canvas{width:100%;height:100%}
-.pin .cap{position:absolute;left:var(--pad);bottom:clamp(30px,7vh,64px);max-width:min(430px,72vw);
+.pin .cap{position:absolute;left:var(--pad);bottom:clamp(26px,6vh,56px);max-width:min(430px,74vw);
   font-family:var(--mono);font-size:11.5px;line-height:1.75;letter-spacing:.01em;color:var(--ink-55);
+  background:var(--paper);border-top:1px solid var(--ink-35);padding:13px 22px 0 0;
   opacity:0;transform:translateY(8px);transition:opacity .5s var(--ease),transform .5s var(--ease)}
+.pin .cap.on{background:var(--paper)}
 .pin .cap.on{opacity:1;transform:none}
 .pin .cap b{display:block;font-family:var(--sans);font-weight:500;font-size:14px;letter-spacing:-.01em;color:var(--ink);margin-bottom:5px}
-.pin .hud{position:absolute;right:var(--pad);top:84px;text-align:right;font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-35)}
+.pin .hud{position:absolute;right:var(--pad);top:84px;text-align:right;font-family:var(--mono);font-size:10px;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ink-35);background:var(--paper);padding:8px 0 10px 18px}
 .pin .hud b{display:block;font-family:var(--serif);font-size:clamp(2rem,4vw,3.2rem);letter-spacing:-.02em;color:var(--ink);line-height:1}
 .pin .hud s{display:block;margin-top:6px;text-decoration:none;font-size:9px;letter-spacing:.12em;color:var(--ink-35)}
 @media(max-width:760px){.pin{height:200vh}}
@@ -197,7 +200,8 @@ h1.huge em{font-style:italic;color:var(--signal)}
 .night .pin .hud{color:rgba(237,231,220,.4)}
 .night .dim,.night .lede{color:rgba(237,231,220,.6)}
 .night h2.display em{color:#FF6A3D}
-.night .pin .cap{color:rgba(237,231,220,.55)}
+.night .pin .cap{color:rgba(237,231,220,.55);background:var(--night);border-top-color:var(--night-rule)}
+.night .pin .hud{background:var(--night)}
 
 /* ---------- dual (folder) ---------- */
 .dual{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--ink);margin-top:34px;background:linear-gradient(180deg,rgba(255,255,255,.18),transparent)}
