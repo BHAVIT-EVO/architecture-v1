@@ -1,5 +1,13 @@
 # Evo
 
+> **Demo:** Evo's boundary service, running against a synthetic corpus —
+> eight works, two claimed, six refused, and a verifier you can try to break.
+> **[Read the demo document → DEMO.md](DEMO.md)** · or run it in two commands:
+>
+> ```bash
+> cd exports/ship-happens && python3 evo_server.py serve   # localhost:8765
+> ```
+
 ### A local-first work memory for macOS
 
 Evo helps people return to meaningful work without reconstructing the context they
