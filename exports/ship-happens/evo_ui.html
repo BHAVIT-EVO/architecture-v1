@@ -91,7 +91,7 @@ async function j(u){ const r=await fetch(u); if(!r.ok) throw new Error(u); retur
 function renderWorks(){
   const el=document.getElementById('works');
   if(!WORKS.length){ el.innerHTML='<div class="empty">No works. Is the server running?</div>'; return; }
-  el.innerHTML=WORKS.map(w=>`<div class="w" data-id="${w.id}"><i></i><span>${esc(w.name)}</span><em>${w.episodes}</em></div>`).join('');
+  el.innerHTML=WORKS.map(w=>`<div class="w" data-id="${w.id}" title="${w.claimed===false?'the engine did not claim this work':'claimed by the engine'}"><i style="background:${w.claimed===false?'#41474E':'var(--car)'}"></i><span${w.claimed===false?' style="color:#84898F"':''}>${esc(w.name)}</span><em>${w.episodes}</em></div>`).join('');
   el.querySelectorAll('.w').forEach(n=>n.onclick=()=>select(n.dataset.id));
 }
 function esc(s){ return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
@@ -100,7 +100,9 @@ async function load(){
   try{
     const b=await j('/works');
     WORKS=b.works;
-    document.getElementById('src').innerHTML='source <b>'+b.source+'</b> · '+b.events.toLocaleString()+' events';
+    document.getElementById('src').innerHTML='source <b>'+b.source+'</b> · '+
+      (b.claimed!=null ? '<b>'+b.claimed+' of '+b.works.length+' claimed</b> · ' : '')+
+      b.events.toLocaleString()+' events';
     renderWorks();
     if(WORKS.length) select(WORKS[0].id);
   }catch(e){
@@ -116,6 +118,7 @@ async function select(id){
     document.getElementById('rbody').innerHTML=
       `<div class="pt">${esc(w.resume_reason||w.resume_point)}</div>
        <div class="ev">${w.episodes} episodes · ${w.status}${w.anchors&&w.anchors.length?' · '+w.anchors.length+' anchors':''}</div>
+       ${w.claimed===false?'<div class="ev" style="color:#C0855E;margin-top:6px">The engine refused to claim this work. You labelled it; it would not assert it.</div>':''}
        <div class="lbl" style="margin-top:12px">Reopen these</div>
        <ul>${(w.restore_set||[]).slice(0,6).map(r=>`<li>${esc(r)}</li>`).join('')||'<li>—</li>'}</ul>`;
     document.getElementById('resume').scrollIntoView({block:'nearest'});

@@ -19,6 +19,15 @@ The service reads `threads.json` if it exists (real engine output, written by
 `cargo run -p evo-threads --bin boundary_dump`), otherwise `boundary.json`
 (label-derived fallback). It reports which one it used at `/health`.
 
+**When both exist** it shows the eight hand-labelled works and marks each one
+`claimed` if the engine independently arrived at it. On this corpus the engine
+claims two of the eight and refuses the other six. That gap is real, it is by
+design, and it is the strongest thing in the demo: a wrong merge is
+irreversible, a refusal costs nothing.
+
+The gate in `tests/ground_truth.rs` asserts no fusion, no leisure anchor and
+determinism. It does not assert coverage. The engine is allowed to be silent.
+
 ## What is here
 
 | File | What it is |

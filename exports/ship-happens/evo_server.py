@@ -35,23 +35,66 @@ please show tell give find""".split())
 
 # ---------------------------------------------------------------- boundary
 
-def load_boundary(path=None):
-    """Load whichever boundary file exists, and normalise its shape.
+def _key(s):
+    """Loose identity for matching engine output against hand labels."""
+    return s.rstrip("…").strip().lower()
 
-    Returns {"source": "engine"|"labels", "works": [...]} where each work has
-    id, name, anchors, companions, restore_set, resume_point, resume_reason,
-    episodes, status.
+
+def _overlaps(a, b):
+    a, b = _key(a), _key(b)
+    if not a or not b:
+        return False
+    return a == b or a.startswith(b) or b.startswith(a)
+
+
+def load_boundary(path=None):
+    """Load the boundary, preferring the engine's own claim.
+
+    If both files exist the hand-labelled works are shown, but each is marked
+    `claimed` when the engine independently arrived at it. That gap is the
+    product: the engine asserts little and refuses the rest.
     """
-    candidates = [path] if path else ["threads.json", "boundary.json"]
-    for c in candidates:
-        if not c:
-            continue
-        p = c if os.path.isabs(c) else os.path.join(HERE, c)
+    def read(name):
+        p = name if os.path.isabs(name) else os.path.join(HERE, name)
         if not os.path.exists(p):
-            continue
+            return None
         with open(p) as f:
-            d = json.load(f)
-        return normalise(d, os.path.basename(p))
+            return json.load(f)
+
+    if path:
+        d = read(path)
+        if d is None:
+            raise SystemExit(f"no boundary file at {path}")
+        return normalise(d, os.path.basename(path))
+
+    eng, lab = read("threads.json"), read("boundary.json")
+
+    if eng is not None and lab is not None:
+        engine = normalise(eng, "threads.json")
+        labels = normalise(lab, "boundary.json")
+        strings = []
+        for w in engine["works"]:
+            strings += w["anchors"] + w["restore_set"]
+        for w in labels["works"]:
+            w["claimed"] = any(_overlaps(a, e) for a in w["anchors"] for e in strings)
+        labels["source"] = "engine+labels"
+        labels["claimed"] = sum(1 for w in labels["works"] if w["claimed"])
+        labels["engine_works"] = len(engine["works"])
+        return labels
+
+    if eng is not None:
+        b = normalise(eng, "threads.json")
+        for w in b["works"]:
+            w["claimed"] = True
+        b["claimed"] = len(b["works"])
+        return b
+
+    if lab is not None:
+        b = normalise(lab, "boundary.json")
+        for w in b["works"]:
+            w["claimed"] = None
+        return b
+
     raise SystemExit("no boundary file found (threads.json or boundary.json)")
 
 
@@ -72,6 +115,7 @@ def normalise(d, fname):
                 "resume_point": w.get("resume_point", ""),
                 "resume_reason": w.get("resume_reason", ""),
                 "fork": w.get("fork"),
+                "claimed": w.get("claimed"),
             })
         return {"source": "engine", "events": d.get("events", 0), "works": works}
 
@@ -91,6 +135,7 @@ def normalise(d, fname):
             "resume_point": anchors[0] if anchors else "",
             "resume_reason": f'Last seen: {anchors[0]}' if anchors else "",
             "fork": None,
+            "claimed": None,
         })
     return {"source": "labels", "events": d.get("totalEvents", 0), "works": works}
 
@@ -247,8 +292,10 @@ class Handler(BaseHTTPRequestHandler):
         if u.path == "/works":
             self._send(200, "application/json", json.dumps({
                 "source": b["source"], "events": b["events"],
+                "claimed": b.get("claimed"),
+                "engine_works": b.get("engine_works"),
                 "works": [{k: w[k] for k in ("id", "name", "status", "episodes",
-                                             "resume_point", "resume_reason")}
+                                             "resume_point", "resume_reason", "claimed")}
                           for w in b["works"]]}).encode())
             return
         if u.path.startswith("/works/"):
@@ -275,6 +322,7 @@ class Handler(BaseHTTPRequestHandler):
         if u.path == "/health":
             self._send(200, "application/json", json.dumps({
                 "ok": True, "source": b["source"], "works": len(b["works"]),
+                "claimed": b.get("claimed"),
                 "sarvam": bool(os.environ.get("SARVAM_API_KEY"))}).encode())
             return
         self._send(404, "text/plain", b"not found")
