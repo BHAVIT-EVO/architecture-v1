@@ -64,41 +64,67 @@ labelled by hand. The engine claims 2 of the 8 works and refuses the other 6.
 
 ## 4. Working website / hosted project link
 
-There is no hosted instance, and that is the product's claim rather than a gap.
-Paste the repo and say so in one line:
+**Your repo is private — a GitHub link is a 404 to every judge.** The only link
+that works is one that is publicly reachable with no login.
+
+### Do this (2 minutes, free)
+
+1. GitHub → New repository → name `evo-boundary-demo` → **Public** → don't
+   initialise it.
+2. Upload `site/index.html` (drag it in via "uploading an existing file") and
+   the demo README from `site/README-demo.md` if you want one.
+3. Settings → **Pages** → Source: `Deploy from a branch` → Branch: `main` →
+   folder `/ (root)` → Save.
+4. Wait ~60 seconds. Your URL is:
 
 ```
-https://github.com/BHAVIT-EVO/architecture-v1/tree/arena/2873f4c9-architecture-v1/exports/ship-happens
-
-No hosted link, deliberately: the boundary is computed on the device and nothing
-about the decision leaves the machine. Two commands to run it:
-
-  cd exports/ship-happens && python3 evo_server.py serve     # localhost:8765
-  python3 mcp_probe.py "where did I look for hiking clothes" # the protocol
+https://bhavit-evo.github.io/evo-boundary-demo/
 ```
 
-If the form rejects a non-URL or you have twenty spare minutes after the
-recording is safe, you can deploy to Render — but **never with the real
-corpus**. `boundary.json` contains this machine's actual browsing. A public
-instance must run a synthetic day. Do not do this before the backup recording
-exists.
+That file is self-contained, has no network calls, no keys, and runs a
+synthetic corpus. Publishing it exposes nothing.
+
+### Alternative: Render, from the private repo
+
+Render can reach a private repo through its GitHub App, so nothing has to
+become public. New → Static Site → build command empty → publish directory
+`site`. You get `something.onrender.com`. Same result, one more permission
+screen.
+
+### What to paste
+
+```
+https://bhavit-evo.github.io/evo-boundary-demo/
+
+No install, no keys. Ask "where did I look for flats to rent?" then ask
+"what is the capital of france?" — it refuses. Then select two works and try
+to merge them by inference, then declare them the same and watch the verifier
+fail the build. Synthetic corpus, so publishing it exposes nobody's browsing.
+Engine, refusal behaviour and verifier are real:
+DEMO.md in github.com/BHAVIT-EVO/architecture-v1
+```
 
 ---
 
-## 5. Video post link
+## 5. Video post link — no video
 
-This field needs a **social post**, not a raw file. Do it in this order:
+The form asks for a social post. If you are not recording, do not leave it
+blank and do not fake it. **Post the demo as screenshots with the caption
+below.** A post with four images and a real writeup is a legitimate submission,
+takes three minutes, and needs no microphone.
 
-1. Record 2–3 minutes on the laptop (block D2 of the plan). Phone camera is fine.
-2. Upload to YouTube — **public**, not unlisted, because the form asks for a
-   post link and unlisted links look evasive.
-3. Post it on LinkedIn or X with the caption below.
-4. Paste the **post** URL into the form.
+Screenshots to take, in this order:
 
-### Caption to post
+1. `site/index.html` — the works grid, six greyed out under `2 of 8 claimed`
+2. The result for `where did I look for flats to rent?` — evidence and the
+   rejected work visible
+3. The refusal for `what is the capital of france?`
+4. The red verifier after **Declare them the same work** — `exit code 1`
+
+### Caption
 
 ```
-I spent today building the thing AI agents are missing.
+I built the thing AI agents are missing.
 
 Every agent today is told where its work begins and ends. You point it at a
 folder. None of them derive it — and you can't get it from content, because two
@@ -107,25 +133,32 @@ people can have identical files and be doing different jobs.
 Evo derives that boundary locally, on one machine, deterministically, with no
 model in the decision. Then it lets any agent ask.
 
-Yesterday it was a Rust library. Today it has a mouth: an HTTP service and an
-MCP server. Kiro — an AWS product that has never heard of my laptop — asks it
-where I left off and gets an answer with evidence, including the work it nearly
-picked instead.
+Three things you can do in the demo:
+— Ask it something. It answers with evidence, and tells you which work it
+  nearly picked instead.
+— Ask it something that isn't work. It refuses.
+— Try to merge two bodies of work. Inference can't. When you force it, the
+  build fails on purpose.
 
-The most interesting number from today: the engine claims 2 of the 8 bodies of
-work on my machine and refuses to assert the other 6. That's by design. A wrong
-merge is irreversible; a refusal costs nothing. A boundary that guesses is not
-a boundary.
+The number I'd defend isn't coverage. It's that the engine claims 2 of the 8
+works on my machine and refuses the other 6. A wrong merge is irreversible; a
+refusal costs nothing. A boundary that guesses is not a boundary.
 
+It doesn't learn, either — the person legislates. Declare two works separate
+and nothing in inference can ever put them back together.
+
+Engine: 16 Rust crates, no HTTP client anywhere, deterministic.
 Built at Ship Happens, Juspay Gurugram, with the AWS Student Builder Group.
-Engine: 16 Rust crates, no HTTP client anywhere in it.
-Service and MCP: Python standard library.
+
+Demo: https://bhavit-evo.github.io/evo-boundary-demo/
+Writeup: DEMO.md
 
 #BuildInPublic #AI #Agents #MCP #Rust
 ```
 
-Keep the post honest about the timeline — the "yesterday it was a library" line
-does that in six words and reads as confidence rather than a confession.
+If the field is genuinely mandatory and you will not post: put the demo URL
+there and note *"written walkthrough in DEMO.md — no video"*. An honest empty
+field costs less than a fabricated link.
 
 ---
 
