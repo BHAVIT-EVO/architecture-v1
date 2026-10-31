@@ -1,0 +1,147 @@
+<script type="application/json" id="corpus">__CORPUS__</script>
+<script>
+(function(){
+'use strict';
+var D=JSON.parse(document.getElementById('corpus').textContent);
+var W=D.works||[];
+var $=function(s,r){return (r||document).querySelector(s);};
+var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));};
+
+/* ---- summary ---- */
+$('#s-ev').textContent=D.totalEvents.toLocaleString('en-US');
+$('#s-cl').textContent=W.filter(function(w){return w.claimed;}).length;
+$('#s-rf').textContent=W.filter(function(w){return !w.claimed;}).length;
+
+/* ---- gantt ---- */
+(function(){
+  var rows=$('#grows'); if(!rows) return;
+  var t0=D.t0,t1=D.t1,span=(t1-t0)||1;
+  W.forEach(function(w){
+    var a=(w.first-t0)/span, b=(w.last-t0)/span;
+    var d=document.createElement('div');
+    d.className='gl';
+    d.innerHTML='<div class="lab">'+w.label+'</div>'+
+      '<div class="track '+(w.claimed?'claimed':'refused')+'"><i style="left:'+(a*100).toFixed(2)+'%;width:'+Math.max(0.6,(b-a)*100).toFixed(2)+'%"></i></div>';
+    rows.appendChild(d);
+  });
+  var f=function(t){ var d=new Date(t); return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); };
+  $('#ax0').textContent=f(t0);
+  $('#ax1').textContent=f(t0+span/2);
+  $('#ax2').textContent=f(t1);
+})();
+
+/* ---- ledger ---- */
+var sel=[];
+(function(){
+  var body=$('#wrows'); if(!body) return;
+  W.forEach(function(w){
+    var tr=document.createElement('tr');
+    tr.className='row'; tr.dataset.id=w.id;
+    var near=(w.top&&w.top[0])?w.top[0].r.replace(/^~?.*\//,''):'—';
+    tr.innerHTML='<td class="idx">'+w.id+'</td>'+
+      '<td class="wk">'+w.label+'</td>'+
+      '<td class="num">'+w.resources+'</td>'+
+      '<td class="num">'+w.events.toLocaleString('en-US')+'</td>'+
+      '<td class="st '+(w.claimed?'c':'r')+'"><span class="dot'+(w.claimed?'':' o')+'"></span>'+(w.claimed?'claimed':'refused')+'</td>'+
+      '<td class="rs">'+near+'</td>';
+    tr.addEventListener('click',function(){ toggle(w,tr); });
+    body.appendChild(tr);
+  });
+})();
+
+function toggle(w,tr){
+  var i=sel.indexOf(w.id);
+  if(i>-1){ sel.splice(i,1); tr.classList.remove('sel'); }
+  else{
+    if(sel.length>=2){ var first=sel.shift(); var prev=$('tr[data-id="'+first+'"]'); if(prev) prev.classList.remove('sel'); }
+    sel.push(w.id); tr.classList.add('sel');
+  }
+  paintGate();
+}
+
+function paintGate(){
+  var gsel=$('#gsel'), bi=$('#btnInfer'), bd=$('#btnDeclare');
+  if(!sel.length){
+    gsel.innerHTML='No works selected. Pick two rows in the map.';
+  } else {
+    gsel.innerHTML='selected: '+sel.map(function(id){ return '<b>'+W[id].label+'</b>'; }).join(' · ');
+  }
+  var ok=sel.length===2;
+  bi.disabled=!ok; bd.disabled=!ok;
+}
+
+/* ---- gate ---- */
+(function(){
+  var rows=$('#gateRows'), out=$('#gateOut');
+  if(!rows) return;
+  var base=rows.innerHTML;
+  $('#btnInfer').onclick=function(){
+    out.innerHTML='<span style="color:var(--moss);font-weight:500">Refused.</span> No inference path exists. A body of work is a claim about relationships, and only a person can make it. <span class="dim">exit 0</span>';
+  };
+  $('#btnDeclare').onclick=function(){
+    var a=W[sel[0]].label, b=W[sel[1]].label;
+    rows.innerHTML=
+      '<tr class="fail"><td><span class="pill bad">fail</span></td><td><div class="gname">no two works fuse</div><div class="gwhy">FUSED: {"'+a+'", "'+b+'"}</div></td></tr>'+
+      '<tr><td><span class="pill">—</span></td><td><div class="gname">no leisure anchor</div><div class="gwhy">cannot evaluate — gate failed</div></td></tr>'+
+      '<tr><td><span class="pill">—</span></td><td><div class="gname">determinism</div><div class="gwhy">halted</div></td></tr>';
+    out.innerHTML='<span class="bad">exit code 1</span> — the build fails. A person may always declare two works the same. The engine may never decide it.';
+  };
+  $('#btnReset').onclick=function(){
+    sel=[]; $$('.ledgr tr.sel').forEach(function(t){t.classList.remove('sel');});
+    rows.innerHTML=base; paintGate();
+    out.innerHTML='<span class="dim">Reset.</span> Same log, same boundary. Nothing was written.';
+  };
+})();
+
+/* ---- ask ---- */
+(function(){
+  var input=$('#q'), ans=$('#ans'); if(!input||!ans) return;
+  var STOP=new Set(("__STOP__").split(' '));
+  var SYN=__SYN__;
+  function toks(s){ return (String(s).toLowerCase().match(/[a-z0-9']+/g)||[]).filter(function(t){return !STOP.has(t);}); }
+  function score(q,wk){
+    var qt=new Set(toks(q)); if(!qt.size) return [0,''];
+    var s=0,hits=[];
+    var name=new Set(toks(wk.label)), nm=[];
+    qt.forEach(function(t){ if(name.has(t)) nm.push(t); });
+    if(nm.length){ s+=3; hits.push('name: '+nm.join(',')); }
+    var syn=new Set(SYN[wk.label]||[]), sy=[];
+    qt.forEach(function(t){ if(syn.has(t)) sy.push(t); });
+    if(sy.length){ s+=2; hits.push('term: '+sy.join(',')); }
+    var rh=new Set();
+    wk.top.forEach(function(r){ var rt=new Set(toks(r.r)); qt.forEach(function(t){ if(rt.has(t)) rh.add(t); }); });
+    if(rh.size){ s+=Math.min(rh.size,4)*0.75; hits.push('resource: '+Array.from(rh).sort().slice(0,4).join(',')); }
+    return [s,hits.join('; ')];
+  }
+  function ask(q){
+    q=String(q||'').trim(); if(!q) return;
+    var scored=W.map(function(wk){ var sc=score(q,wk); return {s:sc[0],w:wk,why:sc[1]}; })
+                .filter(function(x){ return x.s>0; })
+                .sort(function(a,b){ return b.s-a.s; });
+    if(!scored.length){
+      ans.innerHTML='<div class="refuse">Not a job.</div><div class="mono lc dim">No work matches that. Refusing is the correct answer — a boundary that guesses is not a boundary.</div>';
+      return;
+    }
+    var tot=scored.reduce(function(n,x){return n+x.s;},0)||1, b=scored[0];
+    var share=Math.round(b.s/tot*100);
+    var rej=scored.slice(1,3).map(function(x){ return x.w.label+' ('+Math.round(x.s)+')'; }).join(', ');
+    ans.innerHTML='<div class="rec">'+
+      '<div class="top-l"><span class="wn">'+b.w.label+'</span>'+
+        '<span class="mono" style="color:var(--ink-35);font-size:9px">work '+b.w.id+' · '+b.w.resources+' resources · '+b.w.events+' events'+(b.w.claimed?'':' · refused by the engine')+'</span></div>'+
+      '<div><span class="k">evidence</span>'+b.why+'</div>'+
+      '<div><span class="k">reopen</span>'+b.w.top.slice(0,3).map(function(r){return r.r.replace(/^.*\//,'');}).join(' · ')+'</div>'+
+      '<div class="bar"><i style="width:'+share+'%"></i></div>'+
+      '<div class="mono" style="font-size:9px;color:var(--ink-35);letter-spacing:.12em;text-transform:uppercase">'+share+'% of the evidence for this question</div>'+
+      (rej?'<div class="rej">also considered: '+rej+'</div>':'')+
+    '</div>';
+  }
+  $('#go').onclick=function(){ ask(input.value); };
+  input.addEventListener('keydown',function(e){ if(e.key==='Enter') ask(input.value); });
+  $$('.chip').forEach(function(c){ c.onclick=function(){ input.value=c.dataset.q; ask(c.dataset.q); }; });
+})();
+
+paintGate();
+})();
+</script>
+</body>
+</html>

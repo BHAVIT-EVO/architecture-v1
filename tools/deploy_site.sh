@@ -24,7 +24,7 @@ rm -rf "$WORK"
 git clone --depth 1 "$REPO_URL" "$WORK"
 
 echo "==> copying artifacts"
-cp "$SITE/index.html" "$SITE/demo.html" "$SITE/film.html" "$WORK/"
+cp "$SITE/index.html" "$SITE/demo.html" "$SITE/film.html" "$SITE/source.html" "$WORK/"
 mkdir -p "$WORK/fonts"
 cp "$SITE"/fonts/*.woff2 "$WORK/fonts/"
 

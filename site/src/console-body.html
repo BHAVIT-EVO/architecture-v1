@@ -1,0 +1,164 @@
+<style>
+.cwrap{max-width:var(--maxw);margin:0 auto;padding:0 var(--pad);position:relative}
+.chead{padding-top:96px;padding-bottom:26px;border-bottom:1px solid var(--ink)}
+.chead .k{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-55)}
+.chead h1{font-family:var(--serif);font-weight:400;font-size:clamp(2.1rem,5.2vw,4rem);line-height:1;letter-spacing:-.032em;margin:14px 0 0;max-width:18ch}
+.chead h1 em{color:var(--signal)}
+.chead p{margin-top:16px;max-width:56ch;color:var(--ink-70);font-size:1rem}
+.cstats{display:flex;gap:clamp(18px,4vw,48px);flex-wrap:wrap;margin-top:24px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-55)}
+.cstats b{display:block;font-family:var(--serif);font-size:clamp(1.5rem,2.6vw,2rem);letter-spacing:-.02em;color:var(--ink);line-height:1;margin-bottom:5px;text-transform:none}
+
+.cmain{display:grid;grid-template-columns:minmax(0,1fr) 322px;gap:clamp(20px,3vw,44px);align-items:start;padding:40px 0 70px}
+@media(max-width:980px){.cmain{grid-template-columns:minmax(0,1fr)}}
+
+.side{position:sticky;top:76px}
+@media(max-width:980px){.side{position:static}}
+
+.h4{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-55);margin:0 0 12px;font-weight:500;display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.h4 i{font-style:normal;color:var(--ink-35);letter-spacing:.1em}
+
+/* --- gantt --- */
+.gantt{border:1px solid var(--rule);padding:16px clamp(12px,2vw,20px) 10px;margin-bottom:44px;position:relative;background:linear-gradient(180deg,rgba(255,255,255,.16),transparent)}
+.gantt .axis{display:grid;grid-template-columns:104px 1fr;gap:12px;margin-bottom:8px}
+.gantt .axis .scale{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-35);padding-bottom:6px;border-bottom:1px solid var(--rule)}
+.gantt .gl{display:grid;grid-template-columns:104px 1fr;gap:12px;align-items:center;margin-bottom:7px}
+.gantt .lab{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gantt .track{position:relative;height:11px;background:rgba(20,18,15,.055)}
+.gantt .track i{position:absolute;top:0;bottom:0;background:rgba(20,18,15,.32)}
+.gantt .track.claimed i{background:var(--signal)}
+.gantt .track.refused i{background:repeating-linear-gradient(90deg,rgba(20,18,15,.32) 0 2px,transparent 2px 5px);border-top:1px solid rgba(20,18,15,.32);border-bottom:1px solid rgba(20,18,15,.32)}
+.gantt .rule-v{position:absolute;top:44px;bottom:10px;width:1px;background:var(--rule);pointer-events:none}
+
+/* --- ledger table --- */
+.ledgr{width:100%;border-collapse:collapse}
+.ledgr th{text-align:left;font-family:var(--mono);font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-35);padding:0 10px 9px 0;border-bottom:1px solid var(--ink)}
+.ledgr td{padding:13px 10px 13px 0;border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:11.5px;letter-spacing:.02em;vertical-align:middle}
+.ledgr tr.row{cursor:pointer;transition:background .18s}
+.ledgr tr.row:hover td{background:rgba(20,18,15,.035)}
+.ledgr tr.sel td{background:rgba(206,69,31,.07)}
+.ledgr tr.sel td:first-child{box-shadow:inset 3px 0 0 var(--signal);padding-left:11px}
+.ledgr .idx{color:var(--ink-35);width:34px}
+.ledgr .wk{font-family:var(--serif);font-size:21px;letter-spacing:-.012em;line-height:1}
+.ledgr .num{color:var(--ink-70);font-variant-numeric:tabular-nums}
+.ledgr .st{font-size:9px;letter-spacing:.16em;text-transform:uppercase;white-space:nowrap}
+.ledgr .st.c{color:var(--signal)}
+.ledgr .st.r{color:var(--moss)}
+.ledgr .st .dot{display:inline-block;width:5px;height:5px;margin-right:6px;vertical-align:1px;background:currentColor}
+.ledgr .st .dot.o{background:none;border:1px solid currentColor}
+.ledgr .rs{color:var(--ink-35);font-size:10px;max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:720px){.ledgr .rs,.ledgr th.rs{display:none}}
+
+/* --- gate side --- */
+.gpanel{border:1px solid var(--ink);background:rgba(255,255,255,.22)}
+.gpanel .tp{display:flex;justify-content:space-between;gap:10px;padding:10px 13px;border-bottom:1px solid var(--ink);font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-55)}
+.gpanel .rows td{padding:11px 13px;border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:10.5px;vertical-align:middle}
+.gpanel .rows tr:last-child td{border-bottom:0}
+.gpanel .rows tr.fail td{background:rgba(206,69,31,.08)}
+.gname{color:var(--ink)}.gwhy{color:var(--ink-55);font-size:9.5px;margin-top:2px;letter-spacing:.04em}
+.gpanel .bot{padding:12px 13px;border-top:1px solid var(--rule)}
+.gsel{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-35);margin-bottom:10px;min-height:2.6em;line-height:1.6}
+.gsel b{color:var(--signal);font-weight:500}
+.gpanel .btn{width:100%;margin-bottom:7px;font-size:9.5px;padding:10px 11px}
+.gout{font-family:var(--mono);font-size:10px;line-height:1.65;color:var(--ink-55);margin-top:9px;min-height:3.4em}
+.gout .bad{color:var(--signal);font-weight:500}
+
+/* --- ask --- */
+.asksec{border-top:1px solid var(--ink);padding-top:26px;margin-top:52px}
+.ans .rec{border:1px solid var(--rule);padding:16px 18px;font-family:var(--mono);font-size:11px;line-height:1.85;background:rgba(255,255,255,.14)}
+.ans .rec .top-l{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:9px;padding-bottom:9px;border-bottom:1px solid var(--rule)}
+.ans .rec .wn{font-family:var(--serif);font-size:24px;line-height:1;color:var(--ink)}
+.ans .k{color:var(--ink-35);font-size:9px;letter-spacing:.16em;text-transform:uppercase;display:inline-block;min-width:66px}
+.ans .bar{height:2px;background:var(--rule);margin:11px 0 6px;position:relative}
+.ans .bar i{position:absolute;left:0;top:0;bottom:0;background:var(--signal)}
+.ans .rej{margin-top:9px;color:var(--ink-55)}
+.ans .refuse{font-family:var(--serif);font-size:28px;color:var(--signal);line-height:1.1;margin-bottom:8px}
+.ans .idle{font-family:var(--mono);font-size:10.5px;color:var(--ink-35);letter-spacing:.05em;padding:16px 0;line-height:1.8}
+
+/* --- notes --- */
+.note{border-left:1px solid var(--signal);padding:2px 0 2px 14px;font-family:var(--mono);font-size:10.5px;line-height:1.75;color:var(--ink-55);margin-top:22px;max-width:52ch}
+.note b{color:var(--ink);font-weight:500}
+.cfoot2{border-top:1px solid var(--rule);margin-top:40px;padding:16px 0 40px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-35)}
+</style>
+
+<div class="top">
+  <a class="brand" href="index.html"><i></i>EVO</a>
+  <div class="tw mono" style="margin-left:auto">
+    <a href="index.html">← the report</a>
+    <a href="source.html">Source</a>
+  </div>
+</div>
+
+<div class="cwrap">
+  <header class="chead">
+    <div class="k">Console · synthetic corpus · no login</div>
+    <h1>The boundary, <em>as the engine produced it.</em></h1>
+    <p>Eight invented bodies of work for an invented person, over two days on one machine. Two are claimed and defended by a test. Six are refused, because a wrong merge is irreversible and a refusal costs nothing.</p>
+    <div class="cstats">
+      <div><b id="s-ev">—</b>events</div>
+      <div><b id="s-wk">8</b>works</div>
+      <div><b id="s-cl">2</b>claimed</div>
+      <div><b id="s-rf">6</b>refused</div>
+      <div><b>0</b>models in the path</div>
+    </div>
+  </header>
+
+  <div class="cmain">
+    <main>
+      <h2 class="h4"><span>Two days, one machine</span><i>drag your eye left to right</i></h2>
+      <div class="gantt" id="gantt">
+        <div class="axis"><span></span><div class="scale"><span id="ax0">—</span><span id="ax1">—</span><span id="ax2">—</span></div></div>
+        <div id="grows"></div>
+      </div>
+
+      <h2 class="h4"><span>The boundary map</span><i>select two to test the gate</i></h2>
+      <table class="ledgr">
+        <thead>
+          <tr><th class="idx">#</th><th>Work</th><th>Res.</th><th>Events</th><th>State</th><th class="rs">Nearest resource</th></tr>
+        </thead>
+        <tbody id="wrows"></tbody>
+      </table>
+
+      <div class="note"><b>Why so few claimed.</b> A boundary that guesses is not a boundary. The engine refuses six because it has no evidence they are one job — not because it failed to find them.</div>
+
+      <section class="asksec">
+        <h2 class="h4"><span>Ask the boundary</span><i>same rules as evo_server.py</i></h2>
+        <div class="askline">
+          <input id="q" type="text" placeholder="where did I look for flats to rent?" autocomplete="off" spellcheck="false" aria-label="Ask the boundary">
+          <button id="go">Ask →</button>
+        </div>
+        <div class="chips">
+          <button class="chip" data-q="where did I look for flats to rent">flats to rent</button>
+          <button class="chip" data-q="which chapter was I writing">the chapter</button>
+          <button class="chip" data-q="did I send the invoice">the invoice</button>
+          <button class="chip" data-q="what is the capital of france">not a job</button>
+        </div>
+        <div class="ans" id="ans" style="margin-top:18px"><div class="idle">The answer carries its evidence, its share of the evidence, and the work it nearly picked instead. Try the fourth chip.</div></div>
+      </section>
+    </main>
+
+    <aside class="side">
+      <h2 class="h4"><span>The gate</span><i>press the second button</i></h2>
+      <div class="gpanel">
+        <div class="tp"><span>evo-threads · verify</span><span>build</span></div>
+        <table class="rows"><tbody id="gateRows">
+          <tr><td><span class="pill">pass</span></td><td><div class="gname">no two works fuse</div><div class="gwhy">fused 0 · 28 candidate pairs</div></td></tr>
+          <tr><td><span class="pill">pass</span></td><td><div class="gname">no leisure anchor</div><div class="gwhy">leisure anchor false</div></td></tr>
+          <tr><td><span class="pill">pass</span></td><td><div class="gname">determinism</div><div class="gwhy">same log twice = identical</div></td></tr>
+        </tbody></table>
+        <div class="bot">
+          <div class="gsel" id="gsel">No works selected. Pick two rows in the map.</div>
+          <button class="btn" id="btnInfer" disabled>Merge by inference <span>→</span></button>
+          <button class="btn p" id="btnDeclare" disabled>Declare them the same <span>→</span></button>
+          <button class="btn" id="btnReset" style="border-color:var(--rule);color:var(--ink-55)">Reset <span>↺</span></button>
+          <div class="gout" id="gateOut">The verifier asserts three things and never asserts coverage.</div>
+        </div>
+      </div>
+      <p class="mono lc dim" style="font-size:10.5px;margin-top:14px;line-height:1.7">Simulated locally so you can watch the gate trip. It writes nothing. The real assertions are in <span class="sig">tests/ground_truth.rs</span>.</p>
+    </aside>
+  </div>
+
+  <div class="cfoot2">
+    <span>Synthetic corpus · no real browsing</span>
+    <span><a href="index.html">The report</a> · <a href="source.html">Source</a></span>
+  </div>
+</div>
