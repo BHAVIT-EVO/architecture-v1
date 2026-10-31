@@ -228,6 +228,8 @@ h1.huge em{font-style:italic;color:var(--signal)}
 .term .cur{display:inline-block;width:6px;height:12px;background:#FF6A3D;vertical-align:-1px;animation:blink 1.05s steps(1) infinite}
 @keyframes blink{50%{opacity:0}}
 .term .ln{white-space:pre-wrap;word-break:break-word}
+#term{min-height:424px}
+@media(max-width:640px){#term{min-height:380px;font-size:11px}}
 
 /* ---------- gate ---------- */
 .gate{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,.9fr);gap:clamp(16px,2.6vw,34px);margin-top:34px;align-items:start}
