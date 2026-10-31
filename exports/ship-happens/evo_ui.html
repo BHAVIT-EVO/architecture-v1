@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Evo — boundary service</title>
+<style>
+:root{--ink:#EDE9E3;--bg:#13161A;--panel:#1B1F24;--panel2:#20252B;--dim:#8A8F94;--car:#C89B6B;--rule:#2A2F34;--ok:#5FBF8F;--bad:#E06A5C}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 ui-sans-serif,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;height:100vh;overflow:hidden}
+.app{display:grid;grid-template-columns:264px 1fr;height:100vh}
+aside{border-right:1px solid var(--rule);padding:18px 14px;overflow-y:auto;background:#14181C}
+.brand{font-size:17px;font-weight:800;letter-spacing:-.3px;margin-bottom:2px}
+.brand i{color:var(--car);font-style:normal}
+.tag{font-size:10.5px;color:var(--dim);letter-spacing:.02em;margin-bottom:16px}
+.src{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border:1px solid var(--rule);border-radius:20px;padding:2px 8px;display:inline-block;margin-bottom:14px}
+.src b{color:var(--ok);font-weight:700}
+.wl{display:flex;flex-direction:column;gap:2px}
+.w{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:6px;cursor:pointer;font-size:12.5px;color:#C3BEB6;border:1px solid transparent}
+.w:hover{background:#1C2126}
+.w.on{background:#242A30;border-color:#333A41;color:var(--ink)}
+.w i{width:3px;height:15px;border-radius:2px;background:var(--car);flex:none;opacity:.75}
+.w span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.w em{font-style:normal;margin-left:auto;font-size:10px;color:var(--dim);flex:none}
+main{padding:20px 24px;overflow-y:auto;display:flex;flex-direction:column;gap:16px}
+.top{display:flex;align-items:baseline;gap:14px}
+h1{font-size:15px;font-weight:700}
+.hint{font-size:11px;color:var(--dim)}
+.panel{background:var(--panel);border:1px solid var(--rule);border-radius:9px;padding:14px 16px}
+.lbl{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--car);font-weight:700;margin-bottom:8px}
+#askrow{display:flex;gap:8px}
+#q{flex:1;background:#171B1F;border:1px solid var(--rule);color:var(--ink);border-radius:7px;padding:10px 12px;font:inherit;font-size:13px}
+#q:focus{outline:none;border-color:var(--car)}
+button{background:transparent;color:var(--ink);border:1px solid #394046;border-radius:7px;padding:9px 14px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+button:hover{border-color:var(--car);color:var(--car)}
+button.p{background:var(--car);border-color:var(--car);color:#13161A}
+button.p:hover{background:#D6AC7E;color:#13161A}
+.chips{margin-top:9px;display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:11px;color:var(--dim);border:1px solid var(--rule);border-radius:20px;padding:3px 9px;cursor:pointer}
+.chip:hover{color:var(--car);border-color:var(--car)}
+#ans{display:none;margin-top:12px;border-top:1px solid var(--rule);padding-top:12px}
+.wname{font-size:16px;font-weight:800;color:var(--car)}
+.ev{font-size:11.5px;color:var(--dim);margin-top:4px}
+.bar{margin-top:8px;height:4px;background:#23282D;border-radius:3px;overflow:hidden;max-width:260px}
+.bar i{display:block;height:100%;background:var(--car)}
+.rej{margin-top:8px;font-size:11.5px;color:var(--dim)}
+.rej b{color:#C0AE9A}
+.refuse{font-size:15px;font-weight:700;color:var(--bad)}
+#resume .pt{font-size:13px;color:#DCD6CD;margin-bottom:2px}
+#resume ul{list-style:none;margin-top:10px}
+#resume li{font-family:ui-monospace,SFMono-Regular,monospace;font-size:11px;color:#B5B0A8;padding:5px 8px;background:#171B1F;border:1px solid #23282D;border-radius:5px;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.empty{color:var(--dim);font-size:12px}
+footer{border-top:1px solid var(--rule);padding:10px 0 0;display:flex;gap:16px;font-size:11px;color:var(--dim);align-items:center;margin-top:auto}
+.pill{font-size:9px;font-weight:800;letter-spacing:.07em;padding:2px 6px;border-radius:20px;background:#1D3229;color:var(--ok)}
+</style></head><body>
+<div class="app">
+  <aside>
+    <div class="brand">EVO <i>BOUNDARY</i></div>
+    <div class="tag">a local service any agent can ask</div>
+    <div class="src" id="src">source <b>…</b></div>
+    <div class="wl" id="works"></div>
+  </aside>
+  <main>
+    <div class="top"><h1>Ask the boundary</h1><span class="hint">press / to focus · enter to ask</span></div>
+    <div class="panel">
+      <div id="askrow">
+        <input id="q" placeholder="where did I look for hiking clothes?" autocomplete="off">
+        <button class="p" id="go">Ask</button>
+        <button id="hi" title="speak the answer in Hindi via Sarvam">हिंदी</button>
+      </div>
+      <div class="chips">
+        <span class="chip" data-q="arcteryx for the trek">arcteryx for the trek</span>
+        <span class="chip" data-q="which trek was i planning">which trek was i planning</span>
+        <span class="chip" data-q="what did i build">what did i build</span>
+        <span class="chip" data-q="what is the capital of france">not a job</span>
+      </div>
+      <div id="ans"></div>
+    </div>
+    <div class="panel" id="resume">
+      <div class="lbl">Where you left off</div>
+      <div class="empty" id="rbody">Pick a work on the left.</div>
+    </div>
+    <footer>
+      <span class="pill">LOCAL</span>
+      <span id="foot">no model decides the boundary · same input, same output</span>
+    </footer>
+  </main>
+</div>
+<script>
+let WORKS=[], SEL=null, LANG=null;
+async function j(u){ const r=await fetch(u); if(!r.ok) throw new Error(u); return r.json(); }
+
+function renderWorks(){
+  const el=document.getElementById('works');
+  if(!WORKS.length){ el.innerHTML='<div class="empty">No works. Is the server running?</div>'; return; }
+  el.innerHTML=WORKS.map(w=>`<div class="w" data-id="${w.id}"><i></i><span>${esc(w.name)}</span><em>${w.episodes}</em></div>`).join('');
+  el.querySelectorAll('.w').forEach(n=>n.onclick=()=>select(n.dataset.id));
+}
+function esc(s){ return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+async function load(){
+  try{
+    const b=await j('/works');
+    WORKS=b.works;
+    document.getElementById('src').innerHTML='source <b>'+b.source+'</b> · '+b.events.toLocaleString()+' events';
+    renderWorks();
+    if(WORKS.length) select(WORKS[0].id);
+  }catch(e){
+    document.getElementById('works').innerHTML='<div class="empty">Cannot reach the service.<br><br>Run:<br><code>python3 evo_server.py serve</code><br>then open<br><code>localhost:8765</code></div>';
+  }
+}
+
+async function select(id){
+  SEL=id;
+  document.querySelectorAll('.w').forEach(n=>n.classList.toggle('on', n.dataset.id===String(id)));
+  try{
+    const w=await j('/works/'+id);
+    document.getElementById('rbody').innerHTML=
+      `<div class="pt">${esc(w.resume_reason||w.resume_point)}</div>
+       <div class="ev">${w.episodes} episodes · ${w.status}${w.anchors&&w.anchors.length?' · '+w.anchors.length+' anchors':''}</div>
+       <div class="lbl" style="margin-top:12px">Reopen these</div>
+       <ul>${(w.restore_set||[]).slice(0,6).map(r=>`<li>${esc(r)}</li>`).join('')||'<li>—</li>'}</ul>`;
+    document.getElementById('resume').scrollIntoView({block:'nearest'});
+  }catch(e){}
+}
+
+async function ask(q){
+  if(!q.trim()) return;
+  const box=document.getElementById('ans'); box.style.display='block';
+  box.innerHTML='<div class="ev">asking…</div>';
+  try{
+    const r=await j('/ask?q='+encodeURIComponent(q)+(LANG?'&lang='+LANG:''));
+    if(!r.matched){
+      box.innerHTML=`<div class="refuse">That is not a job you were doing.</div>
+        <div class="ev">No work in the boundary matches that. Refusing is the correct answer — a boundary that guesses is not a boundary.</div>`;
+      return;
+    }
+    box.innerHTML=`<div class="wname">${esc(r.work.name)}</div>
+      <div class="ev">${esc(r.evidence)}</div>
+      <div class="bar"><i style="width:${r.confidence}%"></i></div>
+      <div class="ev">${r.confidence}% of the evidence for this question</div>
+      <div class="ev" style="margin-top:8px">${esc(r.resume_reason)}</div>
+      ${r.rejected&&r.rejected.length?`<div class="rej">also considered: <b>${r.rejected.map(x=>esc(x.work)+'('+x.points+'pt)').join(', ')}</b></div>`:''}`;
+    if(r.audio){ try{ new Audio('data:audio/wav;base64,'+r.audio).play(); }catch(e){} }
+  }catch(e){ box.innerHTML='<div class="refuse">service unreachable</div>'; }
+}
+
+document.getElementById('go').onclick=()=>ask(document.getElementById('q').value);
+document.getElementById('q').addEventListener('keydown',e=>{ if(e.key==='Enter') ask(e.target.value); });
+document.getElementById('hi').onclick=(e)=>{ LANG = LANG?null:'hi-IN'; e.target.style.color = LANG?'#C89B6B':''; };
+document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{document.getElementById('q').value=c.dataset.q; ask(c.dataset.q);});
+document.addEventListener('keydown',e=>{ if(e.key==='/'&&document.activeElement.id!=='q'){e.preventDefault();document.getElementById('q').focus();} });
+load();
+</script></body></html>
