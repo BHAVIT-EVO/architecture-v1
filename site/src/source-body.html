@@ -1,0 +1,143 @@
+<style>
+.src-body{padding-top:96px}
+.src-h{max-width:var(--maxw);margin:0 auto;padding:0 var(--pad)}
+.src-h h1{font-family:var(--serif);font-weight:400;font-size:clamp(2.3rem,6vw,4.6rem);line-height:.98;letter-spacing:-.032em;max-width:16ch;margin:14px 0 0}
+.src-h h1 em{color:var(--signal)}
+.src-h p{margin-top:18px;max-width:58ch;color:var(--ink-70);font-size:1.02rem}
+.src-sec{border-top:1px solid var(--rule);padding:clamp(38px,6vh,64px) 0}
+.src-sec .row{grid-template-columns:104px minmax(0,1fr)}
+.code{background:#0C0B0A;color:#D8D1C4;font-family:var(--mono);font-size:11.5px;line-height:1.72;letter-spacing:0;
+  padding:16px 18px;overflow-x:auto;border-left:2px solid var(--signal);margin-top:18px;tab-size:4}
+.code .c{color:#6C665B}
+.code .f{display:block;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(237,231,220,.12);
+  font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#7C7568}
+.crates{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+.crates span{font-family:var(--mono);font-size:10px;letter-spacing:.06em;padding:6px 9px;border:1px solid var(--rule);color:var(--ink-55)}
+.crates span.hi{border-color:var(--signal);color:var(--signal)}
+.withheld{list-style:none;padding:0;margin:16px 0 0;max-width:56ch}
+.withheld li{padding:11px 0;border-bottom:1px solid var(--rule);font-size:.95rem;color:var(--ink-70);display:flex;gap:12px}
+.withheld li b{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--signal);min-width:74px;padding-top:3px;font-weight:500}
+</style>
+
+<div class="top">
+  <a class="brand" href="index.html"><i></i>EVO</a>
+  <div class="tw mono" style="margin-left:auto">
+    <a href="index.html">← the report</a>
+    <a href="demo.html">Console</a>
+  </div>
+</div>
+
+<div class="src-body">
+  <header class="src-h" style="padding-bottom:clamp(30px,6vh,60px)">
+    <div class="mono">Source · read-only · no corpus</div>
+    <h1>The engine is private. <em>The evidence is not.</em></h1>
+    <p>This repository cannot be public: <span class="mono lc">boundary.json</span> holds one person's actual browsing, and publishing the engine publishes their life. So here is the part a judge can check — real excerpts, regenerated from the working tree every time this page is built.</p>
+  </header>
+
+  <section class="src-sec">
+    <div class="wrap">
+      <div class="row">
+        <div class="rail"><span class="n">i</span><span class="k">The shape</span></div>
+        <div>
+          <h2 class="display"><span class="ln"><span>Sixteen crates, one promise.</span></span></h2>
+          <p class="prose">The engine is not a wrapper around a model. It is a deterministic fold: events in, episodes of attention out, episodes joined into bodies of work. Replay the same log and you get the same boundary, byte for byte.</p>
+          <div class="crates">
+            <span class="hi">evo-threads</span><span>evo-ledger</span><span>evo-observation</span><span>evo-retrieval</span><span>evo-restoration</span><span>evo-pods</span><span>evo-desktop</span><span>evo-storage</span><span>evo-semantic</span><span>evo-capture</span><span>evo-daemon</span><span>evo-workspace</span><span>evo-execution</span><span>evo-artifact</span><span>evo-engagement</span><span>evo-voice</span>
+          </div>
+          <p class="mono lc dim" style="margin-top:14px">No model in the decision path · no HTTP client anywhere · no async runtime in the engine</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="src-sec">
+    <div class="wrap">
+      <div class="row">
+        <div class="rail"><span class="n">ii</span><span class="k">The supreme court</span></div>
+        <div>
+          <h2 class="display"><span class="ln"><span>Six ways a person outranks</span></span><span class="ln"><span>the machine.</span></span></h2>
+          <p class="prose">Evo does not learn. There are no weights, no fine-tuning and no feedback loop. The person legislates; the engine adjudicates; the log remembers. These are the six declarations, exactly as they ship.</p>
+          <pre class="code" data-file="crates/evo-threads/src/types.rs" data-lines="67-98"></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="src-sec">
+    <div class="wrap">
+      <div class="row">
+        <div class="rail"><span class="n">iii</span><span class="k">The prohibition</span></div>
+        <div>
+          <h2 class="display"><span class="ln"><span>Not a preference.</span></span><span class="ln"><span><em>A standing constraint.</em></span></span></h2>
+          <p class="prose">This is the load-bearing line of the whole product. <span class="mono lc">SeparateWork</span> is not a score that tilts an inference — it is inserted into a set that every future assignment is checked against, and it is never removed.</p>
+          <pre class="code" data-file="crates/evo-threads/src/assign.rs" data-lines="903-921"></pre>
+          <pre class="code" data-file="crates/evo-threads/src/assign.rs" data-lines="274-290"></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="src-sec">
+    <div class="wrap">
+      <div class="row">
+        <div class="rail"><span class="n">iv</span><span class="k">The gate</span></div>
+        <div>
+          <h2 class="display"><span class="ln"><span>It never asserts coverage.</span></span></h2>
+          <p class="prose">Three things are hard-asserted against the committed corpus: no two labelled works fuse, no leisure resource anchors a work, and the same log replays to the same threads. The test reads the real event log — it is not a fixture.</p>
+          <pre class="code" data-file="crates/evo-threads/tests/ground_truth.rs" data-lines="168-181"></pre>
+          <pre class="code" data-file="crates/evo-threads/tests/ground_truth.rs" data-lines="189-197"></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="src-sec">
+    <div class="wrap">
+      <div class="row">
+        <div class="rail"><span class="n">v</span><span class="k">Local-first, as a test</span></div>
+        <div>
+          <h2 class="display"><span class="ln"><span>“No network” is checked,</span></span><span class="ln"><span><em>not claimed.</em></span></span></h2>
+          <p class="prose">A promise in a README survives exactly as long as nobody is in a hurry. So it is a test: it walks every manifest in the workspace and fails the build if a network or TLS client ever appears.</p>
+          <pre class="code" data-file="crates/evo-desktop/tests/trust_constraints.rs" data-lines="131-152"></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="src-sec">
+    <div class="wrap">
+      <div class="row">
+        <div class="rail"><span class="n">vi</span><span class="k">The agent surface</span></div>
+        <div>
+          <h2 class="display"><span class="ln"><span>Three tools. That is</span></span><span class="ln"><span><em>the whole contract.</em></span></span></h2>
+          <p class="prose">The service speaks MCP over stdio. Any agent — Kiro, Claude, anything that reads the spec — can ask where a resource belongs and get a decision with its evidence. The server is standard-library Python; there is nothing to install.</p>
+          <pre class="code" data-file="exports/ship-happens/evo_server.py" data-lines="332-362"></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="src-sec">
+    <div class="wrap">
+      <div class="row">
+        <div class="rail"><span class="n">vii</span><span class="k">What is withheld</span></div>
+        <div>
+          <h2 class="display"><span class="ln"><span>And why.</span></span></h2>
+          <ul class="withheld">
+            <li><b>Corpus</b><span><span class="mono lc">boundary.json</span> — 10,392 real events from one person's machine, including search queries and documents. Never published, in any form.</span></li>
+            <li><b>Product shell</b><span>The macOS app, the capture layer and the voice pipeline are in the private tree. They are why the boundary can be derived at all.</span></li>
+            <li><b>Access</b><span>Ask, and we will add you to the repository. We would rather give a judge a real walkthrough than scrub a corpus and pretend it is the same thing.</span></li>
+          </ul>
+          <p class="mono lc dim" style="margin-top:20px;max-width:60ch">Everything on this page is extracted from the working tree by <span class="sig">tools/build_source.py</span> at build time. If a line number moves, the page fails to build rather than showing you something plausible.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <div class="cfoot2" style="margin-top:0">
+      <span>Read-only · no data leaves the machine</span>
+      <span><a href="index.html">The report</a> · <a href="demo.html">Console</a></span>
+    </div>
+  </div>
+</div>

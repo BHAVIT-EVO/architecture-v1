@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Evo — source</title>
+<meta name="description" content="Real excerpts from the Evo engine: the declaration enum, the prohibition, the gate, the no-network test, the MCP surface.">
+<meta name="theme-color" content="#EFEAE1">
+<meta property="og:title" content="Evo — the boundary layer for agents">
+<meta property="og:description" content="Every agent is told where its work begins and ends. Evo derives it.">
+<meta property="og:type" content="website">
+<link rel="preload" href="fonts/serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/mono.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/sans.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face{font-family:'Evo Serif';src:url(fonts/serif.woff2) format('woff2');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Evo Serif';src:url(fonts/serif-italic.woff2) format('woff2');font-weight:400;font-style:italic;font-display:swap}
+@font-face{font-family:'Evo Mono';src:url(fonts/mono.woff2) format('woff2');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Evo Mono';src:url(fonts/mono-500.woff2) format('woff2');font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:'Evo Sans';src:url(fonts/sans.woff2) format('woff2');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Evo Sans';src:url(fonts/sans-italic.woff2) format('woff2');font-weight:400;font-style:italic;font-display:swap}
+@font-face{font-family:'Evo Sans';src:url(fonts/sans-500.woff2) format('woff2');font-weight:500;font-style:normal;font-display:swap}
+
+:root{
+  --paper:#EFEAE1;
+  --paper-2:#E6DFD2;
+  --ink:#14120F;
+  --ink-70:rgba(20,18,15,.70);
+  --ink-55:rgba(20,18,15,.55);
+  --ink-35:rgba(20,18,15,.35);
+  --rule:rgba(20,18,15,.16);
+  --signal:#CE451F;
+  --signal-2:#8E2F14;
+  --moss:#6B7565;
+  --night:#0B0B0A;
+  --night-2:#131311;
+  --night-ink:#EDE7DC;
+  --night-rule:rgba(237,231,220,.16);
+  --serif:'Evo Serif',Georgia,'Times New Roman',serif;
+  --sans:'Evo Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  --mono:'Evo Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --ease:cubic-bezier(.19,1,.22,1);
+  --pad:clamp(18px,3.2vw,44px);
+  --maxw:1220px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--sans);font-size:17px;line-height:1.62;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+  overflow-x:hidden;font-feature-settings:"kern" 1,"liga" 1;
+}
+::selection{background:var(--signal);color:var(--paper)}
+img,svg,canvas,iframe{display:block}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a{color:inherit}
+h1,h2,h3,p,figure,blockquote{margin:0}
+sup{font-size:.52em;vertical-align:super;line-height:0}
+
+/* ---------- texture ---------- */
+.grain{
+  position:fixed;inset:0;z-index:60;pointer-events:none;opacity:.055;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:180px 180px;
+}
+.vig{position:fixed;inset:0;z-index:59;pointer-events:none;
+  background:radial-gradient(120% 80% at 50% 0%,transparent 55%,rgba(20,18,15,.055) 100%)}
+
+/* ---------- type ---------- */
+.mono{font-family:var(--mono);font-size:10.5px;line-height:1.6;letter-spacing:.17em;text-transform:uppercase;color:var(--ink-55)}
+.mono.lc{text-transform:none;letter-spacing:.04em;font-size:12px}
+.serif{font-family:var(--serif);font-weight:400}
+.display{font-family:var(--serif);font-weight:400;letter-spacing:-.028em;line-height:.96}
+h2.display{font-size:clamp(2.05rem,4.7vw,3.6rem);line-height:1.0;max-width:19ch;margin-bottom:26px}
+h3{font-family:var(--sans);font-weight:500;font-size:1.02rem;letter-spacing:-.01em;margin-bottom:6px}
+.lede{font-size:clamp(1.06rem,1.45vw,1.3rem);line-height:1.5;max-width:44ch;letter-spacing:-.008em}
+.prose{max-width:60ch}
+.prose p+p{margin-top:1em}
+.dim{color:var(--ink-55)}
+.sig{color:var(--signal)}
+em{font-style:italic}
+
+/* ---------- top bar ---------- */
+.top{
+  position:fixed;top:0;left:0;right:0;height:52px;z-index:50;
+  display:flex;align-items:center;gap:clamp(12px,2vw,28px);
+  padding:0 var(--pad);background:rgba(239,234,225,.94);
+  border-bottom:1px solid var(--rule);
+  font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+}
+.top .bar{position:absolute;left:0;bottom:-1px;height:1px;background:var(--signal);width:100%;transform:scaleX(var(--p,0));transform-origin:0 50%;transition:transform .1s linear}
+.brand{display:flex;align-items:center;gap:9px;font-weight:500;letter-spacing:.34em;color:var(--ink);text-decoration:none;font-size:11px}
+.brand i{width:7px;height:7px;background:var(--signal);display:block}
+.ticks{display:flex;gap:7px;margin-left:auto;align-items:center}
+.ticks b{display:block;width:16px;height:2px;background:var(--ink-35);transition:background .3s,width .3s}
+.ticks b.on{background:var(--ink);width:24px}
+.tw{display:flex;gap:clamp(10px,1.6vw,22px);align-items:center}
+.tw a{text-decoration:none;color:var(--ink-55);transition:color .2s}
+.tw a:hover{color:var(--signal)}
+.tw .go{color:var(--ink);border-bottom:1px solid var(--signal);padding-bottom:2px}
+@media(max-width:720px){.ticks{display:none}.tw a:first-child{display:none}}
+
+/* ---------- shell ---------- */
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 var(--pad);position:relative}
+.row{display:grid;grid-template-columns:104px minmax(0,1fr) 210px;gap:0 clamp(18px,3vw,40px);align-items:start}
+.row.tight{grid-template-columns:104px minmax(0,1fr)}
+@media(max-width:1000px){.row,.row.tight{grid-template-columns:minmax(0,1fr)}.rail{display:none}}
+
+.rail{position:sticky;top:84px;font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-55)}
+.rail .n{display:block;font-family:var(--serif);font-size:30px;letter-spacing:0;color:var(--signal);line-height:1;margin-bottom:9px}
+.rail .k{display:block;max-width:11ch;line-height:1.5}
+.rail .sub{display:block;margin-top:14px;color:var(--ink-35)}
+
+@media(prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+section{position:relative}
+section[id]{scroll-margin-top:64px}
+.sec{padding:clamp(56px,9vh,104px) 0;border-top:1px solid var(--rule)}
+.sec.first{border-top:0}
+
+/* ---------- cover ---------- */
+.cover{min-height:100vh;min-height:100svh;padding:88px var(--pad) 0;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.cover-grid{display:grid;grid-template-columns:minmax(0,1fr) 262px;gap:clamp(20px,4vw,60px);width:100%;
+  max-width:calc(var(--maxw) - var(--pad)*2);margin:0 auto;flex:1;align-content:center;
+  padding:clamp(18px,4.5vh,54px) 0 clamp(16px,3.5vh,40px)}
+.cover-main{min-width:0}
+.cmeta{display:flex;gap:clamp(14px,3vw,40px);flex-wrap:wrap;justify-content:space-between;max-width:calc(var(--maxw) - var(--pad)*2);margin:0 auto;width:100%}
+.cmeta span{white-space:nowrap}
+h1.huge{
+  font-family:var(--serif);font-weight:400;
+  font-size:clamp(2.55rem,8.2vw,7.2rem);line-height:.94;letter-spacing:-.034em;
+  margin:0;max-width:100%;
+}
+h1.huge .ln{display:block;overflow:hidden;padding-bottom:.14em;margin-bottom:-.1em}
+.js h1.huge .ln>span{display:block;transform:translateY(103%);transition:transform 1.15s var(--ease);transition-delay:calc(var(--d,0) * 120ms)}
+.js.ready h1.huge .ln>span{transform:none}
+h1.huge em{font-style:italic;color:var(--signal)}
+.cbelow{display:flex;gap:clamp(20px,4vw,64px);align-items:flex-end;justify-content:space-between;
+  margin:clamp(24px,4.5vh,48px) 0 0;flex-wrap:wrap}
+.cbelow .lede{max-width:30ch;font-size:clamp(1rem,1.35vw,1.17rem);color:var(--ink-70)}
+.scrollcue{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-55)}
+.scrollcue .l{width:56px;height:1px;background:var(--ink-35);position:relative;overflow:hidden}
+.scrollcue .l::after{content:"";position:absolute;inset:0;background:var(--signal);transform:translateX(-100%);animation:sweep 2.6s var(--ease) infinite}
+@keyframes sweep{0%{transform:translateX(-100%)}55%{transform:translateX(0)}100%{transform:translateX(100%)}}
+.cfoot{border-top:1px solid var(--ink);display:flex;gap:20px;justify-content:space-between;flex-wrap:wrap;padding:11px 0 14px}
+
+.ledger{position:static;align-self:center;width:100%;border-left:1px solid var(--rule);padding-left:14px;
+  height:clamp(200px,36vh,330px);overflow:hidden;font-family:var(--mono);font-size:10px;line-height:1.95;letter-spacing:.03em;color:var(--ink-55);
+  -webkit-mask-image:linear-gradient(180deg,transparent,#000 14%,#000 74%,transparent);mask-image:linear-gradient(180deg,transparent,#000 14%,#000 74%,transparent)}
+.ledger div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ledger .cl{color:var(--signal)}
+.ledger .rf{color:var(--moss)}
+@media(max-width:1180px){.cover-grid{grid-template-columns:minmax(0,1fr)}.ledger{display:none}}
+
+/* eight ticks motif */
+.eight{display:flex;gap:6px;align-items:flex-end;height:26px}
+.eight i{width:5px;height:16px;background:var(--ink-35);display:block}
+.eight i.c{height:26px;background:var(--signal)}
+.eight i.x{height:9px;background:var(--ink-35)}
+
+/* ---------- cover strip / day ticks ---------- */
+.strip{position:relative;height:58px;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);overflow:hidden;margin-top:26px}
+.strip svg{position:absolute;inset:0;width:100%;height:100%}
+.strip .lbl{position:absolute;left:8px;bottom:6px;font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-35)}
+
+/* ---------- stats ---------- */
+.stats{border-top:1px solid var(--ink);margin-top:clamp(30px,5vh,50px)}
+.stat{display:grid;grid-template-columns:minmax(190px,.85fr) minmax(0,1fr);gap:clamp(18px,4vw,54px);
+  align-items:baseline;padding:clamp(20px,3.2vh,32px) 0;border-bottom:1px solid var(--rule)}
+.stat .fig{font-family:var(--serif);font-size:clamp(3.2rem,7.6vw,5.9rem);line-height:.86;letter-spacing:-.035em;white-space:nowrap}
+.stat .fig u{text-decoration:none;font-family:var(--mono);font-size:.13em;letter-spacing:.14em;text-transform:uppercase;color:var(--signal);margin-left:.5em;vertical-align:baseline}
+.stat .c{font-size:.99rem;line-height:1.55;max-width:46ch;color:var(--ink-70)}
+.stat .c b{color:var(--ink);font-weight:500}
+.stat .src{display:block;margin-top:8px;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-35)}
+@media(max-width:680px){.stat{grid-template-columns:1fr;gap:10px}}
+
+/* ---------- pinned scenes ---------- */
+.pin{position:relative;height:260vh}
+.pin .stage{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.pin canvas{width:100%;height:100%}
+.pin .cap{position:absolute;left:var(--pad);bottom:clamp(26px,6vh,56px);max-width:min(430px,74vw);
+  font-family:var(--mono);font-size:11.5px;line-height:1.75;letter-spacing:.01em;color:var(--ink-55);
+  background:var(--paper);border-top:1px solid var(--ink-35);padding:13px 22px 0 0;
+  opacity:0;transform:translateY(8px);transition:opacity .5s var(--ease),transform .5s var(--ease)}
+.pin .cap.on{background:var(--paper)}
+.pin .cap.on{opacity:1;transform:none}
+.pin .cap b{display:block;font-family:var(--sans);font-weight:500;font-size:14px;letter-spacing:-.01em;color:var(--ink);margin-bottom:5px}
+.pin .hud{position:absolute;right:var(--pad);top:84px;text-align:right;font-family:var(--mono);font-size:10px;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ink-35);background:var(--paper);padding:8px 0 10px 18px}
+.pin .hud b{display:block;font-family:var(--serif);font-size:clamp(2rem,4vw,3.2rem);letter-spacing:-.02em;color:var(--ink);line-height:1}
+.pin .hud s{display:block;margin-top:6px;text-decoration:none;font-size:9px;letter-spacing:.12em;color:var(--ink-35)}
+@media(max-width:760px){.pin{height:200vh}}
+
+/* night variant */
+.night{background:var(--night);color:var(--night-ink)}
+.night .mono,.night .pin .cap,.night .rail{color:rgba(237,231,220,.5)}
+.night .rail .n{color:#FF6A3D}
+.night h2.display,.night .pin .cap b,.night .pin .hud b{color:var(--night-ink)}
+.night .sec{border-top-color:var(--night-rule)}
+.night .pin .hud{color:rgba(237,231,220,.4)}
+.night .dim,.night .lede{color:rgba(237,231,220,.6)}
+.night h2.display em{color:#FF6A3D}
+.night .pin .cap{color:rgba(237,231,220,.55);background:var(--night);border-top-color:var(--night-rule)}
+.night .pin .hud{background:var(--night)}
+
+/* ---------- dual (folder) ---------- */
+.dual{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--ink);margin-top:34px;background:linear-gradient(180deg,rgba(255,255,255,.18),transparent)}
+.dual .col{padding:18px clamp(14px,2vw,22px) 22px}
+.dual .col+.col{border-left:1px solid var(--ink)}
+.dual .hd{display:flex;justify-content:space-between;align-items:baseline;padding-bottom:12px;border-bottom:1px solid var(--ink);font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase}
+.dual .hd b{font-weight:500;font-family:var(--serif);font-size:19px;letter-spacing:0;text-transform:none}
+.dual .f{display:flex;justify-content:space-between;gap:10px;align-items:baseline;padding:11px 0;border-bottom:1px dotted var(--rule);
+  font-family:var(--mono);font-size:11.5px;letter-spacing:0;color:var(--ink-70);cursor:default;transition:color .25s,padding-left .25s}
+.dual .f:hover{color:var(--ink);padding-left:4px}
+.dual .f span{opacity:0;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--signal);transition:opacity .25s}
+.dual .f:hover span{opacity:1}
+.dual .verdict{padding-top:16px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-35)}
+.dual .verdict b{display:block;margin-top:5px;font-family:var(--sans);font-weight:500;font-size:14px;letter-spacing:-.01em;text-transform:none;color:var(--ink)}
+@media(max-width:700px){.dual{grid-template-columns:1fr}.dual .col+.col{border-left:0;border-top:1px solid var(--ink)}.dual .f span{opacity:1}}
+
+/* ---------- terminal ---------- */
+.term{background:#0C0B0A;color:#E8E1D4;font-family:var(--mono);font-size:12px;line-height:1.95;letter-spacing:.01em;
+  padding:clamp(16px,2.4vw,26px);overflow-x:auto;border:1px solid #26231F}
+.term .hd{display:flex;gap:6px;align-items:center;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(237,231,220,.13);
+  font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:#7C766B}
+.term .hd i{width:6px;height:6px;border:1px solid #575147;display:block}
+.term .ok{color:#93C1A0}.term .bad{color:#FF6A3D}.term .dim{color:#6E685E}.term .hi{color:#EDE7DC}
+.term .cur{display:inline-block;width:6px;height:12px;background:#FF6A3D;vertical-align:-1px;animation:blink 1.05s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.term .ln{white-space:pre-wrap;word-break:break-word}
+#term{min-height:424px}
+@media(max-width:640px){#term{min-height:380px;font-size:11px}}
+
+/* ---------- gate ---------- */
+.gate{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,.9fr);gap:clamp(16px,2.6vw,34px);margin-top:34px;align-items:start}
+.gate .panel{border:1px solid var(--ink);padding:0}
+.gate table{width:100%;border-collapse:collapse}
+.gate td{padding:15px 16px;border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:11.5px;vertical-align:middle}
+.gate tr:last-child td{border-bottom:0}
+.gate tr.fail td{background:rgba(206,69,31,.07)}
+.pill{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;padding:4px 7px;border:1px solid var(--moss);color:var(--moss)}
+.pill.bad{border-color:var(--signal);color:var(--signal)}
+.gname{color:var(--ink)}
+.gwhy{color:var(--ink-55);font-size:10.5px;margin-top:3px}
+.gate .acts{display:flex;flex-direction:column;gap:9px;margin-top:16px}
+.btn{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;padding:13px 14px;
+  border:1px solid var(--ink);text-align:left;transition:background .22s,color .22s,border-color .22s;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.btn:hover{background:var(--ink);color:var(--paper)}
+.btn.p{background:var(--signal);border-color:var(--signal);color:#fff}
+.btn.p:hover{background:var(--signal-2);border-color:var(--signal-2)}
+.btn:disabled{opacity:.38;cursor:not-allowed}
+.btn:disabled:hover{background:none;color:var(--ink)}
+.btn.p:disabled:hover{background:var(--signal);color:#fff}
+:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+.btn:focus-visible,.chip:focus-visible,.wrow:focus-visible{outline:2px solid var(--signal);outline-offset:-2px}
+.askline:focus-within{border-color:var(--signal)}
+.gout{margin-top:14px;font-family:var(--mono);font-size:11px;line-height:1.7;color:var(--ink-55);min-height:3.2em}
+.gout .bad{color:var(--signal);font-weight:500}
+@media(max-width:820px){.gate{grid-template-columns:1fr}}
+
+/* ---------- ledger table ---------- */
+.ledger-t{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:30px;font-family:var(--mono);font-size:11.5px}
+.ledger-t th:nth-child(1),.ledger-t td:nth-child(1){width:21%}
+.ledger-t th:nth-child(2),.ledger-t td:nth-child(2){width:27%}
+.ledger-t th{text-align:left;font-weight:500;font-size:9.5px;letter-spacing:.17em;text-transform:uppercase;color:var(--ink-55);padding:0 14px 9px 0;border-bottom:1px solid var(--ink)}
+.ledger-t td{padding:14px 14px 14px 0;border-bottom:1px solid var(--rule);vertical-align:top;line-height:1.6;overflow-wrap:anywhere}
+.ledger-t tr.hot td{border-bottom-color:var(--signal);background:linear-gradient(90deg,rgba(206,69,31,.055),transparent 60%)}
+.ledger-t tr.hot td:first-child{box-shadow:inset 3px 0 0 var(--signal);padding-left:12px}
+.ledger-t .kw{color:var(--signal);font-weight:500}
+.ledger-t .note{color:var(--ink-55);font-family:var(--sans);font-size:13px;letter-spacing:0;line-height:1.5}
+.ledger-t .who{color:var(--ink-35)}
+@media(max-width:760px){.ledger-t .hidesm{display:none}}
+
+/* ---------- ask ---------- */
+.askbox{border-top:1px solid var(--ink);margin-top:30px;padding-top:20px}
+.askline{display:flex;gap:12px;align-items:center;border-bottom:1px solid var(--ink);padding-bottom:10px}
+.askline input{flex:1;background:none;border:0;outline:none;font-family:var(--mono);font-size:13px;color:var(--ink);padding:4px 2px}
+.askline input::placeholder{color:var(--ink-35)}
+.askline button{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--signal);padding:6px 0}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.chip{font-family:var(--mono);font-size:10px;letter-spacing:.06em;border:1px solid var(--rule);padding:7px 10px;color:var(--ink-70);transition:border-color .2s,color .2s,background .2s}
+.chip:hover{border-color:var(--ink);color:var(--ink);background:rgba(20,18,15,.04)}
+.ans{margin-top:26px;min-height:186px}
+.ans .rec{border:1px solid var(--rule);padding:18px 20px;font-family:var(--mono);font-size:11.5px;line-height:1.85}
+.ans .rec .top-l{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--rule)}
+.ans .rec .wn{font-family:var(--serif);font-size:26px;letter-spacing:-.01em;line-height:1;color:var(--ink)}
+.ans .k{color:var(--ink-35);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;display:inline-block;min-width:72px}
+.ans .bar{height:2px;background:var(--rule);margin:12px 0 7px;position:relative}
+.ans .bar i{position:absolute;left:0;top:0;bottom:0;background:var(--signal);transition:width .6s var(--ease)}
+.ans .rej{margin-top:10px;color:var(--ink-55)}
+.ans .refuse{font-family:var(--serif);font-size:30px;color:var(--signal);line-height:1.1;margin-bottom:10px}
+.ans .idle{font-family:var(--mono);font-size:11px;color:var(--ink-35);letter-spacing:.06em;padding:18px 0}
+
+/* ---------- film ---------- */
+.filmwrap{margin-top:34px;position:relative}
+.film{border:1px solid var(--ink);background:#08090d;aspect-ratio:16/10;width:100%;position:relative;overflow:hidden}
+.film iframe{width:100%;height:100%;border:0}
+.film .ph{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#6E685E;background:#0B0B0A}
+.filmcap{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-top:10px;font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-35)}
+
+/* ---------- numbers ledger ---------- */
+.num-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));border-top:1px solid var(--ink);margin-top:30px}
+.num-grid div{padding:16px 14px 18px 0;border-bottom:1px solid var(--rule)}
+.num-grid b{display:block;font-family:var(--serif);font-size:clamp(1.9rem,3.4vw,2.7rem);line-height:1;letter-spacing:-.03em}
+.num-grid s{display:block;text-decoration:none;margin-top:8px;font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-55)}
+
+/* ---------- three states ---------- */
+.tri{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--ink);margin-top:34px}
+.tri>div{padding:20px;border-right:1px solid var(--rule)}
+.tri>div:last-child{border-right:0}
+.tri h3{font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--signal);margin-bottom:8px}
+.tri p{font-size:.95rem;color:var(--ink-70);line-height:1.55}
+@media(max-width:760px){.tri{grid-template-columns:1fr}.tri>div{border-right:0;border-bottom:1px solid var(--rule)}.tri>div:last-child{border-bottom:0}}
+
+/* ---------- quotes ---------- */
+blockquote.pull{font-family:var(--serif);font-size:clamp(1.5rem,3vw,2.2rem);line-height:1.18;letter-spacing:-.02em;margin:38px 0;max-width:24ch}
+blockquote.pull cite{display:block;margin-top:14px;font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;font-style:normal;color:var(--ink-35)}
+
+/* ---------- colophon ---------- */
+.colo{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(18px,3vw,40px);margin-top:34px}
+.colo h4{font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--signal);margin:0 0 12px;font-weight:500}
+.colo ul{list-style:none;padding:0;margin:0;font-size:.9rem;line-height:1.55;color:var(--ink-70)}
+.colo li{padding:9px 0;border-bottom:1px solid var(--rule)}
+.colo li:last-child{border-bottom:0}
+@media(max-width:820px){.colo{grid-template-columns:1fr}}
+
+.end{padding:clamp(70px,13vh,130px) 0 clamp(30px,5vh,50px);border-top:1px solid var(--ink);position:relative;overflow:hidden}
+.end h2{font-size:clamp(2.1rem,6.2vw,5rem);line-height:.98;max-width:16ch;letter-spacing:-.035em}
+.end h2 em{color:var(--signal)}
+.end .links{display:flex;gap:clamp(16px,3vw,40px);flex-wrap:wrap;margin-top:clamp(36px,7vh,64px);padding-top:20px;border-top:1px solid var(--rule)}
+.end .links a{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;text-decoration:none;border-bottom:1px solid var(--rule);padding-bottom:5px;transition:border-color .2s,color .2s}
+.end .links a:hover{border-color:var(--signal);color:var(--signal)}
+.legal{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-top:44px;font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-35)}
+
+/* ---------- reveal ---------- */
+.js .rv{opacity:0;transform:translateY(12px);transition:opacity .85s var(--ease),transform .85s var(--ease);transition-delay:calc(var(--d,0) * 60ms)}
+.rv.in,.js .rv.in{opacity:1;transform:none}
+
+/* line reveal for h2 */
+h2.display .ln{display:block;overflow:hidden;padding-bottom:.13em;margin-bottom:-.09em}
+.js h2.display .ln>span{display:block;transform:translateY(104%);transition:transform 1s var(--ease);transition-delay:calc(var(--d,0) * 80ms)}
+.js h2.display.in .ln>span{transform:none}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
+  h1.huge .ln>span,h2.display .ln>span{transform:none !important}
+  .rv{opacity:1 !important;transform:none !important}
+  .pin{height:auto}
+  .pin .stage{position:relative;height:70vh;height:70svh}
+}
+@media(max-width:520px){
+  body{font-size:16px}
+  .stat .fig{font-size:3.1rem}
+  .cmeta{display:none}
+}
+</style>
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+<div class="vig" aria-hidden="true"></div>
+<style>
+.src-body{padding-top:96px}
+.src-h{max-width:var(--maxw);margin:0 auto;padding:0 var(--pad)}
+.src-h h1{font-family:var(--serif);font-weight:400;font-size:clamp(2.3rem,6vw,4.6rem);line-height:.98;letter-spacing:-.032em;max-width:16ch;margin:14px 0 0}
+.src-h h1 em{color:var(--signal)}
+.src-h p{margin-top:18px;max-width:58ch;color:var(--ink-70);font-size:1.02rem}
+.src-sec{border-top:1px solid var(--rule);padding:clamp(38px,6vh,64px) 0}
+.src-sec .row{grid-template-columns:104px minmax(0,1fr)}
+.code{background:#0C0B0A;color:#D8D1C4;font-family:var(--mono);font-size:11.5px;line-height:1.72;letter-spacing:0;
+  padding:16px 18px;overflow-x:auto;border-left:2px solid var(--signal);margin-top:18px;tab-size:4}
+.code .c{color:#6C665B}
+.code .f{display:block;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(237,231,220,.12);
+  font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#7C7568}
+.crates{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+.crates span{font-family:var(--mono);font-size:10px;letter-spacing:.06em;padding:6px 9px;border:1px solid var(--rule);color:var(--ink-55)}
+.crates span.hi{border-color:var(--signal);color:var(--signal)}
+.withheld{list-style:none;padding:0;margin:16px 0 0;max-width:56ch}
+.withheld li{padding:11px 0;border-bottom:1px solid var(--rule);font-size:.95rem;color:var(--ink-70);display:flex;gap:12px}
+.withheld li b{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--signal);min-width:74px;padding-top:3px;font-weight:500}
+</style>
+
+<div class="top">
+  <a class="brand" href="index.html"><i></i>EVO</a>
+  <div class="tw mono" style="margin-left:auto">
+    <a href="index.html">← the report</a>
+    <a href="demo.html">Console</a>
+  </div>
+</div>
+
+<div class="src-body">
+  <header class="src-h" style="padding-bottom:clamp(30px,6vh,60px)">
+    <div class="mono">Source · read-only · no corpus</div>
+    <h1>The engine is private. <em>The evidence is not.</em></h1>
+    <p>This repository cannot be public: <span class="mono lc">boundary.json</span> holds one person's actual browsing, and publishing the engine publishes their life. So here is the part a judge can check — real excerpts, regenerated from the working tree every time this page is built.</p>
+  </header>
+
+  <section class="src-sec">
+    <div class="wrap">
+      <div class="row">
+        <div class="rail"><span class="n">i</span><span class="k">The shape</span></div>
+        <div>
+          <h2 class="display"><span class="ln"><span>Sixteen crates, one promise.</span></span></h2>
+          <p class="prose">The engine is not a wrapper around a model. It is a deterministic fold: events in, episodes of attention out, episodes joined into bodies of work. Replay the same log and you get the same boundary, byte for byte.</p>
+          <div class="crates">
+            <span class="hi">evo-threads</span><span>evo-ledger</span><span>evo-observation</span><span>evo-retrieval</span><span>evo-restoration</span><span>evo-pods</span><span>evo-desktop</span><span>evo-storage</span><span>evo-semantic</span><span>evo-capture</span><span>evo-daemon</span><span>evo-workspace</span><span>evo-execution</span><span>evo-artifact</span><span>evo-engagement</span><span>evo-voice</span>
+          </div>
+          <p class="mono lc dim" style="margin-top:14px">No model in the decision path · no HTTP client anywhere · no async runtime in the engine</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="src-sec">
+    <div class="wrap">
+      <div class="row">
+        <div class="rail"><span class="n">ii</span><span class="k">The supreme court</span></div>
+        <div>
+          <h2 class="display"><span class="ln"><span>Six ways a person outranks</span></span><span class="ln"><span>the machine.</span></span></h2>
+          <p class="prose">Evo does not learn. There are no weights, no fine-tuning and no feedback loop. The person legislates; the engine adjudicates; the log remembers. These are the six declarations, exactly as they ship.</p>
+          <pre class="code"><span class="f">crates/evo-threads/src/types.rs · 67–98</span>
+<span class="c">/// The supreme court of attribution. Sparse, rare, and never overridden by</span>
+<span class="c">/// inference. Declarations are the only path by which two established threads</span>
+<span class="c">/// may ever merge.</span>
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Declaration {
+<span class="c">    /// &quot;These belong together.&quot; If each side lives in a different thread,</span>
+<span class="c">    /// those threads merge. This is the sole merge path in the system.</span>
+    SameWork { a: String, b: String },
+<span class="c">    /// &quot;These are separate.&quot; A standing constraint: no future assignment may</span>
+<span class="c">    /// place the two sides into one thread based on inference.</span>
+    SeparateWork { a: String, b: String },
+<span class="c">    /// &quot;This is not my work.&quot; Permanent quarantine: the resource is stripped</span>
+<span class="c">    /// from every view and never becomes evidence again.</span>
+    NotMine { resource: String },
+<span class="c">    /// &quot;This surface is of a class.&quot; The person&#x27;s own word about a subject</span>
+<span class="c">    /// other events have already established — &quot;this is not work&quot;, &quot;this is</span>
+<span class="c">    /// media&quot;. A classification gates *founding and titling only*: the subject</span>
+<span class="c">    /// may never anchor or name a work, and any anchor it already carried is</span>
+<span class="c">    /// demoted back to context. It is never removed from a body of work — the</span>
+<span class="c">    /// non-deletion guarantee holds, and it keeps whatever attention it earned.</span>
+<span class="c">    /// Evo ships no default class; silence produces no classification.</span>
+    Classified { resource: String, class: String },
+<span class="c">    /// &quot;Do not show this body of work on the default surface.&quot; Evidence is</span>
+<span class="c">    /// retained and the work remains retrievable.</span>
+    WorkDismissed { work: String },
+<span class="c">    /// The user&#x27;s lifecycle correction for one member of a body of work.</span>
+    MemberState {
+        work: String,
+        member: String,
+        state: MemberState,
+    },
+}</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="src-sec">
+    <div class="wrap">
+      <div class="row">
+        <div class="rail"><span class="n">iii</span><span class="k">The prohibition</span></div>
+        <div>
+          <h2 class="display"><span class="ln"><span>Not a preference.</span></span><span class="ln"><span><em>A standing constraint.</em></span></span></h2>
+          <p class="prose">This is the load-bearing line of the whole product. <span class="mono lc">SeparateWork</span> is not a score that tilts an inference — it is inserted into a set that every future assignment is checked against, and it is never removed.</p>
+          <pre class="code"><span class="f">crates/evo-threads/src/assign.rs · 903–921</span>
+    pub(crate) fn apply_declaration(&amp;mut self, e: &amp;Event) {
+        let d = match &amp;e.detail {
+            Some(d) =&gt; d.clone(),
+            None =&gt; return,
+        };
+        match d {
+            Declaration::SameWork { a, b } =&gt; self.declare_same_work(a, b),
+            Declaration::SeparateWork { a, b } =&gt; {
+                let pair = canon(a, b);
+                self.st.separate_work.insert(pair.clone());
+                self.st.push(Decision::DeclarationApplied {
+                    summary: format!(
+                        &quot;Recorded: `{}` and `{}` are separate works; inference will never put them together.&quot;,
+                        pair.0, pair.1
+                    ),
+                });
+                self.st.sweep_dirty = true;
+            }
+            Declaration::NotMine { resource } =&gt; self.quarantine(&amp;resource),</pre>
+          <pre class="code"><span class="f">crates/evo-threads/src/assign.rs · 274–290</span>
+        for (a, b) in &amp;self.st.separate_work {
+            for (x, y) in [(a, b), (b, a)] {
+                if contains(x) {
+                    for (tid, t) in &amp;self.st.threads {
+                        if t.anchors.contains_key(y) || t.companions.contains_key(y) {
+                            forbidden.insert(*tid);
+                            witnesses
+                                .entry(*tid)
+                                .or_default()
+                                .push(Witness::UserNeverLink {
+                                    a: a.clone(),
+                                    b: b.clone(),
+                                });
+                        }
+                    }
+                }
+            }</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="src-sec">
+    <div class="wrap">
+      <div class="row">
+        <div class="rail"><span class="n">iv</span><span class="k">The gate</span></div>
+        <div>
+          <h2 class="display"><span class="ln"><span>It never asserts coverage.</span></span></h2>
+          <p class="prose">Three things are hard-asserted against the committed corpus: no two labelled works fuse, no leisure resource anchors a work, and the same log replays to the same threads. The test reads the real event log — it is not a fixture.</p>
+          <pre class="code"><span class="f">crates/evo-threads/tests/ground_truth.rs · 168–181</span>
+        if !is_work_label(w) {
+            continue;
+        }
+        if let Some(t) = res2thread.get(r) {
+            thread_works.entry(*t).or_default().insert(w.clone());
+        }
+    }
+    let fused_threads: Vec&lt;(&amp;ThreadId, &amp;BTreeSet&lt;String&gt;)&gt; =
+        thread_works.iter().filter(|(_, ws)| ws.len() &gt; 1).collect();
+    assert!(
+        fused_threads.is_empty(),
+        &quot;threads fusing distinct labeled works: {fused_threads:?}&quot;
+    );
+    assert!(</pre>
+          <pre class="code"><span class="f">crates/evo-threads/tests/ground_truth.rs · 189–197</span>
+    }
+    engine_again.settle(last_ts + 86_400_000);
+    let ids_first: Vec&lt;u64&gt; = threads.iter().map(|t| t.id).collect();
+    let ids_again: Vec&lt;u64&gt; = engine_again.threads().iter().map(|t| t.id).collect();
+    assert_eq!(
+        ids_first, ids_again,
+        &quot;the same corpus must reconstruct identical thread lineage&quot;
+    );
+    println!(</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="src-sec">
+    <div class="wrap">
+      <div class="row">
+        <div class="rail"><span class="n">v</span><span class="k">Local-first, as a test</span></div>
+        <div>
+          <h2 class="display"><span class="ln"><span>“No network” is checked,</span></span><span class="ln"><span><em>not claimed.</em></span></span></h2>
+          <p class="prose">A promise in a README survives exactly as long as nobody is in a hurry. So it is a test: it walks every manifest in the workspace and fails the build if a network or TLS client ever appears.</p>
+          <pre class="code"><span class="f">crates/evo-desktop/tests/trust_constraints.rs · 131–152</span>
+fn nothing_in_the_workspace_can_transmit_what_evo_witnessed() {
+<span class="c">    // Constraint C3. The observation log is a record of everything the person</span>
+<span class="c">    // did; a single HTTP client dependency is all it would take for a future</span>
+<span class="c">    // feature to send it somewhere. Evo must not have the capability at all.</span>
+    let root = repo_root();
+    let mut offenders = Vec::new();
+    for (path, text) in manifests(&amp;root) {
+        for forbidden in FORBIDDEN_NETWORK_CRATES {
+            if let Some(line) = declares(&amp;text, forbidden) {
+                offenders.push(format!(&quot;{path}: {line}&quot;));
+            }
+        }
+    }
+    assert!(
+        offenders.is_empty(),
+        &quot;Evo must have no way to transmit what it witnessed, but these manifests \
+         declare a network or TLS client:\n  {}\n\n\
+         If a feature genuinely needs the network, it does not belong in Evo — \
+         the product promise is that information never leaves the machine.&quot;,
+        offenders.join(&quot;\n  &quot;)
+    );
+}</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="src-sec">
+    <div class="wrap">
+      <div class="row">
+        <div class="rail"><span class="n">vi</span><span class="k">The agent surface</span></div>
+        <div>
+          <h2 class="display"><span class="ln"><span>Three tools. That is</span></span><span class="ln"><span><em>the whole contract.</em></span></span></h2>
+          <p class="prose">The service speaks MCP over stdio. Any agent — Kiro, Claude, anything that reads the spec — can ask where a resource belongs and get a decision with its evidence. The server is standard-library Python; there is nothing to install.</p>
+          <pre class="code"><span class="f">exports/ship-happens/evo_server.py · 332–362</span>
+
+TOOLS = [
+    {
+        &quot;name&quot;: &quot;list_works&quot;,
+        &quot;description&quot;: &quot;List the bodies of work Evo derived on this machine. &quot;
+                       &quot;Each is a separate job with its own boundary. Use this &quot;
+                       &quot;before acting on anything, to see what exists.&quot;,
+        &quot;inputSchema&quot;: {&quot;type&quot;: &quot;object&quot;, &quot;properties&quot;: {}},
+    },
+    {
+        &quot;name&quot;: &quot;find_work&quot;,
+        &quot;description&quot;: &quot;Given a resource, path, URL or phrase, say which body &quot;
+                       &quot;of work it belongs to, the evidence, and which other &quot;
+                       &quot;works were considered and rejected. Refuses when &quot;
+                       &quot;nothing matches.&quot;,
+        &quot;inputSchema&quot;: {&quot;type&quot;: &quot;object&quot;,
+                        &quot;properties&quot;: {&quot;query&quot;: {&quot;type&quot;: &quot;string&quot;}},
+                        &quot;required&quot;: [&quot;query&quot;]},
+    },
+    {
+        &quot;name&quot;: &quot;resume_work&quot;,
+        &quot;description&quot;: &quot;Get the exact surfaces to reopen for a work: where the &quot;
+                       &quot;person left off and the neighborhood, not the whole &quot;
+                       &quot;history.&quot;,
+        &quot;inputSchema&quot;: {&quot;type&quot;: &quot;object&quot;,
+                        &quot;properties&quot;: {&quot;id&quot;: {&quot;type&quot;: &quot;string&quot;}},
+                        &quot;required&quot;: [&quot;id&quot;]},
+    },
+]
+
+</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="src-sec">
+    <div class="wrap">
+      <div class="row">
+        <div class="rail"><span class="n">vii</span><span class="k">What is withheld</span></div>
+        <div>
+          <h2 class="display"><span class="ln"><span>And why.</span></span></h2>
+          <ul class="withheld">
+            <li><b>Corpus</b><span><span class="mono lc">boundary.json</span> — 10,392 real events from one person's machine, including search queries and documents. Never published, in any form.</span></li>
+            <li><b>Product shell</b><span>The macOS app, the capture layer and the voice pipeline are in the private tree. They are why the boundary can be derived at all.</span></li>
+            <li><b>Access</b><span>Ask, and we will add you to the repository. We would rather give a judge a real walkthrough than scrub a corpus and pretend it is the same thing.</span></li>
+          </ul>
+          <p class="mono lc dim" style="margin-top:20px;max-width:60ch">Everything on this page is extracted from the working tree by <span class="sig">tools/build_source.py</span> at build time. If a line number moves, the page fails to build rather than showing you something plausible.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <div class="cfoot2" style="margin-top:0">
+      <span>Read-only · no data leaves the machine</span>
+      <span><a href="index.html">The report</a> · <a href="demo.html">Console</a></span>
+    </div>
+  </div>
+</div>
+</body>
+</html>
