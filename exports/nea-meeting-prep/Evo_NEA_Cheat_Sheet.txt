@@ -1,0 +1,360 @@
+
+
+===== PAGE 1 =====
+
+BEFORE YOU WALK IN  ·  FRIDAY 23 OCTOBER
+Corpus,
+Loop, Verifier
+Thomas Joshi wrote one of these documents and is a co-author of the other.
+This is what both say, what to say back, and the nine facts to carry in your
+head.
+DOCUMENT 1
+The Neolab Wild West
+NEA, 17 June 2026
+DOCUMENT 2
+DSPy
+ICLR 2024 spotlight
+THE POINT
+You have two of his three layers.
+The one you have best is the one
+he calls most underestimated.
+RULE
+Use his framework.
+Don’t take his label.
+Private. Prepared for Bhavit Saini. Every claim here is traceable to one of the two documents or to your own
+repository.
+
+
+===== PAGE 2 =====
+
+WHAT TO SAY, IN ORDER
+01 The spine
+Seven beats, about seventy-five seconds total. Learn the order, not the wording — the words will come out
+differently and that is fine. What must survive is the sequence.
+#
+BEAT
+SAY THIS
+IF HE INTERRUPTS
+1
+The hook
+“Every knowledge worker has a second job they don’t
+get paid for: rebuilding what they were doing before
+the interruption.”
+You already have him. Let him finish the
+thought.
+2
+The
+product
+“Evo watches work happen locally, groups it into
+bodies of work, and puts the desk back when you say
+continue. Four seconds. No HTTP client in it.”
+Skip
+ the
+ four
+ seconds,
+ keep
+ the
+no-HTTP-client line.
+3
+The
+concession
+“As a Mac utility that’s a five-to-forty-million-dollar
+business, and I’d be fine saying so.”
+Never skip this. It licenses everything after
+it.
+4
+The layer
+“The reason it’s bigger is what accumulates: not
+content, boundaries. Every agent today is handed its
+boundary — you point it at a folder. None derive it.”
+This is the whole pitch. Come back to it.
+5
+The bridge
+“Your neolab piece is three layers — corpus, loop,
+verifier. I have the corpus and the verifier. I skipped
+the loop, and I’d rather say that than pretend.”
+He will lean forward here. Pause.
+6
+The close
+“The verifier is the part I’d defend, because it’s the
+part nobody else in this category has.”
+Then stop. Do not add a market size.
+7
+The gift
+“And the switching-cost argument is already in your
+article: workflows embedded so deep that ripping
+them out costs more than keeping them.”
+Use only if the conversation is warm.
+The one thing to actually memorise
+If everything else falls out of your head, three words survive: corpus, loop, verifier. They are his own
+framework, they describe your company honestly, and they give you a way to answer almost anything by
+pointing at one of the three.
+“By your framework I’ve built the corpus and the verifier and skipped the loop. The verifier
+is the one I’d defend.”
+WHY IT WORKS
+That single sentence does four jobs at once. It proves you read the article. It proves you can size your
+own work honestly. It names the weak layer before he does — which is the thing that makes an associate
+trust the strong one. And it gives him a sentence he can repeat to a partner, which is the actual currency
+of an associate meeting.
+Page 3: the article. Page 4: the paper. Page 5: twelve questions. Page 6: numbers, never-says, fallback. Read 3 and 4 tonight; carry 5
+and 6 into the room.
+Corpus · Loop · Verifier
+2
+
+
+===== PAGE 3 =====
+
+THE DOCUMENT HE WROTE
+02 The Neolab Wild West
+NEA’s blog, 17 June 2026, by Thomas Joshi, Madison Faulkner, Lila Tretikov and Andrew Schoen. It is
+the fund’s public thesis about where the next decade of AI returns comes from — a statement of what NEA
+wants to be true.
+The argument, in one paragraph
+Venture has left the frontier-lab era. $1.68 trillion of private AI-lab value exists and 93.6% of it sits in four
+companies. Everything else combined is barely 6% — one basket, not a market. So the next returns come from
+elsewhere:
+ neolabs
+ —
+ research-first
+ companies
+ that
+ own
+ a
+ domain
+ corpus,
+ run
+ a
+ closed
+training-and-verification loop, and can be sold to a strategic.
+Three trends, and how you stand on each
+TREND
+WHAT IT CLAIMS
+YOUR POSITION
+Commoditisation
+Open weights close the gap; the marginal pre-training dollar
+buys less. “What separates top models is no longer what
+they know but how they act within specific environments.”
+Your intelligence is local deterministic
+code, not a model. You are downstream of
+this trend, not fighting it.
+The budget shift
+RL-first training moved the moat from compute to the loop:
+“compute is no longer the only moat; the entire loop is a
+moat.”
+Say verifier, not data. That is the word
+they chose.
+The exit
+Top-decile software trades at ~15–18x forward revenue
+against 3–6x for the rest. Strategics buy specific capability.
+Your eventual buyer is an agent platform
+that
+ needs
+ a
+ boundary
+ it
+ cannot
+assemble.
+The three layers — this is the whole meeting
+LAYER
+WHAT THE ARTICLE SAYS
+WHAT YOU ACTUALLY HAVE
+Corpus
+A domain-biased corpus pays back on every later cycle.
+Pre-train on one, then RL, beats RL alone — and the gap
+grows with difficulty.
+Real but small. Six works, 164 labels, two days of
+one person’s work. Nobody else can assemble it, but
+it is not a pre-training corpus.
+Loop
+“Whoever owns the environment owns the data flywheel.”
+Every action inside it generates signal nobody outside can
+copy.
+Not built. Deterministic core, no RL. A planned
+per-user fit on declarations — say that, and say it is
+not the same thing.
+Verifier
+“The most underestimated asset in this stack, because it
+looks like infrastructure when it is actually the source of
+truth.”
+Strong, and genuinely rare. Six assertions in the
+build. 164 labels of real work. Exit code 1 if two
+works ever fuse. Receipts on every restore.
+WHY IT WORKS
+You have been calling the gate an engineering chore. In NEA’s vocabulary it is the verifier layer — the
+one they say is most underestimated.
+The sentence to quote back
+That middle clause is your switching-cost argument — they wrote it for you.
+“The durable wedges are domain-specific data that no one else can assemble, workflows embedded
+so deep in a customer’s operations that ripping them out would cost more than keeping them, and
+distribution channels that the hyperscalers cannot easily replicate.”
+Corpus · Loop · Verifier
+3
+
+
+===== PAGE 4 =====
+
+THE PAPER HE CO-WROTE
+03 DSPy
+What it is, plainly. Before DSPy, an LLM pipeline was a pile of prompt strings someone tuned by hand until it
+worked. DSPy says: stop writing prompts, write a program.
+Declare each step — “takes a question, returns an answer” — wire them together, and let a compiler search for
+the instructions and worked examples that maximise a metric you defined. The prompt stops being
+something you hand-craft and becomes a parameter the compiler finds.
+WHAT TO KNOW
+The paper
+DSPy: Compiling Declarative Language Model Calls into State-of-the-Art Pipelines. ICLR 2024, spotlight. First
+author Omar Khattab; senior authors include Matei Zaharia and Christopher Potts. Thirteen authors;
+Thomas T. Joshi is the ninth.
+The claim
+Within minutes of compiling, it beats out-of-the-box few-shot prompting and expert-written demonstrations on
+GPT-3.5 and Llama2-13b. A compiled 770M T5 becomes competitive with large proprietary models driven by
+hand-written prompt chains.
+NEA’s line
+They call it “the most popular open source software to come out of Stanford AI,” used by Meta and Microsoft.
+His bio says co-author. Not “the creator.”
+The bridge — the best thing you can say to this man
+DSPy’s real idea is not the compiler. It is that you do not hand-tune the system; you declare what must
+be true and let the build be measured against it. Your gate is the same move, applied to something
+deterministic.
+SAY THIS
+“The thing I took from DSPy isn’t the library — there’s no language model in my restore path. It’s the
+discipline. You don’t hand-tune the grouping; you declare the properties that must hold and let the build fail
+when they don’t. Six assertions: corpus is real, labels are real, something is reconstructed, no two works
+fuse, no leisure resource ever anchors a thread, same input gives the same output twice. Same idea,
+deterministic system.”
+WHY IT WORKS
+True, specific, checkable in his head, and it connects his own published work to yours without flattering
+him. Associates get flattered constantly. Almost nobody says “here is how your paper changed how I
+build the test that fails me.”
+Three traps
+TRAP
+Don’t say “you wrote DSPy,” and don’t claim you use it. He is one of thirteen authors; NEA’s own
+bio says co-author, which is correct and impressive — “creator” is wrong and he will correct you. And
+there is no LM in your loop, so if you say “we’re doing DSPy for work grouping,” his next question is
+“which teleprompter?” and you have nothing.
+TRAP
+Don’t say “we do RL.” You don’t. Say deterministic core plus a planned per-user fit. Different
+words, and he will know within one question.
+Corpus · Loop · Verifier
+4
+
+
+===== PAGE 5 =====
+
+ONE LINE EACH
+04 Twelve questions
+Left column is what he says. Right column is the answer — short on purpose. If you find yourself extending an
+answer past two sentences, stop and ask him a question instead.
+IF HE ASKS
+ANSWER
+“Did
+ you
+ read
+ the
+ neolab
+piece?”
+“Twice. The three-layer bit is the reason I built the gate the way I did.”
+“What did you take from it?”
+“Corpus, loop, verifier. I have two of the three and I’d rather tell you which one is
+missing.”
+“Which one is missing?”
+“The loop. My core is deterministic. The learning I’d add is a small per-user fit on
+declarations — that’s not an RL loop and I’m not going to call it one.”
+“Then you’re not a neolab.”
+“No. I’m a product company in a neolab-shaped thesis, at pre-seed. Calling myself
+a neolab at $1.5M would be silly.”
+“Where’s your verifier?”
+“A corpus of 164 labels across six real works from one person’s two days, and six
+assertions that fail the build. If two works ever fuse, exit code 1.”
+“Isn’t that just a test suite?”
+“A test suite checks that the code runs. This checks that the boundary is still
+correct — it’s six properties, not six behaviours.”
+“How big is the corpus really?”
+“Ten thousand events, two days, one person, six works. It’s small. I know exactly
+how small.”
+“Who owns the corpus?”
+“The user. It never leaves the machine — there’s no HTTP client in the build.
+That’s the whole reason the layer has to be neutral.”
+“What’s DSPy, in one line?”
+“Declare the steps, define the metric, let a compiler find the prompt. The metric is
+the program.”
+“Do you use it?”
+“No — no language model in the loop. I took the metric discipline, not the library.”
+“What would you compile if you
+could?”
+“The boundary, not the safety. Learned layer on top, deterministic core
+underneath, and the core is the part that can’t be argued with.”
+“Why won’t OpenAI build this?”
+“They did — Computer History, August. It’s ungrouped, because their unit is the
+conversation. What they can’t add is neutrality: a layer that lets Claude be safe on
+your desktop is against their interest.”
+The answer that wins the room
+If he gives you one sentence to defend, make it this one — it is the only claim you can make that nobody else in
+the category can.
+“Every layer in that piece depends on someone owning the environment. My user owns it,
+not me. That’s why the corpus can be neutral, and neutrality is the only thing that makes a
+jurisdiction layer worth anything.”
+Corpus · Loop · Verifier
+5
+
+
+===== PAGE 6 =====
+
+NUMBERS, NEVER-SAYS, FALLBACK
+05 The card
+Numbers worth carrying
+NUMBER
+WHAT IT IS
+$1.68T
+Aggregate private valuation of AI research labs, April 2026 (PitchBook, via NEA).
+93.6%
+Share sitting in four frontier generalists. Everything else combined: ~6%.
+15–18x
+Forward revenue multiple for top-decile software. The rest of the index: 3–6x.
+$50M–$500M
+What neolabs raise before revenue. You are raising $1.5M — hence the label trap.
+86 labs
+Companies in NEA’s map. Not one is a jurisdiction layer.
+13 / ICLR
+Authors on the DSPy paper; Thomas is ninth. Accepted as a spotlight.
+164 labels
+In your verifier corpus. Six works. Two days. Exit code 1 on fusion.
+Never say · Always say
+NEVER
+ALWAYS
+“We’re a neolab.”
+“A neolab-shaped thesis at pre-seed.”
+“You created DSPy.”
+“Co-author of DSPy.”
+“We do RL.”
+“Deterministic core, planned per-user fit.”
+“We use DSPy.”
+“I took the metric discipline, not the library.”
+“The corpus proves it.”
+“The verifier is the part I’d defend.”
+“No one is doing this.”
+“Everyone is doing the feature. Nobody is doing the layer.”
+“Our AI pipeline…”
+“Deterministic code, with a small model for transcription.”
+The fallback — for any question you cannot answer
+IF YOU ARE STUCK
+“I don’t know. That’s a real gap, not a hedge. I know the shape of the answer and how I’d test it. Can I send it
+by Wednesday — and would you tell me what would actually change your mind?”
+WHY IT WORKS
+Four beats: admit, nearest true thing, a date, turn it back. The last clause is what makes him remember
+you — it treats him like a researcher rather than a gatekeeper. He is a researcher.
+One last thing. You do not need to remember this sheet. Three words — corpus, loop, verifier — and one
+sentence: “I have two of the three, and the verifier is the one I’d defend.” Everything else is here so you
+recognise the question when it arrives.
+Sources:
+ nea.com/blog/the-ai-neolab-wild-west
+ (17
+ Jun
+ 2026);
+ openreview.net/forum?id=sY5N0zY5Od
+ (ICLR
+ 2024
+ spotlight);
+nea.com/team/thomas-joshi. Numbers are quoted as the article states them, with its own PitchBook and Epoch AI citations.
+Corpus · Loop · Verifier
+6

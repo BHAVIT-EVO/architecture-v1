@@ -1,271 +1,106 @@
-# Evo
+<div align="center">
 
-### A local-first work memory for macOS
+# evo
 
-Evo helps people return to meaningful work without reconstructing the context they
-lost. It observes the relationships between applications, files, windows, and
-activities, models them as bodies of work, and restores the right working
-surface when it is time to continue.
+### Pick up where you left off.
 
-Evo is designed around a simple product promise:
+**Your work doesn't live in one app. Why should your context?**
 
-> **Continue your work, not the archaeology required to find it again.**
+[The idea](#the-idea) · [How Evo works](#how-evo-works) · [For AI agents](#a-better-starting-point-for-ai-agents) · [Explore the code](#explore-the-code)
 
-The project is intentionally local-first. The desktop shell, activity ledger,
-work reconstruction, native restoration, voice interface, wake word, speech
-transcription, and semantic matching are implemented as local components. No
-cloud speech or intent API is required for the voice path.
+</div>
 
-> **Project status:** active development. Evo is currently a macOS-focused
-> engineering build, not a finished public release. APIs, storage formats, and
-> product surfaces may change.
+---
 
-## What Evo does
+You were working on something important. A document, a few browser pages, maybe a folder and an app or two. Then a message came in. A meeting happened. The day moved on.
 
-- **Remembers work as a unit** instead of treating every application window as
-  unrelated activity.
-- **Reconstructs context** from local observations, artifacts, threads, and
-  workspace evidence.
-- **Restores native applications** through macOS rather than trapping work inside
-  a custom container.
-- **Organizes multi-window work** into a coherent desktop arrangement.
-- **Provides an always-on voice surface** with the local “Hey Evo” wake word,
-  Whisper transcription, and local semantic intent matching.
-- **Shows a native notch-style interaction surface** that can follow the active
-  display and remain visible across applications and Spaces.
-- **Keeps the core architecture testable** through separate Rust crates and
-  deterministic domain contracts.
+The next time you sit down, the work is still there. But first you have to find the pieces, remember how they fit together, and work out where to begin.
 
-## How it works
+**Evo is being built to make that return easier.**
 
-Evo is a Cargo workspace with a layered architecture:
+It's an early, local-first project that explores a simple idea: instead of making you organize your life around individual apps and files, your computer should help you find your way back to the *work* connecting them.
+
+> **Continue the work. Skip the archaeology.**
+
+## The idea
+
+Think about planning a trip, researching a topic, or building a product. Each is one activity, but its pieces can be scattered across your computer. Evo looks for relationships between the activity signals and resources it can access, and uses them to form candidate **bodies of work**.
+
+The goal is not to preserve a perfect recording of your day. It's to make the relevant pieces easier to find when you need them again.
 
 ```text
-macOS observation
-        │
-        ▼
-artifact identity + activity ledger
-        │
-        ▼
-work/thread formation and retrieval
-        │
-        ▼
-restoration planning + native app launch
-        │
-        ▼
-desktop shell, workspace arrangement, notch, and voice
+  A document       A few pages       An app or folder
+       \                |                 /
+        \               |                /
+         ───────  a piece of work  ───────
+                        |
+                 return to it
 ```
 
-The most important boundaries are:
+Whether you're switching between projects, studying for an exam, or picking up a personal idea after a few days away, the ambition is the same: **less time reconstructing context, more time actually doing the thing.**
 
-| Layer | Responsibility |
+## How Evo works
+
+Evo's macOS-focused engineering build explores a pipeline like this:
+
+1. **Observe supported activity signals.** Depending on what's enabled and available, these can include things like app focus, file activity and URLs.
+2. **Find relationships.** An engine processes observations and builds candidate groupings of related work and resources.
+3. **Help you return.** The desktop experience aims to surface a piece of work and reopen supported resources so you can continue.
+
+Evo works with evidence it can access—not a complete record of everything you thought or did. Groupings can be incomplete or wrong; a link to a document is not the same as knowing the decision you made while reading it. Reopening a resource is not necessarily restoring every tab, window or application state exactly as it was.
+
+## A better starting point for AI agents
+
+Now imagine asking an AI agent: *“Help me continue that project.”*
+
+The agent may be capable of writing, searching or taking actions, but it still needs to know **which project you mean** and **which context is relevant**. Otherwise, you're back to explaining the work from scratch.
+
+Our longer-term direction is for a person to choose whether to share relevant Evo context with an agent they use. In a possible future workflow, an agent could request context for a selected activity, receive a limited set of relevant resources and evidence, and ask for clarification when the answer isn't clear.
+
+This is a direction, **not a claim of a finished agent platform**. An early query prototype has been explored, but production integrations, granular permissions and safe action controls still need to be built and validated. A protocol alone doesn't enforce a security boundary; sending context to a cloud model would also mean that selected data leaves the device.
+
+## Privacy is part of the product
+
+Evo's design rule is straightforward: **no screenshots or screen recordings, even temporarily.** No image capture is needed as a workaround.
+
+That doesn't make the remaining data automatically harmless. File names, window titles and URLs can still be sensitive. Local-first design, careful permissions, data minimization and transparent controls matter—and they need to be implemented and tested, not just promised.
+
+## Where we are
+
+Evo is in **active, early development**. There is a macOS MVP aimed at helping a person return to a piece of work, alongside an evolving Rust codebase for observation, work modeling and restoration. This repository is an engineering build, not a polished general release; behavior and setup can change.
+
+What we're working toward:
+
+- More reliable work grouping and a useful, understandable return experience.
+- Clear handling of uncertainty and ways for people to correct mistakes.
+- Privacy and security controls appropriate for real-world use.
+- Carefully scoped, user-directed context for AI agents.
+- Learning from repeated use across more people and activities.
+
+The broader vision is for people everywhere, across work and personal life. The practical starting point is proving the experience on macOS. Windows, mobile and cross-device support are not promised as shipped capabilities.
+
+## Explore the code
+
+This is a Rust workspace. A few places to start:
+
+| Area | What to explore |
 | --- | --- |
-| `evo-observation` | Local observation contracts and event language |
-| `evo-artifact` | Artifact identity and lifecycle |
-| `evo-ledger` | Deterministic local activity ledger with SQLite/FTS5 |
-| `evo-threads` | Formation of bodies of work from activity evidence |
-| `evo-retrieval` | Retrieval and meaning-based continuation |
-| `evo-restoration` | Platform-neutral restoration planning |
-| `evo-execution` | Native restoration execution |
-| `evo-workspace` | Workspace state and arrangement models |
-| `evo-daemon` | Background coordination and local runtime services |
-| `evo-voice` | Microphone, wake word, Whisper, and local intent pipeline |
-| `evo-desktop` | Native macOS shell, notch, voice agent, and user surface |
+| [`evo-capture`](crates/evo-capture/) | Structured observation and platform adapters |
+| [`evo-threads`](crates/evo-threads/) | Work grouping and retrieval logic |
+| [`evo-restoration`](crates/evo-restoration/) | Restoration-related components |
+| [`evo-desktop`](crates/evo-desktop/) | The desktop application |
+| [Architecture](docs/architecture/ARCHITECTURE.md) | The system's architecture |
+| [Work model](docs/architecture/WORK-MODEL.md) | How the project thinks about work |
+| [Constitution](docs/constitution/CONSTITUTION.md) | Principles and constraints |
 
-See the [architecture documentation](docs/architecture/ARCHITECTURE.md) and
-[implementation playbook](docs/implementation/IMPLEMENTATION_PLAYBOOK.md) for
-the deeper system model.
+If you're exploring the source, start with the architecture and the individual crates. Building or running the macOS app requires a Mac and a Rust toolchain; system permissions and setup depend on the build. This project is changing quickly, so check the scripts and code before running them. The application has not been verified on every machine or configuration.
 
-## Requirements
+---
 
-- macOS on Apple Silicon
-- Xcode Command Line Tools
-- Rust toolchain with Cargo
-- A working local ONNX Runtime installation for voice-enabled builds
-- macOS permissions appropriate to the features you enable:
-  - Microphone for voice capture
-  - Accessibility for observing and arranging application windows
-  - Input Monitoring or related permissions when requested by macOS
+<div align="center">
 
-The default build is passive and does not enable microphone capture. Voice is
-opt-in at build time.
+**Your work is more than a collection of tabs.**
 
-## Build Evo
+Evo is an exploration of what happens when your computer starts treating it that way.
 
-Clone the repository and enter the project:
-
-```sh
-git clone https://github.com/BHAVIT-EVO/architecture-v1.git
-cd architecture-v1
-```
-
-Build the standard macOS application:
-
-```sh
-bash scripts/build-app.sh
-```
-
-This produces and installs the canonical application at
-`/Applications/Evo.app` by default. To build the voice-enabled application with
-the notch and always-on agent:
-
-```sh
-EVO_VOICE=on bash scripts/build-app.sh
-```
-
-For a debug build:
-
-```sh
-PROFILE=dev EVO_VOICE=on bash scripts/build-app.sh
-```
-
-### ONNX Runtime provisioning
-
-Voice builds use ONNX Runtime for the local acoustic wake-word models. The
-build intentionally requires explicit provisioning so the runtime source is
-clear and reproducible.
-
-Use an external local runtime directory:
-
-```sh
-EVO_ORT_PROVISIONING=external \
-ORT_LIB_PATH=/path/to/onnx-runtime \
-ORT_PREFER_DYNAMIC_LINK=1 \
-EVO_VOICE=on \
-bash scripts/build-app.sh
-```
-
-Or provide a local bundled runtime and its notices:
-
-```sh
-EVO_ORT_PROVISIONING=bundled \
-EVO_ORT_DYLIB=/path/to/libonnxruntime.dylib \
-EVO_ORT_LICENSE=/path/to/LICENSE \
-EVO_ORT_THIRD_PARTY_NOTICES=/path/to/ThirdPartyNotices.txt \
-EVO_VOICE=on \
-bash scripts/build-app.sh
-```
-
-Do not commit model files, ONNX Runtime binaries, app bundles, or machine-local
-runtime paths. The repository intentionally excludes those artifacts.
-
-## Enable always-on capture
-
-After building a voice-enabled app, install the macOS LaunchAgents:
-
-```sh
-bash scripts/install-agents.sh
-```
-
-The installer uses `/Applications/Evo.app` by default. To use another bundle:
-
-```sh
-BUNDLE=/path/to/Evo.app bash scripts/install-agents.sh
-```
-
-To remove the installed agents:
-
-```sh
-bash scripts/install-agents.sh --remove
-```
-
-The always-on agent owns the voice/notch runtime. Do not start a second copy of
-the daemon against the same storage root.
-
-## Local voice pipeline
-
-When enabled, the voice path runs locally:
-
-1. The microphone stream is captured and resampled locally.
-2. The acoustic wake-word models detect “Hey Evo”.
-3. A native notch surface provides immediate listening feedback.
-4. Whisper transcribes the bounded utterance locally.
-5. Local embeddings and Evo's semantic layers match the request to an intent.
-6. The execution and restoration layers perform the requested local action.
-
-The voice build expects these runtime assets beside the installed agent:
-
-- `whisper-base.en.bin`
-- `melspectrogram.onnx`
-- `embedding_model.onnx`
-- `hey_evoh.onnx`
-
-These assets are not stored in Git. The build script validates and copies them
-from the local model/runtime locations used by the installation.
-
-More detail is available in [the voice wake-word guide](docs/voice-wakeword.md)
-and [the local model notes](docs/model-local.md).
-
-## Development commands
-
-Check the workspace without enabling voice:
-
-```sh
-cargo check --workspace --offline --locked
-```
-
-Check the desktop and voice integration:
-
-```sh
-cargo check -p evo-desktop \
-  --features voice-wake,evo-notch,embeddings \
-  --offline --locked
-```
-
-Run the workspace tests:
-
-```sh
-cargo test --workspace --offline --locked
-```
-
-Useful operational scripts:
-
-```sh
-bash scripts/evo-consolidation-checklist.sh
-python3 scripts/evo-doctor.py
-bash scripts/verify-live-capture.sh
-```
-
-Some checks require macOS permissions, a running app bundle, or locally
-provisioned model/runtime assets. Treat failures from those checks as environment
-signals rather than automatically as unit-test failures.
-
-## Repository map
-
-- `crates/` — Rust workspace and domain/runtime implementation
-- `docs/foundation/` — product principles, cognitive model, and architectural laws
-- `docs/architecture/` — system architecture and restoration model
-- `docs/implementation/` — implementation contracts and feature specifications
-- `docs/user/` — user-facing operating notes
-- `docs/voice-wakeword.md` — local voice and wake-word details
-- `scripts/` — build, install, verification, and model tooling
-- `DESIGN.md` — visual and interaction design contract
-- `THIRD-PARTY-NOTICES.md` — third-party software notices
-
-## Privacy and data handling
-
-Evo is built to keep its working data on the Mac. Local storage, activity
-observations, voice models, transcription, and semantic matching are intended
-to remain within the local runtime. The application still requires powerful
-macOS permissions for features such as Accessibility and microphone capture.
-Review and grant only the permissions needed for the capabilities you choose to
-use.
-
-This repository may contain research and engineering evidence in addition to
-the active implementation. See the applicable file licenses and
-`THIRD-PARTY-NOTICES.md` before redistributing derived or reference material.
-
-## Contributing
-
-Before opening a pull request:
-
-1. Keep changes within the relevant crate or documented architectural boundary.
-2. Add or update tests for behavior changes.
-3. Run the smallest applicable `cargo check` and test command.
-4. Do not commit secrets, local databases, model binaries, app bundles, logs,
-   ONNX Runtime binaries, or machine-specific paths.
-5. Update directly related documentation.
-
-For product and architecture context, start with the
-[constitution](docs/constitution/CONSTITUTION.md), [cognitive model](docs/foundation/COGNITIVE_MODEL.md),
-and [architectural laws](docs/foundation/ARCHITECTURAL_LAWS.md).
+</div>
