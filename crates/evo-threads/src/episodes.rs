@@ -80,8 +80,10 @@ impl Engine {
             if in_focus {
                 // A return while an excursion is pending resolves it.
                 if let Some(d) = self.st.detour.take() {
-                    let productionless = d.events.iter().all(|x| self.production_credit(x) == 0
-                        && !matches!(x.interaction, Interaction::CommandRan));
+                    let productionless = d.events.iter().all(|x| {
+                        self.production_credit(x) == 0
+                            && !matches!(x.interaction, Interaction::CommandRan)
+                    });
                     let short = e.timestamp.saturating_sub(d.start) < dip_max;
                     if productionless && short {
                         // A notification, not a change of work: kept as context,
@@ -356,10 +358,7 @@ impl Engine {
             ep.closed_at = at;
             ep.span.1 = at.max(ep.span.0);
         }
-        self.st.push(Decision::EpisodeClosed {
-            episode: id,
-            at,
-        });
+        self.st.push(Decision::EpisodeClosed { episode: id, at });
         let assigned = self
             .st
             .episodes

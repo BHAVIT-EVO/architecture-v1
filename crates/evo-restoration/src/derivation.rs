@@ -102,17 +102,17 @@
 
 use evo_artifact::artifact_id::ArtifactId;
 use evo_observation::observed_state::ObservedState;
+use evo_workspace::WorkspaceId;
 use evo_workspace::attachment::{Attachment, ResourceRole};
 use evo_workspace::snapshot::Snapshot;
 use evo_workspace::workspace::Workspace;
-use evo_workspace::WorkspaceId;
 
 use crate::blocker::Blocker;
 use crate::context_chain::ContextChain;
 use crate::errors::RestorationError;
 use crate::next_step::NextStep;
-use crate::resume_point::ResumePoint;
 use crate::restoration_plan::RestorationPlan;
+use crate::resume_point::ResumePoint;
 
 // ── Canonical reason constants (IS-0021 §25) ─────────────────────────────────
 
@@ -148,8 +148,7 @@ const NEXT_STEP_DESIGNATED_DESCRIPTION: &str =
 /// body of work happens, this is the one attended most recently. It does not
 /// claim to know what the person intended to do next, because no canonical
 /// evidence records that.
-const NEXT_STEP_CONTINUATION_DESCRIPTION: &str =
-    "This is the resource you were last working in as part of this work, so \
+const NEXT_STEP_CONTINUATION_DESCRIPTION: &str = "This is the resource you were last working in as part of this work, so \
      this is where the work continues.";
 
 // ── RestorationInput ─────────────────────────────────────────────────────────
@@ -248,7 +247,11 @@ impl<'a> RestorationInput<'a> {
         continuation_surface: Option<Vec<ArtifactId>>,
         observed_states: Vec<(ArtifactId, ObservedState)>,
     ) -> Result<Self, RestorationError> {
-        if !workspace.snapshots().iter().any(|candidate| candidate == snapshot) {
+        if !workspace
+            .snapshots()
+            .iter()
+            .any(|candidate| candidate == snapshot)
+        {
             return Err(RestorationError::SnapshotNotPartOfWorkspace {
                 workspace_id: workspace.id().clone(),
             });
@@ -643,10 +646,8 @@ pub fn derive_restoration_plan(input: &RestorationInput<'_>) -> DerivationOutcom
         return DerivationOutcome::Complete(plan);
     }
 
-    let next_step_missing = MissingEvidence::new(
-        RestorationComponent::NextStep,
-        NEXT_STEP_MISSING_REASON,
-    );
+    let next_step_missing =
+        MissingEvidence::new(RestorationComponent::NextStep, NEXT_STEP_MISSING_REASON);
 
     // §25.3 — With no Resume Point derived, or a Resume Point that is the only
     // member there is, there is nothing for a Context Chain to contextualise.
@@ -1035,7 +1036,10 @@ mod tests {
         .unwrap();
 
         let outcome = derive_restoration_plan(&input);
-        assert_eq!(outcome.resume_point().unwrap().observed_state(), Some(&state));
+        assert_eq!(
+            outcome.resume_point().unwrap().observed_state(),
+            Some(&state)
+        );
     }
 
     #[test]
@@ -1056,7 +1060,10 @@ mod tests {
 
         let first = derive_restoration_plan(&input);
         let second = derive_restoration_plan(&input);
-        assert_eq!(first, second, "state-aware derivation remains deterministic");
+        assert_eq!(
+            first, second,
+            "state-aware derivation remains deterministic"
+        );
         assert_eq!(first.resume_point().unwrap().observed_state(), None);
     }
 
@@ -1091,7 +1098,9 @@ mod tests {
                 assert!(missing.reason().contains("25.5"));
                 assert!(missing.reason().contains("continuation"));
             }
-            other => panic!("single-artifact evidence must yield the strongest derivable outcome, got {other:?}"),
+            other => panic!(
+                "single-artifact evidence must yield the strongest derivable outcome, got {other:?}"
+            ),
         }
 
         assert_eq!(outcome.workspace_id(), workspace.id());
@@ -1226,10 +1235,7 @@ mod tests {
         let DerivationOutcome::Complete(plan) = &outcome else {
             panic!("designation must establish a Complete plan, got {outcome:?}");
         };
-        assert_eq!(
-            plan.resume_point().artifact_id().as_str(),
-            "artifact-beta"
-        );
+        assert_eq!(plan.resume_point().artifact_id().as_str(), "artifact-beta");
         assert_eq!(plan.next_step().workspace_id(), workspace.id());
         assert!(plan.next_step().description().contains("designated"));
         // §25.3 as amended — the other member played a part in the work, so it
@@ -1258,9 +1264,8 @@ mod tests {
         ]);
         let workspace = workspace(vec![snapshot.clone()]);
         let foreign = ArtifactId::new("artifact-foreign").unwrap();
-        let input =
-            RestorationInput::new_with_designated(&workspace, &snapshot, Some(foreign))
-                .expect("valid input");
+        let input = RestorationInput::new_with_designated(&workspace, &snapshot, Some(foreign))
+            .expect("valid input");
 
         let outcome = derive_restoration_plan(&input);
         assert!(!outcome.is_complete());
@@ -1289,10 +1294,7 @@ mod tests {
             outcome.resume_point().unwrap().artifact_id().as_str(),
             "artifact-single"
         );
-        assert_eq!(
-            outcome.next_step().unwrap().workspace_id(),
-            workspace.id()
-        );
+        assert_eq!(outcome.next_step().unwrap().workspace_id(), workspace.id());
     }
 
     // Fixture J — Supersession semantics: with a designation pointing at one
@@ -1307,9 +1309,8 @@ mod tests {
         let workspace = workspace(vec![snapshot.clone()]);
 
         let designated = ArtifactId::new("artifact-alpha").unwrap();
-        let input =
-            RestorationInput::new_with_designated(&workspace, &snapshot, Some(designated))
-                .expect("valid input");
+        let input = RestorationInput::new_with_designated(&workspace, &snapshot, Some(designated))
+            .expect("valid input");
         let outcome = derive_restoration_plan(&input);
         assert!(outcome.is_complete());
         assert_eq!(
@@ -1356,7 +1357,10 @@ mod tests {
         ]);
         let workspace = workspace(vec![snapshot.clone()]);
 
-        let chain = derive(&workspace, &snapshot).context_chain().artifacts().to_vec();
+        let chain = derive(&workspace, &snapshot)
+            .context_chain()
+            .artifacts()
+            .to_vec();
         let labels: Vec<&str> = chain.iter().map(ArtifactId::as_str).collect();
         assert_eq!(
             labels,
@@ -1477,7 +1481,10 @@ mod tests {
             let workspace = workspace(vec![snapshot.clone()]);
 
             let outcome = derive(&workspace, &snapshot);
-            assert!(outcome.is_complete(), "roles {roles:?} lost the Continuation");
+            assert!(
+                outcome.is_complete(),
+                "roles {roles:?} lost the Continuation"
+            );
             assert_eq!(
                 outcome.resume_point().unwrap().artifact_id().as_str(),
                 "artifact-draft"
@@ -1523,10 +1530,7 @@ mod tests {
         surface: Option<Vec<ArtifactId>>,
     ) -> DerivationOutcome {
         let input = RestorationInput::new_with_continuation_surface(
-            workspace,
-            snapshot,
-            designated,
-            surface,
+            workspace, snapshot, designated, surface,
         )
         .expect("fixture snapshot must belong to the fixture workspace");
         derive_restoration_plan(&input)
@@ -1559,19 +1563,10 @@ mod tests {
         // The declared foreign Artifact never leaks into this Workspace's
         // surface; members are in canonical order (ascending ArtifactId).
         assert_eq!(plan.continuation_surface().len(), 2);
-        assert_eq!(
-            plan.continuation_surface()[0].as_str(),
-            "artifact-alpha"
-        );
-        assert_eq!(
-            plan.continuation_surface()[1].as_str(),
-            "artifact-beta"
-        );
+        assert_eq!(plan.continuation_surface()[0].as_str(), "artifact-alpha");
+        assert_eq!(plan.continuation_surface()[1].as_str(), "artifact-beta");
         // The surface never changes Resume Point / Next Step semantics.
-        assert_eq!(
-            plan.resume_point().artifact_id().as_str(),
-            "artifact-beta"
-        );
+        assert_eq!(plan.resume_point().artifact_id().as_str(), "artifact-beta");
         assert!(plan.next_step().description().contains("designated"));
     }
 
@@ -1621,8 +1616,14 @@ mod tests {
     // (§12, §16).
     #[test]
     fn an_undeclared_surface_stays_within_the_sitting_being_returned_to() {
-        let earlier = snapshot(vec![attachment_as("artifact-old-primary", ResourceRole::Primary)]);
-        let latest = snapshot(vec![attachment_as("artifact-now-primary", ResourceRole::Primary)]);
+        let earlier = snapshot(vec![attachment_as(
+            "artifact-old-primary",
+            ResourceRole::Primary,
+        )]);
+        let latest = snapshot(vec![attachment_as(
+            "artifact-now-primary",
+            ResourceRole::Primary,
+        )]);
         let workspace = Workspace::new(
             WorkspaceId::new(),
             WorkspaceLifecycle::Active,
@@ -1658,10 +1659,7 @@ mod tests {
         let outcome = derive_with_surface(&workspace, &snapshot, None, Some(surface));
         assert!(!outcome.is_complete());
         assert_eq!(outcome.continuation_surface().len(), 1);
-        assert_eq!(
-            outcome.continuation_surface()[0].as_str(),
-            "artifact-beta"
-        );
+        assert_eq!(outcome.continuation_surface()[0].as_str(), "artifact-beta");
     }
 
     // AMENDED RULE (RFC-0013). This test previously read
@@ -1756,10 +1754,13 @@ mod tests {
         let designated = ArtifactId::new("artifact-single").unwrap();
         let surface = vec![ArtifactId::new("artifact-single").unwrap()];
 
-        let with_surface =
-            derive_with_surface(&workspace, &snapshot, Some(designated.clone()), Some(surface));
-        let without_surface =
-            derive_with_surface(&workspace, &snapshot, Some(designated), None);
+        let with_surface = derive_with_surface(
+            &workspace,
+            &snapshot,
+            Some(designated.clone()),
+            Some(surface),
+        );
+        let without_surface = derive_with_surface(&workspace, &snapshot, Some(designated), None);
 
         let DerivationOutcome::Complete(plan_with) = &with_surface else {
             panic!("designation must establish a Complete plan");
@@ -1767,10 +1768,7 @@ mod tests {
         let DerivationOutcome::Complete(plan_without) = &without_surface else {
             panic!("designation must establish a Complete plan");
         };
-        assert_eq!(
-            plan_with.resume_point(),
-            plan_without.resume_point()
-        );
+        assert_eq!(plan_with.resume_point(), plan_without.resume_point());
         assert_eq!(plan_with.context_chain(), plan_without.context_chain());
         assert_eq!(plan_with.blockers(), plan_without.blockers());
         assert_eq!(plan_with.next_step(), plan_without.next_step());
@@ -1796,8 +1794,7 @@ mod tests {
         // The person declared where they continue — in some other body of work.
         let elsewhere = vec![ArtifactId::new("artifact-other-work").unwrap()];
 
-        let spoken_elsewhere =
-            derive_with_surface(&workspace, &snapshot, None, Some(elsewhere));
+        let spoken_elsewhere = derive_with_surface(&workspace, &snapshot, None, Some(elsewhere));
         let never_spoken = derive_with_surface(&workspace, &snapshot, None, None);
 
         assert_eq!(
@@ -1824,7 +1821,12 @@ mod tests {
         let designated = ArtifactId::new("artifact-zeta").unwrap();
         let surface = vec![ArtifactId::new("artifact-alpha").unwrap()];
 
-        let first = derive_with_surface(&workspace, &snapshot, Some(designated.clone()), Some(surface.clone()));
+        let first = derive_with_surface(
+            &workspace,
+            &snapshot,
+            Some(designated.clone()),
+            Some(surface.clone()),
+        );
         let second = derive_with_surface(&workspace, &snapshot, Some(designated), Some(surface));
         assert_eq!(first, second);
         assert_eq!(first.continuation_surface(), second.continuation_surface());
@@ -1838,7 +1840,14 @@ mod tests {
 
         // Neither Resume Point nor missing evidence.
         assert!(matches!(
-            InsufficientRestoration::new(wid.clone(), None, None, chain.clone(), vec![], missing.clone()),
+            InsufficientRestoration::new(
+                wid.clone(),
+                None,
+                None,
+                chain.clone(),
+                vec![],
+                missing.clone()
+            ),
             Err(RestorationError::InvalidInsufficientOutcome { .. })
         ));
 
@@ -1859,7 +1868,14 @@ mod tests {
         // Resume Point from a different Workspace.
         let point = ResumePoint::new(WorkspaceId::new(), ArtifactId::new("artifact-rp").unwrap());
         assert!(matches!(
-            InsufficientRestoration::new(wid, Some(point), None, chain, vec![], MissingEvidence::new(RestorationComponent::NextStep, "reason")),
+            InsufficientRestoration::new(
+                wid,
+                Some(point),
+                None,
+                chain,
+                vec![],
+                MissingEvidence::new(RestorationComponent::NextStep, "reason")
+            ),
             Err(RestorationError::ResumePointWorkspaceMismatch { .. })
         ));
     }

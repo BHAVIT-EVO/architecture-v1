@@ -140,6 +140,7 @@ fn main() {
                     process_identifier: None,
                     owning_process_name: None,
                     observed_state: None,
+                    window_id: None,
                 },
             );
             moment += 300;
@@ -185,6 +186,7 @@ fn main() {
                     process_identifier: None,
                     owning_process_name: None,
                     observed_state: None,
+                    window_id: None,
                 },
             );
             moment += 300;
@@ -288,6 +290,14 @@ fn main() {
         }
         fn windows(&self) -> Result<Vec<evo_execution::macos::WindowInfo>, String> {
             Ok(self.windows.clone())
+        }
+        // The injected title windows do not report any of this scenario's
+        // file documents; existing file targets are expected to open.
+        fn windows_showing_document(
+            &self,
+            _path: &str,
+        ) -> Result<Vec<evo_execution::macos::WindowInfo>, String> {
+            Ok(vec![])
         }
     }
     fn two_untitled_windows() -> Vec<evo_execution::macos::WindowInfo> {
@@ -524,6 +534,13 @@ impl PreflightSource for RecordingExecutor {
         Path::new(path).exists()
     }
     fn windows(&self) -> Result<Vec<evo_execution::macos::WindowInfo>, String> {
+        Ok(vec![])
+    }
+    // This recording scenario has no open document windows.
+    fn windows_showing_document(
+        &self,
+        _path: &str,
+    ) -> Result<Vec<evo_execution::macos::WindowInfo>, String> {
         Ok(vec![])
     }
 }

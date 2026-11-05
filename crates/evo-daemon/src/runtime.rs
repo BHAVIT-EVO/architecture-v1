@@ -8,36 +8,166 @@
 //!   consumers.
 
 use crate::cache::CanonicalIndex;
-use crate::daemon_status::{
-    clear_capture_status, write_capture_report, CaptureStatus,
-};
+use crate::classification::spawn_classification_listener;
 use crate::continuation::{continuation_surface_socket_path, spawn_continuation_listener};
+use crate::daemon_status::{CaptureStatus, clear_capture_status, write_capture_report};
 use crate::designation::{designation_socket_path, spawn_designation_listener};
-use crate::grouping::{grouping_socket_path, spawn_grouping_listener};
 use crate::errors::DaemonError;
+use crate::feedback::{feedback_socket_path, spawn_feedback_listener};
+use crate::grouping::{grouping_socket_path, spawn_grouping_listener};
+use crate::naming::spawn_naming_listener;
 use crate::persistence::persist_observation;
+use crate::voice::{VoiceKnowledge, spawn_voice_listener, voice_socket_path};
 use evo_artifact::accept::accept as accept_artifact;
 use evo_capture::{
-    CaptureEngine, FSEventsWatcher, MacOSAdapter, MacOSEventSource, MacOSSignal, MacOSInputCounter,
+    CaptureEngine, FSEventsWatcher, MacOSAdapter, MacOSEventSource, MacOSInputCounter, MacOSSignal,
     MacOSURLPoller,
+};
+use evo_execution::browser_macos::{
+    BrowserIdentityProvider as ExecutionBrowserIdentityProvider, BrowserMacOSCapability,
+    LocalDevToolsConfig, MacOSBrowserAdapter, witness_focused_browser,
 };
 use evo_observation::observation::Observation;
 use evo_observation::provenance::ObservationSource;
+use evo_observation::surface_identity::{BrowserIdentityObservation, SurfaceIdentity};
 use evo_restoration::DerivationOutcome;
+use evo_semantic::Embedder;
+use evo_voice::{RestoredSubjects, VoiceCandidate};
 use evo_workspace::snapshot::Snapshot;
 use evo_workspace::workspace::Workspace;
 
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::rc::Rc;
 use std::path::{Path, PathBuf};
-use std::sync::mpsc::{channel, Receiver, RecvTimeoutError, Sender};
+use std::rc::Rc;
+use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender, channel};
+use std::sync::{Arc, Mutex, RwLock};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
 /// Public runtime boundary for the daemon.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct Runtime;
+
+/// Bridges the concrete local execution adapter into capture without making
+/// the capture crate depend on execution. The AX window token belongs to the
+/// already-witnessed native capture sample; browser window/profile/session/tab
+/// tokens come only from the adapter's exact focused-tab witness.
+struct ConfiguredBrowserCaptureProvider {
+    adapter: MacOSBrowserAdapter,
+}
+
+impl evo_capture::BrowserIdentityProvider for ConfiguredBrowserCaptureProvider {
+    fn witness_focused_surface(
+        &self,
+        native: &SurfaceIdentity,
+    ) -> evo_capture::BrowserIdentityWitness {
+        if native.window_identifier.is_none()
+            || self.adapter.capability() != BrowserMacOSCapability::ExactIdentity
+        {
+            return evo_capture::BrowserIdentityWitness::Unreadable;
+        }
+        let identity = match witness_focused_browser(native.process_id, &self.adapter) {
+            Ok(identity) => identity,
+            Err(_) => return evo_capture::BrowserIdentityWitness::Unreadable,
+        };
+        evo_capture::BrowserIdentityWitness::Observed(BrowserIdentityObservation {
+            process_id: Some(identity.process_id),
+            process_started_at: Some(identity.process_started_at),
+            // This field is the AX token already read by the capture source,
+            // not a browser-window/CDP token relabelled as AX evidence.
+            window_identifier: native.window_identifier.clone(),
+            browser_window: Some(identity.native_window_identifier),
+            browser_profile: Some(identity.profile_token),
+            browser_session: Some(identity.session_token),
+            browser_tab: Some(identity.tab_token),
+        })
+    }
+}
+
+fn configured_browser_capture_provider() -> Option<ConfiguredBrowserCaptureProvider> {
+    let address = std::env::var("EVO_BROWSER_DEVTOOLS_ADDRESS").ok();
+    let port = std::env::var("EVO_BROWSER_DEVTOOLS_PORT").ok();
+    let pid = std::env::var("EVO_BROWSER_PID").ok();
+    if address.is_none() && port.is_none() && pid.is_none() {
+        return None;
+    }
+    let address = match address.and_then(|value| value.parse().ok()) {
+        Some(address) => address,
+        None => {
+            eprintln!(
+                "EVO browser adapter disabled: EVO_BROWSER_DEVTOOLS_ADDRESS must be a literal loopback IP"
+            );
+            return None;
+        }
+    };
+    let port = match port.and_then(|value| value.parse().ok()) {
+        Some(port) => port,
+        None => {
+            eprintln!(
+                "EVO browser adapter disabled: EVO_BROWSER_DEVTOOLS_PORT must be a positive port"
+            );
+            return None;
+        }
+    };
+    let pid = match pid.and_then(|value| value.parse().ok()) {
+        Some(pid) => pid,
+        None => {
+            eprintln!("EVO browser adapter disabled: EVO_BROWSER_PID must be a positive PID");
+            return None;
+        }
+    };
+    let config = match LocalDevToolsConfig::new(address, port, pid) {
+        Ok(config) => config,
+        Err(reason) => {
+            eprintln!("EVO browser adapter disabled: {reason}");
+            return None;
+        }
+    };
+    Some(ConfiguredBrowserCaptureProvider {
+        adapter: MacOSBrowserAdapter::new(config),
+    })
+}
+
+/// Loads the optional local semantic model at the daemon composition boundary.
+/// The voice listener is still useful for exact selection and narration when
+/// this returns `None`; semantic trigger requests fail closed in `voice.rs`.
+#[cfg(feature = "embeddings")]
+fn load_voice_embedder() -> Option<Arc<dyn Embedder + Send + Sync>> {
+    match evo_voice::FastEmbedEmbedder::load() {
+        Ok(embedder) => Some(Arc::new(embedder)),
+        Err(err) => {
+            eprintln!(
+                "EVO-DAEMON voice embedder unavailable: {err} \
+                 (voice triggers will fail honestly)"
+            );
+            None
+        }
+    }
+}
+
+#[cfg(not(feature = "embeddings"))]
+fn load_voice_embedder() -> Option<Arc<dyn Embedder + Send + Sync>> {
+    eprintln!(
+        "EVO-DAEMON voice semantic embeddings are disabled; \
+         build with --features embeddings for local semantic triggers"
+    );
+    None
+}
+
+fn start_focus_source<F>(
+    desktop_shell: Option<i32>,
+    callback: F,
+) -> Result<MacOSEventSource, evo_capture::MacOSEventSourceError>
+where
+    F: FnMut(MacOSSignal) + 'static,
+{
+    if let Some(provider) = configured_browser_capture_provider() {
+        MacOSEventSource::new_with_browser_identity_provider(desktop_shell, provider, callback)
+    } else {
+        MacOSEventSource::new(desktop_shell, callback)
+    }
+}
 
 /// Keepalive handle for the active macOS focus runtime.
 pub struct WindowFocusRuntime {
@@ -53,7 +183,11 @@ pub struct VerticalRuntimeHandle {
     worker: Option<JoinHandle<()>>,
     designation_listener: Option<JoinHandle<()>>,
     grouping_listener: Option<JoinHandle<()>>,
+    naming_listener: Option<JoinHandle<()>>,
     continuation_listener: Option<JoinHandle<()>>,
+    classification_listener: Option<JoinHandle<()>>,
+    feedback_listener: Option<JoinHandle<()>>,
+    voice_listener: Option<JoinHandle<()>>,
     storage_root: PathBuf,
 }
 
@@ -75,10 +209,17 @@ impl Drop for VerticalRuntimeHandle {
         //    daemon start binds fresh.
         self.designation_listener.take();
         self.grouping_listener.take();
+        self.naming_listener.take();
         self.continuation_listener.take();
+        self.classification_listener.take();
+        self.feedback_listener.take();
+        self.voice_listener.take();
         let _ = std::fs::remove_file(designation_socket_path(&self.storage_root));
         let _ = std::fs::remove_file(grouping_socket_path(&self.storage_root));
+        let _ = std::fs::remove_file(crate::naming::naming_socket_path(&self.storage_root));
         let _ = std::fs::remove_file(continuation_surface_socket_path(&self.storage_root));
+        let _ = std::fs::remove_file(feedback_socket_path(&self.storage_root));
+        let _ = std::fs::remove_file(voice_socket_path(&self.storage_root));
         // 4. Remove the operational capture-status file: a stopped daemon
         //    makes no claims about capture.
         clear_capture_status(&self.storage_root);
@@ -115,17 +256,15 @@ impl Runtime {
         let pipeline = Rc::new(RefCell::new(LiveCapturePipeline::new(
             sender,
             std::sync::Arc::new(std::sync::Mutex::new(None)),
+            Arc::new(Mutex::new(RestoredSubjects::new())),
         )));
 
-        let source = MacOSEventSource::new(
-            evo_capture::desktop_shell_pid(),
-            {
-                let pipeline = Rc::clone(&pipeline);
-                move |signal| {
-                    let _ = pipeline.borrow_mut().handle_signal(signal);
-                }
-            },
-        )?;
+        let source = start_focus_source(evo_capture::desktop_shell_pid(), {
+            let pipeline = Rc::clone(&pipeline);
+            move |signal| {
+                let _ = pipeline.borrow_mut().handle_signal(signal);
+            }
+        })?;
 
         Ok((WindowFocusRuntime { _source: source }, receiver))
     }
@@ -177,16 +316,14 @@ impl Runtime {
         // desktop never claims full capture. The source is skipped, not
         // faked: without Accessibility no window-focus signal is ever
         // produced.
-        let focus_source = match MacOSEventSource::new(
-            evo_capture::desktop_shell_pid(),
-            {
-                let sender = signal_sender.clone();
-                move |signal| {
-                    let _ = sender.send(signal);
-                }
-            },
-        ) {
+        let focus_source = match start_focus_source(evo_capture::desktop_shell_pid(), {
+            let sender = signal_sender.clone();
+            move |signal| {
+                let _ = sender.send(signal);
+            }
+        }) {
             Ok(source) => Some(source),
+            #[cfg(target_os = "macos")]
             Err(evo_capture::MacOSEventSourceError::AccessibilityPermissionRequired) => None,
             Err(err) => return Err(DaemonError::Capture(err)),
         };
@@ -202,9 +339,7 @@ impl Runtime {
         let counter_sink_sender = signal_sender.clone();
         let counter_subject = counter_subject_slot.clone();
         let input_counter = match MacOSInputCounter::start(
-            Box::new(move || {
-                counter_subject.lock().ok().and_then(|slot| slot.clone())
-            }),
+            Box::new(move || counter_subject.lock().ok().and_then(|slot| slot.clone())),
             Box::new(move |signal| {
                 let _ = counter_sink_sender.send(signal);
             }),
@@ -215,7 +350,7 @@ impl Runtime {
             Err(evo_capture::InputCounterError::RuntimeSetupFailed(step)) => {
                 return Err(DaemonError::Designation(format!(
                     "input counter setup failed: {step}"
-                )))
+                )));
             }
         };
 
@@ -240,7 +375,9 @@ impl Runtime {
                 // is suppressed alongside the save itself.
                 match &signal {
                     MacOSSignal::FileSaved { subject, .. }
-                    | MacOSSignal::RepositoryMembership { member: subject, .. } => {
+                    | MacOSSignal::RepositoryMembership {
+                        member: subject, ..
+                    } => {
                         if storage_path_is_inside(&storage_root, subject) {
                             return;
                         }
@@ -254,42 +391,113 @@ impl Runtime {
         // The user designation channel: the desktop sends explicit
         // designations over the socket; the daemon (the canonical runtime
         // owner) validates, accepts, persists, and derives them.
-        let designation_listener = spawn_designation_listener(
-            storage_root.clone(),
-            designation_sender.clone(),
-        );
+        let designation_listener =
+            spawn_designation_listener(storage_root.clone(), designation_sender.clone());
         // The user grouping channel (RFC-0012): the desktop sends explicit
         // related-work declarations over its own socket; the daemon validates
         // both subjects, canonicalizes the pair, and forwards it for
         // persistence and derivation.
-        let grouping_listener = spawn_grouping_listener(storage_root.clone(), designation_sender.clone());
+        let grouping_listener =
+            spawn_grouping_listener(storage_root.clone(), designation_sender.clone());
+        // The user naming channel (RFC-0014): the desktop sends the person's
+        // own name for a body of work over its own socket; the daemon
+        // validates the shape and forwards it for persistence and derivation.
+        let naming_listener =
+            spawn_naming_listener(storage_root.clone(), designation_sender.clone());
         // The user continuation-surface channel (RFC-0013): the desktop sends
         // explicit continuation declarations over its own socket; the daemon
         // validates every subject, canonicalizes the set, and forwards it for
         // persistence and derivation.
         let continuation_listener =
-            spawn_continuation_listener(storage_root.clone(), designation_sender);
+            spawn_continuation_listener(storage_root.clone(), designation_sender.clone());
+        // The user classification channel (OBS-SURFACE-CLASSIFIED): the
+        // desktop sends the person's own class for a surface over its own
+        // socket; the daemon validates the shape and forwards it for
+        // persistence. A class gates founding and titling; it deletes nothing.
+        let classification_listener =
+            spawn_classification_listener(storage_root.clone(), designation_sender.clone());
+        // The feedback channel carries explicit dismissal and member-state
+        // corrections. It shares the declaration lane so these user acts are
+        // drained ahead of ambient capture, but the listener itself never
+        // persists canonical state.
+        let feedback_listener =
+            spawn_feedback_listener(storage_root.clone(), designation_sender.clone());
+
+        // The voice trigger channel: the desktop's mic driver sends trigger
+        // text; the daemon resolves against its live Reconstruction, restores
+        // the work, marks the restored subjects so capture does not learn
+        // Evo's own restores as user work, and replies with the outcome.
+        let voice_knowledge: Arc<RwLock<Option<VoiceKnowledge>>> = Arc::new(RwLock::new(None));
+        let restored_subjects: Arc<Mutex<RestoredSubjects>> =
+            Arc::new(Mutex::new(RestoredSubjects::new()));
+        let voice_embedder = load_voice_embedder();
+        let voice_listener = spawn_voice_listener(
+            storage_root.clone(),
+            Arc::clone(&voice_knowledge),
+            Arc::clone(&restored_subjects),
+            voice_embedder,
+        );
 
         let (boundary_sender, boundary_receiver) = channel();
         let worker_root = storage_root.clone();
+        let worker_restored = Arc::clone(&restored_subjects);
+        let worker_knowledge = Arc::clone(&voice_knowledge);
         let worker = thread::spawn(move || {
             let _storage_guard = evo_storage::Storage::with_thread_root(worker_root.clone());
-            let mut capture_pipeline =
-                LiveCapturePipeline::new(observation_sender, counter_subject_slot.clone());
-            let mut vertical_pipeline = VerticalPipeline::with_index(boundary_sender, canonical_index);
+            // Publishes the latest understanding for the voice listener.
+            // Called after each recompute; the listener reads this instead
+            // of a stale copy.
+            fn publish_voice_knowledge(
+                knowledge: &Arc<RwLock<Option<VoiceKnowledge>>>,
+                index: &CanonicalIndex,
+            ) {
+                let recent: Vec<VoiceCandidate> = index
+                    .workspaces()
+                    .iter()
+                    .take(3)
+                    .map(|ws| {
+                        let id = ws.id().to_string();
+                        let title = index.titles().get(&id).cloned().unwrap_or_default();
+                        VoiceCandidate::work(id, title)
+                    })
+                    .collect();
+                // Only the cheap published facts live here. The engine's rack
+                // is NOT precomputed: the ask-path (`ASK`/`BRIEF`/engine-id
+                // CHOOSE) reads storage at request time, so spoken answers are
+                // as fresh as the log and this loop never pays for a replay.
+                let knowledge_value = VoiceKnowledge {
+                    reconstruction: Arc::new(index.reconstruction().clone()),
+                    recent,
+                };
+                match knowledge.write() {
+                    Ok(mut guard) => *guard = Some(knowledge_value),
+                    Err(poisoned) => *poisoned.into_inner() = Some(knowledge_value),
+                }
+            }
+            let mut capture_pipeline = LiveCapturePipeline::new(
+                observation_sender,
+                counter_subject_slot.clone(),
+                worker_restored,
+            );
+            let mut vertical_pipeline =
+                VerticalPipeline::with_index(boundary_sender, canonical_index);
 
             // Designations are drained before capture signals so an explicit
             // user action is never starved by the capture stream.
             loop {
                 while let Ok(signal) = designation_receiver.try_recv() {
-                    if let Some(observation) = capture_pipeline.handle_signal(signal) {
-                        vertical_pipeline.handle_observation(observation);
+                    if let Some(observation) = capture_pipeline.handle_signal(signal)
+                        && vertical_pipeline.handle_observation(observation)
+                    {
+                        publish_voice_knowledge(&worker_knowledge, vertical_pipeline.index());
                     }
                 }
                 match signal_receiver.recv_timeout(Duration::from_millis(250)) {
                     Ok(signal) => {
-                        if let Some(observation) = capture_pipeline.handle_signal(signal) {
-                            vertical_pipeline.handle_observation(observation);
+                        if let Some(observation) = capture_pipeline.handle_signal(signal)
+                            && vertical_pipeline.handle_observation(observation)
+                        {
+                            publish_voice_knowledge(&worker_knowledge, vertical_pipeline.index());
                         }
                     }
                     // Capture has gone quiet. The daemon does NOT derive its
@@ -329,7 +537,11 @@ impl Runtime {
         let sources = [
             (
                 "window-focus",
-                if capture.is_some() { "active" } else { "unavailable" },
+                if capture.is_some() {
+                    "active"
+                } else {
+                    "unavailable"
+                },
             ),
             ("file-save", "active"),
             ("commit", "active"),
@@ -345,6 +557,8 @@ impl Runtime {
             ("designation", "active"),
             ("grouping", "active"),
             ("continuation-surface", "active"),
+            ("feedback", "active"),
+            ("voice", "active"),
         ];
         write_capture_report(&storage_root, &status, &sources)?;
 
@@ -357,7 +571,11 @@ impl Runtime {
                 worker: Some(worker),
                 designation_listener: Some(designation_listener),
                 grouping_listener: Some(grouping_listener),
+                naming_listener: Some(naming_listener),
                 continuation_listener: Some(continuation_listener),
+                classification_listener: Some(classification_listener),
+                feedback_listener: Some(feedback_listener),
+                voice_listener: Some(voice_listener),
                 storage_root,
             },
             boundary_receiver,
@@ -445,7 +663,10 @@ struct LiveCapturePipeline {
     filesystem_adapter: MacOSAdapter,
     designation_adapter: MacOSAdapter,
     grouping_adapter: MacOSAdapter,
+    naming_adapter: MacOSAdapter,
     continuation_adapter: MacOSAdapter,
+    classification_adapter: MacOSAdapter,
+    feedback_adapter: MacOSAdapter,
     input_adapter: MacOSAdapter,
     engine: CaptureEngine,
     sender: Sender<Observation>,
@@ -455,6 +676,11 @@ struct LiveCapturePipeline {
     current_subject: std::sync::Arc<std::sync::Mutex<Option<String>>>,
     /// Capture-side write-storm suppression (see [`StormTracker`]).
     storms: StormTracker,
+    /// Subjects Evo's execution recently opened or raised. The voice
+    /// listener reserves before dispatch; this pipeline checks passive events.
+    /// A hit is bounded temporal correlation, not proof of causation. Genuine
+    /// input and declarations release suppression immediately.
+    restored: Arc<Mutex<RestoredSubjects>>,
 }
 
 /// Capture-side write-storm suppression.
@@ -484,7 +710,9 @@ const STORM_MIN_COMPONENTS: usize = 4;
 
 impl StormTracker {
     fn new() -> Self {
-        Self { windows: std::collections::HashMap::new() }
+        Self {
+            windows: std::collections::HashMap::new(),
+        }
     }
 
     /// Whether this save is machine output inside an active storm — and
@@ -519,30 +747,41 @@ impl LiveCapturePipeline {
     fn new(
         sender: Sender<Observation>,
         current_subject: std::sync::Arc<std::sync::Mutex<Option<String>>>,
+        restored: Arc<Mutex<RestoredSubjects>>,
     ) -> Self {
-        let accessibility_source =
-            ObservationSource::new("macos_accessibility").expect("hardcoded source name is non-empty");
+        let accessibility_source = ObservationSource::new("macos_accessibility")
+            .expect("hardcoded source name is non-empty");
         let filesystem_source =
             ObservationSource::new("macos_fsevents").expect("hardcoded source name is non-empty");
         let designation_source =
             ObservationSource::new("user_designation").expect("hardcoded source name is non-empty");
         let grouping_source =
             ObservationSource::new("user_grouping").expect("hardcoded source name is non-empty");
+        let naming_source =
+            ObservationSource::new("user_naming").expect("hardcoded source name is non-empty");
         let input_source =
             ObservationSource::new("macos_input").expect("hardcoded source name is non-empty");
-        let continuation_source =
-            ObservationSource::new("user_continuation").expect("hardcoded source name is non-empty");
+        let continuation_source = ObservationSource::new("user_continuation")
+            .expect("hardcoded source name is non-empty");
+        let classification_source = ObservationSource::new("user_classification")
+            .expect("hardcoded source name is non-empty");
+        let feedback_source =
+            ObservationSource::new("user_feedback").expect("hardcoded source name is non-empty");
         Self {
             accessibility_adapter: MacOSAdapter::new(accessibility_source),
             filesystem_adapter: MacOSAdapter::new(filesystem_source),
             designation_adapter: MacOSAdapter::new(designation_source),
             grouping_adapter: MacOSAdapter::new(grouping_source),
+            naming_adapter: MacOSAdapter::new(naming_source),
             continuation_adapter: MacOSAdapter::new(continuation_source),
+            classification_adapter: MacOSAdapter::new(classification_source),
+            feedback_adapter: MacOSAdapter::new(feedback_source),
             input_adapter: MacOSAdapter::new(input_source),
             engine: CaptureEngine::new(),
             sender,
             current_subject,
             storms: StormTracker::new(),
+            restored,
         }
     }
 
@@ -562,7 +801,10 @@ impl LiveCapturePipeline {
         // all. Membership witnesses ride the same rule: they arrive with
         // the saves they describe.
         match &signal {
-            MacOSSignal::FileSaved { subject, observed_at } => {
+            MacOSSignal::FileSaved {
+                subject,
+                observed_at,
+            } => {
                 let now_ms = observed_at
                     .duration_since(std::time::UNIX_EPOCH)
                     .map(|d| d.as_millis() as u64)
@@ -571,7 +813,11 @@ impl LiveCapturePipeline {
                     return None;
                 }
             }
-            MacOSSignal::RepositoryMembership { member, observed_at, .. } => {
+            MacOSSignal::RepositoryMembership {
+                member,
+                observed_at,
+                ..
+            } => {
                 let now_ms = observed_at
                     .duration_since(std::time::UNIX_EPOCH)
                     .map(|d| d.as_millis() as u64)
@@ -597,6 +843,7 @@ impl LiveCapturePipeline {
                 process_identifier,
                 owning_process_name,
                 observed_state,
+                window_id,
             } => {
                 let locator = observed_state
                     .as_ref()
@@ -611,6 +858,7 @@ impl LiveCapturePipeline {
                     process_identifier,
                     owning_process_name,
                     observed_state,
+                    window_id,
                 }
             }
             other => other,
@@ -621,15 +869,74 @@ impl LiveCapturePipeline {
             | MacOSSignal::RepositoryMembership { .. } => &self.filesystem_adapter,
             MacOSSignal::WorkDesignated { .. } => &self.designation_adapter,
             MacOSSignal::WorkGrouped { .. } => &self.grouping_adapter,
+            MacOSSignal::WorkNamed { .. } => &self.naming_adapter,
             MacOSSignal::ContinuationSurface { .. } => &self.continuation_adapter,
+            MacOSSignal::SurfaceClassified { .. } => &self.classification_adapter,
+            MacOSSignal::WorkDismissed { .. } | MacOSSignal::MemberState { .. } => {
+                &self.feedback_adapter
+            }
             MacOSSignal::InputActivity { .. } => &self.input_adapter,
             _ => &self.accessibility_adapter,
         };
+        // D5: capture the witness subject before normalization consumes the
+        // signal, so we can check it against the restored-subjects registry.
+        let witness_subject = signal_witness_subject(&signal);
+        let handoff_subjects = match &signal {
+            MacOSSignal::InputActivity {
+                subject: Some(subject),
+                ..
+            }
+            | MacOSSignal::WorkDesignated { subject, .. } => vec![subject.clone()],
+            MacOSSignal::WorkGrouped { first, second, .. } => vec![first.clone(), second.clone()],
+            MacOSSignal::WorkNamed { subject, .. } => vec![subject.clone()],
+            MacOSSignal::SurfaceClassified { subject, .. } => vec![subject.clone()],
+            MacOSSignal::WorkDismissed { work, .. } => vec![work.clone()],
+            MacOSSignal::MemberState { work, member, .. } => {
+                vec![work.clone(), member.clone()]
+            }
+            MacOSSignal::ContinuationSurface { subjects, .. } => subjects.clone(),
+            _ => vec![],
+        };
         let raw_event = adapter.normalize(signal).ok()??;
         let schema = raw_event.schema();
-        let observation = self.engine.ingest(raw_event, &schema).ok()?;
+        let mut observation = self.engine.ingest(raw_event, &schema).ok()?;
+        if !handoff_subjects.is_empty() {
+            let mut registry = self.restored.lock().unwrap_or_else(|e| e.into_inner());
+            for subject in handoff_subjects {
+                registry.handoff(&subject);
+            }
+        }
+        // D5: Evo's own restores are audit history, never engagement evidence.
+        // If this observation's subject was just opened/raised by execution
+        // (the voice listener reserved it), tag passive effects so replay skips
+        // them. Real input/declarations are never execution merely due to TTL.
+        if let Some(subject) = witness_subject {
+            observation = self.mark_execution_witness(observation, &subject);
+        }
         let _ = self.sender.send(observation.clone());
         Some(observation)
+    }
+
+    /// Checks whether the given subject was recently restored by Evo's
+    /// execution, and if so marks the observation as execution-origin.
+    ///
+    /// Called by `handle_signal` after ingesting. Returns the (possibly
+    /// marked) observation.
+    fn mark_execution_witness(&self, mut observation: Observation, subject: &str) -> Observation {
+        if !matches!(
+            observation.schema().name(),
+            "OBS-WINDOW-FOCUS-GAINED" | "OBS-URL-NAVIGATED" | "OBS-FILE-SAVED"
+        ) {
+            return observation;
+        }
+        let is_restored = match self.restored.lock() {
+            Ok(mut registry) => registry.is_execution(subject),
+            Err(poisoned) => poisoned.into_inner().is_execution(subject),
+        };
+        if is_restored {
+            observation = observation.with_execution_origin();
+        }
+        observation
     }
 }
 
@@ -716,10 +1023,13 @@ impl VerticalPipeline {
     /// Artifact acceptance runs for them. They do settle immediately: a
     /// declaration is the person speaking, and their word never waits behind
     /// the capture stream (§10).
-    pub fn handle_observation(&mut self, observation: Observation) {
+    ///
+    /// Returns `true` when the understanding recomputed — the worker uses
+    /// this to publish fresh voice knowledge.
+    pub fn handle_observation(&mut self, observation: Observation) -> bool {
         if let Err(err) = persist_observation(&observation) {
             let _ = self.sender.send(Err(err));
-            return;
+            return false;
         }
         let reference_only = observation.schema().is_reference_only();
         let user_declaration = observation.schema().is_user_declaration();
@@ -730,7 +1040,7 @@ impl VerticalPipeline {
             // index applies, so the two never disagree.
             if let Err(err) = accept_artifact(observation.clone()) {
                 let _ = self.sender.send(Err(DaemonError::from(err)));
-                return;
+                return false;
             }
         }
         self.index.ingest_observation(observation);
@@ -740,7 +1050,9 @@ impl VerticalPipeline {
             // membership arrives with every build — take the capture path:
             // settling on each would rebuild the whole-corpus understanding
             // per file write.
-            self.settle();
+            self.settle()
+        } else {
+            false
         }
     }
 
@@ -756,9 +1068,12 @@ impl VerticalPipeline {
     ///
     /// Idempotent and cheap when nothing changed, so the worker can call it on
     /// every idle tick.
-    pub fn settle(&mut self) {
+    ///
+    /// Returns `true` when the understanding recomputed — the worker uses
+    /// this to publish fresh voice knowledge.
+    pub fn settle(&mut self) -> bool {
         if !self.index.reconstruct() {
-            return;
+            return false;
         }
         // Cloned up front because announcing borrows `self` mutably.
         let workspaces = self.index.workspaces().to_vec();
@@ -768,7 +1083,10 @@ impl VerticalPipeline {
             let key = workspace.id().to_string();
             // Only work is announced. A Remembered body remains in the index,
             // reachable by name, but generates no Restoration boundary.
-            if !standings.get(&key).is_some_and(|standing| standing.is_work()) {
+            if !standings
+                .get(&key)
+                .is_some_and(|standing| standing.is_work())
+            {
                 continue;
             }
             let Some(outcome) = outcomes.get(&key) else {
@@ -783,10 +1101,10 @@ impl VerticalPipeline {
                 continue;
             };
             self.announced.insert(key, outcome.clone());
-            let boundary =
-                RestorationInputBoundary::new(workspace, snapshot, outcome.clone());
+            let boundary = RestorationInputBoundary::new(workspace, snapshot, outcome.clone());
             let _ = self.sender.send(Ok(boundary));
         }
+        true
     }
 
     /// The derived index, for callers that read understanding directly rather
@@ -802,6 +1120,20 @@ impl VerticalPipeline {
 /// append writes when the storage root is under the watched home directory.
 fn storage_path_is_inside(root: &Path, subject: &str) -> bool {
     Path::new(subject).starts_with(root)
+}
+
+/// Extracts the witness subject from a platform signal, if it has one.
+///
+/// D5 uses this to check the restored-subjects registry: if Evo's execution
+/// just opened/raised this subject, the observation is marked
+/// execution-origin so interpret() skips it.
+fn signal_witness_subject(signal: &MacOSSignal) -> Option<String> {
+    match signal {
+        MacOSSignal::WindowFocusGained { subject, .. } => Some(subject.clone()),
+        MacOSSignal::FileSaved { subject, .. } => Some(subject.clone()),
+        MacOSSignal::URLNavigated { subject, .. } => Some(subject.clone()),
+        _ => None,
+    }
 }
 
 #[cfg(target_os = "macos")]
@@ -830,7 +1162,10 @@ mod storm_tests {
         }
         // The first STORM_BURST_MAX saves per ancestor window record; the
         // remaining ~490 are machine output.
-        assert!(suppressed > 480, "storm must swallow the bulk, got {suppressed}");
+        assert!(
+            suppressed > 480,
+            "storm must swallow the bulk, got {suppressed}"
+        );
     }
 
     /// A person saving a handful of files by hand never trips the rule.
@@ -872,14 +1207,14 @@ mod tests {
     use evo_observation::provenance::ObservationSource;
     use evo_storage::Storage;
     use evo_workspace::attachment::ResourceRole;
-    use std::time::SystemTime;
     use std::path::PathBuf;
+    use std::time::SystemTime;
 
     #[test]
     fn runtime_is_constructible_copy_and_default() {
         let runtime = Runtime::new();
         let copied = runtime;
-        let cloned = runtime.clone();
+        let cloned = runtime;
         let defaulted: Runtime = Default::default();
 
         assert_eq!(runtime, copied);
@@ -887,10 +1222,211 @@ mod tests {
         assert_eq!(runtime, defaulted);
     }
 
+    #[cfg(not(feature = "embeddings"))]
+    #[test]
+    fn voice_embedder_is_unavailable_without_the_embeddings_feature() {
+        assert!(
+            load_voice_embedder().is_none(),
+            "default daemon builds must not construct a semantic model"
+        );
+    }
+
+    #[test]
+    fn restore_capture_is_execution_until_genuine_input_hands_subject_back() {
+        let (sender, receiver) = channel();
+        let restored = Arc::new(Mutex::new(RestoredSubjects::new()));
+        let mut pipeline =
+            LiveCapturePipeline::new(sender, Arc::new(Mutex::new(None)), restored.clone());
+        let subject = "https://example.test/restored";
+        let operation = restored.lock().unwrap().reserve(subject).unwrap();
+        let at = SystemTime::UNIX_EPOCH;
+        let focus = |seconds| MacOSSignal::WindowFocusGained {
+            subject: subject.into(),
+            observed_at: at + Duration::from_secs(seconds),
+            process_identifier: None,
+            owning_process_name: None,
+            observed_state: None,
+            window_id: None,
+        };
+        for signal in [
+            focus(100),
+            MacOSSignal::URLNavigated {
+                subject: subject.into(),
+                observed_at: at + Duration::from_secs(110),
+            },
+            MacOSSignal::FileSaved {
+                subject: subject.into(),
+                observed_at: at + Duration::from_secs(120),
+            },
+            focus(800),
+        ] {
+            let observation = pipeline.handle_signal(signal).unwrap();
+            assert!(observation.provenance().is_execution_origin());
+            assert_eq!(
+                crate::threads::project_observation(&observation)
+                    .unwrap()
+                    .origin,
+                evo_threads::Origin::Execution
+            );
+        }
+        let observations = receiver.try_iter().collect::<Vec<_>>();
+        assert!(
+            crate::threads::engine_from_observations(&observations)
+                .threads()
+                .is_empty()
+        );
+
+        // Click/scroll-only input is also a handoff, not just typed characters.
+        let input = pipeline
+            .handle_signal(MacOSSignal::InputActivity {
+                subject: Some(subject.into()),
+                keys: 0,
+                clicks: 1,
+                scrolls: 1,
+                observed_at: at + Duration::from_secs(810),
+            })
+            .unwrap();
+        assert!(!input.provenance().is_execution_origin());
+        assert!(!restored.lock().unwrap().is_execution(subject));
+        restored.lock().unwrap().complete(operation, true);
+        assert!(
+            !restored.lock().unwrap().is_execution(subject),
+            "late receipt cannot undo handoff"
+        );
+        assert!(
+            !pipeline
+                .handle_signal(focus(820))
+                .unwrap()
+                .provenance()
+                .is_execution_origin()
+        );
+    }
+
+    #[test]
+    fn completed_file_restore_input_on_either_identity_releases_both() {
+        let aliases = ["file:///work/a b.md", "/work/a b.md"];
+        for handoff in aliases {
+            let (sender, _receiver) = channel();
+            let restored = Arc::new(Mutex::new(RestoredSubjects::new()));
+            {
+                let mut registry = restored.lock().unwrap();
+                let operation = registry.reserve_aliases(&aliases).unwrap();
+                registry.complete(operation, true);
+                registry.mark(["unrelated"]);
+            }
+            let mut pipeline =
+                LiveCapturePipeline::new(sender, Arc::new(Mutex::new(None)), restored.clone());
+            let focus = || MacOSSignal::WindowFocusGained {
+                subject: aliases[0].into(),
+                observed_at: SystemTime::UNIX_EPOCH,
+                process_identifier: None,
+                owning_process_name: None,
+                observed_state: None,
+                window_id: None,
+            };
+            let save = || MacOSSignal::FileSaved {
+                subject: aliases[1].into(),
+                observed_at: SystemTime::UNIX_EPOCH,
+            };
+            assert!(
+                pipeline
+                    .handle_signal(focus())
+                    .unwrap()
+                    .provenance()
+                    .is_execution_origin()
+            );
+            assert!(
+                pipeline
+                    .handle_signal(save())
+                    .unwrap()
+                    .provenance()
+                    .is_execution_origin()
+            );
+            let input = pipeline
+                .handle_signal(MacOSSignal::InputActivity {
+                    subject: Some(handoff.into()),
+                    keys: 0,
+                    clicks: 1,
+                    scrolls: 0,
+                    observed_at: SystemTime::UNIX_EPOCH,
+                })
+                .unwrap();
+            assert!(!input.provenance().is_execution_origin());
+            assert!(
+                !pipeline
+                    .handle_signal(focus())
+                    .unwrap()
+                    .provenance()
+                    .is_execution_origin()
+            );
+            assert!(
+                !pipeline
+                    .handle_signal(save())
+                    .unwrap()
+                    .provenance()
+                    .is_execution_origin()
+            );
+            assert!(restored.lock().unwrap().is_execution("unrelated"));
+        }
+    }
+
+    #[test]
+    fn genuine_declarations_release_only_their_subjects() {
+        let at = SystemTime::UNIX_EPOCH;
+        for (signal, subjects) in [
+            (
+                MacOSSignal::WorkDesignated {
+                    subject: "a".into(),
+                    observed_at: at,
+                },
+                vec!["a"],
+            ),
+            (
+                MacOSSignal::WorkGrouped {
+                    first: "a".into(),
+                    second: "b".into(),
+                    observed_at: at,
+                },
+                vec!["a", "b"],
+            ),
+            (
+                MacOSSignal::ContinuationSurface {
+                    subjects: vec!["a".into(), "b".into()],
+                    observed_at: at,
+                },
+                vec!["a", "b"],
+            ),
+        ] {
+            let (sender, _receiver) = channel();
+            let restored = Arc::new(Mutex::new(RestoredSubjects::new()));
+            let operations: Vec<_> = subjects
+                .iter()
+                .map(|s| restored.lock().unwrap().reserve(s).unwrap())
+                .collect();
+            restored.lock().unwrap().mark(["unrelated"]);
+            let mut pipeline =
+                LiveCapturePipeline::new(sender, Arc::new(Mutex::new(None)), restored.clone());
+            let observation = pipeline.handle_signal(signal).unwrap();
+            assert!(!observation.provenance().is_execution_origin());
+            let mut registry = restored.lock().unwrap();
+            for operation in operations {
+                registry.complete(operation, true);
+            }
+            for subject in subjects {
+                assert!(!registry.is_execution(subject));
+            }
+            assert!(registry.is_execution("unrelated"));
+        }
+    }
+
     #[test]
     fn live_pipeline_translates_supported_signal_into_accepted_observation() {
         let (sender, receiver) = channel();
-        let mut pipeline = LiveCapturePipeline::new(sender, std::sync::Arc::new(std::sync::Mutex::new(None)));
+        let mut pipeline = LiveCapturePipeline::new(
+            sender,
+            std::sync::Arc::new(std::sync::Mutex::new(None)),
+            std::sync::Arc::new(std::sync::Mutex::new(RestoredSubjects::new())),
+        );
 
         let accepted = pipeline.handle_signal(MacOSSignal::WindowFocusGained {
             subject: "editor-window".into(),
@@ -898,13 +1434,17 @@ mod tests {
             process_identifier: Some(4242),
             owning_process_name: None,
             observed_state: None,
+            window_id: None,
         });
         assert!(accepted.is_some(), "focus signal should be accepted");
 
         let observation = receiver
             .try_recv()
             .expect("accepted observation should be emitted");
-        assert_eq!(observation.schema(), &ObservationSchema::window_focus_gained_v3());
+        assert_eq!(
+            observation.schema(),
+            &ObservationSchema::window_focus_gained_v3()
+        );
         assert_eq!(
             observation.provenance().source(),
             &ObservationSource::new("macos_accessibility").unwrap()
@@ -922,7 +1462,11 @@ mod tests {
         );
         assert_eq!(observation.evidence().facts().len(), 1);
         assert_eq!(
-            observation.evidence().fact("WindowFocusGained").unwrap().value(),
+            observation
+                .evidence()
+                .fact("WindowFocusGained")
+                .unwrap()
+                .value(),
             &evo_observation::evidence::FactValue::Text("editor-window".into())
         );
     }
@@ -930,7 +1474,11 @@ mod tests {
     #[test]
     fn live_pipeline_ignores_application_activation() {
         let (sender, receiver) = channel();
-        let mut pipeline = LiveCapturePipeline::new(sender, std::sync::Arc::new(std::sync::Mutex::new(None)));
+        let mut pipeline = LiveCapturePipeline::new(
+            sender,
+            std::sync::Arc::new(std::sync::Mutex::new(None)),
+            std::sync::Arc::new(std::sync::Mutex::new(RestoredSubjects::new())),
+        );
 
         let accepted = pipeline.handle_signal(MacOSSignal::ApplicationActivated {
             bundle_identifier: Some("com.apple.TextEdit".into()),
@@ -951,7 +1499,11 @@ mod tests {
         // subject.
         let (sender, _receiver) = channel();
         let slot = std::sync::Arc::new(std::sync::Mutex::new(None));
-        let mut pipeline = LiveCapturePipeline::new(sender, slot.clone());
+        let mut pipeline = LiveCapturePipeline::new(
+            sender,
+            slot.clone(),
+            std::sync::Arc::new(std::sync::Mutex::new(RestoredSubjects::new())),
+        );
 
         let observation = pipeline
             .handle_signal(MacOSSignal::WindowFocusGained {
@@ -959,6 +1511,7 @@ mod tests {
                 observed_at: SystemTime::UNIX_EPOCH,
                 process_identifier: Some(4242),
                 owning_process_name: None,
+                window_id: None,
                 observed_state: Some(
                     evo_observation::observed_state::ObservedState::new()
                         .with_document_locator("file:///Users/p/evo/src/main.rs"),
@@ -967,7 +1520,11 @@ mod tests {
             .expect("focus with a document is accepted");
 
         assert_eq!(
-            observation.evidence().fact("WindowFocusGained").unwrap().value(),
+            observation
+                .evidence()
+                .fact("WindowFocusGained")
+                .unwrap()
+                .value(),
             &evo_observation::evidence::FactValue::Text("file:///Users/p/evo/src/main.rs".into()),
             "the document is the subject"
         );
@@ -986,7 +1543,11 @@ mod tests {
         let slot = std::sync::Arc::new(std::sync::Mutex::new(Some(
             "file:///Users/p/evo/src/main.rs".to_string(),
         )));
-        let mut pipeline = LiveCapturePipeline::new(sender, slot);
+        let mut pipeline = LiveCapturePipeline::new(
+            sender,
+            slot,
+            std::sync::Arc::new(std::sync::Mutex::new(RestoredSubjects::new())),
+        );
 
         let observation = pipeline
             .handle_signal(MacOSSignal::InputActivity {
@@ -1013,7 +1574,11 @@ mod tests {
     #[test]
     fn live_pipeline_routes_each_signal_to_its_frozen_schema() {
         let (sender, receiver) = channel();
-        let mut pipeline = LiveCapturePipeline::new(sender, std::sync::Arc::new(std::sync::Mutex::new(None)));
+        let mut pipeline = LiveCapturePipeline::new(
+            sender,
+            std::sync::Arc::new(std::sync::Mutex::new(None)),
+            std::sync::Arc::new(std::sync::Mutex::new(RestoredSubjects::new())),
+        );
         let observed_at = SystemTime::UNIX_EPOCH;
 
         let focus = pipeline
@@ -1023,12 +1588,10 @@ mod tests {
                 process_identifier: None,
                 owning_process_name: None,
                 observed_state: None,
+                window_id: None,
             })
             .expect("focus signal accepted");
-        assert_eq!(
-            focus.schema(),
-            &ObservationSchema::window_focus_gained_v3()
-        );
+        assert_eq!(focus.schema(), &ObservationSchema::window_focus_gained_v3());
 
         let file = pipeline
             .handle_signal(MacOSSignal::FileSaved {
@@ -1037,10 +1600,7 @@ mod tests {
             })
             .expect("file signal accepted");
         assert_eq!(file.schema(), &ObservationSchema::file_saved_v1());
-        assert_eq!(
-            file.provenance().source().as_str(),
-            "macos_fsevents"
-        );
+        assert_eq!(file.provenance().source().as_str(), "macos_fsevents");
 
         let url = pipeline
             .handle_signal(MacOSSignal::URLNavigated {
@@ -1049,10 +1609,7 @@ mod tests {
             })
             .expect("url signal accepted");
         assert_eq!(url.schema(), &ObservationSchema::url_navigated_v1());
-        assert_eq!(
-            url.provenance().source().as_str(),
-            "macos_accessibility"
-        );
+        assert_eq!(url.provenance().source().as_str(), "macos_accessibility");
 
         let commit = pipeline
             .handle_signal(MacOSSignal::CommitMade {
@@ -1061,10 +1618,7 @@ mod tests {
             })
             .expect("commit signal accepted");
         assert_eq!(commit.schema(), &ObservationSchema::commit_made_v1());
-        assert_eq!(
-            commit.provenance().source().as_str(),
-            "macos_fsevents"
-        );
+        assert_eq!(commit.provenance().source().as_str(), "macos_fsevents");
 
         assert_eq!(receiver.try_iter().count(), 4);
     }
@@ -1077,7 +1631,8 @@ mod tests {
         // emits genuine observations, which the pipeline persists. Route that
         // real persistence into an isolated root so the canonical default
         // storage stays clean during tests.
-        let result = runtime.start_vertical_runtime_with_storage_root(unique_root("boundary-receiver"));
+        let result =
+            runtime.start_vertical_runtime_with_storage_root(unique_root("boundary-receiver"));
 
         // The vertical runtime must start even without Accessibility
         // permission: it degrades to partial capture (file saves and
@@ -1087,9 +1642,7 @@ mod tests {
             Ok((_handle, receiver)) => {
                 assert!(receiver.try_recv().is_err());
             }
-            Err(DaemonError::Capture(
-                evo_capture::MacOSEventSourceError::UnsupportedPlatform,
-            )) => {}
+            Err(DaemonError::Capture(evo_capture::MacOSEventSourceError::UnsupportedPlatform)) => {}
             Err(err) => panic!("unexpected runtime error: {err}"),
         }
     }
@@ -1104,7 +1657,10 @@ mod tests {
             detail: "Accessibility permission is required to witness focused windows".to_string(),
         };
         crate::daemon_status::write_capture_status(&root, &partial).expect("write");
-        assert_eq!(crate::daemon_status::read_capture_status(&root), Some(partial));
+        assert_eq!(
+            crate::daemon_status::read_capture_status(&root),
+            Some(partial)
+        );
         let _ = std::fs::remove_dir_all(&root);
     }
 
@@ -1113,12 +1669,21 @@ mod tests {
         let root = std::env::temp_dir().join("evo-test-storage-root");
         // Inside the storage root: Evo's own canonical writes.
         let inside = root.join("observation.log");
-        assert!(storage_path_is_inside(&root, inside.to_string_lossy().as_ref()));
+        assert!(storage_path_is_inside(
+            &root,
+            inside.to_string_lossy().as_ref()
+        ));
         // A file that merely shares a prefix is not inside the root.
         let sibling = std::env::temp_dir().join("evo-test-storage-root-other/notes.md");
-        assert!(!storage_path_is_inside(&root, sibling.to_string_lossy().as_ref()));
+        assert!(!storage_path_is_inside(
+            &root,
+            sibling.to_string_lossy().as_ref()
+        ));
         // Unrelated paths are not inside.
-        assert!(!storage_path_is_inside(&root, "/Users/alice/Documents/report.md"));
+        assert!(!storage_path_is_inside(
+            &root,
+            "/Users/alice/Documents/report.md"
+        ));
     }
 
     // ── The settle-and-announce path ─────────────────────────────────────────
@@ -1136,6 +1701,7 @@ mod tests {
             process_identifier: None,
             owning_process_name: None,
             observed_state: None,
+            window_id: None,
         }
     }
 
@@ -1167,6 +1733,7 @@ mod tests {
                 capture: LiveCapturePipeline::new(
                     observation_sender,
                     std::sync::Arc::new(std::sync::Mutex::new(None)),
+                    std::sync::Arc::new(std::sync::Mutex::new(RestoredSubjects::new())),
                 ),
                 observations,
                 pipeline,
@@ -1307,7 +1874,10 @@ mod tests {
         let mut harness = Harness::new(&root);
 
         let moment = drive_one_body_of_work(&mut harness, 3);
-        assert!(harness.announced().is_empty(), "capture has not settled yet");
+        assert!(
+            harness.announced().is_empty(),
+            "capture has not settled yet"
+        );
 
         harness.drive(MacOSSignal::WorkDesignated {
             subject: "/Users/alice/ops/migration-plan.md".into(),
@@ -1321,7 +1891,11 @@ mod tests {
             "the declaration published the understanding without an idle tick"
         );
         assert_eq!(
-            harness.pipeline.index().designation().map(|(subject, _)| subject),
+            harness
+                .pipeline
+                .index()
+                .designation()
+                .map(|(subject, _)| subject),
             Some("/Users/alice/ops/migration-plan.md".to_string())
         );
     }
@@ -1444,13 +2018,11 @@ mod tests {
             witnessed,
             "a declaration adds no Artifact"
         );
-        let observations = crate::persistence::load_persisted_observations(&root)
-            .expect("observations load");
+        let observations =
+            crate::persistence::load_persisted_observations(&root).expect("observations load");
         assert!(
-            observations
-                .iter()
-                .any(|observation| observation.schema()
-                    == &ObservationSchema::repository_membership_v1()),
+            observations.iter().any(|observation| observation.schema()
+                == &ObservationSchema::repository_membership_v1()),
             "the declaration is canonical evidence and was persisted"
         );
     }
@@ -1472,8 +2044,8 @@ mod tests {
             observed_at: t(moment + 5),
         });
 
-        let observations = crate::persistence::load_persisted_observations(&root)
-            .expect("observations load");
+        let observations =
+            crate::persistence::load_persisted_observations(&root).expect("observations load");
         let batch = understanding::derive(
             understanding::evidence_of(&observations),
             evo_engagement::EngagementParams::default(),

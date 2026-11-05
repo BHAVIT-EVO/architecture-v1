@@ -1,0 +1,11 @@
+total 0
+drwxr-xr-x@ 10 bhavitsaini  admin  320 Aug  2 01:23 .
+drwxr-xr-x@  9 bhavitsaini  admin  288 Aug  2 01:23 ..
+drwxr-xr-x@  7 bhavitsaini  admin  224 Aug  2 01:23 Electron Framework.framework
+drwxr-xr-x@  5 bhavitsaini  admin  160 Aug  2 01:23 Mantle.framework
+drwxr-xr-x@  5 bhavitsaini  admin  160 Aug  2 01:23 ReactiveObjC.framework
+drwxr-xr-x@  3 bhavitsaini  admin   96 Aug  2 01:23 Rize Helper (GPU).app
+drwxr-xr-x@  3 bhavitsaini  admin   96 Aug  2 01:23 Rize Helper (Plugin).app
+drwxr-xr-x@  3 bhavitsaini  admin   96 Aug  2 01:23 Rize Helper (Renderer).app
+drwxr-xr-x@  3 bhavitsaini  admin   96 Aug  2 01:23 Rize Helper.app
+drwxr-xr-x@  5 bhavitsaini  admin  160 Aug  2 01:23 Squirrel.framework

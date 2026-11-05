@@ -1,4 +1,4 @@
-use evo_daemon::{daemon_lock, Daemon, DaemonError};
+use evo_daemon::{Daemon, DaemonError, daemon_lock};
 
 use std::thread;
 
@@ -56,4 +56,3 @@ fn real_main() -> Result<(), DaemonError> {
         Err(err) => Err(err),
     }
 }
-

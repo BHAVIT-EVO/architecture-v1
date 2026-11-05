@@ -1,0 +1,55 @@
+evidence_id: ev_70d9c58c389eb8e0941d470b028ea27854ab0b765809421d5dca504245503675
+subject:
+  name: Timing
+  digest:
+    sha256: 55fe35aa41385c696a8df54f54c0931626bb7fcdc8c0beab57726c4091e965fe
+  format: mach-o
+  architecture: arm64
+  local_path: /Applications/Timing.app/Contents/MacOS/Timing
+provider:
+  id: native-macos
+  name: macOS native inspection utilities
+  version: null
+predicate_type: rea.analysis
+operation: list_architectures
+parameters:
+raw_result:
+  provenance[1]:
+    - tool: lipo
+      command[3]: /Library/Developer/CommandLineTools/usr/bin/lipo,"-detailed_info",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 751c4a4636efc5f4015999dc7d41be6e2552b39f8949d6eb971e958fccf0e386
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 422
+      stderr_bytes: 0
+normalized_result:
+  architectures:
+    items[2]{name,cpu_type,cpu_subtype,file_offset,size,alignment}:
+      x86_64,CPU_TYPE_X86_64,CPU_SUBTYPE_X86_64_ALL,16384,3777440,16384
+      arm64,CPU_TYPE_ARM64,CPU_SUBTYPE_ARM64_ALL,3801088,3569168,16384
+    total: 2
+    exhaustive: true
+    limitations: []
+  provenance[1]:
+    - tool: lipo
+      command[3]: /Library/Developer/CommandLineTools/usr/bin/lipo,"-detailed_info",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 751c4a4636efc5f4015999dc7d41be6e2552b39f8949d6eb971e958fccf0e386
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 422
+      stderr_bytes: 0
+  limitations: []
+confidence: observed
+authority: shipped-artifact
+environment: null
+limitations: []
+locations[2]{kind,start,end}:
+  file-offset-range,16384,3793824
+  file-offset-range,3801088,7370256
+evidence_links: []

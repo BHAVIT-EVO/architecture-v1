@@ -1,0 +1,40 @@
+[package]
+name = "evo-voice"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+evo-semantic = { path = "../evo-semantic" }
+evo-retrieval = { path = "../evo-retrieval" }
+evo-engagement = { path = "../evo-engagement" }
+evo-execution = { path = "../evo-execution" }
+evo-threads = { path = "../evo-threads" }
+fastembed = { version = "7.1.0", optional = true }
+whisper-rs = { version = "0.16.0", optional = true, features = ["metal"] }
+cpal = { version = "0.18.2", optional = true }
+ort = { version = "2.0.0-rc.10", optional = true }
+
+[features]
+default = []
+embeddings = ["dep:fastembed"]
+audio = ["whisper-rs", "cpal"]
+# Acoustic wake-word spotting with a trained openWakeWord ONNX model:
+# mel-spectrogram + speech_embedding feature models + the person's
+# custom model, all run in-process via ONNX Runtime.
+wake-model = ["ort"]
+
+# The wake probe streams live mic scores through the trained spotter, so
+# it needs both the audio capture and the wake model.
+[[bin]]
+name = "wake_probe"
+path = "src/bin/wake_probe.rs"
+required-features = ["audio", "wake-model"]
+
+# Transcribes a raw f32 dump with the bundled whisper model (calibration
+# sanity check: what did the mic actually hear?).
+[[bin]]
+name = "transcribe_dump"
+path = "src/bin/transcribe_dump.rs"
+required-features = ["audio"]
+
+[dev-dependencies]

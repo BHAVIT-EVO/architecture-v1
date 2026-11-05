@@ -14,7 +14,7 @@
 
 use crate::identity::TaskKey;
 use crate::intervals::WorkInterval;
-use rusqlite::{params, Connection};
+use rusqlite::Connection;
 use std::collections::BTreeMap;
 
 /// A body of work: all intervals sharing the same identity.
@@ -442,14 +442,14 @@ mod tests {
 
     #[test]
     fn work_has_production_evidence() {
-        let events = vec![ev(
+        let first = ev(
             1000,
             "Chrome",
             "chat",
             Some("https://chat.openai.com/c"),
             None,
             30000,
-        )];
+        );
         let mut typed_event = ev(
             61000,
             "Chrome",
@@ -459,7 +459,7 @@ mod tests {
             30000,
         );
         typed_event.typed = true;
-        let all = vec![events[0].clone(), typed_event];
+        let all = vec![first, typed_event];
         let intervals = intervals::compute_intervals(&all);
         let works = group_into_works(intervals);
         assert!(works[0].has_production, "typing on the site = production");
@@ -592,7 +592,14 @@ mod tests {
     #[test]
     fn app_for_resource_returns_the_witnessed_app_per_document() {
         let events = vec![
-            ev(1000, "VS Code", "main.rs", None, Some("/src/main.rs"), 30000),
+            ev(
+                1000,
+                "VS Code",
+                "main.rs",
+                None,
+                Some("/src/main.rs"),
+                30000,
+            ),
             ev(
                 61000,
                 "Preview",
@@ -605,10 +612,7 @@ mod tests {
         let intervals = intervals::compute_intervals(&events);
         let works = group_into_works(intervals);
         assert_eq!(works.len(), 2, "different documents = different works");
-        let code = works
-            .iter()
-            .find(|w| w.identity == "/src/main.rs")
-            .unwrap();
+        let code = works.iter().find(|w| w.identity == "/src/main.rs").unwrap();
         assert_eq!(code.app_for_resource("/src/main.rs"), Some("VS Code"));
         assert_eq!(code.app_for_resource("/docs/report.pdf"), None);
         let pdf = works

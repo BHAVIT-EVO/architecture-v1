@@ -27,13 +27,23 @@
 //! without the log — the fixture is machine-local by nature), and the
 //! `regression-gate` binary prints the report for humans.
 
-use crate::observation_log::read_observation_log;
+use crate::observation_log::read_observation_log_with_metrics;
 use crate::Ledger;
 use std::path::Path;
 
 /// The gate's outcome: what formed and which gates failed.
 #[derive(Debug, Clone)]
 pub struct GateReport {
+    /// Number of canonical observations in the source log.
+    pub observation_count: usize,
+    /// Number of user-authored design observations in the source log.
+    pub design_event_count: usize,
+    /// User design events per 1,000 canonical observations.
+    pub design_event_rate_per_1000: f64,
+    /// Whether the observed rate meets the PLAN-0001 floor. This is reported
+    /// separately from behavioral failures so historical data cannot be made
+    /// to pass by substituting a synthetic sample.
+    pub design_event_floor_met: bool,
     pub attention_events: usize,
     pub saves: usize,
     pub declared_pairs: usize,
@@ -65,7 +75,8 @@ pub fn run_gates(log_path: &Path) -> Option<GateReport> {
         return None;
     }
 
-    let (events, saves, declared) = read_observation_log(log_path);
+    let (events, saves, declared, _classified, metrics) =
+        read_observation_log_with_metrics(log_path);
     let mut ledger = Ledger::open_memory().expect("in-memory ledger");
     for (a, b) in &declared {
         let _ = ledger.record_declaration(a, b);
@@ -204,6 +215,10 @@ pub fn run_gates(log_path: &Path) -> Option<GateReport> {
     }
 
     Some(GateReport {
+        observation_count: metrics.observation_count,
+        design_event_count: metrics.design_event_count,
+        design_event_rate_per_1000: metrics.rate_per_1000(),
+        design_event_floor_met: metrics.meets_design_event_floor(),
         attention_events: events.len(),
         saves: saves.len(),
         declared_pairs: declared.len(),

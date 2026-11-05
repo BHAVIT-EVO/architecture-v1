@@ -9,7 +9,7 @@
 //! - CC-2: Artifacts SHALL appear at most once.
 //! - CC-3: Every Artifact SHALL belong to the same Workspace.
 //! - CC-4: Context Chain SHALL minimize cognitive reload rather than maximize
-//!         historical completeness.
+//!   historical completeness.
 //!
 //! `ContextChain` enforces CC-2 at construction time by rejecting duplicate
 //! `ArtifactId` values.

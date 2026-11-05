@@ -1,0 +1,13 @@
+{
+  "error": "Analysis failed",
+  "code": "target_unavailable",
+  "category": "unavailable",
+  "message": "REA could not open that app or binary. Check that the path exists, is readable, and points to a supported file.",
+  "retryable": false,
+  "remediation": {
+    "action": "REA could not open that app or binary. Check that the path exists, is readable, and points to a supported file."
+  },
+  "details": {
+    "path": "/Applications/OpenWorkspace.app"
+  }
+}

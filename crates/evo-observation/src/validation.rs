@@ -148,8 +148,14 @@ fn validate_structure(candidate: &CandidateObservation) -> Result<(), Validation
     let expected_second = match schema.name() {
         "OBS-REPOSITORY-MEMBERSHIP" => Some("Repository"),
         "OBS-WORK-GROUPED" => Some("CoMember"),
+        "OBS-WORK-NAMED" => Some("Name"),
+        "OBS-SURFACE-NAMED" => Some("Name"),
+        "OBS-SURFACE-CLASSIFIED" => Some("Class"),
         _ => None,
     };
+    if schema.name() == "OBS-MEMBER-STATE" {
+        return validate_member_state(facts, expected_fact_name);
+    }
     if schema.name() == "OBS-CONTINUATION-SURFACE" {
         return validate_continuation_surface(facts, expected_fact_name);
     }
@@ -183,7 +189,7 @@ fn validate_structure(candidate: &CandidateObservation) -> Result<(), Validation
             _ => {
                 return Err(ValidationError::InvalidStructure(format!(
                     "required {second_name} value information is missing"
-                )))
+                )));
             }
         }
     }
@@ -194,6 +200,42 @@ fn validate_structure(candidate: &CandidateObservation) -> Result<(), Validation
             "required subject information is missing".into(),
         )),
     }
+}
+
+/// Validates the structural rule of `OBS-MEMBER-STATE/v1`:
+/// `MemberState(work witness, member subject, state label)`.
+fn validate_member_state(
+    facts: &[ObservedFact],
+    expected_fact_name: &str,
+) -> Result<(), ValidationError> {
+    if facts.len() != 3 {
+        return Err(ValidationError::InvalidStructure(
+            "member state evidence must contain exactly three canonical facts".into(),
+        ));
+    }
+    let expected = [expected_fact_name, "Member", "State"];
+    for (fact, required) in facts.iter().zip(expected) {
+        if fact.name() != required {
+            return Err(ValidationError::InvalidStructure(format!(
+                "evidence does not express the required {required} value concept"
+            )));
+        }
+        if !matches!(fact.value(), FactValue::Text(value) if !value.trim().is_empty()) {
+            return Err(ValidationError::InvalidStructure(format!(
+                "required {required} value information is missing"
+            )));
+        }
+    }
+    let state = match facts[2].value() {
+        FactValue::Text(value) => value.trim(),
+        _ => unreachable!("the loop above rejects non-text member states"),
+    };
+    if !matches!(state, "Active" | "Completed" | "Superseded" | "Optional") {
+        return Err(ValidationError::InvalidStructure(
+            "member state must be Active, Completed, Superseded, or Optional".into(),
+        ));
+    }
+    Ok(())
 }
 
 /// Validates the structural rule of `OBS-CONTINUATION-SURFACE/v1` (RFC-0013,
@@ -227,7 +269,7 @@ fn validate_continuation_surface(
         _ => {
             return Err(ValidationError::InvalidStructure(
                 "required subject information is missing".into(),
-            ))
+            ));
         }
     };
 
@@ -252,7 +294,7 @@ fn validate_continuation_surface(
             _ => {
                 return Err(ValidationError::InvalidStructure(
                     "required ContinuationSubject value information is missing".into(),
-                ))
+                ));
             }
         }
     }
@@ -302,7 +344,7 @@ fn validate_input_activity(
         _ => {
             return Err(ValidationError::InvalidStructure(
                 "required subject information is missing".into(),
-            ))
+            ));
         }
     }
     let mut any_positive = false;
@@ -462,9 +504,8 @@ mod tests {
     fn valid_fact_passes_validation() {
         let schema = schema();
 
-        let fact =
-            ObservedFact::new("WindowFocusGained", FactValue::Text("editor-window".into()))
-                .unwrap();
+        let fact = ObservedFact::new("WindowFocusGained", FactValue::Text("editor-window".into()))
+            .unwrap();
         let evidence = Evidence::new(vec![fact]);
         let candidate = CandidateObservation::new(schema.clone(), provenance(), evidence);
 
@@ -475,7 +516,8 @@ mod tests {
     fn empty_evidence_is_rejected() {
         let schema = schema();
 
-        let candidate = CandidateObservation::new(schema.clone(), provenance(), Evidence::new(vec![]));
+        let candidate =
+            CandidateObservation::new(schema.clone(), provenance(), Evidence::new(vec![]));
 
         assert_eq!(
             validate(&candidate, &schema),
@@ -485,31 +527,214 @@ mod tests {
         );
     }
 
+    // ── Surface naming (OBS-SURFACE-NAMED/v1) ─────────────────────────────
+
+    fn named_candidate(subject: &str, name: &str) -> (ObservationSchema, CandidateObservation) {
+        let schema = ObservationSchema::surface_named_v1();
+        let concept = ObservationConcept::SurfaceNamed {
+            subject: subject.to_string(),
+            name: name.to_string(),
+        };
+        let candidate = CandidateObservation::new(schema.clone(), provenance(), concept.evidence());
+        (schema, candidate)
+    }
+
+    #[test]
+    fn surface_named_with_subject_and_name_passes_validation() {
+        let (schema, candidate) = named_candidate(
+            "https://example.com/field-guide",
+            "A Field Guide to Checkbox Land — Google Chrome",
+        );
+        assert!(validate(&candidate, &schema).is_ok());
+    }
+
+    #[test]
+    fn surface_named_requires_the_name_value_concept() {
+        let schema = ObservationSchema::surface_named_v1();
+        let facts = vec![
+            ObservedFact::new(
+                "SurfaceNamed",
+                FactValue::Text("https://example.com".into()),
+            )
+            .unwrap(),
+        ];
+        let candidate =
+            CandidateObservation::new(schema.clone(), provenance(), Evidence::new(facts));
+        assert!(matches!(
+            validate(&candidate, &schema),
+            Err(ValidationError::InvalidStructure(_))
+        ));
+    }
+
+    #[test]
+    fn surface_named_with_empty_name_is_rejected() {
+        let schema = ObservationSchema::surface_named_v1();
+        let facts = vec![
+            ObservedFact::new(
+                "SurfaceNamed",
+                FactValue::Text("https://example.com".into()),
+            )
+            .unwrap(),
+            ObservedFact::new("Name", FactValue::Text("   ".into())).unwrap(),
+        ];
+        let candidate =
+            CandidateObservation::new(schema.clone(), provenance(), Evidence::new(facts));
+        assert!(matches!(
+            validate(&candidate, &schema),
+            Err(ValidationError::InvalidStructure(_))
+        ));
+    }
+
+    #[test]
+    fn surface_named_is_canonical_and_not_reference_only() {
+        // A naming is a directly witnessed fact about the world, not a
+        // reference to work other observations established: it must be
+        // canonical, must not be reference-only, and must not be treated as
+        // a user declaration (it is the surface speaking, not the person).
+        let schema = ObservationSchema::surface_named_v1();
+        assert!(schema.is_canonical());
+        assert!(!schema.is_reference_only());
+        assert!(!schema.is_user_declaration());
+        assert_eq!(schema.canonical_fact_name(), Some("SurfaceNamed"));
+    }
+
+    #[test]
+    fn surface_named_evidence_carries_the_witnessed_name_verbatim() {
+        // The name is exactly what the surface displayed — including the
+        // browser suffix, punctuation, casing. Cleaning is downstream's job
+        // and downstream must be able to re-derive it.
+        let concept = ObservationConcept::SurfaceNamed {
+            subject: "file:///work/report.md".into(),
+            name: "report.md — evo — Visual Studio Code".into(),
+        };
+        assert_eq!(concept.schema(), ObservationSchema::surface_named_v1());
+        let evidence = concept.evidence();
+        assert_eq!(
+            evidence.fact("SurfaceNamed").unwrap().value(),
+            &FactValue::Text("file:///work/report.md".into())
+        );
+        assert_eq!(
+            evidence.fact("Name").unwrap().value(),
+            &FactValue::Text("report.md — evo — Visual Studio Code".into())
+        );
+    }
+
+    // ── Surface classification (OBS-SURFACE-CLASSIFIED/v1) ─────────────────
+
+    fn classified_candidate(subject: &str, class: &str) -> (ObservationSchema, CandidateObservation) {
+        let schema = ObservationSchema::surface_classified_v1();
+        let concept = ObservationConcept::SurfaceClassified {
+            subject: subject.to_string(),
+            class: class.to_string(),
+        };
+        let candidate = CandidateObservation::new(schema.clone(), provenance(), concept.evidence());
+        (schema, candidate)
+    }
+
+    #[test]
+    fn surface_classified_with_subject_and_class_passes_validation() {
+        let (schema, candidate) =
+            classified_candidate("https://www.youtube.com/watch?v=abc123", "NotWork");
+        assert!(validate(&candidate, &schema).is_ok());
+    }
+
+    #[test]
+    fn surface_classified_requires_the_class_value_concept() {
+        let schema = ObservationSchema::surface_classified_v1();
+        let facts = vec![
+            ObservedFact::new(
+                "SurfaceClassified",
+                FactValue::Text("https://example.com".into()),
+            )
+            .unwrap(),
+        ];
+        let candidate =
+            CandidateObservation::new(schema.clone(), provenance(), Evidence::new(facts));
+        assert!(matches!(
+            validate(&candidate, &schema),
+            Err(ValidationError::InvalidStructure(_))
+        ));
+    }
+
+    #[test]
+    fn surface_classified_with_empty_class_is_rejected() {
+        let schema = ObservationSchema::surface_classified_v1();
+        let facts = vec![
+            ObservedFact::new(
+                "SurfaceClassified",
+                FactValue::Text("https://example.com".into()),
+            )
+            .unwrap(),
+            ObservedFact::new("Class", FactValue::Text("   ".into())).unwrap(),
+        ];
+        let candidate =
+            CandidateObservation::new(schema.clone(), provenance(), Evidence::new(facts));
+        assert!(matches!(
+            validate(&candidate, &schema),
+            Err(ValidationError::InvalidStructure(_))
+        ));
+    }
+
+    #[test]
+    fn surface_classified_is_a_canonical_user_declaration() {
+        // A classification is the person's own word about a subject other
+        // Observations established: canonical, reference-only, and a user
+        // declaration — the same shape as the other declaration schemas.
+        let schema = ObservationSchema::surface_classified_v1();
+        assert!(schema.is_canonical());
+        assert!(schema.is_reference_only());
+        assert!(schema.is_user_declaration());
+        assert_eq!(schema.canonical_fact_name(), Some("SurfaceClassified"));
+    }
+
+    #[test]
+    fn member_state_accepts_only_the_frozen_lifecycle_labels() {
+        let schema = ObservationSchema::member_state_v1();
+        let valid = ObservationConcept::MemberState {
+            work: "/tmp/work.md".into(),
+            member: "/tmp/member.md".into(),
+            state: "Completed".into(),
+        };
+        let candidate = CandidateObservation::new(schema.clone(), provenance(), valid.evidence());
+        assert!(validate(&candidate, &schema).is_ok());
+        assert!(schema.is_canonical());
+        assert!(schema.is_reference_only());
+        assert!(schema.is_user_declaration());
+
+        let invalid = ObservationConcept::MemberState {
+            work: "/tmp/work.md".into(),
+            member: "/tmp/member.md".into(),
+            state: "MaybeDone".into(),
+        };
+        let candidate = CandidateObservation::new(schema.clone(), provenance(), invalid.evidence());
+        assert!(matches!(
+            validate(&candidate, &schema),
+            Err(ValidationError::InvalidStructure(_))
+        ));
+    }
+
     #[test]
     fn co_membership_schemas_require_their_value_concept() {
         // OBS-REPOSITORY-MEMBERSHIP carries the witnessed fact plus the
         // Repository value concept (RFC-0012, IS-0003 §4.1.6).
         let schema = ObservationSchema::repository_membership_v1();
         let facts = vec![
-            ObservedFact::new(
-                "RepositoryMembership",
-                FactValue::Text("/repo/a.rs".into()),
-            )
-            .unwrap(),
+            ObservedFact::new("RepositoryMembership", FactValue::Text("/repo/a.rs".into()))
+                .unwrap(),
             ObservedFact::new("Repository", FactValue::Text("/repo/.git".into())).unwrap(),
         ];
-        let candidate = CandidateObservation::new(schema.clone(), provenance(), Evidence::new(facts));
+        let candidate =
+            CandidateObservation::new(schema.clone(), provenance(), Evidence::new(facts));
         assert!(validate(&candidate, &schema).is_ok());
 
         // Missing the value concept → rejected.
         let partial = CandidateObservation::new(
             schema.clone(),
             provenance(),
-            Evidence::new(vec![ObservedFact::new(
-                "RepositoryMembership",
-                FactValue::Text("/repo/a.rs".into()),
-            )
-            .unwrap()]),
+            Evidence::new(vec![
+                ObservedFact::new("RepositoryMembership", FactValue::Text("/repo/a.rs".into()))
+                    .unwrap(),
+            ]),
         );
         assert!(validate(&partial, &schema).is_err());
 
@@ -519,7 +744,8 @@ mod tests {
             ObservedFact::new("WorkGrouped", FactValue::Text("/repo/a.rs".into())).unwrap(),
             ObservedFact::new("CoMember", FactValue::Text("https://example.com".into())).unwrap(),
         ];
-        let candidate = CandidateObservation::new(grouped.clone(), provenance(), Evidence::new(grouped_facts));
+        let candidate =
+            CandidateObservation::new(grouped.clone(), provenance(), Evidence::new(grouped_facts));
         assert!(validate(&candidate, &grouped).is_ok());
     }
 
@@ -562,7 +788,8 @@ mod tests {
             ObservedFact::new("ContinuationSurface", FactValue::Text("/tmp/a.md".into())).unwrap(),
             ObservedFact::new("ContinuationSubject", FactValue::Text("/tmp/a.md".into())).unwrap(),
         ];
-        let candidate = CandidateObservation::new(schema.clone(), provenance(), Evidence::new(facts));
+        let candidate =
+            CandidateObservation::new(schema.clone(), provenance(), Evidence::new(facts));
         let result = validate(&candidate, &schema);
         assert_eq!(
             result,
@@ -579,7 +806,8 @@ mod tests {
             ObservedFact::new("ContinuationSubject", FactValue::Text("/tmp/a.md".into())).unwrap(),
             ObservedFact::new("ContinuationSubject", FactValue::Text("/tmp/b.md".into())).unwrap(),
         ];
-        let candidate = CandidateObservation::new(schema.clone(), provenance(), Evidence::new(facts));
+        let candidate =
+            CandidateObservation::new(schema.clone(), provenance(), Evidence::new(facts));
         let result = validate(&candidate, &schema);
         assert!(matches!(result, Err(ValidationError::InvalidStructure(_))));
     }
@@ -591,7 +819,8 @@ mod tests {
             ObservedFact::new("ContinuationSurface", FactValue::Text("/tmp/a.md".into())).unwrap(),
             ObservedFact::new("WrongConcept", FactValue::Text("/tmp/b.md".into())).unwrap(),
         ];
-        let candidate = CandidateObservation::new(schema.clone(), provenance(), Evidence::new(facts));
+        let candidate =
+            CandidateObservation::new(schema.clone(), provenance(), Evidence::new(facts));
         let result = validate(&candidate, &schema);
         assert!(matches!(result, Err(ValidationError::InvalidStructure(_))));
     }
@@ -606,7 +835,8 @@ mod tests {
             ObservedFact::new("ContinuationSurface", FactValue::Text("/tmp/b.md".into())).unwrap(),
             ObservedFact::new("ContinuationSubject", FactValue::Text("/tmp/a.md".into())).unwrap(),
         ];
-        let candidate = CandidateObservation::new(schema.clone(), provenance(), Evidence::new(facts));
+        let candidate =
+            CandidateObservation::new(schema.clone(), provenance(), Evidence::new(facts));
         let result = validate(&candidate, &schema);
         assert!(matches!(result, Err(ValidationError::InvalidStructure(_))));
 

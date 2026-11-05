@@ -21,7 +21,7 @@
 set -u
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP_DIR="$REPO_ROOT/dist/Evo.app"
+APP_DIR="/Applications/Evo.app"
 APP_BIN="$APP_DIR/Contents/MacOS/Evo"
 ROOT="${EVO_STORAGE_ROOT:-$TMPDIR/evo-live-verify}"
 export EVO_STORAGE_ROOT="$ROOT"

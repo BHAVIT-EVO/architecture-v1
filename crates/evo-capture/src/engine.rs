@@ -70,10 +70,17 @@ mod tests {
         let observation = result;
         assert_eq!(observation.schema(), &schema);
         assert_eq!(observation.provenance().source().as_str(), "macos_adapter");
-        assert_eq!(observation.provenance().observed_at(), SystemTime::UNIX_EPOCH);
+        assert_eq!(
+            observation.provenance().observed_at(),
+            SystemTime::UNIX_EPOCH
+        );
         assert_eq!(observation.evidence(), event.evidence());
         assert_eq!(
-            observation.evidence().fact("WindowFocusGained").unwrap().value(),
+            observation
+                .evidence()
+                .fact("WindowFocusGained")
+                .unwrap()
+                .value(),
             event.evidence().fact("WindowFocusGained").unwrap().value()
         );
     }
@@ -88,7 +95,10 @@ mod tests {
         let first_result = engine.ingest(first, &schema).unwrap();
         let second_result = engine.ingest(second, &schema).unwrap();
 
-        assert_eq!(first_result.provenance().observed_at(), SystemTime::UNIX_EPOCH);
+        assert_eq!(
+            first_result.provenance().observed_at(),
+            SystemTime::UNIX_EPOCH
+        );
         assert_eq!(
             second_result.provenance().observed_at(),
             SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(1)

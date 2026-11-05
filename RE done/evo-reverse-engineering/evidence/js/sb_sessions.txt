@@ -1,0 +1,8 @@
+
+===== sessions (8 unique) =====
+  [sb_all.js] r,o=n(57),i=n(6),a=Object(o.b)({name:"unit-add-session",initialState:{},reducers:{unitAddSessionStarted:function(e,t){var n=t.payload;e.context=n},unitAddSessionEnded:function(e){var t;nu
+  [sb_all.js] o.sets,c)&&!Object(i.t)(o.sets,c)){var u=Object(i.p)(o.sets,c);u&&(r=e,t(a.actions.unitAddSessionStarted({setId:c,setType:u})))}}}}var s={context:function(e){return e.unitAddSession.contex
+  [sb_all.js] length?Date.UTC(+n[0],+n[1],+n[2],+n[3],+n[4],+n[5]):t}var Ms={saved:"nxs.v3-id-map-saved-sessions",previous:"nxs.v3-id-map-previous-sessions"};function Fs(e,t){var n=function(e){try{retur
+  [sb_all.js] 4],+n[5]):t}var Ms={saved:"nxs.v3-id-map-saved-sessions",previous:"nxs.v3-id-map-previous-sessions"};function Fs(e,t){var n=function(e){try{return JSON.parse(localStorage.getItem(Ms[e])||"
+  [sb_all.js] me="IngestFormatParseError",r}return Object(Ss.a)(n)}(Object(Is.a)(Error)),Ys=/^\s*/,Xs=["sessions","collections"],Qs=["windows","folders"],Js=["tabs","links"],Zs=["session","collection"],
+  [sb_all.js] ;case 14:f=0,p=0,v=new Jf({stringBufferSize:void 0,paths:["$.format","$.collections.*","$.sessions.*","$.windows.*","$.tabs.*",i?"$.history.*":""].filter(Boolean),keepStack:!1}),y=t.stream

@@ -287,7 +287,9 @@ mod tests {
                 UNIX_EPOCH,
                 HashMap::new(),
             ),
-            Evidence::new(vec![ObservedFact::new(fact_name, FactValue::Text(subject.into())).unwrap()]),
+            Evidence::new(vec![
+                ObservedFact::new(fact_name, FactValue::Text(subject.into())).unwrap(),
+            ]),
         )
     }
 
@@ -316,12 +318,7 @@ mod tests {
         let _listener = spawn_grouping_listener(root.clone(), sender);
 
         let socket = grouping_socket_path(&root);
-        for _ in 0..100 {
-            if socket.exists() {
-                break;
-            }
-            std::thread::sleep(Duration::from_millis(20));
-        }
+        crate::socket_test_support::wait_for_listener(&socket);
 
         // No content observations exist yet: both subjects are unwitnessed,
         // and the declaration is STILL accepted — a declaration is the
@@ -378,12 +375,7 @@ mod tests {
         let _listener = spawn_grouping_listener(root.clone(), sender);
 
         let socket = grouping_socket_path(&root);
-        for _ in 0..100 {
-            if socket.exists() {
-                break;
-            }
-            std::thread::sleep(Duration::from_millis(20));
-        }
+        crate::socket_test_support::wait_for_listener(&socket);
 
         // Witness only the first subject: the pair is still accepted —
         // the unwitnessed side links group identity for the future. (The

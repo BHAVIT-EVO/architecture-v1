@@ -34,7 +34,10 @@ fn main() {
     }
 
     println!("================================================================");
-    println!("EVO — CLUSTERING A/B (same {} observations)", observations.len());
+    println!(
+        "EVO — CLUSTERING A/B (same {} observations)",
+        observations.len()
+    );
     println!("root: {}", root.display());
     println!("================================================================");
 
@@ -80,7 +83,7 @@ fn main() {
         // The largest threads regardless of standing — an over-admitting blob
         // shows here as a big member count whether or not it is called work.
         let mut by_size: Vec<&Engagement> = set.engagements().iter().collect();
-        by_size.sort_by(|a, b| b.participants().len().cmp(&a.participants().len()));
+        by_size.sort_by_key(|b| std::cmp::Reverse(b.participants().len()));
         println!("  LARGEST THREADS (any standing):");
         for engagement in by_size.into_iter().take(6) {
             println!(

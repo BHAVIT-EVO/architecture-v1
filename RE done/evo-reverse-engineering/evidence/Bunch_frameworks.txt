@@ -1,0 +1,8 @@
+total 0
+drwxr-xr-x@ 7 bhavitsaini  admin  224 Sep 15 00:09 .
+drwxr-xr-x@ 9 bhavitsaini  admin  288 Sep 15 00:10 ..
+drwxr-xr-x@ 5 bhavitsaini  admin  160 Sep 15 00:09 ArchDirectoryObserver.framework
+drwxr-xr-x@ 5 bhavitsaini  admin  160 Sep 15 00:09 CocoaLumberjack.framework
+drwxr-xr-x@ 5 bhavitsaini  admin  160 Sep 15 00:09 MASShortcut.framework
+drwxr-xr-x@ 5 bhavitsaini  admin  160 Sep 15 00:09 MDPSplitView.framework
+drwxr-xr-x@ 8 bhavitsaini  admin  256 Sep 15 00:09 Sparkle.framework

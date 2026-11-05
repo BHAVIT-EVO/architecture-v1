@@ -874,10 +874,7 @@ mod tests {
     /// produce a merge: the shorter name has to exist.
     #[test]
     fn subsumption_needs_the_shorter_name_to_have_been_seen() {
-        let never_bare = index(&[
-            "Session - alpha - Recording",
-            "Session - beta - Recording",
-        ]);
+        let never_bare = index(&["Session - alpha - Recording", "Session - beta - Recording"]);
         assert_ne!(
             never_bare.canonical("Session - alpha - Recording"),
             never_bare.canonical("Session - beta - Recording")
@@ -1008,7 +1005,10 @@ mod tests {
             act("Deposition.pdf – Page 9 of 9", 1500),
         ]);
 
-        assert_eq!(index.canonical("Deposition.pdf – Page 2 of 9"), "Deposition.pdf");
+        assert_eq!(
+            index.canonical("Deposition.pdf – Page 2 of 9"),
+            "Deposition.pdf"
+        );
         assert_eq!(
             index.founding_name("Deposition.pdf"),
             Some("Deposition.pdf – Page 2 of 9"),
@@ -1030,7 +1030,10 @@ mod tests {
         let mut before = index(&alone);
         let _ = before.fold_acts(vec![act(alone[0], 0)]);
 
-        let together = ["thesis chapter three — Editor", "thesis appendix draft — Editor"];
+        let together = [
+            "thesis chapter three — Editor",
+            "thesis appendix draft — Editor",
+        ];
         let mut after = index(&together);
         let _ = after.fold_acts(vec![act(together[0], 0), act(together[1], 600)]);
 

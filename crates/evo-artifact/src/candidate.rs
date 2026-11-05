@@ -95,6 +95,10 @@ impl CandidateArtifact {
     ///
     /// The Acceptance Pipeline enforces these invariants through Validation
     /// (IS-0005 Stage 1) before any subsequent stage executes.
+    ///
+    /// Test-only scaffolding: every non-test construction path goes through
+    /// [`CandidateArtifact::new_with_observations`].
+    #[cfg(test)]
     pub(crate) fn new() -> Self {
         Self {
             hypothesis: IdentityHypothesis::new(vec![]),

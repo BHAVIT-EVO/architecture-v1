@@ -1,0 +1,11 @@
+total 0
+drwxr-xr-x@ 10 bhavitsaini  admin  320 Oct  7 14:46 .
+drwxr-xr-x@  9 bhavitsaini  admin  288 Oct  7 14:50 ..
+drwxr-xr-x@  7 bhavitsaini  admin  224 Oct  7 14:44 Electron Framework.framework
+drwxr-xr-x@  5 bhavitsaini  admin  160 Oct  7 14:44 Mantle.framework
+drwxr-xr-x@  5 bhavitsaini  admin  160 Oct  7 14:44 ReactiveObjC.framework
+drwxr-xr-x@  5 bhavitsaini  admin  160 Oct  7 14:44 Squirrel.framework
+drwxr-xr-x@  3 bhavitsaini  admin   96 Oct  7 14:44 Toggl Helper (GPU).app
+drwxr-xr-x@  3 bhavitsaini  admin   96 Oct  7 14:44 Toggl Helper (Plugin).app
+drwxr-xr-x@  3 bhavitsaini  admin   96 Oct  7 14:43 Toggl Helper (Renderer).app
+drwxr-xr-x@  3 bhavitsaini  admin   96 Oct  7 14:44 Toggl Helper.app

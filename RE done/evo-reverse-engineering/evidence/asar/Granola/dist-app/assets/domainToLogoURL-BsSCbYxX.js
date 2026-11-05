@@ -1,0 +1,2 @@
+try{let e=typeof window<`u`?window:typeof global<`u`?global:typeof globalThis<`u`?globalThis:typeof self<`u`?self:{},t=new e.Error().stack;t&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[t]=`6477925a-cce8-4306-bfa3-e5067308e50d`,e._sentryDebugIdIdentifier=`sentry-dbid-6477925a-cce8-4306-bfa3-e5067308e50d`)}catch{}import"./_sentry-release-injection-file-DZROVGkF.js";function e(e){return`https://img.logo.dev/${e}?token=pk_LPVRzrNdSRaQ0zikEGiRZg&retina=true`}export{e as t};
+//# sourceMappingURL=domainToLogoURL-BsSCbYxX.js.map

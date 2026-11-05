@@ -18,7 +18,225 @@
 //!   it never becomes an input to Restoration Derivation.
 
 use crate::engine::{PlatformExecutor, TargetStatus};
+use crate::locator::{LocatorKind, classify_subject};
 use crate::preflight::PreflightSource;
+use crate::restore::{DispatchResult, VerificationResult};
+use evo_observation::surface_identity::SurfaceIdentity;
+
+/// Adapter handles must retain the exact AX element through dispatch and
+/// verification. An adapter must never resolve a handle again by title.
+pub trait IdentityAdapter {
+    type Window;
+    fn process_started_at(&self, pid: i32) -> Result<String, String>;
+    fn windows(&self, pid: i32) -> Result<Vec<Self::Window>, String>;
+    fn identifier(&self, window: &Self::Window) -> Result<Option<String>, String>;
+    /// Directly read the requested kind's locator/title from this retained
+    /// element. Missing evidence must remain absent, never be inferred from
+    /// the window's other attributes or the requested resource.
+    fn resource(&self, window: &Self::Window, kind: &LocatorKind)
+    -> Result<Option<String>, String>;
+    /// Retains the globally focused window, checking the focused app's PID.
+    /// Identifier and resource postconditions must be read from this same handle.
+    fn focused_window(&self, pid: i32) -> Result<Self::Window, String>;
+    fn raise(&self, window: &Self::Window) -> Result<(), String>;
+    fn activate(&self, pid: i32) -> Result<(), String>;
+    /// Must check that `pid` is the globally focused application, then return
+    /// its focused AX window's identifier; app-local focus alone is insufficient.
+    fn focused_window_identifier(&self, pid: i32) -> Result<Option<String>, String>;
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IdentityAttempt {
+    pub dispatch: DispatchResult,
+    pub verification: VerificationResult,
+}
+
+impl IdentityAttempt {
+    pub fn unavailable(reason: impl Into<String>) -> Self {
+        Self {
+            dispatch: DispatchResult::NotDispatched {
+                reason: reason.into(),
+            },
+            verification: VerificationResult::Unverified {
+                reason: "no identity action was dispatched".into(),
+            },
+        }
+    }
+}
+
+fn required_native_identifier(surface: &SurfaceIdentity) -> Result<&str, String> {
+    if !surface.is_valid() {
+        return Err("invalid witnessed surface identity".into());
+    }
+    // These are constraints, even when an adapter cannot interpret them.
+    // They are never dropped to allow a window-only or URL action.
+    if surface.browser_profile.is_some() || surface.browser_tab.is_some() {
+        return Err(
+            "browser profile/tab identity adapter unavailable; exact constraints cannot be honored"
+                .into(),
+        );
+    }
+    surface
+        .window_identifier
+        .as_deref()
+        .filter(|id| !id.trim().is_empty())
+        .ok_or_else(|| "native window identity unavailable: no witnessed AXIdentifier".into())
+}
+
+fn unique_identifier_index(
+    identifiers: &[Option<String>],
+    identifier: &str,
+) -> Result<usize, String> {
+    if identifiers
+        .iter()
+        .any(|id| id.as_deref().is_none_or(|id| id.trim().is_empty()))
+    {
+        return Err(
+            "cannot inspect every candidate AXIdentifier; exact identity is unavailable".into(),
+        );
+    }
+    let matches: Vec<_> = identifiers
+        .iter()
+        .enumerate()
+        .filter(|(_, id)| id.as_deref() == Some(identifier))
+        .map(|(index, _)| index)
+        .collect();
+    match matches.as_slice() {
+        [index] => Ok(*index),
+        [] => Err("no live window has the witnessed AXIdentifier".into()),
+        _ => Err(format!(
+            "{} windows have the witnessed AXIdentifier; exact identity is ambiguous",
+            matches.len()
+        )),
+    }
+}
+
+fn check_process(adapter: &impl IdentityAdapter, surface: &SurfaceIdentity) -> Result<(), String> {
+    let live = adapter.process_started_at(surface.process_id)?;
+    if live != surface.process_started_at {
+        return Err(
+            "process lifetime changed; witnessed PID may have been reused or restarted".into(),
+        );
+    }
+    Ok(())
+}
+
+/// Window-only identity seam. This verifies focus, not restoration of a
+/// particular document/tab. Production constrained resource restores use
+/// [`raise_surface_resource_with_adapter`] instead.
+///
+/// A capture session namespaces provenance; it does not prevent an application
+/// from reusing AXIdentifier after a window closes within the same process.
+/// Process lifetime and observed identifiers cannot prove window lifetime.
+pub fn raise_surface_with_adapter(
+    surface: &SurfaceIdentity,
+    adapter: &impl IdentityAdapter,
+) -> IdentityAttempt {
+    raise_surface_impl(surface, None, adapter)
+}
+
+/// Requires the requested resource on the identified window before dispatch,
+/// and on the globally focused retained window afterward. Resource matching
+/// never selects another window or widens into URL/file/title reopening.
+pub fn raise_surface_resource_with_adapter(
+    surface: &SurfaceIdentity,
+    resource: &str,
+    adapter: &impl IdentityAdapter,
+) -> IdentityAttempt {
+    raise_surface_impl(surface, Some(resource), adapter)
+}
+
+fn check_resource<A: IdentityAdapter>(
+    adapter: &A,
+    window: &A::Window,
+    kind: &LocatorKind,
+) -> Result<(), String> {
+    let witnessed = adapter
+        .resource(window, kind)?
+        .filter(|value| !value.trim().is_empty())
+        .ok_or_else(|| "required native resource locator/title is unavailable".to_string())?;
+    let matches = match kind {
+        // Only the existing raw file URI/absolute path classification is
+        // equivalent. No canonicalization, title resemblance, or browser
+        // profile/tab inference is an acceptable locator witness.
+        LocatorKind::FilePath(path) => {
+            classify_subject(&witnessed) == LocatorKind::FilePath(path.clone())
+        }
+        LocatorKind::Url(url) => witnessed == *url,
+        LocatorKind::WindowTitle(title) => witnessed == *title && !title.trim().is_empty(),
+    };
+    if matches {
+        Ok(())
+    } else {
+        Err("identified window does not show the requested exact resource".into())
+    }
+}
+
+fn raise_surface_impl(
+    surface: &SurfaceIdentity,
+    resource: Option<&str>,
+    adapter: &impl IdentityAdapter,
+) -> IdentityAttempt {
+    let kind = resource.map(classify_subject);
+    let prepared = (|| -> Result<_, String> {
+        let identifier = required_native_identifier(surface)?;
+        check_process(adapter, surface)?;
+        let windows = adapter.windows(surface.process_id)?;
+        let identifiers = windows
+            .iter()
+            .map(|window| adapter.identifier(window))
+            .collect::<Result<Vec<_>, _>>()?;
+        let index = unique_identifier_index(&identifiers, identifier)?;
+        // The selected handle stays retained. Refuse mutation, rather than
+        // searching for a replacement, immediately before dispatch.
+        if adapter.identifier(&windows[index])?.as_deref() != Some(identifier) {
+            return Err("selected AX window identity changed before dispatch".into());
+        }
+        if let Some(kind) = &kind {
+            check_resource(adapter, &windows[index], kind)?;
+        }
+        check_process(adapter, surface)?;
+        Ok((windows, index, identifier))
+    })();
+    let (windows, index, identifier) = match prepared {
+        Ok(prepared) => prepared,
+        Err(reason) => return IdentityAttempt::unavailable(reason),
+    };
+    if let Err(reason) = adapter.raise(&windows[index]) {
+        return IdentityAttempt {
+            dispatch: DispatchResult::Failed { reason },
+            verification: VerificationResult::Unverified {
+                reason: "AXRaise was refused".into(),
+            },
+        };
+    }
+    let postcondition: Result<(), String> = (|| {
+        // A restart after AXRaise must not activate a replacement process.
+        check_process(adapter, surface)?;
+        adapter.activate(surface.process_id)?;
+        check_process(adapter, surface)?;
+        let focused = if let Some(kind) = &kind {
+            let window = adapter.focused_window(surface.process_id)?;
+            let identifier = adapter.identifier(&window)?;
+            check_resource(adapter, &window, kind)?;
+            identifier
+        } else {
+            adapter.focused_window_identifier(surface.process_id)?
+        };
+        check_process(adapter, surface)?;
+        if focused.as_deref() != Some(identifier) {
+            return Err("focused AX window does not have the witnessed AXIdentifier".into());
+        }
+        Ok(())
+    })();
+    IdentityAttempt {
+        dispatch: DispatchResult::RaiseAccepted,
+        verification: match postcondition {
+            Ok(()) => VerificationResult::Verified,
+            Err(reason) => VerificationResult::Failed { reason },
+        },
+    }
+}
 
 // ── Window source abstraction (testable) ─────────────────────────────────────
 
@@ -72,6 +290,34 @@ pub fn select_unique_window<'a>(
         0 => Err(WindowSelectionError::NoMatch),
         1 => Ok(matches[0]),
         count => Err(WindowSelectionError::MultipleMatches { count }),
+    }
+}
+
+/// Last-moment check over *all* titles in the owning PID. An unreadable
+/// element could be another match, so it cannot be silently skipped.
+/// PID + title is still not a durable window identity: a replacement with
+/// the same title, or a change after this check, cannot be distinguished.
+#[cfg(any(target_os = "macos", test))]
+fn unique_raise_index(titles: &[Option<String>], title: &str) -> Result<usize, String> {
+    if title.trim().is_empty() {
+        return Err("an empty title cannot identify a window to raise".to_string());
+    }
+    if titles.iter().any(Option::is_none) {
+        return Err("cannot inspect every window title in the owning application".to_string());
+    }
+    let matches: Vec<_> = titles
+        .iter()
+        .enumerate()
+        .filter(|(_, live)| live.as_deref() == Some(title))
+        .map(|(index, _)| index)
+        .collect();
+    match matches.as_slice() {
+        [] => Err(format!("the window “{title}” is no longer open")),
+        [index] => Ok(*index),
+        _ => Err(format!(
+            "{} windows in the owning application carry the title “{title}”; cannot raise a unique window",
+            matches.len()
+        )),
     }
 }
 
@@ -179,8 +425,8 @@ impl<S: WindowSource> PlatformExecutor for MacOSExecutor<S> {
     /// This deliberately does *not* go back through the title path: the
     /// binding may have identified this window by the file the OS reports it
     /// is displaying, and that window's title is not required to be unique
-    /// across every running application. Re-deriving it by title would
-    /// downgrade a certainty into an ambiguity.
+    /// across every running application. The native call does still require
+    /// a unique title within its PID: `WindowInfo` has no durable AX handle.
     fn focus_bound_window(&self, window: &WindowInfo) -> TargetStatus {
         match imp::raise_and_activate(window) {
             Ok(()) => TargetStatus::Opened {
@@ -236,7 +482,12 @@ impl WindowSource for SystemWindowSource {
 
 #[cfg(target_os = "macos")]
 mod imp {
-    use super::WindowInfo;
+    use super::{
+        IdentityAdapter, IdentityAttempt, LocatorKind, WindowInfo,
+        raise_surface_resource_with_adapter, raise_surface_with_adapter, unique_raise_index,
+    };
+    use crate::restore::VerificationResult;
+    use evo_observation::surface_identity::SurfaceIdentity;
     use std::ffi::CStr;
     use std::os::raw::{c_char, c_void};
     use std::ptr;
@@ -253,6 +504,9 @@ mod imp {
     type AXUIElementRef = *mut c_void;
 
     const AX_SUCCESS: AXError = 0;
+    const AX_CANNOT_COMPLETE: AXError = -25204;
+    const AX_ATTRIBUTE_UNSUPPORTED: AXError = -25205;
+    const AX_NO_VALUE: AXError = -25212;
     const CFSTRING_ENCODING_UTF8: u32 = 0x0800_0100;
 
     #[repr(C)]
@@ -265,6 +519,7 @@ mod imp {
         _priv: [u8; 0],
     }
 
+    #[allow(clippy::duplicated_attributes)]
     #[link(name = "objc")]
     #[link(name = "Foundation", kind = "framework")]
     #[link(name = "AppKit", kind = "framework")]
@@ -276,13 +531,23 @@ mod imp {
         fn sel_registerName(name: *const c_char) -> Sel;
 
         fn AXUIElementCreateApplication(pid: i32) -> AXUIElementRef;
+        fn AXUIElementCreateSystemWide() -> AXUIElementRef;
+        fn AXUIElementGetPid(element: AXUIElementRef, pid: *mut i32) -> AXError;
+        fn AXUIElementGetTypeID() -> usize;
         fn AXUIElementCopyAttributeValue(
             element: AXUIElementRef,
             attribute: CFStringRef,
             value: *mut CFTypeRef,
         ) -> AXError;
         fn AXUIElementPerformAction(element: AXUIElementRef, action: CFStringRef) -> AXError;
+        fn AXIsProcessTrusted() -> Bool;
         fn CFRelease(cf: CFTypeRef);
+        fn CFRetain(cf: CFTypeRef) -> CFTypeRef;
+        fn CFGetTypeID(cf: CFTypeRef) -> usize;
+        fn CFArrayGetTypeID() -> usize;
+        fn CFStringGetTypeID() -> usize;
+        fn CFURLGetTypeID() -> usize;
+        fn CFURLGetString(url: CFTypeRef) -> CFStringRef;
         fn CFStringGetLength(the_string: CFStringRef) -> isize;
         fn CFStringGetMaximumSizeForEncoding(length: isize, encoding: u32) -> isize;
         fn CFStringGetCString(
@@ -303,10 +568,16 @@ mod imp {
     const KAX_WINDOWS_ATTRIBUTE: &[u8] = b"AXWindows\0";
     const KAX_TITLE_ATTRIBUTE: &[u8] = b"AXTitle\0";
     const KAX_DOCUMENT_ATTRIBUTE: &[u8] = b"AXDocument\0";
+    const KAX_URL_ATTRIBUTE: &[u8] = b"AXURL\0";
+    const KAX_IDENTIFIER_ATTRIBUTE: &[u8] = b"AXIdentifier\0";
+    const KAX_FOCUSED_APPLICATION_ATTRIBUTE: &[u8] = b"AXFocusedApplication\0";
+    const KAX_FOCUSED_WINDOW_ATTRIBUTE: &[u8] = b"AXFocusedWindow\0";
     const KAX_RAISE_ACTION: &[u8] = b"AXRaise\0";
+    #[allow(dead_code)]
     const AX_TRUSTED_CHECK_OPTION_PROMPT: &[u8] = b"AXTrustedCheckOptionPrompt\0";
 
     const SHARED_WORKSPACE_SEL: &[u8] = b"sharedWorkspace\0";
+    const FRONTMOST_APPLICATION_SEL: &[u8] = b"frontmostApplication\0";
     const OPEN_URL_SEL: &[u8] = b"openURL:\0";
     const OPEN_FILE_SEL: &[u8] = b"openFile:\0";
     const URL_WITH_STRING_SEL: &[u8] = b"URLWithString:\0";
@@ -316,11 +587,263 @@ mod imp {
     const ACTIVATE_WITH_OPTIONS_SEL: &[u8] = b"activateWithOptions:\0";
     const OBJECT_AT_INDEX_SEL: &[u8] = b"objectAtIndex:\0";
     const COUNT_SEL: &[u8] = b"count\0";
+    const RUNNING_APPLICATION_WITH_PID_SEL: &[u8] = b"runningApplicationWithProcessIdentifier:\0";
+    const LAUNCH_DATE_SEL: &[u8] = b"launchDate\0";
+    const TIME_INTERVAL_SINCE_1970_SEL: &[u8] = b"timeIntervalSince1970\0";
 
     /// `NSApplicationActivateIgnoringOtherApps`.
     const ACTIVATE_IGNORING_OTHER_APPS: usize = 1 << 1;
 
     // ── Public helpers used by the executor ──────────────────────────────
+
+    struct NativeIdentityAdapter;
+
+    impl IdentityAdapter for NativeIdentityAdapter {
+        type Window = OwnedCf;
+
+        fn process_started_at(&self, pid: i32) -> Result<String, String> {
+            process_started_at(pid)
+        }
+
+        fn windows(&self, pid: i32) -> Result<Vec<OwnedCf>, String> {
+            unsafe {
+                require_accessibility()?;
+                let windows = copy_app_windows(pid)?
+                    .ok_or_else(|| "AXWindows unavailable for witnessed process".to_string())?;
+                let mut retained = Vec::new();
+                for i in 0..CFArrayGetCount(windows.0) {
+                    let window = CFArrayGetValueAtIndex(windows.0, i);
+                    if window.is_null() || CFGetTypeID(window) != AXUIElementGetTypeID() {
+                        return Err("AXWindows contains an unreadable window element".into());
+                    }
+                    retained.push(OwnedCf::new(CFRetain(window))?);
+                }
+                Ok(retained)
+            }
+        }
+
+        fn identifier(&self, window: &OwnedCf) -> Result<Option<String>, String> {
+            unsafe { copy_string_attribute(window.0 as AXUIElementRef, KAX_IDENTIFIER_ATTRIBUTE) }
+        }
+
+        fn resource(&self, window: &OwnedCf, kind: &LocatorKind) -> Result<Option<String>, String> {
+            let attribute = match kind {
+                LocatorKind::FilePath(_) => KAX_DOCUMENT_ATTRIBUTE,
+                LocatorKind::Url(_) => KAX_URL_ATTRIBUTE,
+                LocatorKind::WindowTitle(_) => KAX_TITLE_ATTRIBUTE,
+            };
+            unsafe { copy_resource_attribute(window.0 as AXUIElementRef, attribute) }
+        }
+
+        fn focused_window(&self, pid: i32) -> Result<OwnedCf, String> {
+            unsafe {
+                let (focused_pid, window) = focused_window()?;
+                if focused_pid != pid {
+                    return Err("globally focused application is not the witnessed process".into());
+                }
+                Ok(window)
+            }
+        }
+
+        fn raise(&self, window: &OwnedCf) -> Result<(), String> {
+            unsafe {
+                let action = OwnedCf::new(cfstring(KAX_RAISE_ACTION))?;
+                let error = AXUIElementPerformAction(window.0 as AXUIElementRef, action.0);
+                if error == AX_SUCCESS {
+                    Ok(())
+                } else {
+                    Err(format!(
+                        "AXRaise refused the exact window (Accessibility error {error})"
+                    ))
+                }
+            }
+        }
+
+        fn activate(&self, pid: i32) -> Result<(), String> {
+            activate_app(pid)
+        }
+
+        fn focused_window_identifier(&self, pid: i32) -> Result<Option<String>, String> {
+            unsafe {
+                let (focused_pid, window) = focused_window()?;
+                if focused_pid != pid {
+                    return Err("globally focused application is not the witnessed process".into());
+                }
+                copy_string_attribute(window.0 as AXUIElementRef, KAX_IDENTIFIER_ATTRIBUTE)
+            }
+        }
+    }
+
+    fn running_application(pid: i32) -> Result<Id, String> {
+        unsafe {
+            let app = msg_send_id_i32(
+                class_id(b"NSRunningApplication\0") as Id,
+                sel(RUNNING_APPLICATION_WITH_PID_SEL),
+                pid,
+            );
+            if app.is_null() {
+                Err("witnessed process is no longer running".into())
+            } else {
+                Ok(app)
+            }
+        }
+    }
+
+    fn process_started_at(pid: i32) -> Result<String, String> {
+        unsafe {
+            let app = running_application(pid)?;
+            let date = msg_send_id(app, sel(LAUNCH_DATE_SEL));
+            if date.is_null() {
+                return Err("NSRunningApplication launchDate is unavailable".into());
+            }
+            let seconds = msg_send_f64(date, sel(TIME_INTERVAL_SINCE_1970_SEL));
+            if !seconds.is_finite() {
+                return Err("NSRunningApplication launchDate is unreadable".into());
+            }
+            Ok(format!("{:016x}", seconds.to_bits()))
+        }
+    }
+
+    fn frontmost_application_pid() -> Result<i32, String> {
+        unsafe {
+            let workspace =
+                msg_send_id(class_id(b"NSWorkspace\0") as Id, sel(SHARED_WORKSPACE_SEL));
+            if workspace.is_null() {
+                return Err("frontmost application unavailable".into());
+            }
+            let app = msg_send_id(workspace, sel(FRONTMOST_APPLICATION_SEL));
+            if app.is_null() {
+                return Err("frontmost application unavailable".into());
+            }
+            let pid = msg_send_i32(app, sel(PROCESS_IDENTIFIER_SEL));
+            (pid > 0)
+                .then_some(pid)
+                .ok_or_else(|| "frontmost process identifier unavailable".into())
+        }
+    }
+
+    fn check_scoped_focus(before: i32, observed: i32, after: i32) -> Result<i32, String> {
+        if before <= 0 || observed != before || after != before {
+            Err("frontmost application changed during scoped AX inspection".into())
+        } else {
+            Ok(before)
+        }
+    }
+
+    /// macOS can return AXCannotComplete for the system-wide focused-app
+    /// attribute while the exact frontmost application's AXFocusedWindow is
+    /// readable. Scope the fallback to that one process and reject a focus
+    /// race rather than enumerating or choosing another app by title.
+    unsafe fn focused_window_from_frontmost_app() -> Result<(i32, OwnedCf), String> {
+        unsafe {
+            let before = frontmost_application_pid()?;
+            let app = OwnedCf::new(AXUIElementCreateApplication(before) as CFTypeRef)?;
+            let window = copy_attribute(app.0 as AXUIElementRef, KAX_FOCUSED_WINDOW_ATTRIBUTE)?
+                .ok_or_else(|| "focused AX window unavailable".to_string())?;
+            if CFGetTypeID(window.0) != AXUIElementGetTypeID() {
+                return Err("focused AX window has an unreadable type".into());
+            }
+            let mut observed = 0;
+            if AXUIElementGetPid(window.0 as AXUIElementRef, &mut observed) != AX_SUCCESS {
+                return Err("focused AX window process identifier unavailable".into());
+            }
+            let pid = check_scoped_focus(before, observed, frontmost_application_pid()?)?;
+            Ok((pid, window))
+        }
+    }
+
+    /// Reads only the globally focused app/window, not a desktop-wide snapshot.
+    unsafe fn focused_window() -> Result<(i32, OwnedCf), String> {
+        unsafe {
+            require_accessibility()?;
+            let system = OwnedCf::new(AXUIElementCreateSystemWide() as CFTypeRef)?;
+            let attribute = OwnedCf::new(cfstring(KAX_FOCUSED_APPLICATION_ATTRIBUTE))?;
+            let mut value: CFTypeRef = ptr::null();
+            let error =
+                AXUIElementCopyAttributeValue(system.0 as AXUIElementRef, attribute.0, &mut value);
+            let app = if error == AX_SUCCESS {
+                OwnedCf::new(value)?
+            } else {
+                if !value.is_null() {
+                    CFRelease(value);
+                }
+                if error == AX_CANNOT_COMPLETE {
+                    return focused_window_from_frontmost_app();
+                }
+                return Err(format!(
+                    "cannot inspect AXFocusedApplication (Accessibility error {error})"
+                ));
+            };
+            if CFGetTypeID(app.0) != AXUIElementGetTypeID() {
+                return Err("focused AX application has an unreadable type".into());
+            }
+            let mut pid = 0;
+            if AXUIElementGetPid(app.0 as AXUIElementRef, &mut pid) != AX_SUCCESS || pid <= 0 {
+                return Err("focused AX process identifier unavailable".into());
+            }
+            let window = copy_attribute(app.0 as AXUIElementRef, KAX_FOCUSED_WINDOW_ATTRIBUTE)?
+                .ok_or_else(|| "focused AX window unavailable".to_string())?;
+            if CFGetTypeID(window.0) != AXUIElementGetTypeID() {
+                return Err("focused AX window has an unreadable type".into());
+            }
+            Ok((pid, window))
+        }
+    }
+
+    pub fn raise_surface(surface: &SurfaceIdentity) -> IdentityAttempt {
+        raise_surface_with_adapter(surface, &NativeIdentityAdapter)
+    }
+
+    pub fn raise_surface_resource(surface: &SurfaceIdentity, resource: &str) -> IdentityAttempt {
+        raise_surface_resource_with_adapter(surface, resource, &NativeIdentityAdapter)
+    }
+
+    pub fn verify_resource(
+        kind: &str,
+        resource: &str,
+        app: Option<&str>,
+        expected: Option<&WindowInfo>,
+    ) -> VerificationResult {
+        if kind == "url" {
+            return VerificationResult::Unverified { reason: "generic URL postcondition verification is unsupported without a browser tab adapter".into() };
+        }
+        let inspected: Result<bool, String> = (|| unsafe {
+            let (pid, window) = focused_window()?;
+            if expected.is_some_and(|window| window.owner_pid != pid) {
+                return Ok(false);
+            }
+            let running = running_application(pid)?;
+            if let Some(app) = app {
+                let name = optional_nsstring(running, sel(LOCALIZED_NAME_SEL))
+                    .ok_or_else(|| "focused application name unavailable".to_string())?;
+                if name != app {
+                    return Ok(false);
+                }
+            }
+            let (attribute, value) = match kind {
+                "file" => (KAX_DOCUMENT_ATTRIBUTE, resource),
+                "title" => (KAX_TITLE_ATTRIBUTE, resource),
+                _ => return Err("postcondition verification unsupported for target kind".into()),
+            };
+            let witnessed = copy_resource_attribute(window.0 as AXUIElementRef, attribute)?
+                .ok_or_else(|| "focused AX resource attribute unavailable".to_string())?;
+            let matches = if kind == "file" {
+                crate::binding::document_path(&witnessed).as_deref() == Some(value)
+            } else {
+                witnessed == value
+            };
+            Ok(matches)
+        })();
+        match inspected {
+            Ok(true) => VerificationResult::Verified,
+            Ok(false) => VerificationResult::Failed {
+                reason:
+                    "globally focused AX window does not show the requested resource/application"
+                        .into(),
+            },
+            Err(reason) => VerificationResult::Unverified { reason },
+        }
+    }
 
     /// Whether a file path currently exists (runtime check at execution time
     /// only — never an input to Restoration Derivation).
@@ -361,6 +884,7 @@ mod imp {
     /// Enumerates live windows of every running application via Accessibility.
     pub fn system_windows() -> Result<Vec<WindowInfo>, String> {
         unsafe {
+            require_accessibility()?;
             let workspace = shared_workspace();
             if workspace.is_null() {
                 return Err("NSWorkspace unavailable".to_string());
@@ -374,11 +898,11 @@ mod imp {
             for i in 0..count {
                 let app = msg_send_id1(apps, sel(OBJECT_AT_INDEX_SEL), i as Id);
                 if app.is_null() {
-                    continue;
+                    return Err("cannot inspect a running application".to_string());
                 }
                 let pid = msg_send_i32(app, sel(PROCESS_IDENTIFIER_SEL));
                 let name = optional_nsstring(app, sel(LOCALIZED_NAME_SEL));
-                collect_app_windows(pid, name.as_deref().unwrap_or(""), &mut windows);
+                collect_app_windows(pid, name.as_deref().unwrap_or(""), &mut windows)?;
             }
             Ok(windows)
         }
@@ -396,6 +920,7 @@ mod imp {
     /// it was closed.
     pub fn windows_showing_document(path: &str) -> Result<Vec<WindowInfo>, String> {
         unsafe {
+            require_accessibility()?;
             let workspace = shared_workspace();
             if workspace.is_null() {
                 return Err("NSWorkspace unavailable".to_string());
@@ -409,11 +934,11 @@ mod imp {
             for i in 0..count {
                 let app = msg_send_id1(apps, sel(OBJECT_AT_INDEX_SEL), i as Id);
                 if app.is_null() {
-                    continue;
+                    return Err("cannot inspect a running application".to_string());
                 }
                 let pid = msg_send_i32(app, sel(PROCESS_IDENTIFIER_SEL));
                 let name = optional_nsstring(app, sel(LOCALIZED_NAME_SEL));
-                collect_document_windows(pid, name.as_deref().unwrap_or(""), path, &mut windows);
+                collect_document_windows(pid, name.as_deref().unwrap_or(""), path, &mut windows)?;
             }
             Ok(windows)
         }
@@ -422,63 +947,26 @@ mod imp {
     /// Raises the unique matched window and activates its application.
     pub fn raise_and_activate(window: &WindowInfo) -> Result<(), String> {
         unsafe {
-            let element = AXUIElementCreateApplication(window.owner_pid);
-            if element.is_null() {
-                return Err("cannot address the owning application".to_string());
-            }
-            let windows_attr = cfstring(KAX_WINDOWS_ATTRIBUTE);
-            let mut windows_value: CFTypeRef = ptr::null();
-            let err = AXUIElementCopyAttributeValue(element, windows_attr, &mut windows_value);
-            CFRelease(windows_attr);
-            if err != AX_SUCCESS || windows_value.is_null() {
-                CFRelease(element as CFTypeRef);
-                return Err(format!(
-                    "cannot read windows of {} (Accessibility permission may be missing)",
-                    window.owner_name
-                ));
-            }
+            require_accessibility()?;
+            let windows_value = copy_app_windows(window.owner_pid)?
+                .ok_or_else(|| "cannot inspect windows of the owning application".to_string())?;
 
-            // Find the window element whose title matches exactly. The
-            // element is owned by the CFArray, so the raise action MUST be
-            // performed while `windows_value` is still alive.
-            let array = windows_value as CFArrayRef;
+            // Scan the entire PID before acting, even for an upstream unique
+            // document binding. The title need not be unique within that PID.
+            // The array owns the AX elements and remains alive through raise.
+            let array = windows_value.0 as CFArrayRef;
             let count = CFArrayGetCount(array);
-            let mut matched: AXUIElementRef = ptr::null_mut();
+            let mut titles = Vec::new();
             for i in 0..count {
-                let item = CFArrayGetValueAtIndex(array, i);
-                let window_element = item as AXUIElementRef;
-                let title_attr = cfstring(KAX_TITLE_ATTRIBUTE);
-                let mut title_value: CFTypeRef = ptr::null();
-                if AXUIElementCopyAttributeValue(window_element, title_attr, &mut title_value)
-                    == AX_SUCCESS
-                    && !title_value.is_null()
-                {
-                    let title = cfstring_to_string(title_value as CFStringRef).unwrap_or_default();
-                    CFRelease(title_value);
-                    if title == window.title {
-                        matched = window_element;
-                        CFRelease(title_attr);
-                        break;
-                    }
-                }
-                CFRelease(title_attr);
+                let window_element = CFArrayGetValueAtIndex(array, i) as AXUIElementRef;
+                titles.push(copy_string_attribute(window_element, KAX_TITLE_ATTRIBUTE)?);
             }
-
-            if matched.is_null() {
-                CFRelease(windows_value);
-                CFRelease(element as CFTypeRef);
-                return Err(format!("the window “{}” is no longer open", window.title));
-            }
+            let index = unique_raise_index(&titles, &window.title)?;
+            let matched = CFArrayGetValueAtIndex(array, index as CFIndex) as AXUIElementRef;
 
             // Raised while the array (which owns the element) is alive.
-            let raise_action = cfstring(KAX_RAISE_ACTION);
-            let raise_err = AXUIElementPerformAction(matched, raise_action);
-            CFRelease(raise_action);
-            let raise_ok = raise_err == AX_SUCCESS;
-            CFRelease(windows_value);
-            CFRelease(element as CFTypeRef);
-
-            if !raise_ok {
+            let raise_action = OwnedCf::new(cfstring(KAX_RAISE_ACTION))?;
+            if AXUIElementPerformAction(matched, raise_action.0) != AX_SUCCESS {
                 return Err(format!(
                     "the window “{}” could not be raised (Accessibility permission may be missing)",
                     window.title
@@ -523,46 +1011,100 @@ mod imp {
 
     // ── Objective-C / CoreFoundation plumbing ────────────────────────────
 
-    unsafe fn collect_app_windows(pid: i32, owner_name: &str, out: &mut Vec<WindowInfo>) {
-        let element = AXUIElementCreateApplication(pid);
-        if element.is_null() {
-            return;
-        }
-        let windows_attr = cfstring(KAX_WINDOWS_ATTRIBUTE);
-        let mut windows_value: CFTypeRef = ptr::null();
-        let err = AXUIElementCopyAttributeValue(element, windows_attr, &mut windows_value);
-        CFRelease(windows_attr);
-        if err != AX_SUCCESS || windows_value.is_null() {
-            CFRelease(element as CFTypeRef);
-            return;
-        }
+    /// Owns a Create/Copy reference, releasing it on every success/error path.
+    struct OwnedCf(CFTypeRef);
 
-        let array = windows_value as CFArrayRef;
-        let count = CFArrayGetCount(array);
-        for i in 0..count {
-            let item = CFArrayGetValueAtIndex(array, i);
-            let window_element = item as AXUIElementRef;
-            let title_attr = cfstring(KAX_TITLE_ATTRIBUTE);
-            let mut title_value: CFTypeRef = ptr::null();
-            if AXUIElementCopyAttributeValue(window_element, title_attr, &mut title_value)
-                == AX_SUCCESS
-                && !title_value.is_null()
-            {
-                let title = cfstring_to_string(title_value as CFStringRef).unwrap_or_default();
-                CFRelease(title_value);
-                if !title.trim().is_empty() {
-                    out.push(WindowInfo {
-                        title,
-                        owner_pid: pid,
-                        owner_name: owner_name.to_string(),
-                    });
+    impl OwnedCf {
+        fn new(value: CFTypeRef) -> Result<Self, String> {
+            if value.is_null() {
+                Err("Accessibility returned a null reference".to_string())
+            } else {
+                Ok(Self(value))
+            }
+        }
+    }
+
+    impl Drop for OwnedCf {
+        fn drop(&mut self) {
+            unsafe { CFRelease(self.0) }
+        }
+    }
+
+    fn require_accessibility() -> Result<(), String> {
+        if unsafe { AXIsProcessTrusted() } == 0 {
+            Err("Accessibility permission is missing; cannot inspect windows".to_string())
+        } else {
+            Ok(())
+        }
+    }
+
+    // Unsupported/no-value is an absent attribute. Other AX failures are
+    // unreadable state, never evidence for an empty window/document list.
+    unsafe fn copy_attribute(
+        element: AXUIElementRef,
+        attribute: &'static [u8],
+    ) -> Result<Option<OwnedCf>, String> {
+        unsafe {
+            if element.is_null() {
+                return Err("cannot inspect a null window element".to_string());
+            }
+            let attr = OwnedCf::new(cfstring(attribute))?;
+            let mut value: CFTypeRef = ptr::null();
+            let err = AXUIElementCopyAttributeValue(element, attr.0, &mut value);
+            let owned = (!value.is_null()).then(|| OwnedCf(value));
+            match err {
+                AX_SUCCESS => owned
+                    .map(Some)
+                    .ok_or_else(|| "Accessibility returned no attribute value".to_string()),
+                AX_ATTRIBUTE_UNSUPPORTED | AX_NO_VALUE => Ok(None),
+                _ => Err(format!(
+                    "cannot inspect {} (Accessibility error {err})",
+                    String::from_utf8_lossy(&attribute[..attribute.len() - 1])
+                )),
+            }
+        }
+    }
+
+    unsafe fn copy_app_windows(pid: i32) -> Result<Option<OwnedCf>, String> {
+        unsafe {
+            let element = OwnedCf::new(AXUIElementCreateApplication(pid) as CFTypeRef)?;
+            let value = copy_attribute(element.0 as AXUIElementRef, KAX_WINDOWS_ATTRIBUTE)?;
+            if let Some(value) = &value {
+                if CFGetTypeID(value.0) != CFArrayGetTypeID() {
+                    return Err("Accessibility returned a non-array window list".to_string());
                 }
             }
-            CFRelease(title_attr);
+            Ok(value)
         }
+    }
 
-        CFRelease(windows_value);
-        CFRelease(element as CFTypeRef);
+    unsafe fn collect_app_windows(
+        pid: i32,
+        owner_name: &str,
+        out: &mut Vec<WindowInfo>,
+    ) -> Result<(), String> {
+        unsafe {
+            let Some(windows_value) = copy_app_windows(pid)? else {
+                return Ok(());
+            };
+
+            let array = windows_value.0 as CFArrayRef;
+            let count = CFArrayGetCount(array);
+            for i in 0..count {
+                let item = CFArrayGetValueAtIndex(array, i);
+                let window_element = item as AXUIElementRef;
+                if let Some(title) = copy_string_attribute(window_element, KAX_TITLE_ATTRIBUTE)? {
+                    if !title.trim().is_empty() {
+                        out.push(WindowInfo {
+                            title,
+                            owner_pid: pid,
+                            owner_name: owner_name.to_string(),
+                        });
+                    }
+                }
+            }
+            Ok(())
+        }
     }
 
     /// Collects one application's windows whose `AXDocument` resolves to
@@ -572,124 +1114,148 @@ mod imp {
         owner_name: &str,
         path: &str,
         out: &mut Vec<WindowInfo>,
-    ) {
-        let element = AXUIElementCreateApplication(pid);
-        if element.is_null() {
-            return;
-        }
-        let windows_attr = cfstring(KAX_WINDOWS_ATTRIBUTE);
-        let mut windows_value: CFTypeRef = ptr::null();
-        let err = AXUIElementCopyAttributeValue(element, windows_attr, &mut windows_value);
-        CFRelease(windows_attr);
-        if err != AX_SUCCESS || windows_value.is_null() {
-            CFRelease(element as CFTypeRef);
-            return;
-        }
-
-        let array = windows_value as CFArrayRef;
-        let count = CFArrayGetCount(array);
-        for i in 0..count {
-            let window_element = CFArrayGetValueAtIndex(array, i) as AXUIElementRef;
-            let Some(document) = copy_string_attribute(window_element, KAX_DOCUMENT_ATTRIBUTE)
-            else {
-                continue;
+    ) -> Result<(), String> {
+        unsafe {
+            let Some(windows_value) = copy_app_windows(pid)? else {
+                return Ok(());
             };
-            // The window is only a match if the OS's own document value
-            // resolves to the exact canonical path.
-            if crate::binding::document_path(&document).as_deref() != Some(path) {
-                continue;
-            }
-            let title =
-                copy_string_attribute(window_element, KAX_TITLE_ATTRIBUTE).unwrap_or_default();
-            out.push(WindowInfo {
-                title,
-                owner_pid: pid,
-                owner_name: owner_name.to_string(),
-            });
-        }
 
-        CFRelease(windows_value);
-        CFRelease(element as CFTypeRef);
+            let array = windows_value.0 as CFArrayRef;
+            let count = CFArrayGetCount(array);
+            for i in 0..count {
+                let window_element = CFArrayGetValueAtIndex(array, i) as AXUIElementRef;
+                let Some(document) = copy_string_attribute(window_element, KAX_DOCUMENT_ATTRIBUTE)?
+                else {
+                    continue;
+                };
+                // The window is only a match if the OS's own document value
+                // resolves to the exact canonical path.
+                if crate::binding::document_path(&document).as_deref() != Some(path) {
+                    continue;
+                }
+                let title =
+                    copy_string_attribute(window_element, KAX_TITLE_ATTRIBUTE)?.unwrap_or_default();
+                out.push(WindowInfo {
+                    title,
+                    owner_pid: pid,
+                    owner_name: owner_name.to_string(),
+                });
+            }
+
+            Ok(())
+        }
+    }
+
+    /// Locators may be actual CFURLs or raw strings. Read only the named
+    /// attribute; a missing URL/document never becomes a title-based match.
+    unsafe fn copy_resource_attribute(
+        element: AXUIElementRef,
+        attribute: &'static [u8],
+    ) -> Result<Option<String>, String> {
+        unsafe {
+            let Some(value) = copy_attribute(element, attribute)? else {
+                return Ok(None);
+            };
+            let string = if CFGetTypeID(value.0) == CFStringGetTypeID() {
+                value.0
+            } else if CFGetTypeID(value.0) == CFURLGetTypeID() && attribute != KAX_TITLE_ATTRIBUTE {
+                CFURLGetString(value.0)
+            } else {
+                return Err("Accessibility returned an unreadable resource locator type".into());
+            };
+            cfstring_to_string(string)
+                .map(Some)
+                .ok_or_else(|| "cannot decode Accessibility resource locator".to_string())
+        }
     }
 
     /// Reads one string-valued Accessibility attribute of an element.
     unsafe fn copy_string_attribute(
         element: AXUIElementRef,
         attribute: &'static [u8],
-    ) -> Option<String> {
-        let attr = cfstring(attribute);
-        let mut value: CFTypeRef = ptr::null();
-        let err = AXUIElementCopyAttributeValue(element, attr, &mut value);
-        CFRelease(attr);
-        if err != AX_SUCCESS || value.is_null() {
-            return None;
+    ) -> Result<Option<String>, String> {
+        unsafe {
+            let Some(value) = copy_attribute(element, attribute)? else {
+                return Ok(None);
+            };
+            if CFGetTypeID(value.0) != CFStringGetTypeID() {
+                return Err("Accessibility returned a non-string attribute".to_string());
+            }
+            cfstring_to_string(value.0 as CFStringRef)
+                .map(Some)
+                .ok_or_else(|| "cannot decode Accessibility string attribute".to_string())
         }
-        let string = cfstring_to_string(value as CFStringRef);
-        CFRelease(value);
-        string
     }
 
     unsafe fn shared_workspace() -> Id {
-        msg_send_id(class_id(b"NSWorkspace\0") as Id, sel(SHARED_WORKSPACE_SEL))
+        unsafe { msg_send_id(class_id(b"NSWorkspace\0") as Id, sel(SHARED_WORKSPACE_SEL)) }
     }
 
     unsafe fn ns_string(value: &str) -> Id {
-        // The C buffer lives for the duration of the synchronous msg_send call;
-        // NSString copies the bytes, so no dangling pointer escapes.
-        let mut bytes = value.as_bytes().to_vec();
-        bytes.push(0);
-        msg_send_id1(
-            class_id(b"NSString\0") as Id,
-            sel(STRING_WITH_UTF8_SEL),
-            bytes.as_ptr() as *mut c_char as Id,
-        )
+        unsafe {
+            // The C buffer lives for the duration of the synchronous msg_send call;
+            // NSString copies the bytes, so no dangling pointer escapes.
+            let mut bytes = value.as_bytes().to_vec();
+            bytes.push(0);
+            msg_send_id1(
+                class_id(b"NSString\0") as Id,
+                sel(STRING_WITH_UTF8_SEL),
+                bytes.as_ptr() as *mut c_char as Id,
+            )
+        }
     }
 
     unsafe fn optional_nsstring(receiver: Id, selector: Sel) -> Option<String> {
-        let value = msg_send_id(receiver, selector);
-        if value.is_null() {
-            return None;
+        unsafe {
+            let value = msg_send_id(receiver, selector);
+            if value.is_null() {
+                return None;
+            }
+            let cstr = msg_send_id(value, sel(UTF8_STRING_SEL));
+            if cstr.is_null() {
+                return None;
+            }
+            let bytes = CStr::from_ptr(cstr as *const c_char);
+            Some(bytes.to_string_lossy().into_owned())
         }
-        let cstr = msg_send_id(value, sel(UTF8_STRING_SEL));
-        if cstr.is_null() {
-            return None;
-        }
-        let bytes = CStr::from_ptr(cstr as *const c_char);
-        Some(bytes.to_string_lossy().into_owned())
     }
 
     unsafe fn cfstring(bytes: &'static [u8]) -> CFStringRef {
-        CFStringCreateWithCString(
-            ptr::null(),
-            bytes.as_ptr() as *const c_char,
-            CFSTRING_ENCODING_UTF8,
-        )
+        unsafe {
+            CFStringCreateWithCString(
+                ptr::null(),
+                bytes.as_ptr() as *const c_char,
+                CFSTRING_ENCODING_UTF8,
+            )
+        }
     }
 
     unsafe fn cfstring_to_string(value: CFStringRef) -> Option<String> {
-        if value.is_null() {
-            return None;
+        unsafe {
+            if value.is_null() {
+                return None;
+            }
+            let length = CFStringGetLength(value);
+            if length <= 0 {
+                return Some(String::new());
+            }
+            let max_size = CFStringGetMaximumSizeForEncoding(length, CFSTRING_ENCODING_UTF8) + 1;
+            if max_size <= 0 {
+                return None;
+            }
+            let mut buffer = vec![0u8; max_size as usize];
+            let ok = CFStringGetCString(
+                value,
+                buffer.as_mut_ptr() as *mut c_char,
+                buffer.len() as isize,
+                CFSTRING_ENCODING_UTF8,
+            );
+            if ok == 0 {
+                return None;
+            }
+            let end = buffer.iter().position(|b| *b == 0).unwrap_or(buffer.len());
+            String::from_utf8(buffer[..end].to_vec()).ok()
         }
-        let length = CFStringGetLength(value);
-        if length <= 0 {
-            return Some(String::new());
-        }
-        let max_size = CFStringGetMaximumSizeForEncoding(length, CFSTRING_ENCODING_UTF8) + 1;
-        if max_size <= 0 {
-            return None;
-        }
-        let mut buffer = vec![0u8; max_size as usize];
-        let ok = CFStringGetCString(
-            value,
-            buffer.as_mut_ptr() as *mut c_char,
-            buffer.len() as isize,
-            CFSTRING_ENCODING_UTF8,
-        );
-        if ok == 0 {
-            return None;
-        }
-        let end = buffer.iter().position(|b| *b == 0).unwrap_or(buffer.len());
-        String::from_utf8(buffer[..end].to_vec()).ok()
     }
 
     fn sel(bytes: &'static [u8]) -> Sel {
@@ -697,52 +1263,115 @@ mod imp {
     }
 
     unsafe fn class_id(name: &'static [u8]) -> Class {
-        objc_getClass(name.as_ptr() as *const c_char)
+        unsafe { objc_getClass(name.as_ptr() as *const c_char) }
     }
 
     unsafe fn msg_send_id(receiver: Id, selector: Sel) -> Id {
-        let function: extern "C" fn(Id, Sel) -> Id = std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector)
+        unsafe {
+            let function: extern "C" fn(Id, Sel) -> Id =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector)
+        }
     }
 
     unsafe fn msg_send_id1(receiver: Id, selector: Sel, arg: Id) -> Id {
-        let function: extern "C" fn(Id, Sel, Id) -> Id =
-            std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector, arg)
+        unsafe {
+            let function: extern "C" fn(Id, Sel, Id) -> Id =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector, arg)
+        }
     }
 
     unsafe fn msg_send_bool1(receiver: Id, selector: Sel, arg: Id) -> Bool {
-        let function: extern "C" fn(Id, Sel, Id) -> Bool =
-            std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector, arg)
+        unsafe {
+            let function: extern "C" fn(Id, Sel, Id) -> Bool =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector, arg)
+        }
     }
 
     unsafe fn msg_send_usize(receiver: Id, selector: Sel) -> usize {
-        let function: extern "C" fn(Id, Sel) -> usize =
-            std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector)
+        unsafe {
+            let function: extern "C" fn(Id, Sel) -> usize =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector)
+        }
     }
 
     unsafe fn msg_send_usize1(receiver: Id, selector: Sel, arg: usize) -> usize {
-        let function: extern "C" fn(Id, Sel, usize) -> usize =
-            std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector, arg)
+        unsafe {
+            let function: extern "C" fn(Id, Sel, usize) -> usize =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector, arg)
+        }
     }
 
     unsafe fn msg_send_i32(receiver: Id, selector: Sel) -> i32 {
-        let function: extern "C" fn(Id, Sel) -> i32 =
-            std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector)
+        unsafe {
+            let function: extern "C" fn(Id, Sel) -> i32 =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector)
+        }
+    }
+
+    unsafe fn msg_send_id_i32(receiver: Id, selector: Sel, arg: i32) -> Id {
+        unsafe {
+            let function: extern "C" fn(Id, Sel, i32) -> Id =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector, arg)
+        }
+    }
+
+    unsafe fn msg_send_f64(receiver: Id, selector: Sel) -> f64 {
+        unsafe {
+            let function: extern "C" fn(Id, Sel) -> f64 =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector)
+        }
     }
 
     const UTF8_STRING_SEL: &[u8] = b"UTF8String\0";
     const STRING_WITH_UTF8_SEL: &[u8] = b"stringWithUTF8String:\0";
+
+    #[cfg(test)]
+    mod scoped_focus_tests {
+        use super::check_scoped_focus;
+
+        #[test]
+        fn exact_frontmost_pid_must_remain_the_owner_of_the_focused_ax_window() {
+            assert_eq!(check_scoped_focus(42, 42, 42), Ok(42));
+            for (before, window, after) in [(0, 42, 42), (42, 41, 42), (42, 42, 41)] {
+                assert!(check_scoped_focus(before, window, after).is_err());
+            }
+        }
+    }
 }
 
 #[cfg(not(target_os = "macos"))]
 mod imp {
-    use super::{WindowInfo, WindowSource};
+    use super::{IdentityAttempt, WindowInfo, WindowSource};
     use crate::engine::TargetStatus;
+    use crate::restore::VerificationResult;
+    use evo_observation::surface_identity::SurfaceIdentity;
+
+    pub fn raise_surface(_surface: &SurfaceIdentity) -> IdentityAttempt {
+        IdentityAttempt::unavailable("native surface identity execution is only supported on macOS")
+    }
+
+    pub fn raise_surface_resource(_surface: &SurfaceIdentity, _resource: &str) -> IdentityAttempt {
+        IdentityAttempt::unavailable("native surface resource execution is only supported on macOS")
+    }
+
+    pub fn verify_resource(
+        _kind: &str,
+        _resource: &str,
+        _app: Option<&str>,
+        _window: Option<&WindowInfo>,
+    ) -> VerificationResult {
+        VerificationResult::Unverified {
+            reason: "native postcondition inspection is only supported on macOS".into(),
+        }
+    }
 
     /// Non-macOS stub: opening is unsupported, honestly reported.
     pub fn open(_kind: &str, _value: &str) -> Result<(), String> {
@@ -810,11 +1439,34 @@ pub fn live_windows() -> Result<Vec<WindowInfo>, String> {
     imp::system_windows()
 }
 
+/// Window-only focus primitive; this does not verify a resource restoration.
+/// Constrained restore targets must use [`raise_surface_resource`] instead.
+pub fn raise_surface(surface: &SurfaceIdentity) -> IdentityAttempt {
+    imp::raise_surface(surface)
+}
+
+pub fn raise_surface_resource(surface: &SurfaceIdentity, resource: &str) -> IdentityAttempt {
+    imp::raise_surface_resource(surface, resource)
+}
+
+/// Inspect-only postcondition probe. Reads the focused AX window only; it
+/// does not capture other windows, launch apps, or dispatch native actions.
+pub fn verify_resource(
+    kind: &str,
+    resource: &str,
+    app: Option<&str>,
+    window: Option<&WindowInfo>,
+) -> VerificationResult {
+    imp::verify_resource(kind, resource, app, window)
+}
+
 // ── Tests ────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::cell::{Cell, RefCell};
+    use std::collections::VecDeque;
 
     fn window(title: &str, pid: i32, owner: &str) -> WindowInfo {
         WindowInfo {
@@ -891,19 +1543,45 @@ mod tests {
     }
 
     #[test]
-    fn executor_reports_opened_for_unique_match() {
-        let executor = MacOSExecutor::with_source(FakeSource(vec![window("B", 100, "App")]));
-        let status = executor.focus_window("B");
-        // Opening paths (raise + activate) can't run in unit tests without a
-        // real window; on macOS the OS call may legitimately fail, so we only
-        // assert it is not Unavailable/Ambiguous due to selection.
+    fn native_raise_selects_only_a_unique_title_in_owning_pid() {
+        let titles = [Some("A".into()), Some("B".into()), Some("C".into())];
+        assert_eq!(unique_raise_index(&titles, "B"), Ok(1));
+    }
+
+    #[test]
+    fn native_raise_counts_late_duplicates_even_after_an_initial_match() {
+        // These are all windows in one PID, including unrelated documents
+        // that acquired the same title after an upstream document binding.
+        let titles = [Some("B".into()), Some("Other".into()), Some("B".into())];
+        let err = unique_raise_index(&titles, "B").unwrap_err();
+        assert!(err.contains("2 windows"));
+        assert!(err.contains("cannot raise a unique window"));
+    }
+
+    #[test]
+    fn native_raise_refuses_disappeared_or_unidentifiable_target() {
         assert!(
-            matches!(
-                status,
-                TargetStatus::Opened { .. } | TargetStatus::Failed { .. }
-            ),
-            "selection must succeed; actual: {status:?}"
+            unique_raise_index(&[Some("Other".into())], "B")
+                .unwrap_err()
+                .contains("no longer open")
         );
+        assert!(unique_raise_index(&[], "B").is_err());
+        assert!(
+            unique_raise_index(&[Some("".into())], "")
+                .unwrap_err()
+                .contains("empty title")
+        );
+    }
+
+    #[test]
+    fn native_raise_refuses_unreadable_competitor_even_with_one_match() {
+        for titles in [vec![Some("B".into()), None], vec![None, Some("B".into())]] {
+            assert!(
+                unique_raise_index(&titles, "B")
+                    .unwrap_err()
+                    .contains("cannot inspect every window title")
+            );
+        }
     }
 
     #[test]
@@ -929,6 +1607,504 @@ mod tests {
         assert!(matches!(
             status,
             TargetStatus::Unavailable { reason } if reason.contains("Accessibility")
+        ));
+    }
+
+    #[derive(Clone)]
+    struct IdentityWindow {
+        handle: usize,
+        title: String,
+        identifier: Option<String>,
+    }
+
+    #[derive(Debug, PartialEq, Eq)]
+    enum IdentityEffect {
+        Raise(usize),
+        Activate(i32),
+    }
+
+    struct FakeIdentityAdapter {
+        starts: RefCell<VecDeque<Result<String, String>>>,
+        windows: Result<Vec<IdentityWindow>, String>,
+        changed_identifier: Option<Option<String>>,
+        identifier_error: Option<String>,
+        reads: Cell<usize>,
+        raised: Result<(), String>,
+        activated: Result<(), String>,
+        focused: Result<Option<String>, String>,
+        resource: Result<Option<String>, String>,
+        resource_after_raise: Option<Result<Option<String>, String>>,
+        effects: RefCell<Vec<IdentityEffect>>,
+    }
+
+    fn identity() -> SurfaceIdentity {
+        SurfaceIdentity {
+            capture_session: "capture-fixture".into(),
+            window_id: "window-1".into(),
+            process_id: 10,
+            process_started_at: format!("{:016x}", 1_791_000_000.5f64.to_bits()),
+            window_identifier: Some("wanted-window".into()),
+            browser_window: None,
+            browser_profile: None,
+            browser_session: None,
+            browser_tab: None,
+        }
+    }
+
+    impl Default for FakeIdentityAdapter {
+        fn default() -> Self {
+            Self {
+                starts: RefCell::new(VecDeque::from([Ok(identity().process_started_at)])),
+                windows: Ok(vec![IdentityWindow {
+                    handle: 1,
+                    title: "Report".into(),
+                    identifier: Some("wanted-window".into()),
+                }]),
+                changed_identifier: None,
+                identifier_error: None,
+                reads: Cell::new(0),
+                raised: Ok(()),
+                activated: Ok(()),
+                focused: Ok(Some("wanted-window".into())),
+                resource: Ok(None),
+                resource_after_raise: None,
+                effects: RefCell::new(vec![]),
+            }
+        }
+    }
+
+    impl IdentityAdapter for FakeIdentityAdapter {
+        type Window = IdentityWindow;
+        fn process_started_at(&self, pid: i32) -> Result<String, String> {
+            assert_eq!(pid, 10);
+            let mut starts = self.starts.borrow_mut();
+            if starts.len() > 1 {
+                starts.pop_front().unwrap()
+            } else {
+                starts.front().unwrap().clone()
+            }
+        }
+        fn windows(&self, pid: i32) -> Result<Vec<IdentityWindow>, String> {
+            assert_eq!(pid, 10);
+            self.windows.clone()
+        }
+        fn identifier(&self, window: &IdentityWindow) -> Result<Option<String>, String> {
+            if let Some(error) = &self.identifier_error {
+                return Err(error.clone());
+            }
+            let reads = self.reads.get();
+            self.reads.set(reads + 1);
+            if reads >= self.windows.as_ref().unwrap().len() {
+                if let Some(changed) = &self.changed_identifier {
+                    return Ok(changed.clone());
+                }
+            }
+            Ok(window.identifier.clone())
+        }
+        fn raise(&self, window: &IdentityWindow) -> Result<(), String> {
+            self.effects
+                .borrow_mut()
+                .push(IdentityEffect::Raise(window.handle));
+            self.raised.clone()
+        }
+        fn resource(
+            &self,
+            window: &IdentityWindow,
+            kind: &LocatorKind,
+        ) -> Result<Option<String>, String> {
+            if !self.effects.borrow().is_empty() {
+                if let Some(resource) = &self.resource_after_raise {
+                    return resource.clone();
+                }
+            }
+            match kind {
+                LocatorKind::WindowTitle(_) => Ok(Some(window.title.clone())),
+                _ => self.resource.clone(),
+            }
+        }
+        fn focused_window(&self, pid: i32) -> Result<IdentityWindow, String> {
+            assert_eq!(pid, 10);
+            let focused = self
+                .focused
+                .clone()?
+                .ok_or_else(|| "focused window unavailable".to_string())?;
+            self.windows
+                .as_ref()
+                .map_err(Clone::clone)?
+                .iter()
+                .find(|window| window.identifier.as_deref() == Some(&focused))
+                .cloned()
+                .ok_or_else(|| "focused window is not the witnessed window".into())
+        }
+        fn activate(&self, pid: i32) -> Result<(), String> {
+            self.effects
+                .borrow_mut()
+                .push(IdentityEffect::Activate(pid));
+            self.activated.clone()
+        }
+        fn focused_window_identifier(&self, pid: i32) -> Result<Option<String>, String> {
+            assert_eq!(pid, 10);
+            self.focused.clone()
+        }
+    }
+
+    #[test]
+    fn identity_selects_retained_exact_element_between_same_title_windows() {
+        let adapter = FakeIdentityAdapter {
+            windows: Ok(vec![
+                IdentityWindow {
+                    handle: 2,
+                    title: "Report".into(),
+                    identifier: Some("other-window".into()),
+                },
+                IdentityWindow {
+                    handle: 3,
+                    title: "Report".into(),
+                    identifier: Some("wanted-window".into()),
+                },
+            ]),
+            ..FakeIdentityAdapter::default()
+        };
+        let windows = adapter.windows.as_ref().unwrap();
+        assert_eq!(windows[0].title, windows[1].title);
+        let attempt = raise_surface_with_adapter(&identity(), &adapter);
+        assert_eq!(attempt.dispatch, DispatchResult::RaiseAccepted);
+        assert_eq!(attempt.verification, VerificationResult::Verified);
+        assert_eq!(
+            *adapter.effects.borrow(),
+            [IdentityEffect::Raise(3), IdentityEffect::Activate(10)]
+        );
+    }
+
+    #[test]
+    fn identity_refuses_pid_reuse_restart_and_missing_launch_date_before_action() {
+        let original = identity().process_started_at;
+        let replacement = format!("{:016x}", 1_791_000_010.5f64.to_bits());
+        for starts in [
+            vec![Ok(replacement.clone())],
+            vec![Ok(original), Ok(replacement)],
+            vec![Err("launchDate unavailable".into())],
+        ] {
+            let adapter = FakeIdentityAdapter {
+                starts: RefCell::new(VecDeque::from(starts)),
+                ..FakeIdentityAdapter::default()
+            };
+            assert!(matches!(
+                raise_surface_with_adapter(&identity(), &adapter).dispatch,
+                DispatchResult::NotDispatched { .. }
+            ));
+            assert!(adapter.effects.borrow().is_empty());
+        }
+    }
+
+    #[test]
+    fn identity_refuses_missing_unreadable_duplicate_or_unmatched_identifiers() {
+        for identifiers in [
+            vec![None],
+            vec![Some("wanted-window"), None],
+            vec![Some("wanted-window"), Some("")],
+            vec![Some("wanted-window"), Some("wanted-window")],
+            vec![Some("other-window")],
+            vec![],
+        ] {
+            let windows = identifiers
+                .into_iter()
+                .enumerate()
+                .map(|(handle, identifier)| IdentityWindow {
+                    handle,
+                    title: "Report".into(),
+                    identifier: identifier.map(str::to_string),
+                })
+                .collect();
+            let adapter = FakeIdentityAdapter {
+                windows: Ok(windows),
+                ..FakeIdentityAdapter::default()
+            };
+            assert!(matches!(
+                raise_surface_with_adapter(&identity(), &adapter).dispatch,
+                DispatchResult::NotDispatched { .. }
+            ));
+            assert!(adapter.effects.borrow().is_empty());
+        }
+        for adapter in [
+            FakeIdentityAdapter {
+                windows: Err("AXWindows unreadable".into()),
+                ..FakeIdentityAdapter::default()
+            },
+            FakeIdentityAdapter {
+                identifier_error: Some("AXIdentifier unreadable".into()),
+                ..FakeIdentityAdapter::default()
+            },
+        ] {
+            assert!(matches!(
+                raise_surface_with_adapter(&identity(), &adapter).dispatch,
+                DispatchResult::NotDispatched { .. }
+            ));
+            assert!(adapter.effects.borrow().is_empty());
+        }
+    }
+
+    #[test]
+    fn identity_missing_required_native_identifier_and_unsupported_browser_constraints_do_not_widen()
+     {
+        let mut missing = identity();
+        missing.window_identifier = None;
+        let mut profile = identity();
+        profile.browser_profile = Some("profile-a".into());
+        let mut tab = profile.clone();
+        tab.browser_tab = Some("tab-a".into());
+        let mut invalid = identity();
+        invalid.process_started_at = "0000000000000000".into();
+        for surface in [missing, profile, tab, invalid] {
+            let adapter = FakeIdentityAdapter::default();
+            let attempt = raise_surface_with_adapter(&surface, &adapter);
+            assert!(matches!(
+                attempt.dispatch,
+                DispatchResult::NotDispatched { .. }
+            ));
+            assert_eq!(adapter.reads.get(), 0);
+            assert!(adapter.effects.borrow().is_empty());
+        }
+    }
+
+    #[test]
+    fn identity_mutation_before_raise_is_refused_without_searching_for_a_replacement() {
+        for changed in [None, Some("replacement-window".into())] {
+            let adapter = FakeIdentityAdapter {
+                changed_identifier: Some(changed),
+                ..FakeIdentityAdapter::default()
+            };
+            let attempt = raise_surface_with_adapter(&identity(), &adapter);
+            assert!(
+                matches!(attempt.dispatch, DispatchResult::NotDispatched { reason } if reason.contains("changed before dispatch"))
+            );
+            assert!(adapter.effects.borrow().is_empty());
+        }
+    }
+
+    #[test]
+    fn identity_postcondition_failures_remain_dispatch_accepted_without_a_second_action() {
+        for focused in [
+            Ok(None),
+            Ok(Some("wrong-window".into())),
+            Err("focused AXIdentifier unreadable".into()),
+            Err("globally focused app differs".into()),
+        ] {
+            let adapter = FakeIdentityAdapter {
+                focused,
+                ..FakeIdentityAdapter::default()
+            };
+            let attempt = raise_surface_with_adapter(&identity(), &adapter);
+            assert_eq!(attempt.dispatch, DispatchResult::RaiseAccepted);
+            assert!(matches!(
+                attempt.verification,
+                VerificationResult::Failed { .. }
+            ));
+            assert_eq!(
+                *adapter.effects.borrow(),
+                [IdentityEffect::Raise(1), IdentityEffect::Activate(10)]
+            );
+        }
+    }
+
+    #[test]
+    fn identity_rechecks_process_after_raise_and_after_focused_inspection() {
+        let original = identity().process_started_at;
+        let replacement = format!("{:016x}", 1_791_000_010.5f64.to_bits());
+        for changed_at in [2, 4] {
+            let mut starts = vec![Ok(original.clone()); changed_at];
+            starts.push(Ok(replacement.clone()));
+            let adapter = FakeIdentityAdapter {
+                starts: RefCell::new(VecDeque::from(starts)),
+                ..FakeIdentityAdapter::default()
+            };
+            let attempt = raise_surface_with_adapter(&identity(), &adapter);
+            assert_eq!(attempt.dispatch, DispatchResult::RaiseAccepted);
+            assert!(
+                matches!(attempt.verification, VerificationResult::Failed { reason } if reason.contains("process lifetime changed"))
+            );
+            assert_eq!(adapter.effects.borrow()[0], IdentityEffect::Raise(1));
+            assert_eq!(
+                adapter.effects.borrow().len(),
+                if changed_at == 2 { 1 } else { 2 }
+            );
+        }
+    }
+
+    #[test]
+    fn identity_raise_and_activation_refusals_have_distinct_receipts() {
+        let adapter = FakeIdentityAdapter {
+            raised: Err("AXRaise refused".into()),
+            ..FakeIdentityAdapter::default()
+        };
+        let attempt = raise_surface_with_adapter(&identity(), &adapter);
+        assert!(matches!(attempt.dispatch, DispatchResult::Failed { .. }));
+        assert_eq!(*adapter.effects.borrow(), [IdentityEffect::Raise(1)]);
+        let adapter = FakeIdentityAdapter {
+            activated: Err("activation refused".into()),
+            ..FakeIdentityAdapter::default()
+        };
+        let attempt = raise_surface_with_adapter(&identity(), &adapter);
+        assert_eq!(attempt.dispatch, DispatchResult::RaiseAccepted);
+        assert!(
+            matches!(attempt.verification, VerificationResult::Failed { reason } if reason.contains("activation refused"))
+        );
+        assert_eq!(
+            *adapter.effects.borrow(),
+            [IdentityEffect::Raise(1), IdentityEffect::Activate(10)]
+        );
+    }
+
+    #[test]
+    fn constrained_resources_require_exact_document_or_url_before_dispatch() {
+        for (requested, witnessed) in [
+            ("/work/report.md", Some("/work/other.md")),
+            ("/work/report.md", Some("https://example.com/report.md")),
+            ("/work/report.md", None),
+            (
+                "https://example.com/exact",
+                Some("https://example.com/other"),
+            ),
+            ("https://example.com/exact", Some("Report")),
+            ("https://example.com/exact", None),
+        ] {
+            let adapter = FakeIdentityAdapter {
+                resource: Ok(witnessed.map(str::to_string)),
+                ..FakeIdentityAdapter::default()
+            };
+            let attempt = raise_surface_resource_with_adapter(&identity(), requested, &adapter);
+            assert!(
+                matches!(attempt.dispatch, DispatchResult::NotDispatched { .. }),
+                "{attempt:?}"
+            );
+            assert!(adapter.effects.borrow().is_empty());
+        }
+        let adapter = FakeIdentityAdapter {
+            resource: Err("AXDocument unreadable".into()),
+            ..FakeIdentityAdapter::default()
+        };
+        assert!(matches!(
+            raise_surface_resource_with_adapter(&identity(), "/work/report.md", &adapter).dispatch,
+            DispatchResult::NotDispatched { .. }
+        ));
+        assert!(adapter.effects.borrow().is_empty());
+    }
+
+    #[test]
+    fn constrained_resources_accept_only_exact_raw_file_uri_path_equivalence() {
+        for (requested, witnessed) in [
+            ("/work/report.md", "file:///work/report.md"),
+            ("file:///work/report.md", "/work/report.md"),
+            ("https://example.com/exact", "https://example.com/exact"),
+        ] {
+            let adapter = FakeIdentityAdapter {
+                resource: Ok(Some(witnessed.into())),
+                ..FakeIdentityAdapter::default()
+            };
+            let attempt = raise_surface_resource_with_adapter(&identity(), requested, &adapter);
+            assert_eq!(
+                attempt.verification,
+                VerificationResult::Verified,
+                "{attempt:?}"
+            );
+        }
+        let adapter = FakeIdentityAdapter {
+            resource: Ok(Some("/work/../work/report.md".into())),
+            ..FakeIdentityAdapter::default()
+        };
+        assert!(matches!(
+            raise_surface_resource_with_adapter(&identity(), "/work/report.md", &adapter).dispatch,
+            DispatchResult::NotDispatched { .. }
+        ));
+        assert!(adapter.effects.borrow().is_empty());
+    }
+
+    #[test]
+    fn switched_or_unreadable_resource_after_raise_is_accepted_but_verification_failed() {
+        for (requested, before, after) in [
+            (
+                "/work/report.md",
+                "/work/report.md",
+                Ok(Some("/work/other.md".into())),
+            ),
+            (
+                "https://example.com/exact",
+                "https://example.com/exact",
+                Ok(Some("https://example.com/other".into())),
+            ),
+            ("/work/report.md", "/work/report.md", Ok(None)),
+            (
+                "/work/report.md",
+                "/work/report.md",
+                Err("AXDocument unreadable after dispatch".into()),
+            ),
+        ] {
+            let adapter = FakeIdentityAdapter {
+                resource: Ok(Some(before.into())),
+                resource_after_raise: Some(after),
+                ..FakeIdentityAdapter::default()
+            };
+            let attempt = raise_surface_resource_with_adapter(&identity(), requested, &adapter);
+            assert_eq!(attempt.dispatch, DispatchResult::RaiseAccepted);
+            assert!(matches!(
+                attempt.verification,
+                VerificationResult::Failed { .. }
+            ));
+            assert_eq!(
+                *adapter.effects.borrow(),
+                [IdentityEffect::Raise(1), IdentityEffect::Activate(10)]
+            );
+        }
+    }
+
+    #[test]
+    fn exact_document_under_identity_can_raise_between_duplicate_titles() {
+        let adapter = FakeIdentityAdapter {
+            windows: Ok(vec![
+                IdentityWindow {
+                    handle: 2,
+                    title: "Report".into(),
+                    identifier: Some("other-window".into()),
+                },
+                IdentityWindow {
+                    handle: 3,
+                    title: "Report".into(),
+                    identifier: Some("wanted-window".into()),
+                },
+            ]),
+            resource: Ok(Some("file:///work/report.md".into())),
+            ..FakeIdentityAdapter::default()
+        };
+        let attempt = raise_surface_resource_with_adapter(&identity(), "/work/report.md", &adapter);
+        assert_eq!(attempt.verification, VerificationResult::Verified);
+        assert_eq!(
+            *adapter.effects.borrow(),
+            [IdentityEffect::Raise(3), IdentityEffect::Activate(10)]
+        );
+    }
+
+    #[test]
+    fn title_targets_require_exact_native_title_without_locator_substitution() {
+        let adapter = FakeIdentityAdapter::default();
+        assert_eq!(
+            raise_surface_resource_with_adapter(&identity(), "Report", &adapter).verification,
+            VerificationResult::Verified
+        );
+        let adapter = FakeIdentityAdapter::default();
+        assert!(matches!(
+            raise_surface_resource_with_adapter(&identity(), "report", &adapter).dispatch,
+            DispatchResult::NotDispatched { .. }
+        ));
+        assert!(adapter.effects.borrow().is_empty());
+        let adapter = FakeIdentityAdapter {
+            resource_after_raise: Some(Ok(Some("Other Report".into()))),
+            ..FakeIdentityAdapter::default()
+        };
+        let attempt = raise_surface_resource_with_adapter(&identity(), "Report", &adapter);
+        assert_eq!(attempt.dispatch, DispatchResult::RaiseAccepted);
+        assert!(matches!(
+            attempt.verification,
+            VerificationResult::Failed { .. }
         ));
     }
 }

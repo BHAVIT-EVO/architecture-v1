@@ -8,6 +8,7 @@ use crate::raw_event::RawEvent;
 use evo_observation::observation_language::ObservationConcept;
 use evo_observation::observed_state::ObservedState;
 use evo_observation::provenance::ObservationSource;
+use evo_observation::window_registry::{WINDOW_ID_CONTEXT_KEY, WindowId};
 
 use std::collections::HashMap;
 use std::time::SystemTime;
@@ -45,6 +46,10 @@ pub enum MacOSSignal {
         process_identifier: Option<i32>,
         owning_process_name: Option<String>,
         observed_state: Option<ObservedState>,
+        /// Stable identity of the focused window, resolved from the live
+        /// window list at the emit site. `None` when the platform could not
+        /// see windows — never guessed.
+        window_id: Option<WindowId>,
     },
     /// A file save was directly witnessed.
     FileSaved {
@@ -85,6 +90,15 @@ pub enum MacOSSignal {
         second: String,
         observed_at: SystemTime,
     },
+    /// The directly witnessed act that the user named a body of work
+    /// (RFC-0014, OBS-WORK-NAMED): `subject` is the canonical Workspace
+    /// identity and `name` is exactly what the person wrote. The declaration
+    /// is a witnessed user act, not a capture signal.
+    WorkNamed {
+        subject: String,
+        name: String,
+        observed_at: SystemTime,
+    },
     /// The directly witnessed act that the user explicitly declared a set of
     /// already-witnessed subjects to constitute the current continuation of
     /// their work (RFC-0013, OBS-CONTINUATION-SURFACE). The declaration is a
@@ -92,6 +106,42 @@ pub enum MacOSSignal {
     /// (ordered, deduplicated) by the daemon before acceptance.
     ContinuationSurface {
         subjects: Vec<String>,
+        observed_at: SystemTime,
+    },
+    /// A surface presented its own name (OBS-SURFACE-NAMED/v1): the page
+    /// title of a web document, the document title of an editor, the window
+    /// title of any surface. `subject` is the surface the name belongs to —
+    /// the URL when the surface is witnessed as a web document, the file
+    /// path when a document — and `name` is exactly what the surface
+    /// displayed. Presentation evidence only: a name decorates identity,
+    /// it never mints or re-keys it.
+    SurfaceNamed {
+        subject: String,
+        name: String,
+        observed_at: SystemTime,
+    },
+    /// The directly witnessed act that the user classified a surface
+    /// (OBS-SURFACE-CLASSIFIED): `subject` is the surface they classified and
+    /// `class` is exactly the class they assigned. The declaration is a
+    /// witnessed user act, not a capture signal. Evo ships no default class;
+    /// silence produces no classification.
+    SurfaceClassified {
+        subject: String,
+        class: String,
+        observed_at: SystemTime,
+    },
+    /// The user dismissed a body of work from the default surface. The daemon
+    /// resolves the witnessed subject to the derived work; the shell never
+    /// writes a derived thread id into canonical evidence.
+    WorkDismissed {
+        work: String,
+        observed_at: SystemTime,
+    },
+    /// The user assigned a lifecycle state to one witnessed member of a work.
+    MemberState {
+        work: String,
+        member: String,
+        state: String,
         observed_at: SystemTime,
     },
     /// Directly witnessed input activity on a surface, as content-free
@@ -146,7 +196,10 @@ impl MacOSAdapter {
     }
 
     /// Normalizes one structured macOS signal into a `RawEvent` when possible.
-    pub fn normalize(&self, signal: MacOSSignal) -> Result<Option<RawEvent>, std::convert::Infallible> {
+    pub fn normalize(
+        &self,
+        signal: MacOSSignal,
+    ) -> Result<Option<RawEvent>, std::convert::Infallible> {
         match signal {
             MacOSSignal::WindowFocusGained {
                 subject,
@@ -154,21 +207,21 @@ impl MacOSAdapter {
                 process_identifier,
                 owning_process_name,
                 observed_state,
+                window_id,
             } => {
                 let mut context = HashMap::new();
                 if let Some(pid) = process_identifier {
-                    context.insert(
-                        OWNING_PROCESS_PID_CONTEXT_KEY.to_string(),
-                        pid.to_string(),
-                    );
+                    context.insert(OWNING_PROCESS_PID_CONTEXT_KEY.to_string(), pid.to_string());
                 }
                 if let Some(name) = owning_process_name {
-                    context.insert(
-                        OWNING_PROCESS_NAME_CONTEXT_KEY.to_string(),
-                        name,
-                    );
+                    context.insert(OWNING_PROCESS_NAME_CONTEXT_KEY.to_string(), name);
                 }
-                if let Some(state) = observed_state { state.write_context(&mut context); }
+                if let Some(window_id) = window_id {
+                    context.insert(WINDOW_ID_CONTEXT_KEY.to_string(), window_id.to_string());
+                }
+                if let Some(state) = observed_state {
+                    state.write_context(&mut context);
+                }
                 Ok(Some(self.translate(
                     observed_at,
                     context,
@@ -225,6 +278,25 @@ impl MacOSAdapter {
                 HashMap::new(),
                 ObservationConcept::WorkGrouped { first, second },
             ))),
+            MacOSSignal::WorkNamed {
+                subject,
+                name,
+                observed_at,
+            } => {
+                // A name must name something, and the something must not be
+                // the name itself (a Workspace renamed to its own id string
+                // carries nothing the concept can express). Dropped, like
+                // every other non-canonical signal.
+                let clean = |value: &String| !value.trim().is_empty();
+                if !clean(&subject) || !clean(&name) || name.trim() == subject.trim() {
+                    return Ok(None);
+                }
+                Ok(Some(self.translate(
+                    observed_at,
+                    HashMap::new(),
+                    ObservationConcept::WorkNamed { subject, name },
+                )))
+            }
             MacOSSignal::ContinuationSurface {
                 subjects,
                 observed_at,
@@ -233,6 +305,75 @@ impl MacOSAdapter {
                 HashMap::new(),
                 ObservationConcept::ContinuationSurface { subjects },
             ))),
+            MacOSSignal::SurfaceNamed {
+                subject,
+                name,
+                observed_at,
+            } => {
+                // A name must name something, and the something must be the
+                // thing witnessed: an empty subject, an empty name, or a
+                // name that is really the subject re-observed (Chrome
+                // reporting the URL as its own page title) carries nothing
+                // the concept can express. Dropped, like every other
+                // non-canonical signal.
+                let clean = |value: &String| !value.trim().is_empty();
+                if !clean(&subject) || !clean(&name) || name.trim() == subject.trim() {
+                    return Ok(None);
+                }
+                Ok(Some(self.translate(
+                    observed_at,
+                    HashMap::new(),
+                    ObservationConcept::SurfaceNamed { subject, name },
+                )))
+            }
+            MacOSSignal::SurfaceClassified {
+                subject,
+                class,
+                observed_at,
+            } => {
+                // A class must classify something, and must say something the
+                // subject does not already say (a surface "classified" as
+                // itself carries nothing). Dropped, like every other
+                // non-canonical signal.
+                let clean = |value: &String| !value.trim().is_empty();
+                if !clean(&subject) || !clean(&class) || class.trim() == subject.trim() {
+                    return Ok(None);
+                }
+                Ok(Some(self.translate(
+                    observed_at,
+                    HashMap::new(),
+                    ObservationConcept::SurfaceClassified { subject, class },
+                )))
+            }
+            MacOSSignal::WorkDismissed { work, observed_at } => {
+                if work.trim().is_empty() {
+                    return Ok(None);
+                }
+                Ok(Some(self.translate(
+                    observed_at,
+                    HashMap::new(),
+                    ObservationConcept::WorkDismissed { work },
+                )))
+            }
+            MacOSSignal::MemberState {
+                work,
+                member,
+                state,
+                observed_at,
+            } => {
+                if work.trim().is_empty() || member.trim().is_empty() || state.trim().is_empty() {
+                    return Ok(None);
+                }
+                Ok(Some(self.translate(
+                    observed_at,
+                    HashMap::new(),
+                    ObservationConcept::MemberState {
+                        work,
+                        member,
+                        state,
+                    },
+                )))
+            }
             MacOSSignal::ApplicationActivated { .. } => Ok(None),
             MacOSSignal::InputActivity {
                 subject,
@@ -252,7 +393,12 @@ impl MacOSAdapter {
                 Ok(Some(self.translate(
                     observed_at,
                     HashMap::new(),
-                    ObservationConcept::InputActivity { subject, keys, clicks, scrolls },
+                    ObservationConcept::InputActivity {
+                        subject,
+                        keys,
+                        clicks,
+                        scrolls,
+                    },
                 )))
             }
         }
@@ -285,28 +431,47 @@ mod tests {
                 observed_at: SystemTime::UNIX_EPOCH,
                 process_identifier: Some(4242),
                 owning_process_name: None,
-                observed_state: Some(ObservedState::new()
-                    .with_document_locator("/work/report.md")
-                    .with_selection(12, 3)),
+                observed_state: Some(
+                    ObservedState::new()
+                        .with_document_locator("/work/report.md")
+                        .with_selection(12, 3),
+                ),
+                window_id: None,
             })
             .unwrap();
 
         let raw_event = event.expect("canonical signal should normalize");
-        assert_eq!(raw_event.concept(), &ObservationConcept::WindowFocusGained {
-            subject: "editor-window".into(),
-        });
+        assert_eq!(
+            raw_event.concept(),
+            &ObservationConcept::WindowFocusGained {
+                subject: "editor-window".into(),
+            }
+        );
         assert_eq!(raw_event.source(), &source);
         assert_eq!(raw_event.observed_at(), SystemTime::UNIX_EPOCH);
         assert_eq!(
-            raw_event.context().get(OWNING_PROCESS_PID_CONTEXT_KEY).map(String::as_str),
+            raw_event
+                .context()
+                .get(OWNING_PROCESS_PID_CONTEXT_KEY)
+                .map(String::as_str),
             Some("4242")
         );
-        assert_eq!(raw_event.schema(), ObservationSchema::window_focus_gained_v3());
+        assert_eq!(
+            raw_event.schema(),
+            ObservationSchema::window_focus_gained_v3()
+        );
         assert_eq!(
             ObservedState::from_context(raw_event.context()).and_then(|state| state.selection()),
             Some((12, 3))
         );
-        assert_eq!(raw_event.evidence().fact("WindowFocusGained").unwrap().value(), &evo_observation::evidence::FactValue::Text("editor-window".into()));
+        assert_eq!(
+            raw_event
+                .evidence()
+                .fact("WindowFocusGained")
+                .unwrap()
+                .value(),
+            &evo_observation::evidence::FactValue::Text("editor-window".into())
+        );
     }
 
     #[test]
@@ -323,10 +488,14 @@ mod tests {
                 process_identifier: None,
                 owning_process_name: None,
                 observed_state: None,
+                window_id: None,
             })
             .unwrap()
             .expect("canonical signal");
-        assert_eq!(raw_event.schema(), ObservationSchema::window_focus_gained_v3());
+        assert_eq!(
+            raw_event.schema(),
+            ObservationSchema::window_focus_gained_v3()
+        );
         assert!(raw_event.context().is_empty());
     }
 
@@ -346,6 +515,7 @@ mod tests {
                 process_identifier: Some(7),
                 owning_process_name: None,
                 observed_state: None,
+                window_id: None,
             })
             .unwrap()
             .expect("canonical signal");
@@ -353,7 +523,10 @@ mod tests {
         let observation = accept(raw_event.into_candidate_observation(), &schema)
             .expect("valid v2 candidate is accepted");
 
-        assert_eq!(observation.schema(), &ObservationSchema::window_focus_gained_v3());
+        assert_eq!(
+            observation.schema(),
+            &ObservationSchema::window_focus_gained_v3()
+        );
         assert_eq!(
             observation
                 .provenance()
@@ -364,7 +537,11 @@ mod tests {
         );
         // Evidence is unchanged: exactly one canonical fact, the subject.
         assert_eq!(
-            observation.evidence().fact("WindowFocusGained").unwrap().value(),
+            observation
+                .evidence()
+                .fact("WindowFocusGained")
+                .unwrap()
+                .value(),
             &evo_observation::evidence::FactValue::Text("editor-window".into())
         );
         assert_eq!(observation.evidence().facts().len(), 1);
@@ -402,7 +579,10 @@ mod tests {
             &ObservationSchema::input_activity_v1(),
         )
         .unwrap();
-        assert_eq!(observation.schema(), &ObservationSchema::input_activity_v1());
+        assert_eq!(
+            observation.schema(),
+            &ObservationSchema::input_activity_v1()
+        );
     }
 
     #[test]
@@ -413,26 +593,30 @@ mod tests {
         let source = ObservationSource::new("macos_adapter").unwrap();
         let adapter = MacOSAdapter::new(source);
 
-        assert!(adapter
-            .normalize(MacOSSignal::InputActivity {
-                subject: None,
-                keys: 30,
-                clicks: 0,
-                scrolls: 0,
-                observed_at: SystemTime::UNIX_EPOCH,
-            })
-            .unwrap()
-            .is_none());
-        assert!(adapter
-            .normalize(MacOSSignal::InputActivity {
-                subject: Some("   ".into()),
-                keys: 30,
-                clicks: 0,
-                scrolls: 0,
-                observed_at: SystemTime::UNIX_EPOCH,
-            })
-            .unwrap()
-            .is_none());
+        assert!(
+            adapter
+                .normalize(MacOSSignal::InputActivity {
+                    subject: None,
+                    keys: 30,
+                    clicks: 0,
+                    scrolls: 0,
+                    observed_at: SystemTime::UNIX_EPOCH,
+                })
+                .unwrap()
+                .is_none()
+        );
+        assert!(
+            adapter
+                .normalize(MacOSSignal::InputActivity {
+                    subject: Some("   ".into()),
+                    keys: 30,
+                    clicks: 0,
+                    scrolls: 0,
+                    observed_at: SystemTime::UNIX_EPOCH,
+                })
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[test]
@@ -473,6 +657,67 @@ mod tests {
     }
 
     #[test]
+    fn adapter_normalizes_surface_named_with_matching_schema() {
+        // OBS-SURFACE-NAMED/v1: a surface's own name, with the subject it
+        // names. The full witness path: signal → normalize → accept.
+        let source = ObservationSource::new("macos_adapter").unwrap();
+        let adapter = MacOSAdapter::new(source);
+
+        let raw_event = adapter
+            .normalize(MacOSSignal::SurfaceNamed {
+                subject: "https://example.com/field-guide".into(),
+                name: "A Field Guide to Checkbox Land - Google Chrome".into(),
+                observed_at: SystemTime::UNIX_EPOCH,
+            })
+            .unwrap()
+            .expect("canonical surface-named signal");
+        assert_eq!(raw_event.schema(), ObservationSchema::surface_named_v1());
+        assert_eq!(
+            raw_event.evidence().fact("SurfaceNamed").unwrap().value(),
+            &evo_observation::evidence::FactValue::Text("https://example.com/field-guide".into())
+        );
+        assert_eq!(
+            raw_event.evidence().fact("Name").unwrap().value(),
+            &evo_observation::evidence::FactValue::Text(
+                "A Field Guide to Checkbox Land - Google Chrome".into()
+            )
+        );
+        let observation = accept(
+            raw_event.into_candidate_observation(),
+            &ObservationSchema::surface_named_v1(),
+        )
+        .unwrap();
+        assert_eq!(observation.schema(), &ObservationSchema::surface_named_v1());
+    }
+
+    #[test]
+    fn adapter_drops_degenerate_surface_named_signals() {
+        // Nothing a name can be: an empty subject, an empty name, and the
+        // URL-as-its-own-title degenerate case all carry nothing the
+        // language can express.
+        let source = ObservationSource::new("macos_adapter").unwrap();
+        let adapter = MacOSAdapter::new(source);
+
+        let cases = [
+            ("", "A real title"),
+            ("   ", "A real title"),
+            ("https://example.com", ""),
+            ("https://example.com", "   "),
+            ("https://example.com/page", "https://example.com/page"),
+        ];
+        for (subject, name) in cases {
+            let event = adapter
+                .normalize(MacOSSignal::SurfaceNamed {
+                    subject: subject.into(),
+                    name: name.into(),
+                    observed_at: SystemTime::UNIX_EPOCH,
+                })
+                .unwrap();
+            assert!(event.is_none(), "({subject:?}, {name:?}) must drop");
+        }
+    }
+
+    #[test]
     fn adapter_normalizes_co_membership_signals_with_matching_schemas() {
         let source = ObservationSource::new("macos_adapter").unwrap();
         let adapter = MacOSAdapter::new(source);
@@ -486,19 +731,31 @@ mod tests {
             })
             .unwrap()
             .expect("canonical membership signal");
-        assert_eq!(membership.schema(), ObservationSchema::repository_membership_v1());
         assert_eq!(
-            membership.evidence().fact("RepositoryMembership").unwrap().value(),
+            membership.schema(),
+            ObservationSchema::repository_membership_v1()
+        );
+        assert_eq!(
+            membership
+                .evidence()
+                .fact("RepositoryMembership")
+                .unwrap()
+                .value(),
             &evo_observation::evidence::FactValue::Text("/Users/alice/evo/src/a.rs".into())
         );
         assert_eq!(
             membership.evidence().fact("Repository").unwrap().value(),
             &evo_observation::evidence::FactValue::Text("/Users/alice/evo/.git".into())
         );
-        let observation =
-            accept(membership.into_candidate_observation(), &ObservationSchema::repository_membership_v1())
-                .unwrap();
-        assert_eq!(observation.schema(), &ObservationSchema::repository_membership_v1());
+        let observation = accept(
+            membership.into_candidate_observation(),
+            &ObservationSchema::repository_membership_v1(),
+        )
+        .unwrap();
+        assert_eq!(
+            observation.schema(),
+            &ObservationSchema::repository_membership_v1()
+        );
 
         // OBS-WORK-GROUPED/v1 (RFC-0012): declared pair.
         let grouped = adapter
@@ -538,6 +795,7 @@ mod tests {
                     process_identifier: None,
                     owning_process_name: None,
                     observed_state: None,
+                    window_id: None,
                 },
                 ObservationSchema::window_focus_gained_v3(),
                 "WindowFocusGained",
@@ -573,9 +831,57 @@ mod tests {
         ];
 
         for (signal, schema, fact_name, subject) in cases {
-            let raw_event = adapter.normalize(signal).unwrap().expect("canonical signal");
+            let raw_event = adapter
+                .normalize(signal)
+                .unwrap()
+                .expect("canonical signal");
             assert_eq!(raw_event.schema(), schema);
-            assert_eq!(raw_event.evidence().fact(fact_name).unwrap().value(), &evo_observation::evidence::FactValue::Text(subject.into()));
+            assert_eq!(
+                raw_event.evidence().fact(fact_name).unwrap().value(),
+                &evo_observation::evidence::FactValue::Text(subject.into())
+            );
+            let observation = accept(raw_event.into_candidate_observation(), &schema).unwrap();
+            assert_eq!(observation.schema(), &schema);
+        }
+    }
+
+    #[test]
+    fn adapter_normalizes_feedback_signals_with_their_frozen_schemas() {
+        let source = ObservationSource::new("macos_adapter").unwrap();
+        let adapter = MacOSAdapter::new(source);
+        let cases = [
+            (
+                MacOSSignal::WorkDismissed {
+                    work: "/tmp/work.md".into(),
+                    observed_at: SystemTime::UNIX_EPOCH,
+                },
+                ObservationSchema::work_dismissed_v1(),
+                "WorkDismissed",
+                "/tmp/work.md",
+            ),
+            (
+                MacOSSignal::MemberState {
+                    work: "/tmp/work.md".into(),
+                    member: "/tmp/member.md".into(),
+                    state: "Completed".into(),
+                    observed_at: SystemTime::UNIX_EPOCH,
+                },
+                ObservationSchema::member_state_v1(),
+                "MemberState",
+                "/tmp/work.md",
+            ),
+        ];
+
+        for (signal, schema, fact_name, subject) in cases {
+            let raw_event = adapter
+                .normalize(signal)
+                .unwrap()
+                .expect("feedback signal should normalize");
+            assert_eq!(raw_event.schema(), schema);
+            assert_eq!(
+                raw_event.evidence().fact(fact_name).unwrap().value(),
+                &evo_observation::evidence::FactValue::Text(subject.into())
+            );
             let observation = accept(raw_event.into_candidate_observation(), &schema).unwrap();
             assert_eq!(observation.schema(), &schema);
         }

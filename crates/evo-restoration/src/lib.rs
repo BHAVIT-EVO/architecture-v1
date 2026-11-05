@@ -35,8 +35,8 @@
 mod blocker;
 mod context_chain;
 pub mod derivation;
-pub mod execution;
 mod errors;
+pub mod execution;
 mod next_step;
 mod restoration_plan;
 mod resume_point;
@@ -44,13 +44,12 @@ mod resume_point;
 pub use blocker::Blocker;
 pub use context_chain::ContextChain;
 pub use derivation::{
-    derive_restoration_plan, DerivationOutcome, InsufficientRestoration, MissingEvidence,
-    RestorationComponent, RestorationInput,
+    DerivationOutcome, InsufficientRestoration, MissingEvidence, RestorationComponent,
+    RestorationInput, derive_restoration_plan,
 };
 pub use errors::RestorationError;
 pub use execution::{
-    execute, ExecutionAttempt, ExecutionError, ExecutionRequest, ExecutionResult,
-    ExecutionStatus,
+    ExecutionAttempt, ExecutionError, ExecutionRequest, ExecutionResult, ExecutionStatus, execute,
 };
 pub use next_step::NextStep;
 pub use restoration_plan::RestorationPlan;

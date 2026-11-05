@@ -1,0 +1,52 @@
+evidence_id: ev_b2e560fa006191ce0c056e6a99cdc853d2dff2042a6ad336c8932780b0884f17
+subject:
+  name: Rize
+  digest:
+    sha256: bb416030c26d99c23bfd7471b1e5441eda0d5522ff479183ab086e4e99b741cc
+  format: mach-o
+  architecture: arm64
+  local_path: /Applications/Rize.app/Contents/MacOS/Rize
+provider:
+  id: native-macos
+  name: macOS native inspection utilities
+  version: null
+predicate_type: rea.analysis
+operation: list_architectures
+parameters:
+raw_result:
+  provenance[1]:
+    - tool: lipo
+      command[3]: /Library/Developer/CommandLineTools/usr/bin/lipo,"-detailed_info",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 751c4a4636efc5f4015999dc7d41be6e2552b39f8949d6eb971e958fccf0e386
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 152
+      stderr_bytes: 0
+normalized_result:
+  architectures:
+    items[1]{name,cpu_type,cpu_subtype,file_offset,size,alignment}:
+      arm64,null,null,null,null,null
+    total: 1
+    exhaustive: true
+    limitations: []
+  provenance[1]:
+    - tool: lipo
+      command[3]: /Library/Developer/CommandLineTools/usr/bin/lipo,"-detailed_info",$ARTIFACT
+      tool_version: null
+      version_reason: Tool exposes no uniform stable version flag; executable digest identifies it.
+      executable_sha256: 751c4a4636efc5f4015999dc7d41be6e2552b39f8949d6eb971e958fccf0e386
+      exit:
+        code: 0
+        signal: null
+      stdout_bytes: 152
+      stderr_bytes: 0
+  limitations: []
+confidence: observed
+authority: shipped-artifact
+environment: null
+limitations: []
+locations: []
+evidence_links: []

@@ -1,0 +1,2 @@
+var e=class{queue=[];isRunning=!1;add(e){return new Promise((t,n)=>{this.queue.push({task:e,resolve:t,reject:n}),this.isRunning||this.run()})}async run(){for(this.isRunning=!0;this.queue.length>0;){let e=this.queue.shift();if(!e)break;let{task:t,resolve:n,reject:r}=e;try{n(await t())}catch(e){r(e)}}this.isRunning=!1}};Object.defineProperty(exports,"t",{enumerable:!0,get:function(){return e}});
+//# sourceMappingURL=simple-queue-BnnLp-lO.js.map

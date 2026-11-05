@@ -3,15 +3,16 @@
 //! Presentation only. This module owns color, typography, spacing, radii,
 //! shadows and the *material* definitions. Reusable layout and control
 //! primitives live in [`crate::ui`]; screen composition lives in the screen
-//! modules. Nothing here is canonical.
+//! modules. Nothing here is canonical. The contract this implements is
+//! `DESIGN.md` at the repository root.
 //!
 //! # The material hierarchy is the design
 //!
 //! Evo has six semantic surfaces and each one is a visually distinct
-//! material. They are deliberately *not* six variations of a white card:
+//! material. They are deliberately *not* six variations of one card:
 //!
 //! ```text
-//! ENVIRONMENT   the window itself — warm neutral, top-lit. Most content
+//! ENVIRONMENT   the window itself — warm charcoal, top-lit. Most content
 //!               sits directly on it with no container at all.
 //! RAISED        the one primary object on a screen — lighter than the
 //!               environment, soft downward shadow, generous padding.
@@ -22,9 +23,9 @@
 //!               rule and reduced presence. History never gets a card.
 //! NOTICE        transient system messages — a tinted band with a leading
 //!               edge bar. Never shaped like content.
-//! ACTION        the pinned Continue bar and primary controls — the most
-//!               opaque material, lifted by an upward shadow and separated
-//!               from content by a soft scrim rather than a hard rule.
+//! ACTION        the dock and primary controls — the most opaque material,
+//!               lifted by an upward shadow and separated from content by a
+//!               soft scrim rather than a hard rule.
 //! ```
 //!
 //! Rule: at most one RAISED surface per screen, and RECESSED is never
@@ -35,7 +36,7 @@
 //! The current egui renderer cannot sample the desktop behind the window, so
 //! genuine backdrop blur and live environment translucency are unavailable.
 //! Rather than paint a decorative gradient and call it blur, the environment
-//! is a warm neutral with a ~7-luminance-unit vertical wash that reads as
+//! is warm charcoal with a ~6-luminance-unit vertical wash that reads as
 //! *light from above*. It is a lighting cue, not a translucency claim, and it
 //! is painted in discrete bands because the renderer has no gradient
 //! primitive. Every other layer earns its depth from opacity, shadow,
@@ -48,26 +49,27 @@ use egui::{
 };
 
 // ────────────────────────────────────────────────────────────────────────
-// Environment
+// Environment — Control Room (DESIGN.md: Color)
 // ────────────────────────────────────────────────────────────────────────
 
 /// The environment material's base tone. Used as the window clear color so
 /// the very first painted frame is already the environment.
-pub const BG: Color32 = Color32::from_rgb(0xE9, 0xE6, 0xE1);
+pub const BG: Color32 = Color32::from_rgb(0x12, 0x15, 0x17);
 /// The environment at the top of the window (light source above).
-pub const ENV_TOP: Color32 = Color32::from_rgb(0xEC, 0xE9, 0xE4);
+pub const ENV_TOP: Color32 = Color32::from_rgb(0x15, 0x18, 0x1A);
 /// The environment at the bottom of the window.
-pub const ENV_BOTTOM: Color32 = Color32::from_rgb(0xE5, 0xE1, 0xDC);
+pub const ENV_BOTTOM: Color32 = Color32::from_rgb(0x0F, 0x12, 0x14);
 
-/// The raised surface: the single primary object on a screen.
-pub const RAISED: Color32 = Color32::from_rgb(0xFD, 0xFC, 0xFB);
+/// The raised surface: the single primary object on a screen (the track
+/// card, the stage hero).
+pub const RAISED: Color32 = Color32::from_rgb(0x1B, 0x1F, 0x21);
 /// The recessed surface: contextual and supporting regions. Darker than the
 /// environment on purpose — supporting material recedes by weight.
-pub const RECESSED: Color32 = Color32::from_rgb(0xE1, 0xDD, 0xD7);
+pub const RECESSED: Color32 = Color32::from_rgb(0x0D, 0x10, 0x12);
 /// A recessed well used for small inputs (search) — one step in, not a card.
-pub const WELL: Color32 = Color32::from_rgb(0xE3, 0xDF, 0xD9);
-/// The action material (Continue bar, sheets): near-opaque, warm white.
-pub const ACTION_SURFACE: Color32 = Color32::from_rgb(0xFB, 0xFA, 0xF8);
+pub const WELL: Color32 = Color32::from_rgb(0x0B, 0x0D, 0x0F);
+/// The action material (the dock, sheets): near-opaque, lifted charcoal.
+pub const ACTION_SURFACE: Color32 = Color32::from_rgb(0x1E, 0x22, 0x24);
 
 /// Legacy alias retained for the small-input well.
 pub fn surface_alt() -> Color32 {
@@ -76,51 +78,61 @@ pub fn surface_alt() -> Color32 {
 
 // ────────────────────────────────────────────────────────────────────────
 // Ink — contrast-checked against the environment (≥ 4.5:1 for every tone
-// that carries information).
+// that carries information, on both raised and recessed surfaces).
 // ────────────────────────────────────────────────────────────────────────
 
 /// Primary text.
-pub const TEXT: Color32 = Color32::from_rgb(0x1B, 0x1B, 0x1D);
+pub const TEXT: Color32 = Color32::from_rgb(0xEC, 0xEA, 0xE6);
 /// Secondary text — explanations, provenance, supporting prose.
-pub const MUTED: Color32 = Color32::from_rgb(0x56, 0x56, 0x5B);
+pub const MUTED: Color32 = Color32::from_rgb(0xA8, 0xAA, 0xA8);
 /// Tertiary text — eyebrow labels and field names.
-pub const TERTIARY: Color32 = Color32::from_rgb(0x63, 0x63, 0x6A);
+pub const TERTIARY: Color32 = Color32::from_rgb(0x8A, 0x8D, 0x8D);
 /// Receded — decoration only (rules, empty marks). Never information.
-pub const RECEDED: Color32 = Color32::from_rgb(0x8A, 0x8A, 0x90);
+pub const RECEDED: Color32 = Color32::from_rgb(0x5C, 0x60, 0x62);
 
-/// Evo's accent: deep teal, used sparingly — the primary action, the mark of
+/// Evo's accent: caramel, used sparingly — the primary action, the mark of
 /// a declared choice, focus. Evo must never look covered in colored buttons.
-pub const ACCENT: Color32 = Color32::from_rgb(0x0A, 0x5E, 0x58);
+/// The ink on top of the accent is a deep warm brown (≥ 7:1).
+pub const ACCENT: Color32 = Color32::from_rgb(0xC8, 0x9B, 0x6B);
+/// The ink set on top of the accent.
+pub const ON_ACCENT: Color32 = Color32::from_rgb(0x1A, 0x12, 0x06);
 /// Accent under the pointer.
-pub const ACCENT_HOVER: Color32 = Color32::from_rgb(0x0C, 0x6B, 0x64);
+pub const ACCENT_HOVER: Color32 = Color32::from_rgb(0xD4, 0xAA, 0x7A);
 /// Accent while pressed.
-pub const ACCENT_PRESSED: Color32 = Color32::from_rgb(0x08, 0x52, 0x4D);
+pub const ACCENT_PRESSED: Color32 = Color32::from_rgb(0xB0, 0x87, 0x57);
 /// A faint accent tint for marked rows and notices.
 pub fn accent_tint() -> Color32 {
-    Color32::from_rgba_unmultiplied(10, 94, 88, 20)
+    Color32::from_rgba_unmultiplied(0xC8, 0x9B, 0x6B, 36)
+}
+
+/// The cool counter-voice: the teal wash of the reference theme. It names
+/// phases and record evidence; it never means success.
+pub const TEAL: Color32 = Color32::from_rgb(0x5B, 0x8A, 0x8F);
+pub fn teal_tint() -> Color32 {
+    Color32::from_rgba_unmultiplied(0x5B, 0x8A, 0x8F, 41)
 }
 
 /// READY / recorded / running.
-pub const SUCCESS: Color32 = Color32::from_rgb(0x0F, 0x6B, 0x29);
+pub const SUCCESS: Color32 = Color32::from_rgb(0x63, 0xB8, 0x7F);
 pub fn success_tint() -> Color32 {
-    Color32::from_rgba_unmultiplied(15, 107, 41, 22)
+    Color32::from_rgba_unmultiplied(0x63, 0xB8, 0x7F, 36)
 }
 /// UNAVAILABLE / AMBIGUOUS / permission required.
-pub const WARNING: Color32 = Color32::from_rgb(0x9A, 0x44, 0x00);
+pub const WARNING: Color32 = Color32::from_rgb(0xE0, 0x81, 0x3F);
 pub fn warning_tint() -> Color32 {
-    Color32::from_rgba_unmultiplied(154, 68, 0, 22)
+    Color32::from_rgba_unmultiplied(0xE0, 0x81, 0x3F, 36)
 }
 /// Rejected / failed. Distinct from the accent so a rejection can never read
 /// as a success.
-pub const ERROR: Color32 = Color32::from_rgb(0xC1, 0x12, 0x1F);
+pub const ERROR: Color32 = Color32::from_rgb(0xE5, 0x48, 0x4D);
 pub fn error_tint() -> Color32 {
-    Color32::from_rgba_unmultiplied(193, 18, 31, 22)
+    Color32::from_rgba_unmultiplied(0xE5, 0x48, 0x4D, 36)
 }
 /// UNSUPPORTED / UNKNOWN. A capability Evo does not have, or a fact its
 /// record does not contain, is neither a success nor a failure — it must not
 /// borrow the color of either.
 pub fn neutral_tint() -> Color32 {
-    Color32::from_rgba_unmultiplied(0x63, 0x63, 0x6A, 22)
+    Color32::from_rgba_unmultiplied(0x8A, 0x8D, 0x8D, 36)
 }
 
 /// The text color for a status line: success when the daemon accepted the
@@ -131,11 +143,11 @@ pub fn status_color(accepted: bool) -> Color32 {
 
 /// Hairline rule.
 pub fn border() -> Color32 {
-    Color32::from_rgba_unmultiplied(0, 0, 0, 18)
+    Color32::from_rgba_unmultiplied(0xFF, 0xFF, 0xFF, 18)
 }
 /// A stronger hairline, for hover and focus.
 pub fn border_strong() -> Color32 {
-    Color32::from_rgba_unmultiplied(0, 0, 0, 34)
+    Color32::from_rgba_unmultiplied(0xFF, 0xFF, 0xFF, 34)
 }
 /// The inset top edge of a recessed surface — the shade a lowered plane
 /// catches from the light above.
@@ -145,7 +157,7 @@ pub fn inset_edge() -> Color32 {
 /// The wash a row takes under the pointer. Extends past the text margins so
 /// hover reads as a region, not a box.
 pub fn hover_wash() -> Color32 {
-    Color32::from_rgba_unmultiplied(0, 0, 0, 12)
+    Color32::from_rgba_unmultiplied(0xFF, 0xFF, 0xFF, 12)
 }
 
 // ────────────────────────────────────────────────────────────────────────
@@ -189,6 +201,19 @@ pub const MIN_WINDOW_WIDTH: f32 = 420.0;
 pub const ACTION_BAR_HEIGHT: f32 = 56.0;
 /// The height of the top chrome strip.
 pub const HEADER_HEIGHT: f32 = 56.0;
+
+/// The collapsed height of a stage panel-card's strip. Deliberately the
+/// dock's own height: the two rows of chrome at the bottom of the stage
+/// share one rhythm, so the panels read as sitting on the dock's line.
+pub const PANEL_STRIP_HEIGHT: f32 = ACTION_BAR_HEIGHT;
+/// How tall an expanded stage panel-card may grow, at most. Tall enough to
+/// read as one of the reference's full-height columns — the canvas recedes
+/// behind it — while the nav row above keeps the way out visible.
+pub const PANEL_MAX_HEIGHT: f32 = 480.0;
+/// Where an expanded panel's body content starts, below the panel's own
+/// strip — the strip stays exactly where it was while the column grows
+/// upward beneath it, so the body begins one header-height down.
+pub const PANEL_BODY_TOP: f32 = HEADER_HEIGHT + S1;
 /// Standard control height.
 pub const CONTROL_HEIGHT: f32 = 34.0;
 /// The padding inside a raised surface.
@@ -231,18 +256,20 @@ pub const GAP_TIGHT: f32 = S1;
 
 /// Window corner radius.
 pub const CORNER_WINDOW: u8 = 12;
-/// Large surfaces (raised, recessed regions).
-pub const CORNER_SURFACE: u8 = 16;
+/// Large surfaces (raised, recessed regions). Tightened from 16 so cards
+/// read denser, like the references.
+pub const CORNER_SURFACE: u8 = 12;
 /// Sheets.
-pub const CORNER_SHEET: u8 = 18;
+pub const CORNER_SHEET: u8 = 14;
 /// Controls.
-pub const CORNER_CONTROL: u8 = 10;
+pub const CORNER_CONTROL: u8 = 8;
 /// Chips, notices, marks.
 pub const CORNER_SMALL: u8 = 8;
 
 // ────────────────────────────────────────────────────────────────────────
 // Shadows — only RAISED, ACTION and sheets cast them. A recessed plane
-// cannot cast a shadow, and history never lifts off the page.
+// cannot cast a shadow, and history never lifts off the page. On a dark
+// environment shadows deepen rather than lighten.
 // ────────────────────────────────────────────────────────────────────────
 
 /// The primary raised object at rest.
@@ -251,7 +278,7 @@ pub fn raised_shadow() -> Shadow {
         offset: [0, 3],
         blur: 18,
         spread: 0,
-        color: Color32::from_rgba_unmultiplied(0, 0, 0, 24),
+        color: Color32::from_rgba_unmultiplied(0, 0, 0, 90),
     }
 }
 /// The primary raised object under the pointer — it rises toward the finger.
@@ -260,7 +287,7 @@ pub fn raised_shadow_hover() -> Shadow {
         offset: [0, 6],
         blur: 26,
         spread: 0,
-        color: Color32::from_rgba_unmultiplied(0, 0, 0, 34),
+        color: Color32::from_rgba_unmultiplied(0, 0, 0, 130),
     }
 }
 /// The pinned action strip: lifted, so its shadow falls *upward* onto the
@@ -270,7 +297,7 @@ pub fn action_shadow() -> Shadow {
         offset: [0, -4],
         blur: 20,
         spread: 0,
-        color: Color32::from_rgba_unmultiplied(0, 0, 0, 20),
+        color: Color32::from_rgba_unmultiplied(0, 0, 0, 80),
     }
 }
 /// A sheet: the furthest-forward material, so the deepest shadow.
@@ -279,35 +306,45 @@ pub fn sheet_shadow() -> Shadow {
         offset: [0, 14],
         blur: 44,
         spread: 0,
-        color: Color32::from_rgba_unmultiplied(0, 0, 0, 44),
+        color: Color32::from_rgba_unmultiplied(0, 0, 0, 150),
     }
 }
 
 // ────────────────────────────────────────────────────────────────────────
 // Typography
 //
-// One typeface (the system UI font) with a fixed eight-role ramp. Each role
-// fixes size, weight, tracking and leading *together* — hierarchy is built
-// from the set, never from size alone.
-//
-// Tracking is size-specific, as it must be: large text reads too loose at
-// its natural spacing and is tightened; small text and all-caps eyebrows are
-// opened up. Leading moves inversely to size: tight on display, generous on
-// body prose.
+// Three voices (DESIGN.md: Typography): the display voice carries work
+// titles and screen headings in Instrument Serif; the data voice sets
+// durations, counts and paths in JetBrains Mono; the UI voice remains the
+// platform face, which keeps every label native. Each role fixes size,
+// weight, tracking and leading *together* — hierarchy is built from the
+// set, never from size alone.
 //
 // egui's `.strong()` only changes color, so real weight comes from dedicated
 // variable-font instances (wght 500/600/700) registered as named families.
+// The display and data faces ship as bundled static TTFs.
 // ────────────────────────────────────────────────────────────────────────
 
 const FACE_REGULAR: &str = "evo-sf";
 const FAMILY_MEDIUM: &str = "evo-medium";
 const FAMILY_SEMIBOLD: &str = "evo-semibold";
 const FAMILY_BOLD: &str = "evo-bold";
+const FAMILY_DISPLAY: &str = "evo-display";
+const FAMILY_MONO: &str = "evo-mono";
 
-/// The eight text roles. Every piece of text in Evo is one of these.
+/// Bundled display voice: Instrument Serif Regular (SIL OFL 1.1; see
+/// `assets/fonts/LICENSE-InstrumentSerif.txt`).
+const DISPLAY_TTF: &[u8] = include_bytes!("../assets/fonts/InstrumentSerif-Regular.ttf");
+/// Bundled data voice: JetBrains Mono Regular (SIL OFL 1.1; see
+/// `assets/fonts/LICENSE-JetBrainsMono.txt`).
+const MONO_TTF: &[u8] = include_bytes!("../assets/fonts/JetBrainsMono-Regular.ttf");
+/// Bundled data voice, medium weight for emphasized figures.
+const MONO_MEDIUM_TTF: &[u8] = include_bytes!("../assets/fonts/JetBrainsMono-Medium.ttf");
+
+/// The nine text roles. Every piece of text in Evo is one of these.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Role {
-    /// 30 Bold — the one sentence a screen exists to say.
+    /// Display voice — the one sentence a screen exists to say.
     Display,
     /// 22 Semibold — a screen or region heading.
     Headline,
@@ -319,6 +356,8 @@ pub enum Role {
     Body,
     /// 13.5 Semibold — a body line that carries the weight of the group.
     BodyStrong,
+    /// 12.5 Mono — durations, counts, paths, ages: the data voice.
+    Data,
     /// 12 Regular — provenance, reasons, counts.
     Caption,
     /// 10.5 Medium, opened up — an all-caps region label.
@@ -333,8 +372,8 @@ impl Role {
             Role::Headline => 22.0,
             Role::Title => 16.5,
             Role::Lede => 15.0,
-            Role::Body => 13.5,
-            Role::BodyStrong => 13.5,
+            Role::Body | Role::BodyStrong => 13.5,
+            Role::Data => 12.5,
             Role::Caption => 12.0,
             Role::Eyebrow => 10.5,
         }
@@ -343,11 +382,11 @@ impl Role {
     /// Extra letter spacing, in points. Negative tightens.
     pub fn tracking(self) -> f32 {
         match self {
-            Role::Display => -0.6,
+            Role::Display => -0.2,
             Role::Headline => -0.35,
             Role::Title => -0.15,
             Role::Lede => -0.05,
-            Role::Body | Role::BodyStrong => 0.0,
+            Role::Body | Role::BodyStrong | Role::Data => 0.0,
             Role::Caption => 0.1,
             Role::Eyebrow => 0.9,
         }
@@ -356,12 +395,12 @@ impl Role {
     /// Line height as a multiple of size. Inversely related to size.
     pub fn leading(self) -> f32 {
         match self {
-            Role::Display => 1.08,
+            Role::Display => 1.12,
             Role::Headline => 1.16,
             Role::Title => 1.26,
             Role::Lede => 1.44,
-            Role::Body => 1.48,
-            Role::BodyStrong => 1.44,
+            Role::Body | Role::BodyStrong => 1.48,
+            Role::Data => 1.4,
             Role::Caption => 1.42,
             Role::Eyebrow => 1.2,
         }
@@ -370,15 +409,16 @@ impl Role {
     /// The weighted face this role is set in.
     pub fn font(self) -> FontId {
         match self {
-            Role::Display => bold_font(self.size()),
+            Role::Display => display_font(self.size()),
             Role::Headline | Role::Title | Role::BodyStrong => title_font(self.size()),
             Role::Lede | Role::Body | Role::Caption => body_font(self.size()),
+            Role::Data => data_font(self.size()),
             Role::Eyebrow => tiny_font(self.size()),
         }
     }
 }
 
-/// Text in one of the eight roles, with that role's tracking and leading
+/// Text in one of the roles, with that role's tracking and leading
 /// applied. This is the only way text should be produced.
 pub fn text(role: Role, value: impl Into<String>, color: Color32) -> RichText {
     RichText::new(value)
@@ -394,9 +434,13 @@ pub fn eyebrow(value: &str, color: Color32) -> RichText {
     text(Role::Eyebrow, value.to_uppercase(), color)
 }
 
-/// Display voice — Bold (700).
+/// Display voice — Instrument Serif.
 pub fn display_font(size: f32) -> FontId {
-    FontId::new(size, FontFamily::Name(FAMILY_BOLD.into()))
+    FontId::new(size, FontFamily::Name(FAMILY_DISPLAY.into()))
+}
+/// Data voice — JetBrains Mono.
+pub fn data_font(size: f32) -> FontId {
+    FontId::new(size, FontFamily::Name(FAMILY_MONO.into()))
 }
 /// Title voice — Semibold (600).
 pub fn title_font(size: f32) -> FontId {
@@ -441,6 +485,13 @@ pub fn body(value: impl Into<String>, size: f32, color: Color32) -> RichText {
         .font(body_font(size))
         .color(color)
         .line_height(Some(size * Role::Body.leading()))
+}
+/// Free-size data text. Prefer [`text`] with [`Role::Data`].
+pub fn data(value: impl Into<String>, size: f32, color: Color32) -> RichText {
+    RichText::new(value)
+        .font(data_font(size))
+        .color(color)
+        .line_height(Some(size * Role::Data.leading()))
 }
 /// Free-size body-strong text. Prefer [`text`] with a [`Role`].
 pub fn strong(value: impl Into<String>, size: f32, color: Color32) -> RichText {
@@ -559,7 +610,7 @@ impl Severity {
     /// The notice band's fill.
     pub fn tint(self) -> Color32 {
         match self {
-            Severity::Info => accent_tint(),
+            Severity::Info => teal_tint(),
             Severity::Good => success_tint(),
             Severity::Caution => warning_tint(),
             Severity::Bad => error_tint(),
@@ -570,7 +621,7 @@ impl Severity {
     /// The notice's leading edge bar and status word color.
     pub fn ink(self) -> Color32 {
         match self {
-            Severity::Info => ACCENT,
+            Severity::Info => TEAL,
             Severity::Good => SUCCESS,
             Severity::Caution => WARNING,
             Severity::Bad => ERROR,
@@ -601,7 +652,7 @@ pub fn detail_split(total: f32) -> (f32, f32, f32) {
 pub fn install(ctx: &egui::Context) {
     ctx.set_fonts(font_definitions());
 
-    let mut visuals = egui::Visuals::light();
+    let mut visuals = egui::Visuals::dark();
     visuals.override_text_color = Some(TEXT);
     visuals.panel_fill = BG;
     visuals.window_fill = BG;
@@ -667,7 +718,8 @@ fn load_system_face() -> Option<Vec<u8>> {
 }
 
 /// The font set Evo asks egui for: the platform face at three real weights,
-/// with egui's own proportional stack behind each of them.
+/// the bundled display and data voices, and egui's own proportional stack
+/// behind each of them.
 ///
 /// Separate from [`install`] so the binding invariant below can be tested
 /// without a live context — the named families are registered whether or not
@@ -683,6 +735,29 @@ fn font_definitions() -> FontDefinitions {
         .get(&FontFamily::Proportional)
         .cloned()
         .unwrap_or_default();
+
+    // The bundled voices are always present: they are the identity of the
+    // interface, not an enhancement of it.
+    fonts.font_data.insert(
+        FAMILY_DISPLAY.to_string(),
+        std::sync::Arc::new(FontData::from_static(DISPLAY_TTF)),
+    );
+    fonts.font_data.insert(
+        FAMILY_MONO.to_string(),
+        std::sync::Arc::new(FontData::from_static(MONO_TTF)),
+    );
+    fonts.font_data.insert(
+        "evo-mono-medium".to_string(),
+        std::sync::Arc::new(FontData::from_static(MONO_MEDIUM_TTF)),
+    );
+    fonts.families.insert(
+        FontFamily::Name(FAMILY_DISPLAY.into()),
+        vec![FAMILY_DISPLAY.to_string()],
+    );
+    fonts.families.insert(
+        FontFamily::Name(FAMILY_MONO.into()),
+        vec!["evo-mono-medium".to_string(), FAMILY_MONO.to_string()],
+    );
 
     let system_face = load_system_face();
     if let Some(bytes) = &system_face {
@@ -766,6 +841,7 @@ mod tests {
             Role::Lede,
             Role::Body,
             Role::BodyStrong,
+            Role::Data,
             Role::Caption,
             Role::Eyebrow,
         ] {
@@ -773,6 +849,33 @@ mod tests {
             assert!(
                 fonts.families.contains_key(&family),
                 "{role:?} asks for {family:?}, which is not registered"
+            );
+        }
+    }
+
+    #[test]
+    fn the_bundled_voices_are_always_registered() {
+        // Display and data are the interface's identity: they must survive
+        // even a machine whose platform face cannot be read.
+        let fonts = font_definitions();
+        for name in [FAMILY_DISPLAY, FAMILY_MONO] {
+            let family = FontFamily::Name(name.into());
+            let chain = fonts
+                .families
+                .get(&family)
+                .unwrap_or_else(|| panic!("{name} is not registered as a family"));
+            assert!(!chain.is_empty(), "{name} is bound to no font data");
+            for face in chain {
+                assert!(fonts.font_data.contains_key(face));
+            }
+        }
+        // And the embedded bytes really are faces, not truncated downloads.
+        for ttf in [DISPLAY_TTF, MONO_TTF, MONO_MEDIUM_TTF] {
+            assert!(ttf.len() > 4);
+            let tag = &ttf[0..4];
+            assert!(
+                tag == b"\x00\x01\x00\x00" || tag == b"true" || tag == b"OTTO" || tag == b"ttcf",
+                "embedded font lacks a recognized sfnt tag"
             );
         }
     }
@@ -790,11 +893,44 @@ mod tests {
     }
 
     #[test]
-    fn display_font_is_the_bold_face_not_the_plain_body_face() {
+    fn display_font_is_the_serif_face_not_the_plain_body_face() {
         let display = display_font(20.0);
         let body = body_font(20.0);
         assert_ne!(display.family, body.family);
         assert_eq!(display.size, body.size);
+    }
+
+    #[test]
+    fn data_font_is_the_mono_face() {
+        assert_ne!(data_font(12.0).family, body_font(12.0).family);
+        assert_ne!(data_font(12.0).family, display_font(12.0).family);
+    }
+
+    #[test]
+    fn the_bundled_voices_do_not_share_the_body_face() {
+        // Registration is not use: a display or data role that silently fell
+        // back to the platform face would render without complaint and the
+        // interface would lose its voices. Each named family must resolve
+        // only to its own face — never to anything in the proportional
+        // (body) chain.
+        let fonts = font_definitions();
+        let body_chain = fonts
+            .families
+            .get(&FontFamily::Proportional)
+            .cloned()
+            .unwrap_or_default();
+        for name in [FAMILY_DISPLAY, FAMILY_MONO] {
+            let chain = fonts
+                .families
+                .get(&FontFamily::Name(name.into()))
+                .unwrap_or_else(|| panic!("{name} is not registered"));
+            for face in chain {
+                assert!(
+                    !body_chain.contains(face),
+                    "{name} resolves to the body face {face}"
+                );
+            }
+        }
     }
 
     #[test]
@@ -860,9 +996,9 @@ mod tests {
 
     #[test]
     fn the_recessed_surface_is_darker_than_the_environment() {
-        // Supporting material recedes by weight, not by being another white
-        // card. The contextual surface must be darker than the environment
-        // it sits in, and the one raised object must be lighter.
+        // Supporting material recedes by weight, not by being another card.
+        // The contextual surface must be darker than the environment it sits
+        // in, and the one raised object must be lighter.
         let luma = |color: Color32| {
             0.2126 * color.r() as f32 + 0.7152 * color.g() as f32 + 0.0722 * color.b() as f32
         };
@@ -884,6 +1020,7 @@ mod tests {
         assert!(Role::Display.tracking() < 0.0);
         assert!(Role::Eyebrow.tracking() > 0.0);
         assert_eq!(Role::Body.tracking(), 0.0);
+        assert_eq!(Role::Data.tracking(), 0.0);
     }
 
     #[test]
@@ -903,6 +1040,7 @@ mod tests {
             Role::Lede,
             Role::Body,
             Role::BodyStrong,
+            Role::Data,
             Role::Caption,
             Role::Eyebrow,
         ];
@@ -937,8 +1075,10 @@ mod tests {
 
     #[test]
     fn leaving_is_never_slower_than_arriving() {
-        assert!(RESPONSE_OUT < RESPONSE_IN);
-        assert!(RESPONSE_TOUCH < RESPONSE_OUT);
+        const {
+            assert!(RESPONSE_OUT < RESPONSE_IN);
+            assert!(RESPONSE_TOUCH < RESPONSE_OUT);
+        }
     }
 
     #[test]
@@ -958,5 +1098,26 @@ mod tests {
                 assert_ne!(severity.ink(), other.ink());
             }
         }
+    }
+
+    #[test]
+    fn the_accent_carries_its_own_readable_ink() {
+        // The caramel fill is a light color on a dark theme: white text on
+        // it would be unreadable. The on-accent ink is dark and must stay
+        // darker than the fill it sits on.
+        let luma = |color: Color32| {
+            0.2126 * color.r() as f32 + 0.7152 * color.g() as f32 + 0.0722 * color.b() as f32
+        };
+        assert!(luma(ON_ACCENT) < luma(ACCENT));
+        assert_ne!(ON_ACCENT, Color32::WHITE);
+    }
+
+    #[test]
+    fn the_teal_voice_is_neither_success_nor_the_accent() {
+        // The teal voice names phases and evidence; it must never be
+        // mistaken for a state or for the declared-choice accent.
+        assert_ne!(TEAL, SUCCESS);
+        assert_ne!(TEAL, ACCENT);
+        assert_ne!(TEAL, ERROR);
     }
 }

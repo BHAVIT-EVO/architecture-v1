@@ -1,0 +1,7 @@
+AVSH
+[A^]
+[A^]
+ELECTRON_RUN_AS_NODE
+/dev/null
+ELECTRON_RUN_AS_NODE
+/dev/null

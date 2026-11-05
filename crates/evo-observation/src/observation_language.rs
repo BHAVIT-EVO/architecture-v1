@@ -9,11 +9,21 @@ use crate::observation_schema::ObservationSchema;
 /// The frozen canonical Observation Language.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ObservationConcept {
-    WindowFocusGained { subject: String },
-    FileSaved { subject: String },
-    URLNavigated { subject: String },
-    CommitMade { subject: String },
-    WorkDesignated { subject: String },
+    WindowFocusGained {
+        subject: String,
+    },
+    FileSaved {
+        subject: String,
+    },
+    URLNavigated {
+        subject: String,
+    },
+    CommitMade {
+        subject: String,
+    },
+    WorkDesignated {
+        subject: String,
+    },
     /// The directly witnessed fact that entity `member` is a member of
     /// repository `repository` (RFC-0012, OBS-REPOSITORY-MEMBERSHIP/v1).
     RepositoryMembership {
@@ -22,7 +32,20 @@ pub enum ObservationConcept {
     },
     /// The directly witnessed declaration that subjects `first` and `second`
     /// are related work, canonically ordered (RFC-0012, OBS-WORK-GROUPED/v1).
-    WorkGrouped { first: String, second: String },
+    WorkGrouped {
+        first: String,
+        second: String,
+    },
+    /// The directly witnessed act of the person naming a body of work
+    /// (RFC-0014, OBS-WORK-NAMED/v1): `subject` is the canonical Workspace
+    /// identity the name belongs to and `name` is exactly what the person
+    /// wrote. A person's name for their own work is ground truth over every
+    /// derived title (Law IX); it references the Workspace other
+    /// Observations established and never mints one.
+    WorkNamed {
+        subject: String,
+        name: String,
+    },
     /// Directly witnessed input activity on a subject, as content-free
     /// counters aggregated over a fixed flush bucket (OBS-INPUT-ACTIVITY/v1).
     ///
@@ -42,7 +65,51 @@ pub enum ObservationConcept {
     /// (RFC-0013, OBS-CONTINUATION-SURFACE/v1). The set is canonically ordered:
     /// the lexicographically smallest subject is the Required Subject; the
     /// remainder follow in ascending order.
-    ContinuationSurface { subjects: Vec<String> },
+    ContinuationSurface {
+        subjects: Vec<String>,
+    },
+    /// The name a surface presented of itself (OBS-SURFACE-NAMED/v1): the
+    /// directly witnessed page title of a web document, the document title of
+    /// an editor, the window title of any focused surface. The subject is the
+    /// surface the name belongs to — the URL when the surface was witnessed as
+    /// a web document, the file path when it was witnessed as a document, the
+    /// window title itself otherwise — and the name is exactly what the
+    /// surface displayed, never truncated, never cleaned, never guessed. A
+    /// name is presentation, not identity: it decorates and never votes.
+    SurfaceNamed {
+        subject: String,
+        name: String,
+    },
+    /// The directly witnessed user declaration that a surface is of a class
+    /// (OBS-SURFACE-CLASSIFIED/v1): the person's own word — "this is not
+    /// work", "this is media" — about a subject other Observations have
+    /// already established. `subject` is that established subject; `class` is
+    /// exactly the class the person assigned. Evo ships no default class:
+    /// silence is the default, and every classification here has the person's
+    /// name on it. A classification gates founding and titling only — it never
+    /// removes the subject from a body of work (the non-deletion guarantee
+    /// holds); it only prevents it from anchoring or naming one. This
+    /// references subjects other Observations established and never mints an
+    /// Artifact.
+    SurfaceClassified {
+        subject: String,
+        class: String,
+    },
+    /// The directly witnessed user declaration that a body of work should be
+    /// dismissed from the default surface (Phase 5). The subject is a
+    /// witnessed member that identifies the work; dismissal never deletes the
+    /// work or its evidence.
+    WorkDismissed {
+        work: String,
+    },
+    /// The directly witnessed user declaration of one member's lifecycle
+    /// state within a body of work (Phase 5/6). `work` and `member` are
+    /// witnessed subjects, while `state` is the person's exact label.
+    MemberState {
+        work: String,
+        member: String,
+        state: String,
+    },
 }
 
 impl ObservationConcept {
@@ -56,8 +123,13 @@ impl ObservationConcept {
             ObservationConcept::WorkDesignated { .. } => "WorkDesignated",
             ObservationConcept::RepositoryMembership { .. } => "RepositoryMembership",
             ObservationConcept::WorkGrouped { .. } => "WorkGrouped",
+            ObservationConcept::WorkNamed { .. } => "WorkNamed",
             ObservationConcept::ContinuationSurface { .. } => "ContinuationSurface",
             ObservationConcept::InputActivity { .. } => "InputActivity",
+            ObservationConcept::SurfaceNamed { .. } => "SurfaceNamed",
+            ObservationConcept::SurfaceClassified { .. } => "SurfaceClassified",
+            ObservationConcept::WorkDismissed { .. } => "WorkDismissed",
+            ObservationConcept::MemberState { .. } => "MemberState",
         }
     }
 
@@ -71,10 +143,16 @@ impl ObservationConcept {
             | ObservationConcept::WorkDesignated { subject } => subject,
             ObservationConcept::RepositoryMembership { member, .. } => member,
             ObservationConcept::WorkGrouped { first, .. } => first,
+            ObservationConcept::WorkNamed { subject, .. } => subject,
             ObservationConcept::InputActivity { subject, .. } => subject,
-            ObservationConcept::ContinuationSurface { subjects } => {
-                subjects.iter().min().expect("a valid surface names at least two subjects")
-            }
+            ObservationConcept::SurfaceNamed { subject, .. } => subject,
+            ObservationConcept::SurfaceClassified { subject, .. } => subject,
+            ObservationConcept::WorkDismissed { work } => work,
+            ObservationConcept::MemberState { work, .. } => work,
+            ObservationConcept::ContinuationSurface { subjects } => subjects
+                .iter()
+                .min()
+                .expect("a valid surface names at least two subjects"),
         }
     }
 
@@ -96,10 +174,17 @@ impl ObservationConcept {
                 ObservationSchema::repository_membership_v1()
             }
             ObservationConcept::WorkGrouped { .. } => ObservationSchema::work_grouped_v1(),
+            ObservationConcept::WorkNamed { .. } => ObservationSchema::work_named_v1(),
             ObservationConcept::ContinuationSurface { .. } => {
                 ObservationSchema::continuation_surface_v1()
             }
             ObservationConcept::InputActivity { .. } => ObservationSchema::input_activity_v1(),
+            ObservationConcept::SurfaceNamed { .. } => ObservationSchema::surface_named_v1(),
+            ObservationConcept::SurfaceClassified { .. } => {
+                ObservationSchema::surface_classified_v1()
+            }
+            ObservationConcept::WorkDismissed { .. } => ObservationSchema::work_dismissed_v1(),
+            ObservationConcept::MemberState { .. } => ObservationSchema::member_state_v1(),
         }
     }
 
@@ -122,7 +207,18 @@ impl ObservationConcept {
                 ObservedFact::new("CoMember", FactValue::Text(second.clone()))
                     .expect("canonical concept names are always valid"),
             ]),
-            ObservationConcept::InputActivity { subject, keys, clicks, scrolls } => {
+            ObservationConcept::WorkNamed { subject, name } => Evidence::new(vec![
+                ObservedFact::new("WorkNamed", FactValue::Text(subject.clone()))
+                    .expect("canonical concept names are always valid"),
+                ObservedFact::new("Name", FactValue::Text(name.clone()))
+                    .expect("canonical concept names are always valid"),
+            ]),
+            ObservationConcept::InputActivity {
+                subject,
+                keys,
+                clicks,
+                scrolls,
+            } => {
                 // The counters are aggregates over the flush bucket; the
                 // subject is the surface they landed on. Nothing about the
                 // *content* of any keystroke, click, or scroll exists here
@@ -164,12 +260,50 @@ impl ObservationConcept {
                 }
                 Evidence::new(facts)
             }
+            ObservationConcept::SurfaceNamed { subject, name } => {
+                // The subject is the witnessed fact (what was named); the name
+                // is the value concept (what it presented). Evidence order is
+                // fixed: the witnessed fact first, exactly as the co-membership
+                // concepts fix theirs.
+                Evidence::new(vec![
+                    ObservedFact::new("SurfaceNamed", FactValue::Text(subject.clone()))
+                        .expect("canonical concept names are always valid"),
+                    ObservedFact::new("Name", FactValue::Text(name.clone()))
+                        .expect("canonical concept names are always valid"),
+                ])
+            }
+            ObservationConcept::SurfaceClassified { subject, class } => {
+                // The subject is the witnessed fact (what was classified); the
+                // class is the value concept (what the person called it).
+                // Evidence order is fixed: the witnessed fact first, exactly
+                // as the co-membership concepts fix theirs.
+                Evidence::new(vec![
+                    ObservedFact::new("SurfaceClassified", FactValue::Text(subject.clone()))
+                        .expect("canonical concept names are always valid"),
+                    ObservedFact::new("Class", FactValue::Text(class.clone()))
+                        .expect("canonical concept names are always valid"),
+                ])
+            }
+            ObservationConcept::WorkDismissed { work } => Evidence::new(vec![
+                ObservedFact::new("WorkDismissed", FactValue::Text(work.clone()))
+                    .expect("canonical concept names are always valid"),
+            ]),
+            ObservationConcept::MemberState {
+                work,
+                member,
+                state,
+            } => Evidence::new(vec![
+                ObservedFact::new("MemberState", FactValue::Text(work.clone()))
+                    .expect("canonical concept names are always valid"),
+                ObservedFact::new("Member", FactValue::Text(member.clone()))
+                    .expect("canonical concept names are always valid"),
+                ObservedFact::new("State", FactValue::Text(state.clone()))
+                    .expect("canonical concept names are always valid"),
+            ]),
             _ => {
-                let fact = ObservedFact::new(
-                    self.name(),
-                    FactValue::Text(self.subject().to_string()),
-                )
-                .expect("canonical observation concept names are always valid");
+                let fact =
+                    ObservedFact::new(self.name(), FactValue::Text(self.subject().to_string()))
+                        .expect("canonical observation concept names are always valid");
                 Evidence::new(vec![fact])
             }
         }

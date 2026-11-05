@@ -126,7 +126,10 @@ impl ObservationSchema {
     /// v3 permits the directly witnessed, generic accessibility state defined
     /// by [`crate::observed_state::ObservedState`] in provenance context.
     pub fn window_focus_gained_v3() -> Self {
-        Self { name: "OBS-WINDOW-FOCUS-GAINED".to_string(), version: 3 }
+        Self {
+            name: "OBS-WINDOW-FOCUS-GAINED".to_string(),
+            version: 3,
+        }
     }
 
     /// Returns the frozen schema for `FileSaved`.
@@ -161,6 +164,16 @@ impl ObservationSchema {
         Self::canonical("OBS-WORK-GROUPED")
     }
 
+    /// Returns the frozen schema for `WorkNamed` (RFC-0014, OBS-WORK-NAMED/v1):
+    /// the person's own name for a body of work — the word that answers "what
+    /// do I call this work". The subject is the canonical Workspace identity
+    /// the name belongs to; the name is exactly what the person wrote. A
+    /// person's name for their own work is ground truth over every derived
+    /// title (Law IX): derivation may propose, only the person disposes.
+    pub fn work_named_v1() -> Self {
+        Self::canonical("OBS-WORK-NAMED")
+    }
+
     /// Returns the frozen schema for `ContinuationSurface` (RFC-0013,
     /// IS-0003 §4.1.8).
     pub fn continuation_surface_v1() -> Self {
@@ -173,6 +186,39 @@ impl ObservationSchema {
     /// never observed and cannot be reconstructed.
     pub fn input_activity_v1() -> Self {
         Self::canonical("OBS-INPUT-ACTIVITY")
+    }
+
+    /// Returns the frozen schema for `SurfaceNamed` (OBS-SURFACE-NAMED/v1):
+    /// the name a surface presented of itself — a page title, a document
+    /// title, a window title — witnessed alongside the subject it names.
+    /// The subject is the witnessed fact; the name is the value concept.
+    pub fn surface_named_v1() -> Self {
+        Self::canonical("OBS-SURFACE-NAMED")
+    }
+
+    /// Returns the frozen schema for `SurfaceClassified`
+    /// (OBS-SURFACE-CLASSIFIED/v1): the person's own declaration that a
+    /// surface is of a class — "this is not work", "this is media" — about a
+    /// subject other Observations already established. The subject is the
+    /// witnessed fact; the class is the value concept. Evo ships no default
+    /// class: silence is the default, and every classification carries the
+    /// person's own word (RFC-0014 R11). A classification gates founding and
+    /// titling only; it never removes the subject from a body of work.
+    pub fn surface_classified_v1() -> Self {
+        Self::canonical("OBS-SURFACE-CLASSIFIED")
+    }
+
+    /// Returns the frozen schema for a user's dismissal of a body of work.
+    /// The record references an already-witnessed work subject and never
+    /// deletes or mutates derived history.
+    pub fn work_dismissed_v1() -> Self {
+        Self::canonical("OBS-WORK-DISMISSED")
+    }
+
+    /// Returns the frozen schema for a user's lifecycle state declaration for
+    /// one member of a body of work.
+    pub fn member_state_v1() -> Self {
+        Self::canonical("OBS-MEMBER-STATE")
     }
 
     /// Returns `true` when this schema is one of the frozen IS-0003 schemas.
@@ -190,6 +236,11 @@ impl ObservationSchema {
                 | ("OBS-WORK-GROUPED", 1)
                 | ("OBS-CONTINUATION-SURFACE", 1)
                 | ("OBS-INPUT-ACTIVITY", 1)
+                | ("OBS-SURFACE-NAMED", 1)
+                | ("OBS-SURFACE-CLASSIFIED", 1)
+                | ("OBS-WORK-DISMISSED", 1)
+                | ("OBS-MEMBER-STATE", 1)
+                | ("OBS-WORK-NAMED", 1)
         )
     }
 
@@ -204,7 +255,11 @@ impl ObservationSchema {
             ("OBS-WORK-DESIGNATED", 1)
                 | ("OBS-REPOSITORY-MEMBERSHIP", 1)
                 | ("OBS-WORK-GROUPED", 1)
+                | ("OBS-WORK-NAMED", 1)
                 | ("OBS-CONTINUATION-SURFACE", 1)
+                | ("OBS-SURFACE-CLASSIFIED", 1)
+                | ("OBS-WORK-DISMISSED", 1)
+                | ("OBS-MEMBER-STATE", 1)
         )
     }
 
@@ -222,7 +277,11 @@ impl ObservationSchema {
             (self.name.as_str(), self.version),
             ("OBS-WORK-DESIGNATED", 1)
                 | ("OBS-WORK-GROUPED", 1)
+                | ("OBS-WORK-NAMED", 1)
                 | ("OBS-CONTINUATION-SURFACE", 1)
+                | ("OBS-SURFACE-CLASSIFIED", 1)
+                | ("OBS-WORK-DISMISSED", 1)
+                | ("OBS-MEMBER-STATE", 1)
         )
     }
 
@@ -238,8 +297,13 @@ impl ObservationSchema {
             ("OBS-WORK-DESIGNATED", 1) => Some("WorkDesignated"),
             ("OBS-REPOSITORY-MEMBERSHIP", 1) => Some("RepositoryMembership"),
             ("OBS-WORK-GROUPED", 1) => Some("WorkGrouped"),
+            ("OBS-WORK-NAMED", 1) => Some("WorkNamed"),
             ("OBS-CONTINUATION-SURFACE", 1) => Some("ContinuationSurface"),
             ("OBS-INPUT-ACTIVITY", 1) => Some("InputActivity"),
+            ("OBS-SURFACE-NAMED", 1) => Some("SurfaceNamed"),
+            ("OBS-SURFACE-CLASSIFIED", 1) => Some("SurfaceClassified"),
+            ("OBS-WORK-DISMISSED", 1) => Some("WorkDismissed"),
+            ("OBS-MEMBER-STATE", 1) => Some("MemberState"),
             _ => None,
         }
     }

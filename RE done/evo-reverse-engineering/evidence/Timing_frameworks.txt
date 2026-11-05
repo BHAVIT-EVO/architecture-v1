@@ -1,0 +1,15 @@
+total 0
+drwxr-xr-x@ 14 bhavitsaini  admin  448 Oct  7 00:29 .
+drwxr-xr-x@ 10 bhavitsaini  admin  320 Oct  7 00:29 ..
+lrwxr-xr-x@  1 bhavitsaini  admin   79 Oct  7 00:29 RepliesSDK.framework -> ../Library/LoginItems/TimingHelper.app/Contents/Frameworks/RepliesSDK.framework
+lrwxr-xr-x@  1 bhavitsaini  admin   76 Oct  7 00:29 RxCocoa.framework -> ../Library/LoginItems/TimingHelper.app/Contents/Frameworks/RxCocoa.framework
+lrwxr-xr-x@  1 bhavitsaini  admin   76 Oct  7 00:29 RxRelay.framework -> ../Library/LoginItems/TimingHelper.app/Contents/Frameworks/RxRelay.framework
+lrwxr-xr-x@  1 bhavitsaini  admin   76 Oct  7 00:29 RxSwift.framework -> ../Library/LoginItems/TimingHelper.app/Contents/Frameworks/RxSwift.framework
+lrwxr-xr-x@  1 bhavitsaini  admin   75 Oct  7 00:29 Sentry.framework -> ../Library/LoginItems/TimingHelper.app/Contents/Frameworks/Sentry.framework
+lrwxr-xr-x@  1 bhavitsaini  admin   76 Oct  7 00:29 Sparkle.framework -> ../Library/LoginItems/TimingHelper.app/Contents/Frameworks/Sparkle.framework
+lrwxr-xr-x@  1 bhavitsaini  admin   83 Oct  7 00:29 TimingDatabase.framework -> ../Library/LoginItems/TimingHelper.app/Contents/Frameworks/TimingDatabase.framework
+lrwxr-xr-x@  1 bhavitsaini  admin   87 Oct  7 00:29 TimingIntegrations.framework -> ../Library/LoginItems/TimingHelper.app/Contents/Frameworks/TimingIntegrations.framework
+lrwxr-xr-x@  1 bhavitsaini  admin   81 Oct  7 00:29 TimingLegacy.framework -> ../Library/LoginItems/TimingHelper.app/Contents/Frameworks/TimingLegacy.framework
+lrwxr-xr-x@  1 bhavitsaini  admin   83 Oct  7 00:29 TimingPackages.framework -> ../Library/LoginItems/TimingHelper.app/Contents/Frameworks/TimingPackages.framework
+lrwxr-xr-x@  1 bhavitsaini  admin   77 Oct  7 00:29 TimingUI.framework -> ../Library/LoginItems/TimingHelper.app/Contents/Frameworks/TimingUI.framework
+lrwxr-xr-x@  1 bhavitsaini  admin   90 Oct  7 00:29 libswiftCompatibilitySpan.dylib -> ../Library/LoginItems/TimingHelper.app/Contents/Frameworks/libswiftCompatibilitySpan.dylib
