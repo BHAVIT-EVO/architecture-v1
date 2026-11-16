@@ -1,0 +1,5 @@
+# ONNX Runtime build contract (docs/RELEASE-CHECKLIST.md).
+# ort / ort-sys 2.0.0-rc.13 loads ONNX Runtime 1.x; the reviewed local runtime
+# is 1.29.0 for macOS arm64, with OrtGetApiBase exported.
+# sha256                                                           filename
+f799cf7f30b0884fb343dc2d9d01f3579650dad67677e0b61ef90ef587ff30a2  libonnxruntime.1.29.0.dylib

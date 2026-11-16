@@ -387,7 +387,8 @@ async function continueSelected() {
   if (!w) return;
   if (isPaused()) return pausedRefusal();
   busy = true;
-  scene.setListening(true);
+  // Opening is not listening: one calm pulse on the CRT, never the waveform.
+  scene.setOpening(true);
   try {
     const result = await api.continueWork(w.id);
     const outcome = result?.hint ?? "Evo could not open this work.";
@@ -408,7 +409,7 @@ async function continueSelected() {
   } catch (error) {
     toast(error.message);
   } finally {
-    scene.setListening(false);
+    scene.setOpening(false);
     busy = false;
   }
 }

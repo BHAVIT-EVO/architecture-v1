@@ -37,7 +37,7 @@ export function createScene({
   scratch.height = H;
   const sc = scratch.getContext("2d");
 
-  let state = { mode, listening, selected: 0, frame: 0, highlight: [] };
+  let state = { mode, listening, selected: 0, frame: 0, highlight: [], opening: false, openingFrame: -999 };
   let timer = null;
 
   function drawObject(w, lift, hl, frame, alpha = 1, rise = 0) {
@@ -83,6 +83,14 @@ export function createScene({
       drawBars(c, frame, theme.accent);
     } else {
       drawWord(c, frame, theme.accent);
+    }
+
+    // Continue: one calm pulse, never the listening bars. A pulse says "this is
+    // happening" without pretending the microphone is involved (§3.2).
+    if (state.opening) {
+      const t = Math.min(1, Math.max(0, (frame - state.openingFrame) / 18));
+      const pulse = Math.sin(Math.PI * t) * 0.32;
+      px(c, theme.accent, CRT.x, CRT.y, CRT.w, CRT.h, pulse);
     }
 
     // Loading: pale outlines on the path, never a spinner (§S6).
@@ -179,6 +187,12 @@ export function createScene({
     },
     setListening(v) {
       state.listening = v;
+      draw(state.frame);
+    },
+    /** Continue is opening something: one pulse, no microphone pretence. */
+    setOpening(v) {
+      state.opening = Boolean(v);
+      if (state.opening) state.openingFrame = state.frame;
       draw(state.frame);
     },
     setLoading(v) {

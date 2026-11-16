@@ -69,15 +69,195 @@ find_ort_library() {
   return 1
 }
 
+# Accept only the runtime the locked bindings were built against. ort/ort-sys
+# 2.0.0-rc.13 loads ONNX Runtime 1.x; the reviewed local contract is 1.29.0
+# (docs/RELEASE-CHECKLIST.md). A mismatched library fails at wake time, not at
+# link time, so the version is checked here instead of trusted.
+ORT_RELEASE_VERSION="${ORT_RELEASE_VERSION:-1.29.0}"
+ORT_REQUIRED_VERSION="${ORT_REQUIRED_VERSION:-${ORT_RELEASE_VERSION%.*}.}"
+ORT_SEARCH_LOG=()
+ORT_CHOSEN=""
+ORT_CHOSEN_ORIGIN=""
+
+ort_note() { ORT_SEARCH_LOG+=("$1"); }
+
+# The first real, nonempty runtime library directly inside a directory.
+ort_dylib_in() {
+  local directory="$1" candidate
+  [ -d "$directory" ] || return 1
+  for candidate in "$directory"/libonnxruntime*.dylib "$directory"/onnxruntime*.dylib; do
+    if [ -f "$candidate" ] && [ -s "$candidate" ]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+ort_dylib_version() {
+  local version
+  version="$(otool -L "$1" 2>/dev/null | sed -n '2p' | sed -n 's/.*current version \([0-9][0-9.]*\).*/\1/p')"
+  if [ -z "$version" ]; then
+    version="$(strings -a "$1" 2>/dev/null | grep -m1 -E '^1\.[0-9]+\.[0-9]+$' || true)"
+  fi
+  printf '%s\n' "$version"
+}
+
+ort_accept_candidate() { # path, origin
+  local path="$1" origin="$2" version
+  if [ ! -f "$path" ] || [ ! -s "$path" ]; then
+    ort_note "$origin: no nonempty libonnxruntime*.dylib"
+    return 1
+  fi
+  version="$(ort_dylib_version "$path")"
+  case "$version" in
+    ${ORT_REQUIRED_VERSION}*) ;;
+    "")
+      ort_note "$origin: $path has no readable Mach-O runtime version"
+      return 1
+      ;;
+    *)
+      ort_note "$origin: $path is $version, the ort crate needs ${ORT_REQUIRED_VERSION}x"
+      return 1
+      ;;
+  esac
+  if ! nm -gU "$path" 2>/dev/null | grep -q '_OrtGetApiBase'; then
+    ort_note "$origin: $path does not export OrtGetApiBase"
+    return 1
+  fi
+  if ! file "$path" 2>/dev/null | grep -q 'arm64'; then
+    ort_note "$origin: $path is not an arm64 Mach-O"
+    return 1
+  fi
+  ORT_CHOSEN="$path"
+  ORT_CHOSEN_ORIGIN="$origin"
+  return 0
+}
+
+# Staging directories that no longer hold a runtime are build litter: they are
+# what made the old search pick a directory with nothing linkable in it.
+purge_stale_ort_staging() {
+  local dir
+  for dir in "$TARGET_DIR"/ort-bundled-link.*; do
+    [ -d "$dir" ] || continue
+    if ! ort_dylib_in "$dir" >/dev/null; then
+      rm -rf "$dir"
+      echo "ONNX Runtime: removed staging directory with no runtime: $dir"
+    fi
+  done
+}
+
+# vendor/ort is the only copy that may be downloaded, and only when its bytes
+# match the pin in scripts/ort.sha256.
+provision_ort_from_vendor() {
+  local pin="$REPO_ROOT/scripts/ort.sha256" want="" have
+  if [ -f "$pin" ]; then
+    want="$(awk 'NF>=1 && $1 !~ /^#/ {print $1; exit}' "$pin")"
+  fi
+  if [ -z "$want" ]; then
+    ort_note "vendor/ort: scripts/ort.sha256 has no pin"
+    return 1
+  fi
+  if [ -f "$REPO_ROOT/vendor/ort/libonnxruntime.1.dylib" ]; then
+    have="$(shasum -a 256 "$REPO_ROOT/vendor/ort/libonnxruntime.1.dylib" | awk '{print $1}')"
+    if [ "$have" = "$want" ]; then
+      printf '%s\n' "$REPO_ROOT/vendor/ort/libonnxruntime.1.dylib"
+      return 0
+    fi
+    ort_note "vendor/ort: sha256 $have does not match the pin $want"
+    return 1
+  fi
+  if [ "${EVO_ORT_DOWNLOAD:-0}" != "1" ]; then
+    ort_note "vendor/ort: empty (set EVO_ORT_DOWNLOAD=1 to fetch the pinned release)"
+    return 1
+  fi
+  local url="https://github.com/microsoft/onnxruntime/releases/download/v${ORT_RELEASE_VERSION}/onnxruntime-osx-arm64-${ORT_RELEASE_VERSION}.tgz"
+  local tmp
+  tmp="$(mktemp -d)"
+  if ! curl -fsSL "$url" -o "$tmp/ort.tgz"; then
+    ort_note "vendor/ort: download failed: $url"
+    rm -rf "$tmp"
+    return 1
+  fi
+  if ! tar -xzf "$tmp/ort.tgz" -C "$tmp"; then
+    ort_note "vendor/ort: could not unpack $url"
+    rm -rf "$tmp"
+    return 1
+  fi
+  local found
+  found="$(find "$tmp" -name 'libonnxruntime*.dylib' -type f | head -n 1)"
+  if [ -z "$found" ] || [ "$(shasum -a 256 "$found" | awk '{print $1}')" != "$want" ]; then
+    ort_note "vendor/ort: downloaded archive did not match the pin $want"
+    rm -rf "$tmp"
+    return 1
+  fi
+  mkdir -p "$REPO_ROOT/vendor/ort"
+  cp -X "$found" "$REPO_ROOT/vendor/ort/libonnxruntime.1.dylib"
+  rm -rf "$tmp"
+  printf '%s\n' "$REPO_ROOT/vendor/ort/libonnxruntime.1.dylib"
+}
+
+# Search order, fixed by docs/mission/MISSION.md §1.2. Every rejected path is
+# recorded so a failure prints the whole search, not just the last attempt.
+resolve_ort_library() {
+  ORT_SEARCH_LOG=()
+  local candidate directory
+  purge_stale_ort_staging
+
+  if [ -n "$ORT_LIB_DIR" ]; then
+    if candidate="$(ort_dylib_in "$ORT_LIB_DIR" || true)" && [ -n "$candidate" ] \
+      && ort_accept_candidate "$candidate" "ORT_LIB_PATH=$ORT_LIB_DIR"; then
+      ORT_LIB_DIR="$(dirname "$ORT_CHOSEN")"
+      return 0
+    fi
+    [ -n "${candidate:-}" ] || ort_note "ORT_LIB_PATH=$ORT_LIB_DIR: no nonempty libonnxruntime*.dylib"
+  else
+    ort_note "ORT_LIB_PATH: not set"
+  fi
+
+  if candidate="$(provision_ort_from_vendor || true)" && [ -n "$candidate" ] \
+    && ort_accept_candidate "$candidate" "vendor/ort (sha256 pinned)"; then
+    ORT_LIB_DIR="$REPO_ROOT/vendor/ort"
+    return 0
+  fi
+
+  for directory in \
+    /Applications/Evo.app/Contents/Frameworks \
+    /Applications/Evo.app/Contents/Resources \
+    /Applications/Evo.app/Contents/Resources/onnxruntime; do
+    if candidate="$(ort_dylib_in "$directory" || true)" && [ -n "$candidate" ] \
+      && ort_accept_candidate "$candidate" "installed app: $directory"; then
+      ORT_LIB_DIR="$(dirname "$ORT_CHOSEN")"
+      return 0
+    fi
+    [ -n "${candidate:-}" ] || ort_note "installed app: $directory has no runtime"
+  done
+
+  while IFS= read -r candidate; do
+    [ -n "$candidate" ] || continue
+    if ort_accept_candidate "$candidate" "target: $(dirname "$candidate")"; then
+      ORT_LIB_DIR="$(dirname "$ORT_CHOSEN")"
+      return 0
+    fi
+  done < <(find "$TARGET_DIR" -maxdepth 4 -name 'libonnxruntime*.dylib' -type f -size +1M -print 2>/dev/null | sort)
+  ort_note "target: no accepted libonnxruntime*.dylib under $TARGET_DIR"
+
+  while IFS= read -r directory; do
+    [ -n "$directory" ] || continue
+    if candidate="$(ort_dylib_in "$directory" || true)" && [ -n "$candidate" ] \
+      && ort_accept_candidate "$candidate" "ort crate cache: $directory"; then
+      ORT_LIB_DIR="$(dirname "$ORT_CHOSEN")"
+      return 0
+    fi
+  done < <(find "${HOME:-/nonexistent}/.cache" -maxdepth 7 -type d -path '*/onnxruntime/capi' -print 2>/dev/null | sort)
+  ort_note "ort crate cache: no accepted runtime under ${HOME:-}/.cache"
+
+  return 1
+}
+
 validate_ort_provisioning() {
   if [ "$EVO_VOICE" = "on" ] && [ "$ORT_PROVISIONING" = "none" ]; then
     ORT_PROVISIONING="external"
-    if [ -z "$ORT_LIB_DIR" ]; then
-      ORT_LIB_DIR="$(find "$TARGET_DIR" -maxdepth 1 -type d -name 'ort-bundled-link.*' -print 2>/dev/null | sort | tail -n 1)"
-    fi
-    if [ -z "$ORT_LIB_DIR" ] && [ -n "${HOME:-}" ]; then
-      ORT_LIB_DIR="$(find "$HOME/.cache" -type d -path '*/onnxruntime/capi' -print 2>/dev/null | sort | tail -n 1)"
-    fi
   fi
   if [ -n "$ORT_LIB_DIR" ] && [ "${ORT_LIB_DIR#/}" = "$ORT_LIB_DIR" ]; then
     ORT_LIB_DIR="$REPO_ROOT/$ORT_LIB_DIR"
@@ -89,7 +269,18 @@ validate_ort_provisioning() {
       # runtime merely to build focused-window capture.
       return 0
       ;;
-    external) ;;
+    external)
+      if ! resolve_ort_library; then
+        echo "error: no usable ONNX Runtime ${ORT_REQUIRED_VERSION}x arm64 dylib was found." >&2
+        echo "       Searched, in order:" >&2
+        printf '         - %s\n' "${ORT_SEARCH_LOG[@]}" >&2
+        echo "       Fix one of these and rerun:" >&2
+        echo "         ORT_LIB_PATH=<dir containing libonnxruntime.1.dylib>" >&2
+        echo "         or put the pinned runtime in vendor/ort (scripts/ort.sha256)." >&2
+        return 1
+      fi
+      echo "ONNX Runtime: $ORT_CHOSEN (from $ORT_CHOSEN_ORIGIN)"
+      ;;
     bundled)
       # Refuse to overwrite/sign an existing bundle in this opt-in path.
       if [ -e "$APP_DIR" ] || [ -L "$APP_DIR" ]; then
@@ -137,11 +328,18 @@ validate_ort_provisioning() {
   # locked build cannot silently fall back to its link-error sentinel.
   export ORT_LIB_PATH="$ORT_LIB_DIR" ORT_LIB_LOCATION="$ORT_LIB_DIR"
 
-  case "${ORT_PREFER_DYNAMIC_LINK:-}" in
+  # Dynamic linking is the default: the mission's one documented build command
+  # must work without extra environment. 0 still selects a static archive.
+  case "${ORT_PREFER_DYNAMIC_LINK:-1}" in
     1|[Tt][Rr][Uu][Ee]) ORT_DYNAMIC=1 ;;
     *) ORT_DYNAMIC=0 ;;
   esac
   if [ "$ORT_DYNAMIC" = "1" ]; then
+    # ort-sys reads this variable itself in its build script
+    # (build/dynamic_link.rs: prefer_dynamic_linking). Computing it here is not
+    # enough: it must reach Cargo's child processes, or the crate falls back to
+    # the static-archive probe and fails with "could not link".
+    export ORT_PREFER_DYNAMIC_LINK=1
     local ort_library
     ort_library="$(find_ort_library "$ORT_LIB_DIR" .dylib || true)"
     if [ -z "$ort_library" ]; then
@@ -156,8 +354,12 @@ validate_ort_provisioning() {
     if [ "$(uname -s)" = "Darwin" ]; then
       local ort_link_dir="$TARGET_DIR/ort-link"
       mkdir -p "$ort_link_dir"
-      ln -sfn "$ort_library" "$ort_link_dir/libonnxruntime.dylib"
-      ln -sfn "$ort_library" "$ort_link_dir/libonnxruntime.1.dylib"
+      # ort-sys probes the directory for a real library file; a symlink to a
+      # library outside the build tree is rejected. Stage actual bytes, then
+      # keep the unversioned name as a sibling-relative link.
+      rm -f "$ort_link_dir/libonnxruntime.dylib" "$ort_link_dir/libonnxruntime.1.dylib"
+      cp -X "$ort_library" "$ort_link_dir/libonnxruntime.1.dylib"
+      ln -sfn libonnxruntime.1.dylib "$ort_link_dir/libonnxruntime.dylib"
       ORT_LIB_DIR="$ort_link_dir"
       export ORT_LIB_PATH="$ORT_LIB_DIR"
     fi

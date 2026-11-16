@@ -15,6 +15,26 @@ fn main() {
         .map(|d| d.as_secs())
         .unwrap_or(0);
     println!("cargo:rustc-env=EVO_BUILD_TIME={secs}");
+    // About must state which source this binary came from. Ask git once at
+    // build time; a source tarball without .git is honestly "unknown" rather
+    // than a made-up hash. EVO_GIT_HASH overrides it for reproducible builds.
+    let commit = std::env::var("EVO_GIT_HASH")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .or_else(|| {
+            std::process::Command::new("git")
+                .args(["rev-parse", "--short=12", "HEAD"])
+                .current_dir(env!("CARGO_MANIFEST_DIR"))
+                .output()
+                .ok()
+                .filter(|output| output.status.success())
+                .and_then(|output| String::from_utf8(output.stdout).ok())
+                .map(|value| value.trim().to_string())
+                .filter(|value| !value.is_empty())
+        })
+        .unwrap_or_else(|| "unknown".into());
+    println!("cargo:rustc-env=EVO_COMMIT={commit}");
+    println!("cargo:rerun-if-env-changed=EVO_GIT_HASH");
     println!("cargo:rerun-if-changed=objc/objc_try.mm");
     cc::Build::new()
         .file("objc/objc_try.mm")
