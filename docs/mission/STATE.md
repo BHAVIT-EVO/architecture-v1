@@ -8,7 +8,19 @@ Read this first; continue from the first unfinished step.
 - 0.1 tag + branch — DONE — evidence/0-baseline.txt
 - 0.2 backups (copy only, ~/Evo-backups) — DONE — evidence/0-baseline.txt
 - 0.3 clippy — PASS — evidence/0.3-clippy.txt: `cargo clippy --workspace -- -D warnings` finished, CLIPPY_EXIT=0, zero warnings
-- 0.3 cargo test — RUNNING — evidence/0.3-cargo-test.txt: 25 suites `ok`, zero failures, then `regression_gate_on_the_real_log` still running at the 10-minute mark; no TEST_EXIT line yet. The first attempt failed to link with `ld: write() failed, errno=28 (No space left on device)`; the disk was at 204 MB free and `target/debug/incremental` held 20 GB, which was removed before the current run
+- 0.3 cargo test — **FAIL** — `evidence/0.3-cargo-test.txt` holds a completed run: `TEST_EXIT=101`.
+  25 suites `ok` (1 ignored in two suites, 252 tests in the largest), 1 suite FAILED —
+  `evo-ledger --test regression_gate::regression_gate_on_the_real_log`,
+  `test result: FAILED. 0 passed; 1 failed; … finished in 151.36s`.
+  The assertion is the gate's own no-mega-work tripwire: `a mega-work holds 1420 of 1584 resources`
+  (90 %, rule trips above 60 %). The run before this one never finished: the same suite was still
+  executing after 26 minutes because `specific_tokens` rescanned every page title per token;
+  `sample` named `content_adjacent_to_dominant → specific_tokens`. Cache the corpus token
+  frequency once (identical arithmetic: same predicate, same divisor) and the suite completes in
+  136–151 s. The mega-work failure is not caused by that change: with the per-page memo removed and
+  only the frequency map in place, the gate still fails identically (`evidence/0.3-gate-nomemo.txt`).
+  Fixing it means changing how attachment groups pages — a grouping-model decision, not a repair —
+  so it is left open rather than guessed.
 - 0.3 node tests — PASS — evidence/0.3-node-tests.txt (28 pass)
 - 0.4 mission-verify.sh + STATE.md — DONE — scripts/mission-verify.sh
 - 0.5 duplicate bundles — BLOCKED — evidence/0.5-duplicates.txt (host refused the unscoped `mdfind`; bounded query returned nothing; HUMAN step added)

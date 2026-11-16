@@ -184,10 +184,24 @@ fn title_tokens(title: &str) -> BTreeSet<String> {
 /// page titles ("page", "pdf", brand suffixes) carry no identity — the
 /// same ubiquity discount that quarantines ambient pages. Computed over
 /// the corpus, deterministic, never a word list.
+/// How many title sets contain each token. Computed once per corpus: the
+/// filter below asks this question for every token of every title, and
+/// rescanning the corpus per token was the whole cost of a real-log replay.
+fn token_document_frequency(titles: &[&BTreeSet<String>]) -> BTreeMap<String, usize> {
+    let mut frequency: BTreeMap<String, usize> = BTreeMap::new();
+    for set in titles {
+        for token in set.iter() {
+            *frequency.entry(token.clone()).or_insert(0) += 1;
+        }
+    }
+    frequency
+}
+
 fn specific_tokens(
     titles: &[&BTreeSet<String>],
     chrome: &BTreeSet<String>,
     title: &str,
+    document_frequency: &BTreeMap<String, usize>,
 ) -> BTreeSet<String> {
     let stripped = strip_title_chrome(title, chrome);
     let tokens = title_tokens(&stripped);
@@ -197,7 +211,7 @@ fn specific_tokens(
     tokens
         .into_iter()
         .filter(|token| {
-            let frequency = titles.iter().filter(|set| set.contains(token)).count();
+            let frequency = document_frequency.get(token).copied().unwrap_or(0);
             // 10%: any token in over a tenth of all page titles is
             // corpus chrome — an app suffix, a brand, a username — never
             // identity.
@@ -428,6 +442,7 @@ pub fn group_works_traced(
         .flat_map(|p| p.titles.iter().cloned())
         .collect();
     let title_chrome = recurring_title_chrome(&all_titles);
+    let title_frequency = token_document_frequency(&title_sets);
     // Specific token sets are computed once per page — the pair loop is
     // O(P²) comparisons and recomputing token sets per pair was a
     // measured hot spot as page diversity grows.
@@ -439,7 +454,7 @@ pub fn group_works_traced(
                 pages[key]
                     .titles
                     .iter()
-                    .map(|t| specific_tokens(&title_sets, &title_chrome, t))
+                    .map(|t| specific_tokens(&title_sets, &title_chrome, t, &title_frequency))
                     .collect(),
             )
         })
@@ -975,18 +990,20 @@ fn content_adjacent_to_dominant(
         .flat_map(|p| p.titles.iter().cloned())
         .collect();
     let title_chrome = recurring_title_chrome(&all_titles);
-    for gk in group_keys {
-        let g_specific: Vec<BTreeSet<String>> = pages[gk.as_str()]
+    let title_frequency = token_document_frequency(&title_sets);
+    // Each page's specific token sets are the same on every visit, and this
+    // function is called once per candidate pair: compute them once here.
+    let specific_for = |key: &str| -> Vec<BTreeSet<String>> {
+        pages[key]
             .titles
             .iter()
-            .map(|t| specific_tokens(&title_sets, &title_chrome, t))
-            .collect();
+            .map(|t| specific_tokens(&title_sets, &title_chrome, t, &title_frequency))
+            .collect()
+    };
+    for gk in group_keys {
+        let g_specific = specific_for(gk.as_str());
         for dk in &dominant_keys {
-            let d_specific: Vec<BTreeSet<String>> = pages[dk.as_str()]
-                .titles
-                .iter()
-                .map(|t| specific_tokens(&title_sets, &title_chrome, t))
-                .collect();
+            let d_specific = specific_for(dk.as_str());
             let best = g_specific
                 .iter()
                 .flat_map(|ta| d_specific.iter().map(move |tb| jaccard_sets(ta, tb)))
