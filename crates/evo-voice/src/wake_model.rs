@@ -19,8 +19,8 @@
 use std::path::Path;
 
 use crate::driver::AcousticWake;
-use ort::session::Session;
 use ort::session::builder::GraphOptimizationLevel;
+use ort::session::Session;
 use ort::value::TensorRef;
 
 /// Samples per streaming chunk: 80 ms at 16 kHz, openWakeWord's native step.
@@ -135,10 +135,11 @@ impl CustomWakeSpotter {
     /// person's custom wake model from `models_dir` (the same directory
     /// the whisper `.bin` lives in is natural).
     pub fn load(models_dir: &Path) -> Result<Self, String> {
+        ort::init().with_name("evo").commit();
         let load = |name: &str| -> Result<Session, String> {
             let path = models_dir.join(name);
-            let mut builder =
-                Session::builder().map_err(|e| format!("load {}: builder: {e}", path.display()))?;
+            let mut builder = Session::builder()
+                .map_err(|e| format!("load {}: builder: {e}", path.display()))?;
             builder = builder
                 .with_optimization_level(GraphOptimizationLevel::Level3)
                 .map_err(|e| format!("load {}: optimization: {e}", path.display()))?;

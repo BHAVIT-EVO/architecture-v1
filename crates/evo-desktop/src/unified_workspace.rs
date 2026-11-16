@@ -10,9 +10,16 @@ use std::collections::BTreeSet;
 use evo_pods::layout::{Layout, LayoutEngine, LayoutId, Plan, WindowRef};
 use evo_pods::surface::{PodSurface, PodWindow};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct WorkspaceSnapshot {
-    windows: BTreeSet<(i32, u32)>,
+    windows: Vec<(i32, u32, evo_pods::surface::Frame)>,
+    hidden_apps: BTreeSet<i32>,
+}
+
+impl WorkspaceSnapshot {
+    pub fn remember_hidden_app(&mut self, pid: i32) {
+        self.hidden_apps.insert(pid);
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -23,7 +30,8 @@ pub struct WorkspaceArrangement {
 
 /// Capture the visible regular-app windows before Evo opens a work.
 pub fn snapshot(surface: &mut impl PodSurface, protected_pid: i32) -> WorkspaceSnapshot {
-    let mut windows = BTreeSet::new();
+    let mut windows = Vec::new();
+    let mut hidden_apps = BTreeSet::new();
     if let Ok(apps) = surface.running_apps() {
         for app in apps
             .into_iter()
@@ -34,12 +42,15 @@ pub fn snapshot(surface: &mut impl PodSurface, protected_pid: i32) -> WorkspaceS
                     app_windows
                         .into_iter()
                         .filter(|window| !window.minimized)
-                        .map(|window| (window.pid, window.window_id)),
+                        .map(|window| (window.pid, window.window_id, window.frame)),
                 );
+            }
+            if app.hidden {
+                hidden_apps.insert(app.pid);
             }
         }
     }
-    WorkspaceSnapshot { windows }
+    WorkspaceSnapshot { windows, hidden_apps }
 }
 
 /// Arrange windows that appeared after `before` into a deterministic layout.
@@ -77,16 +88,24 @@ pub fn arrange_new_windows_with_layout(
             match surface.windows_of(app.pid) {
                 Ok(windows) => windows,
                 Err(err) => {
-                    eprintln!("EVO workspace: could not enumerate windows for pid {}: {err}", app.pid);
+                    eprintln!(
+                        "EVO workspace: could not enumerate windows for pid {}: {err}",
+                        app.pid
+                    );
                     continue;
                 }
             }
-                .into_iter()
-                .filter(|window| {
-                    !window.minimized && !before.windows.contains(&(window.pid, window.window_id))
-                }),
+            .into_iter()
+            .filter(|window| {
+                !window.minimized
+                    && !before
+                        .windows
+                        .iter()
+                        .any(|(pid, window_id, _)| *pid == window.pid && *window_id == window.window_id)
+            }),
         );
     }
+
     if current.is_empty() {
         return None;
     }
@@ -122,6 +141,16 @@ pub fn arrange_new_windows_with_layout(
         layout: layout.id,
         plan,
     })
+}
+
+/// Restore the exact frames and hidden state captured before a continuation.
+pub fn restore_snapshot(surface: &mut impl PodSurface, snapshot: &WorkspaceSnapshot) {
+    for (pid, window_id, frame) in &snapshot.windows {
+        let _ = surface.move_window(*pid, *window_id, *frame);
+    }
+    for pid in &snapshot.hidden_apps {
+        let _ = surface.unhide_app(*pid);
+    }
 }
 
 fn window_ref(window: &PodWindow) -> WindowRef {

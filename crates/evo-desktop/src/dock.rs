@@ -65,7 +65,7 @@ pub fn show(
     // The ACTION material: near-opaque charcoal over the content. The strip
     // is structural, so a one-pixel top rule and the lighter fill are the
     // lift; the upward shadow belongs to floating frames, not this one.
-    painter.rect_filled(rect, 0.0, theme::ACTION_SURFACE);
+    painter.rect_filled(rect, 0.0, theme::action_surface());
 
     // The top hairline is also the progress line: while a restoration is
     // executing, the teal fraction fills *the hairline itself*, left to
@@ -87,7 +87,7 @@ pub fn show(
                     rect.left_top() + egui::vec2(0.0, 0.5),
                     rect.left_top() + egui::vec2(rect.width() * fraction, 0.5),
                 ],
-                egui::Stroke::new(1.5, theme::TEAL),
+                egui::Stroke::new(1.5, theme::accent()),
             );
         }
     }
@@ -198,7 +198,7 @@ fn transport(
             ui.label(theme::data(
                 format!("{} / {} steps", done.len(), steps.len().max(1)),
                 Role::Data.size(),
-                theme::TEXT,
+                theme::text_ink(),
             ));
         }
     }
@@ -209,15 +209,17 @@ fn transport(
 /// achievement, so it borrows neither the success green nor the accent.
 /// Sized from its own measured galley, so the word can never clip.
 fn phase_pill(ui: &mut egui::Ui, word: &str) {
-    let text = theme::eyebrow(word, theme::TEAL);
-    let galley =
-        ui.painter()
-            .layout_no_wrap(text.text().to_owned(), Role::Eyebrow.font(), theme::TEAL);
+    let text = theme::eyebrow(word, theme::accent());
+    let galley = ui.painter().layout_no_wrap(
+        text.text().to_owned(),
+        Role::Eyebrow.font(),
+        theme::accent(),
+    );
     let size = galley.size() + egui::vec2(theme::S3 * 2.0, theme::S1 * 1.5);
     let (rect, _) = ui.allocate_exact_size(size, egui::Sense::hover());
     let painter = ui.painter();
     let corner = egui::CornerRadius::same(theme::CORNER_CONTROL);
-    painter.rect_filled(rect, corner, theme::RAISED);
+    painter.rect_filled(rect, corner, theme::raised());
     painter.rect_stroke(
         rect,
         corner,
@@ -225,5 +227,5 @@ fn phase_pill(ui: &mut egui::Ui, word: &str) {
         egui::StrokeKind::Inside,
     );
     let origin = rect.center() - galley.size() * 0.5;
-    painter.galley(origin, galley, theme::TEAL);
+    painter.galley(origin, galley, theme::accent());
 }

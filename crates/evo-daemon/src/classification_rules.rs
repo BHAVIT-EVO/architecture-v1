@@ -94,6 +94,7 @@ impl ClassificationMatcher {
     }
 }
 
+#[allow(clippy::manual_memcpy)]
 fn wildcard_matches(pattern: &str, value: &str) -> bool {
     let pattern: Vec<char> = pattern.chars().collect();
     let value: Vec<char> = value.chars().collect();

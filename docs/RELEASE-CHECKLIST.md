@@ -302,3 +302,12 @@ original-browser restore receipt. No private browser profile was inspected.
 **Release decision:** no broad release until all applicable gates have current
 evidence. The doctor deliberately reports semantic/live/browser gates separately
 and never grants release approval.
+## Standard voice build
+
+Run this from the repository root. The script discovers a reviewed ONNX
+Runtime directory in `target/ort-bundled-link.*` or the local package cache and
+fails with the exact missing-runtime path if neither exists:
+
+```bash
+EVO_VOICE=on EVO_UI=web bash scripts/build-app.sh
+```

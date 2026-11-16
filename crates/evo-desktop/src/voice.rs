@@ -703,6 +703,18 @@ fn voice_thread_main(
 ) {
     use evo_voice::{Mic, Transcriber, UtteranceTranscriber, VoiceLoopConfig};
 
+    fn write_voice_status(root: &std::path::Path, status: &str) {
+        let path = root.join("voice.status");
+        if let Err(err) = std::fs::write(&path, format!("{status}\n")) {
+            eprintln!("EVO voice: cannot write {}: {err}", path.display());
+        } else {
+            let _ = std::fs::set_permissions(
+                &path,
+                std::os::unix::fs::PermissionsExt::from_mode(0o600),
+            );
+        }
+    }
+
     #[cfg(feature = "voice-wake")]
     let acoustic_wake = load_acoustic_wake();
 
@@ -731,14 +743,20 @@ fn voice_thread_main(
         }
     }
     let transcriber = TranscriberAdapter(transcriber);
-    let transport = VoiceSocketClient::new(storage_root);
+    let transport = VoiceSocketClient::new(storage_root.clone());
     let mic = match Mic::open() {
         Ok(m) => m,
         Err(err) => {
             eprintln!("EVO voice mic unavailable: {err}");
+            let _ = event_sender.send(evo_voice::VoiceEvent::Outcome(
+                evo_voice::VoiceOutcome::Failed {
+                    reason: format!("Microphone permission denied: {err}"),
+                },
+            ));
             return;
         }
     };
+    let (audio_control_tx, audio_control_rx) = std::sync::mpsc::channel::<bool>();
     // Keep the real-time microphone/resampler path independent from whisper
     // and the acoustic wake model. Both can take longer than one hardware
     // callback on a CPU-only Mac. Previously `driver.poll()` ran on this same
@@ -752,9 +770,32 @@ fn voice_thread_main(
     let audio_drain = std::thread::Builder::new()
         .name("evo-voice-audio-drain".to_string())
         .spawn(move || {
+            let mut paused = false;
             loop {
                 if audio_stop_rx.try_recv().is_ok() {
                     break;
+                }
+                if let Ok(next_paused) = audio_control_rx.try_recv() {
+                    if next_paused != paused {
+                        let result = if next_paused {
+                            mic.pause()
+                        } else {
+                            mic.resume()
+                        };
+                        if let Err(err) = result {
+                            eprintln!("EVO voice: capture state change failed: {err}");
+                        } else {
+                            eprintln!(
+                                "EVO voice: microphone capture {}",
+                                if next_paused { "paused" } else { "resumed" }
+                            );
+                        }
+                        paused = next_paused;
+                    }
+                }
+                if paused {
+                    std::thread::sleep(Duration::from_millis(100));
+                    continue;
                 }
                 let samples = match mic.recv_timeout(Duration::from_millis(100)) {
                     Ok(samples) => samples,
@@ -769,6 +810,9 @@ fn voice_thread_main(
             }
         })
         .ok();
+    let mut paused = crate::ui_state::UiState::load(&storage_root).paused;
+    let _ = audio_control_tx.send(paused);
+    write_voice_status(&storage_root, if paused { "paused" } else { "listening" });
     let mut driver = VoiceDriver::new(
         transcriber,
         transport,
@@ -797,6 +841,12 @@ fn voice_thread_main(
     // Feed audio until the UI goes away. The dedicated capture worker keeps
     // Mic drained while this loop performs model inference.
     loop {
+        let next_paused = crate::ui_state::UiState::load(&storage_root).paused;
+        if next_paused != paused {
+            paused = next_paused;
+            let _ = audio_control_tx.send(paused);
+            write_voice_status(&storage_root, if paused { "paused" } else { "listening" });
+        }
         if let Ok(samples) = audio_rx.recv_timeout(Duration::from_millis(20)) {
             if !samples.is_empty() {
                 driver.ingest(samples);
@@ -823,6 +873,7 @@ fn voice_thread_main(
     if let Some(audio_drain) = audio_drain {
         let _ = audio_drain.join();
     }
+    write_voice_status(&storage_root, "off");
 }
 
 /// The effective wake threshold: `EVO_WAKE_THRESHOLD` when set, else the

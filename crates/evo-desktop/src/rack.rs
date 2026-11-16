@@ -82,17 +82,12 @@ pub fn rack(
     // of the deck and the stack and disclosed in one quiet line: demoted, never
     // hidden. Their indices are carried rather than the threads themselves so
     // that a redraw does not clone the list.
-    let presentable: Vec<usize> = works
-        .iter()
-        .enumerate()
-        .filter(|(_, work)| work.is_work)
-        .map(|(index, _)| index)
-        .collect();
+    let presentable = presentable_indices(works);
     let remembered = works.len() - presentable.len();
 
     ui::gap(ui, theme::S4);
-    ui::eyebrow(ui, "Your work");
-    ui::display(ui, "Continue where you left off");
+    ui::eyebrow(ui, crate::copy::HOME_LABEL);
+    ui::display(ui, crate::copy::HOME_CONTINUE_TITLE);
     ui::gap(ui, theme::S3);
 
     if presentable.is_empty() {
@@ -116,15 +111,15 @@ pub fn rack(
     // Search narrows an already-meaningful list (DESIGN.md: the search field
     // stays quiet — a shallow well in the environment). The person's own
     // names match because they ARE the card titles (RFC-0014 read-back).
-    ui::search_field(ui, query, "Find a work by name", "evo-rack-search");
+    ui::search_field(ui, query, crate::copy::HOME_SEARCH, "evo-rack-search");
     ui::gap(ui, theme::S4);
 
     let needle = query.trim().to_lowercase();
     if !needle.is_empty() {
-        let matches: Vec<&DisplayThread> = presentable
+        let matches: Vec<usize> = presentable
             .iter()
-            .map(|&index| &works[index])
-            .filter(|work| work_matches(work, &needle))
+            .copied()
+            .filter(|&index| work_matches(&works[index], &needle))
             .collect();
         if matches.is_empty() {
             ui::caption(
@@ -146,8 +141,8 @@ pub fn rack(
             ),
         );
         ui::gap(ui, theme::S2);
-        for (position, work) in matches.iter().enumerate() {
-            if let Some(requested) = stack_row(ui, work, position) {
+        for (position, &work_index) in matches.iter().enumerate() {
+            if let Some(requested) = stack_row(ui, &works[work_index], position, work_index) {
                 action = Some(requested);
             }
             if position + 1 < matches.len() {
@@ -167,8 +162,9 @@ pub fn rack(
     // reflows, it does not truncate.
     ui.columns(on_deck.max(1), |columns| {
         for (slot, column) in columns.iter_mut().enumerate() {
-            let work = &works[presentable[slot]];
-            if let Some(requested) = track_card(column, work, slot) {
+            let work_index = presentable[slot];
+            let work = &works[work_index];
+            if let Some(requested) = track_card(column, work, slot, work_index, slot == 0) {
                 action = Some(requested);
             }
         }
@@ -194,18 +190,18 @@ pub fn rack(
             ui.label(theme::data(
                 in_stack.to_string(),
                 Role::Data.size(),
-                theme::TERTIARY,
+                theme::tertiary_ink(),
             ));
             ui.label(theme::text(
                 Role::Body,
                 if *stack_open { "\u{2191}" } else { "\u{2193}" },
-                theme::TERTIARY,
+                theme::tertiary_ink(),
             ));
         });
         if *stack_open {
             ui::gap(ui, theme::S3);
             for (position, &index) in presentable.iter().enumerate().skip(on_deck) {
-                if let Some(requested) = stack_row(ui, &works[index], position) {
+                if let Some(requested) = stack_row(ui, &works[index], position, index) {
                     action = Some(requested);
                 }
                 if position + 1 < presentable.len() {
@@ -327,7 +323,13 @@ pub fn rack(
 /// the data-voice age. Returns the user's request. `index` is the work's
 /// position in the caller's canonical list — the identity the action
 /// carries back.
-fn track_card(ui: &mut egui::Ui, work: &DisplayThread, index: usize) -> Option<RackAction> {
+fn track_card(
+    ui: &mut egui::Ui,
+    work: &DisplayThread,
+    position: usize,
+    work_index: usize,
+    is_continue_work: bool,
+) -> Option<RackAction> {
     let mut action = None;
     // The card's widget id is a global contract, not a layout artifact: it
     // is derived from the work's identity alone, so a screen reader, a
@@ -345,7 +347,7 @@ fn track_card(ui: &mut egui::Ui, work: &DisplayThread, index: usize) -> Option<R
     );
 
     let frame = egui::Frame::new()
-        .fill(theme::RAISED)
+        .fill(theme::raised())
         .stroke(egui::Stroke::new(
             1.0,
             if was_hovered {
@@ -372,7 +374,7 @@ fn track_card(ui: &mut egui::Ui, work: &DisplayThread, index: usize) -> Option<R
                 egui::Sense::hover(),
             );
             let painter = ui.painter();
-            painter.rect_filled(tile, egui::CornerRadius::same(9), theme::RECESSED);
+            painter.rect_filled(tile, egui::CornerRadius::same(9), theme::recessed());
             let initial: String = work
                 .name
                 .chars()
@@ -384,19 +386,23 @@ fn track_card(ui: &mut egui::Ui, work: &DisplayThread, index: usize) -> Option<R
                 egui::Align2::RIGHT_BOTTOM,
                 &initial,
                 theme::display_font(44.0),
-                theme::TEXT,
+                theme::text_ink(),
             );
             painter.text(
                 egui::pos2(tile.left() + 10.0, tile.top() + 8.0),
                 egui::Align2::LEFT_TOP,
-                format!("{:02}", index + 1),
+                format!("{:02}", position + 1),
                 theme::data_font(10.0),
-                theme::MUTED,
+                theme::muted_ink(),
             );
 
             ui::gap(ui, theme::S3);
             // The display voice: what this work is.
-            ui.label(theme::display(&work.name, Role::Title.size(), theme::TEXT));
+            ui.label(theme::display(
+                &work.name,
+                Role::Title.size(),
+                theme::text_ink(),
+            ));
             ui::gap(ui, theme::S1);
 
             // The full evidence stays in the work detail. The deck is a
@@ -405,7 +411,7 @@ fn track_card(ui: &mut egui::Ui, work: &DisplayThread, index: usize) -> Option<R
             ui.label(theme::text(
                 Role::Caption,
                 card_summary(&work.understanding.narrative),
-                theme::MUTED,
+                theme::muted_ink(),
             ));
             ui::gap(ui, theme::S2);
 
@@ -415,7 +421,7 @@ fn track_card(ui: &mut egui::Ui, work: &DisplayThread, index: usize) -> Option<R
                 ui.label(theme::text(
                     Role::Eyebrow,
                     work.understanding.phase.label().to_uppercase(),
-                    theme::TEAL,
+                    theme::accent(),
                 ));
             });
             // The reason this work holds the position it holds, when there is
@@ -426,16 +432,20 @@ fn track_card(ui: &mut egui::Ui, work: &DisplayThread, index: usize) -> Option<R
             // Carried in the teal voice: record evidence, not status.
             if let Some(reason) = work.urgency_reason.as_deref() {
                 ui.horizontal(|ui| {
-                    ui.label(theme::text(Role::Caption, reason, theme::TEAL));
+                    ui.label(theme::text(Role::Caption, reason, theme::accent()));
                 });
             }
             if let Some(summary) = lifecycle_summary(work) {
                 ui.horizontal(|ui| {
-                    ui.label(theme::text(Role::Caption, summary, theme::TEAL));
+                    ui.label(theme::text(Role::Caption, summary, theme::accent()));
                 });
             }
             ui.horizontal(|ui| {
-                ui.label(theme::text(Role::Data, age_stamp(work), theme::TERTIARY));
+                ui.label(theme::text(
+                    Role::Data,
+                    age_stamp(work),
+                    theme::tertiary_ink(),
+                ));
             });
         })
         .response;
@@ -454,7 +464,21 @@ fn track_card(ui: &mut egui::Ui, work: &DisplayThread, index: usize) -> Option<R
 
     // Whole card is one hit target (D4): a click opens the stage.
     if response.clicked() {
-        action = Some(RackAction::Open(index));
+        action = Some(RackAction::Open(work_index));
+    }
+    // Continue belongs to the most recently active eligible card, but remains outside its
+    // Open hit target so choosing the primary action cannot also navigate.
+    if is_continue_work {
+        ui::gap(ui, theme::S2);
+        let response = ui::control(ui, Control::primary(crate::copy::HOME_CONTINUE));
+        if cfg!(test) {
+            ui.data_mut(|data| {
+                data.insert_temp(egui::Id::new("rack-continue-rect"), response.rect)
+            });
+        }
+        if response.clicked() {
+            action = Some(RackAction::Continue(work_index));
+        }
     }
     // Separate from the card hit target: this press must not open/enter work.
     if restore_selected_control(ui, work) {
@@ -477,7 +501,12 @@ fn track_card(ui: &mut egui::Ui, work: &DisplayThread, index: usize) -> Option<R
 }
 
 /// A stack row: the same content as a card, laid out as a list row.
-fn stack_row(ui: &mut egui::Ui, work: &DisplayThread, index: usize) -> Option<RackAction> {
+fn stack_row(
+    ui: &mut egui::Ui,
+    work: &DisplayThread,
+    position: usize,
+    work_index: usize,
+) -> Option<RackAction> {
     let mut action = None;
     // Same global-id contract as the card.
     let id = stack_row_widget_id(work.thread_id);
@@ -486,36 +515,44 @@ fn stack_row(ui: &mut egui::Ui, work: &DisplayThread, index: usize) -> Option<Ra
         ui.horizontal(|ui| {
             ui.label(theme::text(
                 Role::Data,
-                format!("{:02}", index + 1),
-                theme::TERTIARY,
+                format!("{:02}", position + 1),
+                theme::tertiary_ink(),
             ));
             ui.add_space(theme::S2);
-            ui.label(theme::display(&work.name, Role::Title.size(), theme::TEXT));
+            ui.label(theme::display(
+                &work.name,
+                Role::Title.size(),
+                theme::text_ink(),
+            ));
         });
         ui.horizontal(|ui| {
             ui.label(theme::text(
                 Role::Caption,
                 &work.understanding.narrative,
-                theme::MUTED,
+                theme::muted_ink(),
             ));
         });
         // Same reason line as the card, same voice.
         if let Some(reason) = work.urgency_reason.as_deref() {
             ui.horizontal(|ui| {
-                ui.label(theme::text(Role::Caption, reason, theme::TEAL));
+                ui.label(theme::text(Role::Caption, reason, theme::accent()));
             });
         }
         if let Some(summary) = lifecycle_summary(work) {
             ui.horizontal(|ui| {
-                ui.label(theme::text(Role::Caption, summary, theme::TEAL));
+                ui.label(theme::text(Role::Caption, summary, theme::accent()));
             });
         }
         ui.horizontal(|ui| {
-            ui.label(theme::text(Role::Data, age_stamp(work), theme::TERTIARY));
+            ui.label(theme::text(
+                Role::Data,
+                age_stamp(work),
+                theme::tertiary_ink(),
+            ));
         });
     });
     if response.clicked() {
-        action = Some(RackAction::Open(index));
+        action = Some(RackAction::Open(work_index));
     }
     if restore_selected_control(ui, work) {
         action = Some(RackAction::RestoreSelected(work.thread_id));
@@ -617,6 +654,24 @@ fn lifecycle_summary(work: &DisplayThread) -> Option<String> {
         parts.push(format!("{inferred} inferred"));
     }
     Some(format!("Skipped members: {}", parts.join(", ")))
+}
+
+/// Indices for eligible work, ordered by witnessed activity (newest first).
+/// Missing activity sorts last; equal timestamps retain engine order.
+fn presentable_indices(works: &[DisplayThread]) -> Vec<usize> {
+    let mut indices: Vec<usize> = works
+        .iter()
+        .enumerate()
+        .filter(|(_, work)| work.is_work)
+        .map(|(index, _)| index)
+        .collect();
+    indices.sort_by(|left, right| {
+        works[*right]
+            .last_active_ms
+            .cmp(&works[*left].last_active_ms)
+            .then(left.cmp(right))
+    });
+    indices
 }
 
 /// Whether one work answers a search query: a case-insensitive match over
@@ -732,6 +787,22 @@ mod tests {
     }
 
     #[test]
+    fn home_orders_eligible_work_by_witnessed_activity_and_keeps_missing_last() {
+        let mut works = [
+            work(1, "Older"),
+            work(2, "Recent"),
+            work(3, "Unstamped"),
+            work(4, "Not work"),
+        ];
+        works[0].last_active_ms = Some(10);
+        works[1].last_active_ms = Some(20);
+        works[2].last_active_ms = None;
+        works[3].last_active_ms = Some(30);
+        works[3].is_work = false;
+        assert_eq!(presentable_indices(&works), vec![1, 0, 2]);
+    }
+
+    #[test]
     fn search_matches_the_persons_own_words_not_derived_vocabulary_only() {
         // The person named this work; searching by their word must find it,
         // even though every derived string says otherwise (RFC-0014).
@@ -745,6 +816,69 @@ mod tests {
         assert!(work_matches(&thesis, "main.rs"));
         assert!(!work_matches(&thesis, "spreadsheet"));
         assert!(work_matches(&thesis, ""));
+    }
+
+    #[test]
+    fn continue_control_restores_the_first_eligible_work_without_opening_it() {
+        let mut works = [
+            work(1, "Remembered only"),
+            work(2, "Building — ZCode"),
+            work(3, "Research notes"),
+        ];
+        works[0].is_work = false;
+        let ctx = egui::Context::default();
+        crate::theme::install(&ctx);
+        let mut stack_open = false;
+        let mut merge_armed = None;
+        let mut action = None;
+
+        frame(
+            &ctx,
+            &works,
+            &[],
+            &mut stack_open,
+            &mut merge_armed,
+            &mut action,
+            vec![],
+        );
+        let rect = stashed_rect(&ctx, egui::Id::new("rack-continue-rect"))
+            .unwrap_or_else(|| panic!("Continue control did not report its rect"));
+        let [move_ev, down_ev, up_ev] = press_release_events(rect.center());
+
+        frame(
+            &ctx,
+            &works,
+            &[],
+            &mut stack_open,
+            &mut merge_armed,
+            &mut action,
+            move_ev,
+        );
+        frame(
+            &ctx,
+            &works,
+            &[],
+            &mut stack_open,
+            &mut merge_armed,
+            &mut action,
+            down_ev,
+        );
+        assert_eq!(action, None, "Continue does not dispatch before release");
+        frame(
+            &ctx,
+            &works,
+            &[],
+            &mut stack_open,
+            &mut merge_armed,
+            &mut action,
+            up_ev,
+        );
+
+        assert_eq!(
+            action,
+            Some(RackAction::Continue(1)),
+            "Continue targets the first eligible work's original index"
+        );
     }
 
     #[test]

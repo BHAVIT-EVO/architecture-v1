@@ -309,11 +309,15 @@ pub fn submit_classification(
     stream
         .write_all(format!("{}\n", subject.len()).as_bytes())
         .map_err(classification_io)?;
-    stream.write_all(subject.as_bytes()).map_err(classification_io)?;
+    stream
+        .write_all(subject.as_bytes())
+        .map_err(classification_io)?;
     stream
         .write_all(format!("{}\n", class.len()).as_bytes())
         .map_err(classification_io)?;
-    stream.write_all(class.as_bytes()).map_err(classification_io)?;
+    stream
+        .write_all(class.as_bytes())
+        .map_err(classification_io)?;
     stream.flush().map_err(classification_io)?;
     let mut response = String::new();
     BufReader::new(&mut stream)
@@ -466,8 +470,8 @@ mod tests {
         let socket = classification_socket_path(&root);
         crate::socket_test_support::wait_for_listener(&socket);
 
-        let response = submit_classification(&root, "https://x.example/a", "   ")
-            .expect("submission works");
+        let response =
+            submit_classification(&root, "https://x.example/a", "   ").expect("submission works");
         assert!(
             matches!(response, ClassificationResponse::Rejected(_)),
             "a blank class carries nothing the concept can express"

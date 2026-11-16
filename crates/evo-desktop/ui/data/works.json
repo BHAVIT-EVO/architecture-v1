@@ -1,0 +1,41 @@
+[
+  {
+    "id": "w-frontend-prompt",
+    "raw": "Frontend prompt for product redesign - Claude - Google Chrome",
+    "openedAgo": 60,
+    "kind": "book"
+  },
+  {
+    "id": "w-tollywood",
+    "raw": "Eating at every Tollywood celebrity restaurant for 24 hours - YouTube",
+    "app": "Google Chrome",
+    "audio": true,
+    "openedAgo": 120,
+    "kind": "paper"
+  },
+  {
+    "id": "w-untitled-chat",
+    "raw": "Untitled chat - Claude - Google Chrome",
+    "openedAgo": 2880,
+    "kind": "folder"
+  },
+  {
+    "id": "w-yc-script",
+    "raw": "YC application script request - Claude - Google Chrome",
+    "openedAgo": 8640,
+    "kind": "notebook"
+  },
+  {
+    "id": "w-family-man",
+    "raw": "Watch The Family Man - Netflix - Google Chrome",
+    "openedAgo": 10080,
+    "kind": "paper"
+  },
+  {
+    "id": "w-muse",
+    "raw": "Muse",
+    "app": "Freebuff",
+    "openedAgo": 10200,
+    "kind": "folder"
+  }
+]

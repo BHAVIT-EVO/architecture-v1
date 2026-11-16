@@ -919,9 +919,7 @@ impl Engine {
                 self.st.sweep_dirty = true;
             }
             Declaration::NotMine { resource } => self.quarantine(&resource),
-            Declaration::Classified { resource, class } => {
-                self.classify_surface(resource, class)
-            }
+            Declaration::Classified { resource, class } => self.classify_surface(resource, class),
             Declaration::WorkDismissed { work } => self.dismiss_work(work),
             Declaration::MemberState {
                 work,
@@ -1169,10 +1167,8 @@ impl Engine {
             set.retain(|_| false);
         }
         self.st.anchor_index.remove(&resource);
-        self.st.push(Decision::SurfaceClassified {
-            resource,
-            class,
-        });
+        self.st
+            .push(Decision::SurfaceClassified { resource, class });
         self.st.sweep_dirty = true;
     }
 }

@@ -115,7 +115,10 @@ const WORKS: &[Work] = &[
         key: "wake",
         names: &["evo-voice wake.rs"],
         anchors: &["file:///Users/fixture/evo/crates/evo-voice/src/wake.rs"],
-        companions: &[("file:///Users/fixture/evo/crates/evo-voice/src/driver.rs", 160.0)],
+        companions: &[(
+            "file:///Users/fixture/evo/crates/evo-voice/src/driver.rs",
+            160.0,
+        )],
         next_step: "Uncommitted changes in evo-voice",
         narrative: "Observed activity for evo-voice wake.rs across 2 recorded episodes. Next: Uncommitted changes in evo-voice",
     },
@@ -142,20 +145,76 @@ struct Phrase {
 }
 
 const PHRASES: &[Phrase] = &[
-    Phrase { text: "the pitch thing", expect: Expect::CarouselFirst("pitch"), note: "vague noun; one pitch work" },
-    Phrase { text: "that pitch deck I was still working on", expect: Expect::Restore("pitch"), note: "clear" },
-    Phrase { text: "that investor update I was drafting", expect: Expect::Restore("investor"), note: "near-verbatim" },
-    Phrase { text: "the thing I was putting together for the investors", expect: Expect::Carousel, note: "vague; two investor-facing works" },
-    Phrase { text: "that doc I had open", expect: Expect::Carousel, note: "deixis; several doc-like works" },
-    Phrase { text: "what I was looking at earlier", expect: Expect::Carousel, note: "pure deixis" },
-    Phrase { text: "the benchmark thing", expect: Expect::CarouselFirst("benchmark"), note: "vague noun; unique domain word" },
-    Phrase { text: "that website I was tweaking", expect: Expect::CarouselFirst("website"), note: "vague; one site work" },
-    Phrase { text: "the banner chat", expect: Expect::Restore("banner"), note: "topic + surface" },
-    Phrase { text: "the wake word code", expect: Expect::Restore("wake"), note: "near-verbatim" },
-    Phrase { text: "that paper I was writing", expect: Expect::CarouselFirst("paper"), note: "vague; paper draft vs lecture notes" },
-    Phrase { text: "the overleaf paper", expect: Expect::Restore("paper"), note: "host" },
-    Phrase { text: "order a pizza for dinner", expect: Expect::Carousel, note: "control" },
-    Phrase { text: "buy running shoes online", expect: Expect::Carousel, note: "control" },
+    Phrase {
+        text: "the pitch thing",
+        expect: Expect::CarouselFirst("pitch"),
+        note: "vague noun; one pitch work",
+    },
+    Phrase {
+        text: "that pitch deck I was still working on",
+        expect: Expect::Restore("pitch"),
+        note: "clear",
+    },
+    Phrase {
+        text: "that investor update I was drafting",
+        expect: Expect::Restore("investor"),
+        note: "near-verbatim",
+    },
+    Phrase {
+        text: "the thing I was putting together for the investors",
+        expect: Expect::Carousel,
+        note: "vague; two investor-facing works",
+    },
+    Phrase {
+        text: "that doc I had open",
+        expect: Expect::Carousel,
+        note: "deixis; several doc-like works",
+    },
+    Phrase {
+        text: "what I was looking at earlier",
+        expect: Expect::Carousel,
+        note: "pure deixis",
+    },
+    Phrase {
+        text: "the benchmark thing",
+        expect: Expect::CarouselFirst("benchmark"),
+        note: "vague noun; unique domain word",
+    },
+    Phrase {
+        text: "that website I was tweaking",
+        expect: Expect::CarouselFirst("website"),
+        note: "vague; one site work",
+    },
+    Phrase {
+        text: "the banner chat",
+        expect: Expect::Restore("banner"),
+        note: "topic + surface",
+    },
+    Phrase {
+        text: "the wake word code",
+        expect: Expect::Restore("wake"),
+        note: "near-verbatim",
+    },
+    Phrase {
+        text: "that paper I was writing",
+        expect: Expect::CarouselFirst("paper"),
+        note: "vague; paper draft vs lecture notes",
+    },
+    Phrase {
+        text: "the overleaf paper",
+        expect: Expect::Restore("paper"),
+        note: "host",
+    },
+    Phrase {
+        text: "order a pizza for dinner",
+        expect: Expect::Carousel,
+        note: "control",
+    },
+    Phrase {
+        text: "buy running shoes online",
+        expect: Expect::Carousel,
+        note: "control",
+    },
 ];
 
 /// Candidate floors for the sensitivity table, spanning the old match bar
@@ -236,7 +295,10 @@ fn route(scored: &[(u64, f64)], floor: f64, margin: f64, k: usize) -> Route {
 #[derive(PartialEq)]
 enum Route {
     Restore(u64),
-    Ask { candidates: Vec<u64>, above_floor: bool },
+    Ask {
+        candidates: Vec<u64>,
+        above_floor: bool,
+    },
     NotFound,
 }
 
@@ -257,7 +319,10 @@ fn main() {
             .iter()
             .map(|work| {
                 let document = production_document(work, surface(work));
-                (work.id, embedder.embed_document(&document).expect("embed document"))
+                (
+                    work.id,
+                    embedder.embed_document(&document).expect("embed document"),
+                )
             })
             .collect()
     };
@@ -378,7 +443,9 @@ fn main() {
     // Composition ablation: what the one-line next step adds over the bare
     // structural material, and what the longer narrative does to the same
     // decisions. Enrichment must not buy vague phrases a restore.
-    println!("=== composition ablation (floor {RETRIEVAL_RESTORE_FLOOR}, margin {RETRIEVAL_MARGIN}) ===");
+    println!(
+        "=== composition ablation (floor {RETRIEVAL_RESTORE_FLOOR}, margin {RETRIEVAL_MARGIN}) ==="
+    );
     println!(
         "{:<44} {:>17} {:>16} {:>7} {:>9}",
         "composition", "correct restores", "missed restores", "false", "mean best"
@@ -452,13 +519,27 @@ fn expect_label(expect: &Expect) -> String {
 fn describe(route: &Route, titles: &BTreeMap<u64, &str>) -> String {
     match route {
         Route::Restore(id) => format!("RESTORE {} (work {id})", titles[id]),
-        Route::Ask { candidates, above_floor: true } => format!(
+        Route::Ask {
+            candidates,
+            above_floor: true,
+        } => format!(
             "ASK (above floor, contested): [{}]",
-            candidates.iter().map(|id| titles[id]).collect::<Vec<_>>().join(", ")
+            candidates
+                .iter()
+                .map(|id| titles[id])
+                .collect::<Vec<_>>()
+                .join(", ")
         ),
-        Route::Ask { candidates, above_floor: false } => format!(
+        Route::Ask {
+            candidates,
+            above_floor: false,
+        } => format!(
             "ASK (below floor, nearest): [{}]",
-            candidates.iter().map(|id| titles[id]).collect::<Vec<_>>().join(", ")
+            candidates
+                .iter()
+                .map(|id| titles[id])
+                .collect::<Vec<_>>()
+                .join(", ")
         ),
         Route::NotFound => "NOTFOUND (empty rack)".to_string(),
     }

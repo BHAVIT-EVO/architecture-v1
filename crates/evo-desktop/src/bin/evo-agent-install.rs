@@ -36,6 +36,9 @@ fn main() -> ExitCode {
 }
 
 fn install() -> Result<String, String> {
+    if std::env::var_os("EVO_TEST_HOME").is_some() {
+        return Err("refusing to install/uninstall launchd job under EVO_TEST_HOME".to_string());
+    }
     // The agent binary sits beside this installer (same target dir).
     let exe = std::env::current_exe().map_err(|e| format!("cannot locate own binary: {e}"))?;
     let build_dir = exe
@@ -146,15 +149,12 @@ fn install() -> Result<String, String> {
         .join("Application Support")
         .join("Evo")
         .join("embedding");
-    // The canonical app lives in /Applications and is already signed as a
-    // bundle. Launch that binary directly instead of the copied
-    // Application Support executable, whose post-copy rpath rewrite can
-    // invalidate its code signature before launchd loads it.
-    let launch_agent = if exe.starts_with("/Applications/Evo.app/") {
-        built_agent
-    } else {
-        agent
-    };
+    // Run the installed copy (outside the app bundle) so launchd does not
+    // register the headless agent as an instance of the desktop app's bundle.
+    // That registration made `open /Applications/Evo.app` a no-op while the
+    // agent was running, so the window could never be opened. The copy's
+    // rpath and signature are repaired by install_runtime_library below.
+    let launch_agent = agent.clone();
     let plist = plist_xml(&launch_agent, &out_log, &err_log, &embedding_dir)?;
     std::fs::write(&plist_path, plist)
         .map_err(|e| format!("cannot write {}: {e}", plist_path.display()))?;
@@ -170,19 +170,18 @@ fn install() -> Result<String, String> {
     // launchd can briefly retain the old job after bootout. Retry the
     // bootstrap instead of leaving the agent uninstalled on transient
     // `Input/output error` (exit 5).
-    let mut bootstrap = None;
-    for attempt in 0..5 {
-        let status = Command::new("launchctl")
-            .args(["bootstrap", &domain, &plist_path.to_string_lossy()])
-            .status()
-            .map_err(|e| format!("launchctl bootstrap failed to run: {e}"))?;
-        if status.success() || attempt == 4 {
-            bootstrap = Some(status);
-            break;
+    let bootstrap = 'bootstrap: loop {
+        for attempt in 0..5 {
+            let status = Command::new("launchctl")
+                .args(["bootstrap", &domain, &plist_path.to_string_lossy()])
+                .status()
+                .map_err(|e| format!("launchctl bootstrap failed to run: {e}"))?;
+            if status.success() || attempt == 4 {
+                break 'bootstrap status;
+            }
+            std::thread::sleep(Duration::from_millis(250));
         }
-        std::thread::sleep(Duration::from_millis(250));
-    }
-    let bootstrap = bootstrap.expect("bootstrap attempts always produce a status");
+    };
     if !bootstrap.success() {
         return Err(format!(
             "launchctl bootstrap exited with {} (is this a GUI login session?)",
@@ -467,6 +466,8 @@ fn plist_xml(
     </array>
     <key>EnvironmentVariables</key>
     <dict>
+        <key>__CFBundleIdentifier</key>
+        <string>dev.evo.agent</string>
         <key>EVO_EMBEDDING_MODEL_DIR</key>
         <string>{embedding}</string>
     </dict>

@@ -150,6 +150,20 @@ impl Mic {
         })
     }
 
+    /// Pauses the CoreAudio input stream without dropping the session.
+    pub fn pause(&self) -> Result<(), String> {
+        self._stream
+            .pause()
+            .map_err(|err| format!("failed to pause mic stream: {err}"))
+    }
+
+    /// Resumes the CoreAudio input stream.
+    pub fn resume(&self) -> Result<(), String> {
+        self._stream
+            .play()
+            .map_err(|err| format!("failed to resume mic stream: {err}"))
+    }
+
     /// Non-blocking drain: collects all pending 16 kHz audio chunks into
     /// one buffer.
     pub fn drain(&self) -> Vec<f32> {

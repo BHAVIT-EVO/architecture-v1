@@ -10,11 +10,14 @@ fn main() {
 }
 
 fn real_main() -> Result<(), DaemonError> {
+    let _ = evo_storage::apply_test_home();
+    evo_storage::tighten_all();
     // Canonical state lives in the persistent Application Support location; a
     // populated legacy temp root is migrated forward safely at startup
     // (BE-TRACE-0001 §3.4). A migration failure preserves the legacy data and
     // fails honestly — the daemon exits non-zero rather than pretending.
     let storage_root = evo_storage::prepare_storage_root()?;
+    eprintln!("EVO-DAEMON storage_root={}", storage_root.display());
     // One daemon per storage root: a second writer to the same append-only
     // canonical logs would race. The desktop shell spawns this worker, so
     // the lock prevents a stale daemon from being joined by a new one.

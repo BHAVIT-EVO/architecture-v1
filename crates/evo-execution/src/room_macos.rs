@@ -18,7 +18,7 @@ use crate::room::{DesktopSurface, RoomApp, RoomWindow};
 
 #[cfg(target_os = "macos")]
 mod imp {
-    use super::{DesktopSurface, RoomApp, RoomWindow};
+    use super::{RoomApp, RoomWindow};
     use std::ffi::CStr;
     use std::os::raw::{c_char, c_void};
     use std::ptr;
@@ -52,7 +52,6 @@ mod imp {
     #[link(name = "Foundation", kind = "framework")]
     #[link(name = "AppKit", kind = "framework")]
     #[link(name = "ApplicationServices", kind = "framework")]
-    #[link(name = "CoreFoundation", kind = "framework")]
     unsafe extern "C" {
         fn objc_getClass(name: *const c_char) -> Class;
         fn objc_msgSend();
@@ -250,7 +249,7 @@ mod imp {
     unsafe fn with_app_windows<F>(pid: i32, mut f: F) -> Result<(), String>
     where
         F: FnMut(&LiveWindow),
-    {
+    { unsafe {
         let element = AXUIElementCreateApplication(pid);
         if element.is_null() {
             return Err("cannot address the application".to_string());
@@ -288,7 +287,7 @@ mod imp {
         CFRelease(windows_value);
         CFRelease(element as CFTypeRef);
         Ok(())
-    }
+    }}
 
     fn set_minimized(pid: i32, window_id: u32, minimized: bool) -> Result<(), String> {
         let mut outcome: Option<Result<(), String>> = None;
@@ -368,7 +367,7 @@ mod imp {
     unsafe fn copy_string_attribute(
         element: AXUIElementRef,
         attribute: &'static [u8],
-    ) -> Option<String> {
+    ) -> Option<String> { unsafe {
         let attr = cfstring(attribute);
         let mut value: CFTypeRef = ptr::null();
         let err = AXUIElementCopyAttributeValue(element, attr, &mut value);
@@ -379,9 +378,9 @@ mod imp {
         let string = cfstring_to_string(value as CFStringRef);
         CFRelease(value);
         string
-    }
+    }}
 
-    unsafe fn copy_boolean_attribute(element: AXUIElementRef, attribute: &'static [u8]) -> bool {
+    unsafe fn copy_boolean_attribute(element: AXUIElementRef, attribute: &'static [u8]) -> bool { unsafe {
         let attr = cfstring(attribute);
         let mut value: CFTypeRef = ptr::null();
         let err = AXUIElementCopyAttributeValue(element, attr, &mut value);
@@ -392,13 +391,13 @@ mod imp {
         let boolean = CFBooleanGetValue(value as CFBooleanRef) != 0;
         CFRelease(value);
         boolean
-    }
+    }}
 
-    unsafe fn shared_workspace() -> Id {
+    unsafe fn shared_workspace() -> Id { unsafe {
         msg_send_id(class_id(b"NSWorkspace\0") as Id, sel(SHARED_WORKSPACE_SEL))
-    }
+    }}
 
-    unsafe fn optional_nsstring(receiver: Id, selector: Sel) -> Option<String> {
+    unsafe fn optional_nsstring(receiver: Id, selector: Sel) -> Option<String> { unsafe {
         let value = msg_send_id(receiver, selector);
         if value.is_null() {
             return None;
@@ -409,17 +408,17 @@ mod imp {
         }
         let bytes = CStr::from_ptr(cstr as *const c_char);
         Some(bytes.to_string_lossy().into_owned())
-    }
+    }}
 
-    unsafe fn cfstring(bytes: &'static [u8]) -> CFStringRef {
+    unsafe fn cfstring(bytes: &'static [u8]) -> CFStringRef { unsafe {
         CFStringCreateWithCString(
             ptr::null(),
             bytes.as_ptr() as *const c_char,
             CFSTRING_ENCODING_UTF8,
         )
-    }
+    }}
 
-    unsafe fn cfstring_to_string(value: CFStringRef) -> Option<String> {
+    unsafe fn cfstring_to_string(value: CFStringRef) -> Option<String> { unsafe {
         if value.is_null() {
             return None;
         }
@@ -443,50 +442,50 @@ mod imp {
         }
         let end = buffer.iter().position(|b| *b == 0).unwrap_or(buffer.len());
         String::from_utf8(buffer[..end].to_vec()).ok()
-    }
+    }}
 
     fn sel(bytes: &'static [u8]) -> Sel {
         unsafe { sel_registerName(bytes.as_ptr() as *const c_char) }
     }
 
-    unsafe fn class_id(name: &'static [u8]) -> Class {
+    unsafe fn class_id(name: &'static [u8]) -> Class { unsafe {
         objc_getClass(name.as_ptr() as *const c_char)
-    }
+    }}
 
-    unsafe fn msg_send_id(receiver: Id, selector: Sel) -> Id {
+    unsafe fn msg_send_id(receiver: Id, selector: Sel) -> Id { unsafe {
         let function: extern "C" fn(Id, Sel) -> Id = std::mem::transmute(objc_msgSend as *const ());
         function(receiver, selector)
-    }
+    }}
 
-    unsafe fn msg_send_id1(receiver: Id, selector: Sel, arg: Id) -> Id {
+    unsafe fn msg_send_id1(receiver: Id, selector: Sel, arg: Id) -> Id { unsafe {
         let function: extern "C" fn(Id, Sel, Id) -> Id =
             std::mem::transmute(objc_msgSend as *const ());
         function(receiver, selector, arg)
-    }
+    }}
 
-    unsafe fn msg_send_bool(receiver: Id, selector: Sel) -> Bool {
+    unsafe fn msg_send_bool(receiver: Id, selector: Sel) -> Bool { unsafe {
         let function: extern "C" fn(Id, Sel) -> Bool =
             std::mem::transmute(objc_msgSend as *const ());
         function(receiver, selector)
-    }
+    }}
 
-    unsafe fn msg_send_usize(receiver: Id, selector: Sel) -> usize {
+    unsafe fn msg_send_usize(receiver: Id, selector: Sel) -> usize { unsafe {
         let function: extern "C" fn(Id, Sel) -> usize =
             std::mem::transmute(objc_msgSend as *const ());
         function(receiver, selector)
-    }
+    }}
 
-    unsafe fn msg_send_usize1(receiver: Id, selector: Sel, arg: usize) -> usize {
+    unsafe fn msg_send_usize1(receiver: Id, selector: Sel, arg: usize) -> usize { unsafe {
         let function: extern "C" fn(Id, Sel, usize) -> usize =
             std::mem::transmute(objc_msgSend as *const ());
         function(receiver, selector, arg)
-    }
+    }}
 
-    unsafe fn msg_send_i32(receiver: Id, selector: Sel) -> i32 {
+    unsafe fn msg_send_i32(receiver: Id, selector: Sel) -> i32 { unsafe {
         let function: extern "C" fn(Id, Sel) -> i32 =
             std::mem::transmute(objc_msgSend as *const ());
         function(receiver, selector)
-    }
+    }}
 
     const UTF8_STRING_SEL: &[u8] = b"UTF8String\0";
 }

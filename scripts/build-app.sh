@@ -2,6 +2,8 @@
 # Builds a real macOS .app bundle for Evo — all three processes.
 #
 # Usage:
+#   EVO_VOICE=on EVO_UI=web bash scripts/build-app.sh
+#                                            # voice build; discovers local ORT
 #   bash scripts/build-app.sh                # release profile (default)
 #   PROFILE=dev bash scripts/build-app.sh    # debug profile
 #   EVO_ORT_PROVISIONING=external ORT_LIB_PATH=/path/to/ort \
@@ -45,6 +47,7 @@ APP_DIR="$APP_OUTPUT_DIR/$APP_NAME.app"
 IDENTITY="${EVO_CODESIGN_IDENTITY:-Evo Code Signing}"
 ORT_PROVISIONING="${EVO_ORT_PROVISIONING-none}"
 ORT_LIB_DIR="${ORT_LIB_PATH-${ORT_LIB_LOCATION-}}"
+EVO_VOICE="${EVO_VOICE:-off}"
 
 if [ "$(uname -s)" != "Darwin" ]; then
   echo "error: scripts/build-app.sh only produces macOS bundles (Darwin required)." >&2
@@ -67,6 +70,15 @@ find_ort_library() {
 }
 
 validate_ort_provisioning() {
+  if [ "$EVO_VOICE" = "on" ] && [ "$ORT_PROVISIONING" = "none" ]; then
+    ORT_PROVISIONING="external"
+    if [ -z "$ORT_LIB_DIR" ]; then
+      ORT_LIB_DIR="$(find "$TARGET_DIR" -maxdepth 1 -type d -name 'ort-bundled-link.*' -print 2>/dev/null | sort | tail -n 1)"
+    fi
+    if [ -z "$ORT_LIB_DIR" ] && [ -n "${HOME:-}" ]; then
+      ORT_LIB_DIR="$(find "$HOME/.cache" -type d -path '*/onnxruntime/capi' -print 2>/dev/null | sort | tail -n 1)"
+    fi
+  fi
   if [ -n "$ORT_LIB_DIR" ] && [ "${ORT_LIB_DIR#/}" = "$ORT_LIB_DIR" ]; then
     ORT_LIB_DIR="$REPO_ROOT/$ORT_LIB_DIR"
   fi
@@ -200,7 +212,6 @@ fi
 # The default keeps the smallest honest permission surface: Accessibility, and
 # nothing else. That is the promise the app makes on its permission screen, and
 # a bundle that asks for a microphone it does not need breaks it.
-EVO_VOICE="${EVO_VOICE:-off}"
 EVO_NOTCH="${EVO_NOTCH:-on}"
 case "$EVO_VOICE" in
   on)
@@ -342,25 +353,72 @@ if [ "$EVO_VOICE" = "on" ]; then
   done
 fi
 
-# Placeholder icon (solid-color, pure-Python PNG writer) until a real one is
-# designed: some macOS surfaces expect an icon in the bundle.
+# The web UI ships inside the bundle and is served only through evo-app://
+# (ADR 0002). No remote URL is reachable from it.
+if [ -d "$REPO_ROOT/crates/evo-desktop/ui" ]; then
+  rm -rf "$APP_DIR/Contents/Resources/ui"
+  mkdir -p "$APP_DIR/Contents/Resources/ui"
+  # The app has no mock mode: every work comes from the daemon bridge
+  # (docs/BRIDGE.md). ui/data/ is the browser preview's corpus and is never
+  # copied; the check below fails the build if any of it slips through.
+  rm -rf "$APP_DIR/Contents/Resources/ui"
+  mkdir -p "$APP_DIR/Contents/Resources/ui"
+  rsync -a --exclude 'data/' "$REPO_ROOT/crates/evo-desktop/ui/" "$APP_DIR/Contents/Resources/ui/"
+  # Browser preview data and its mock bridge are development-only. Keep the
+  # preview source usable, but remove the mock implementation from the
+  # shipped app bundle.
+  python3 - "$APP_DIR/Contents/Resources/ui/app/bridge.js" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+text = path.read_text()
+text = re.sub(
+    r"\nlet samples = null;.*?\nexport const api =",
+    "\nexport const api =",
+    text,
+    flags=re.S,
+)
+text = re.sub(
+    r"if \(!native\) \{\n    if \(appScheme\).*?\n    return mock\(cmd, args\);\n  \}",
+    'if (!native) return Promise.reject(new Error("Evo bridge unavailable."));',
+    text,
+    flags=re.S,
+)
+path.write_text(text)
+PY
+  if grep -qE 'mockRows|async function mock|return mock\\(' "$APP_DIR/Contents/Resources/ui/app/bridge.js"; then
+    echo "error: browser mock bridge survived release packaging." >&2
+    exit 1
+  fi
+  if [ -f "$REPO_ROOT/crates/evo-desktop/resources/EvoTemplate.png" ]; then
+    install -m 644 "$REPO_ROOT/crates/evo-desktop/resources/EvoTemplate.png" "$APP_DIR/Contents/Resources/EvoTemplate.png"
+    install -m 644 "$REPO_ROOT/crates/evo-desktop/resources/EvoTemplate@2x.png" "$APP_DIR/Contents/Resources/EvoTemplate@2x.png"
+  fi
+  if ! bash "$REPO_ROOT/scripts/check-ui-bundle.sh" "$APP_DIR/Contents/Resources/ui"; then
+    echo "error: sample data would ship in the app; build stopped." >&2
+    exit 1
+  fi
+fi
+
+# App icon rendered from the final brand mark (design/brand/evo-icon.svg).
 ICONSET="$(mktemp -d)/AppIcon.iconset"
 mkdir -p "$ICONSET"
-for SIZE in 16 32 128 256; do
-  python3 - "$SIZE" "$ICONSET" <<'PYEOF'
-import struct, zlib, sys
-size = int(sys.argv[1]); out = sys.argv[2]
-def chunk(typ, data):
-    return struct.pack('>I', len(data)) + typ + data + struct.pack('>I', zlib.crc32(typ + data))
-raw = b''.join(b'\x00' + b'\x1a\x2a\x3c\xff' * size for _ in range(size))
-png = (b'\x89PNG\r\n\x1a\n'
-       + chunk(b'IHDR', struct.pack('>IIBBBBB', size, size, 8, 6, 0, 0, 0))
-       + chunk(b'IDAT', zlib.compress(raw))
-       + chunk(b'IEND', b''))
-open(f'{out}/icon_{size}x{size}.png', 'wb').write(png)
-open(f'{out}/icon_{size * 2}x{size * 2}.png', 'wb').write(png)  # HiDPI pair
-PYEOF
-done
+ICON_SVG="$REPO_ROOT/design/brand/evo-icon.svg"
+render() { # size filename
+  sips -s format png -z "$1" "$1" "$ICON_SVG" --out "$ICONSET/$2" >/dev/null 2>&1
+}
+render 16   icon_16x16.png
+render 32   icon_16x16@2x.png
+render 32   icon_32x32.png
+render 64   icon_32x32@2x.png
+render 128  icon_128x128.png
+render 256  icon_128x128@2x.png
+render 256  icon_256x256.png
+render 512  icon_256x256@2x.png
+render 512  icon_512x512.png
+render 1024 icon_512x512@2x.png
 iconutil -c icns "$ICONSET" -o "$APP_DIR/Contents/Resources/AppIcon.icns" >/dev/null 2>&1 \
   || echo "note: iconutil unavailable; bundle ships without an icon"
 plutil -replace CFBundleIconFile -string "AppIcon" "$APP_DIR/Contents/Info.plist" >/dev/null 2>&1 || true

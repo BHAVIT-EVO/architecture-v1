@@ -61,8 +61,10 @@ pub const MIN_REGION_FRACTION: f64 = 0.25;
 /// region is resolved per display, so shrinking a screen never smears a
 /// layout off it.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Default)]
 pub enum Region {
     /// The whole usable frame.
+    #[default]
     Full,
     /// The left band: `fraction` of the usable width, full height.
     Left(f64),
@@ -76,11 +78,6 @@ pub enum Region {
     Bottom,
 }
 
-impl Default for Region {
-    fn default() -> Self {
-        Region::Full
-    }
-}
 
 impl Region {
     /// The left band at its documented default width ([`DEFAULT_SIDE`]).
@@ -120,9 +117,7 @@ impl Region {
         let fraction = self.fraction();
         match self {
             Region::Full => *screen,
-            Region::Left(_) => {
-                Frame::new(screen.x, screen.y, screen.w * fraction, screen.h)
-            }
+            Region::Left(_) => Frame::new(screen.x, screen.y, screen.w * fraction, screen.h),
             Region::Right(_) => Frame::new(
                 screen.x + screen.w * (1.0 - fraction),
                 screen.y,
@@ -131,7 +126,12 @@ impl Region {
             ),
             Region::Center(_) => {
                 let width = screen.w * fraction;
-                Frame::new(screen.x + (screen.w - width) / 2.0, screen.y, width, screen.h)
+                Frame::new(
+                    screen.x + (screen.w - width) / 2.0,
+                    screen.y,
+                    width,
+                    screen.h,
+                )
             }
             Region::Top => Frame::new(screen.x, screen.y, screen.w, screen.h * fraction),
             Region::Bottom => Frame::new(
@@ -215,7 +215,11 @@ fn clamp_origin(origin: f64) -> f64 {
 /// A side that cannot be expressed (non-finite) lands on the floor.
 fn clamp_side(side: f64, origin: f64) -> f64 {
     let room = 1.0 - origin;
-    let value = if side.is_finite() { side } else { MIN_SLOT_SIDE };
+    let value = if side.is_finite() {
+        side
+    } else {
+        MIN_SLOT_SIDE
+    };
     value.clamp(MIN_SLOT_SIDE, room)
 }
 
@@ -307,7 +311,15 @@ impl LayoutNode {
     /// the order a work's windows are planned into.
     pub fn flatten(&self) -> Vec<Slot> {
         let mut slots = Vec::new();
-        self.flatten_into(RatioRect { x: 0.0, y: 0.0, w: 1.0, h: 1.0 }, &mut slots);
+        self.flatten_into(
+            RatioRect {
+                x: 0.0,
+                y: 0.0,
+                w: 1.0,
+                h: 1.0,
+            },
+            &mut slots,
+        );
         slots
     }
 
@@ -323,11 +335,7 @@ impl LayoutNode {
     fn flatten_into(&self, rect: RatioRect, slots: &mut Vec<Slot>) {
         match self {
             LayoutNode::Leaf => slots.push(Slot::new(rect.x, rect.y, rect.w, rect.h)),
-            LayoutNode::HSplit {
-                ratio,
-                top,
-                bottom,
-            } => {
+            LayoutNode::HSplit { ratio, top, bottom } => {
                 let first_h = rect.h * ratio;
                 let remaining = rect.h - first_h;
                 top.flatten_into(
@@ -349,11 +357,7 @@ impl LayoutNode {
                     slots,
                 );
             }
-            LayoutNode::VSplit {
-                ratio,
-                left,
-                right,
-            } => {
+            LayoutNode::VSplit { ratio, left, right } => {
                 let first_w = rect.w * ratio;
                 let remaining = rect.w - first_w;
                 left.flatten_into(
@@ -566,7 +570,11 @@ impl Layout {
         let (shape, region) = match id {
             LayoutId::Full => (LayoutShape::Tree(LayoutNode::leaf()), Region::Full),
             LayoutId::Halves => (
-                LayoutShape::Tree(LayoutNode::vsplit(0.5, LayoutNode::leaf(), LayoutNode::leaf())),
+                LayoutShape::Tree(LayoutNode::vsplit(
+                    0.5,
+                    LayoutNode::leaf(),
+                    LayoutNode::leaf(),
+                )),
                 Region::Full,
             ),
             LayoutId::Thirds => (
@@ -586,7 +594,11 @@ impl Layout {
                 Region::Full,
             ),
             LayoutId::MainSide => (
-                LayoutShape::Tree(LayoutNode::vsplit(0.7, LayoutNode::leaf(), LayoutNode::leaf())),
+                LayoutShape::Tree(LayoutNode::vsplit(
+                    0.7,
+                    LayoutNode::leaf(),
+                    LayoutNode::leaf(),
+                )),
                 Region::Full,
             ),
             LayoutId::LeftSplitRight => (
@@ -606,11 +618,19 @@ impl Layout {
                 Region::Full,
             ),
             LayoutId::MainSideVertical => (
-                LayoutShape::Tree(LayoutNode::hsplit(0.7, LayoutNode::leaf(), LayoutNode::leaf())),
+                LayoutShape::Tree(LayoutNode::hsplit(
+                    0.7,
+                    LayoutNode::leaf(),
+                    LayoutNode::leaf(),
+                )),
                 Region::Full,
             ),
             LayoutId::HalvesVertical => (
-                LayoutShape::Tree(LayoutNode::hsplit(0.5, LayoutNode::leaf(), LayoutNode::leaf())),
+                LayoutShape::Tree(LayoutNode::hsplit(
+                    0.5,
+                    LayoutNode::leaf(),
+                    LayoutNode::leaf(),
+                )),
                 Region::Full,
             ),
             LayoutId::ThirdsVertical => (
@@ -659,7 +679,10 @@ impl Layout {
     /// region.
     pub fn resolved_slots(&self, screen: &Frame) -> Vec<Frame> {
         let region = self.region.frame(screen);
-        self.slots().iter().map(|slot| slot.frame(&region)).collect()
+        self.slots()
+            .iter()
+            .map(|slot| slot.frame(&region))
+            .collect()
     }
 }
 
@@ -858,7 +881,7 @@ fn first_free_slot(
             !taken[*index]
                 && alternating
                     .get(*index)
-                    .is_some_and(|alternate| matching(alternate))
+                    .is_some_and(&matching)
         })
     })
 }

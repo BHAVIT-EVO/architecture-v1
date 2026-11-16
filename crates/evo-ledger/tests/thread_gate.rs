@@ -66,7 +66,7 @@ fn thread_gate_on_the_real_log() {
     );
     assert_eq!(
         report.gates.len(),
-        7,
+        evo_ledger::thread_gate::ALL_GATES.len(),
         "every ledger gate must be evaluated over the engine"
     );
     assert!(

@@ -22,8 +22,37 @@
 use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
+fn record_voice_event(root: &std::path::Path, event: &evo_voice::VoiceEvent) {
+    let value = match event {
+        evo_voice::VoiceEvent::WakeGesture { score } => serde_json::json!({"type":"listening","score":score}),
+        evo_voice::VoiceEvent::Listening { partial } => serde_json::json!({"type":"live_transcript","partial":partial}),
+        evo_voice::VoiceEvent::HeardCommand { command } => serde_json::json!({"type":"thinking","command":command}),
+        evo_voice::VoiceEvent::Outcome(outcome) => match outcome {
+            evo_voice::VoiceOutcome::Restored { title, summary, .. } => serde_json::json!({"type":"opened","title":title,"summary":summary}),
+            evo_voice::VoiceOutcome::Ambiguous { candidates } => serde_json::json!({"type":"choices","choices":candidates.iter().take(3).map(|c| &c.title).collect::<Vec<_>>()}),
+            evo_voice::VoiceOutcome::NotFound { .. } => serde_json::json!({"type":"not_found","message":"I couldn't find that. Try another name, or type it."}),
+            evo_voice::VoiceOutcome::NoCommand => serde_json::json!({"type":"no_speech","message":"I didn't catch that. Try again, or type it."}),
+            evo_voice::VoiceOutcome::Failed { reason } => {
+                let denied = reason.to_ascii_lowercase().contains("permission")
+                    || reason.to_ascii_lowercase().contains("denied");
+                if denied {
+                    serde_json::json!({"type":"mic_denied","message":"Microphone access is off. Allow access in System Settings.","action":"Allow microphone access"})
+                } else {
+                    serde_json::json!({"type":"agent_error","message":reason})
+                }
+            }
+            evo_voice::VoiceOutcome::Brief { narration, .. } => serde_json::json!({"type":"opened","summary":narration}),
+        },
+    };
+    if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(root.join("voice.events.jsonl")) {
+        use std::io::Write;
+        let _ = writeln!(file, "{}", value);
+    }
+}
+
 #[cfg(not(target_os = "macos"))]
 fn main() {
+    let _ = evo_storage::apply_test_home();
     if let Err(err) = run() {
         eprintln!("EVO-AGENT: {err}");
         std::process::exit(1);
@@ -32,6 +61,7 @@ fn main() {
 
 #[cfg(target_os = "macos")]
 fn main() {
+    let _ = evo_storage::apply_test_home();
     if let Err(err) = run_macos() {
         eprintln!("EVO-AGENT: {err}");
         std::process::exit(1);
@@ -249,6 +279,13 @@ fn restore_and_arrange(
 fn run() -> Result<(), String> {
     let storage_root =
         evo_storage::prepare_storage_root().map_err(|e| format!("storage unavailable: {e}"))?;
+    let build_id = format!(
+        "{}-{}",
+        env!("CARGO_PKG_VERSION"),
+        option_env!("EVO_BUILD_TIME").unwrap_or("unknown")
+    );
+    std::fs::write(storage_root.join("agent.build-id"), build_id)
+        .map_err(|err| format!("cannot record agent build id: {err}"))?;
 
     let daemon_path = evo_desktop::daemon::daemon_binary_path().ok_or_else(|| {
         "daemon worker missing beside evo-agent; reinstall the agent with evo-agent-install"
@@ -306,6 +343,7 @@ fn run() -> Result<(), String> {
         // Drain voice events so the channel never backs up (and log the
         // honest outcomes; the notch shows them too).
         while let Ok(event) = rx.try_recv() {
+            record_voice_event(&storage_root, &event);
             match &event {
                 evo_voice::VoiceEvent::Outcome(outcome) => {
                     if matches!(outcome, evo_voice::VoiceOutcome::NoCommand)

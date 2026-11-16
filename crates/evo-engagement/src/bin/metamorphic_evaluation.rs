@@ -288,10 +288,7 @@ fn fingerprint(engagement: &Engagement, labels: &Labels) -> Fingerprint {
     }
 }
 
-fn works_containing<'snapshot>(
-    snapshot: &'snapshot Snapshot,
-    slot: Slot,
-) -> Vec<&'snapshot Fingerprint> {
+fn works_containing(snapshot: &Snapshot, slot: Slot) -> Vec<&Fingerprint> {
     snapshot
         .engagements
         .iter()

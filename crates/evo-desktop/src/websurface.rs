@@ -111,57 +111,74 @@ mod imp {
     }
 
     unsafe fn msg_send_id(receiver: Id, selector: Sel) -> Id {
-        let function: extern "C" fn(Id, Sel) -> Id = std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector)
+        unsafe {
+            let function: extern "C" fn(Id, Sel) -> Id =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector)
+        }
     }
     unsafe fn msg_send_id1(receiver: Id, selector: Sel, arg: Id) -> Id {
-        let function: extern "C" fn(Id, Sel, Id) -> Id =
-            std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector, arg)
+        unsafe {
+            let function: extern "C" fn(Id, Sel, Id) -> Id =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector, arg)
+        }
     }
     unsafe fn msg_send_rect(receiver: Id, selector: Sel, arg: NsRect) {
-        let function: extern "C" fn(Id, Sel, NsRect) =
-            std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector, arg)
+        unsafe {
+            let function: extern "C" fn(Id, Sel, NsRect) =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector, arg)
+        }
     }
     unsafe fn msg_send_bool(receiver: Id, selector: Sel) -> Bool {
-        let function: extern "C" fn(Id, Sel) -> Bool =
-            std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector)
+        unsafe {
+            let function: extern "C" fn(Id, Sel) -> Bool =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector)
+        }
     }
     unsafe fn msg_send_bool1(receiver: Id, selector: Sel, arg: isize) {
-        let function: extern "C" fn(Id, Sel, isize) =
-            std::mem::transmute(objc_msgSend as *const ());
-        function(receiver, selector, arg);
+        unsafe {
+            let function: extern "C" fn(Id, Sel, isize) =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(receiver, selector, arg);
+        }
     }
 
     unsafe fn class(name: &[u8]) -> Class {
-        let mut bytes = name.to_vec();
-        bytes.push(0);
-        objc_getClass(bytes.as_ptr() as *const c_char)
+        unsafe {
+            let mut bytes = name.to_vec();
+            bytes.push(0);
+            objc_getClass(bytes.as_ptr() as *const c_char)
+        }
     }
 
     unsafe fn ns_string(value: &str) -> Id {
-        let mut bytes = value.as_bytes().to_vec();
-        bytes.push(0);
-        msg_send_id1(
-            class(b"NSString") as Id,
-            sel(STRING_WITH_UTF8_SEL),
-            bytes.as_ptr() as *mut c_char as Id,
-        )
+        unsafe {
+            let mut bytes = value.as_bytes().to_vec();
+            bytes.push(0);
+            msg_send_id1(
+                class(b"NSString") as Id,
+                sel(STRING_WITH_UTF8_SEL),
+                bytes.as_ptr() as *mut c_char as Id,
+            )
+        }
     }
 
     /// Reads an NSString into a Rust String (empty for nil).
     unsafe fn nsstring_value(value: Id) -> String {
-        if value.is_null() {
-            return String::new();
+        unsafe {
+            if value.is_null() {
+                return String::new();
+            }
+            let utf8 = msg_send_id(value, sel(UTF8_STRING_SEL));
+            if utf8.is_null() {
+                return String::new();
+            }
+            let cstr = std::ffi::CStr::from_ptr(utf8 as *const c_char);
+            cstr.to_string_lossy().into_owned()
         }
-        let utf8 = msg_send_id(value, sel(UTF8_STRING_SEL));
-        if utf8.is_null() {
-            return String::new();
-        }
-        let cstr = std::ffi::CStr::from_ptr(utf8 as *const c_char);
-        cstr.to_string_lossy().into_owned()
     }
 
     // ─── per-work data stores ─────────────────────────────────────────────
@@ -193,69 +210,75 @@ mod imp {
 
     /// The work's persistent WKWebsiteDataStore (created on first use).
     unsafe fn data_store_for(work_identity: &str) -> Id {
-        // `initWithUUIDString:` returns nil (never throws) for a malformed
-        // string — the derived UUID is always well-formed, but nil is
-        // checked anyway: passing nil to `dataStoreForIdentifier:` throws.
-        let uuid_string = ns_string(&work_store_uuid(work_identity));
-        let allocated = msg_send_id(class(b"NSUUID") as Id, sel(ALLOC_SEL));
-        let uuid = msg_send_id1(allocated, sel(UUID_WITH_STRING_SEL), uuid_string);
-        if uuid.is_null() {
-            // The honest fallback: a fresh non-persistent store rather
-            // than throwing into the app.
-            return msg_send_id(class(b"WKWebsiteDataStore") as Id, sel(NEW_SEL));
+        unsafe {
+            // `initWithUUIDString:` returns nil (never throws) for a malformed
+            // string — the derived UUID is always well-formed, but nil is
+            // checked anyway: passing nil to `dataStoreForIdentifier:` throws.
+            let uuid_string = ns_string(&work_store_uuid(work_identity));
+            let allocated = msg_send_id(class(b"NSUUID") as Id, sel(ALLOC_SEL));
+            let uuid = msg_send_id1(allocated, sel(UUID_WITH_STRING_SEL), uuid_string);
+            if uuid.is_null() {
+                // The honest fallback: a fresh non-persistent store rather
+                // than throwing into the app.
+                return msg_send_id(class(b"WKWebsiteDataStore") as Id, sel(NEW_SEL));
+            }
+            msg_send_id1(
+                class(b"WKWebsiteDataStore") as Id,
+                sel(DATA_STORE_FOR_IDENTIFIER_SEL),
+                uuid,
+            )
         }
-        msg_send_id1(
-            class(b"WKWebsiteDataStore") as Id,
-            sel(DATA_STORE_FOR_IDENTIFIER_SEL),
-            uuid,
-        )
     }
 
     /// The window's content view: main, key, or the first window — Evo
     /// has one window, and the panel can only show when one exists.
     unsafe fn content_view() -> Id {
-        let app = msg_send_id(class(b"NSApplication") as Id, sel(SHARED_APPLICATION_SEL));
-        if app.is_null() {
-            return std::ptr::null_mut();
-        }
-        let window = {
-            let main = msg_send_id(app, sel(MAIN_WINDOW_SEL));
-            if !main.is_null() {
-                main
-            } else {
-                let key = msg_send_id(app, sel(KEY_WINDOW_SEL));
-                if !key.is_null() {
-                    key
-                } else {
-                    let windows = msg_send_id(app, sel(WINDOWS_SEL));
-                    if windows.is_null() {
-                        return std::ptr::null_mut();
-                    }
-                    msg_send_id(windows, sel(FIRST_OBJECT_SEL))
-                }
+        unsafe {
+            let app = msg_send_id(class(b"NSApplication") as Id, sel(SHARED_APPLICATION_SEL));
+            if app.is_null() {
+                return std::ptr::null_mut();
             }
-        };
-        if window.is_null() {
-            return std::ptr::null_mut();
+            let window = {
+                let main = msg_send_id(app, sel(MAIN_WINDOW_SEL));
+                if !main.is_null() {
+                    main
+                } else {
+                    let key = msg_send_id(app, sel(KEY_WINDOW_SEL));
+                    if !key.is_null() {
+                        key
+                    } else {
+                        let windows = msg_send_id(app, sel(WINDOWS_SEL));
+                        if windows.is_null() {
+                            return std::ptr::null_mut();
+                        }
+                        msg_send_id(windows, sel(FIRST_OBJECT_SEL))
+                    }
+                }
+            };
+            if window.is_null() {
+                return std::ptr::null_mut();
+            }
+            msg_send_id(window, sel(CONTENT_VIEW_SEL))
         }
-        msg_send_id(window, sel(CONTENT_VIEW_SEL))
     }
 
     /// `[[WKWebView alloc] initWithFrame:configuration:]` — the instance
     /// initializer (returns retained).
     unsafe fn web_view_init(frame: NsRect, configuration: Id) -> Id {
-        let allocated = msg_send_id(class(b"WKWebView") as Id, sel(ALLOC_SEL));
-        if allocated.is_null() {
-            return std::ptr::null_mut();
+        unsafe {
+            let allocated = msg_send_id(class(b"WKWebView") as Id, sel(ALLOC_SEL));
+            if allocated.is_null() {
+                return std::ptr::null_mut();
+            }
+            let function: extern "C" fn(Id, Sel, NsRect, Id) -> Id =
+                std::mem::transmute(objc_msgSend as *const ());
+            function(
+                allocated,
+                sel(INIT_WITH_FRAME_CONFIG_SEL),
+                frame,
+                configuration,
+            )
         }
-        let function: extern "C" fn(Id, Sel, NsRect, Id) -> Id =
-            std::mem::transmute(objc_msgSend as *const ());
-        function(
-            allocated,
-            sel(INIT_WITH_FRAME_CONFIG_SEL),
-            frame,
-            configuration,
-        )
     }
 
     // ─── ObjC exception guard ─────────────────────────────────────────────
@@ -697,10 +720,10 @@ impl WebSurfaces {
             };
             for (index, slot) in self.views.iter_mut().enumerate() {
                 if index == self.active {
-                    if slot.is_none() {
-                        if let Some(url) = self.tabs.get(index) {
-                            *slot = Pane::new(&work, url);
-                        }
+                    if slot.is_none()
+                        && let Some(url) = self.tabs.get(index)
+                    {
+                        *slot = Pane::new(&work, url);
                     }
                     if let Some(pane) = slot.as_mut() {
                         pane.layout(rect);

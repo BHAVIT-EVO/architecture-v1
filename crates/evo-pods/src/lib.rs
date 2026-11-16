@@ -39,7 +39,7 @@ pub mod wrapper;
 
 pub use config::ContainMode;
 pub use layout::{
-    Layout, LayoutEngine, LayoutId, LayoutNode, LayoutShape, Plan, Placement, Region, Slot,
+    Layout, LayoutEngine, LayoutId, LayoutNode, LayoutShape, Placement, Plan, Region, Slot,
     WindowRef,
 };
 pub use pod::{Pod, PodBadge, PodClaim, PodColor, PodId, PodResource, PodState, PodSurfaces};

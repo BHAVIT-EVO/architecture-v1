@@ -366,8 +366,8 @@ pub fn sheet_contents(
         .auto_shrink([false, false])
         .show(ui, |ui| {
             ui.set_width(ui.available_width());
-            ui.label(theme::display(&state.work_name, Role::Title.size(), theme::TEXT));
-            ui.label(theme::data(format!("Work id: {}", state.thread_id.map_or_else(|| "unavailable".into(), |id| id.to_string())), Role::Data.size(), theme::MUTED));
+            ui.label(theme::display(&state.work_name, Role::Title.size(), theme::text_ink()));
+            ui.label(theme::data(format!("Work id: {}", state.thread_id.map_or_else(|| "unavailable".into(), |id| id.to_string())), Role::Data.size(), theme::muted_ink()));
             ui::gap(ui, theme::S3);
             if let Some(result) = &state.result {
                 let (word, severity, message) = match &result.outcome {
@@ -379,12 +379,12 @@ pub fn sheet_contents(
                 ui::notice(ui, severity, word, &message);
                 ui::gap(ui, theme::S2);
                 ui::caption(ui, &format!("Request #{} · work {} · {}", result.request.id, result.request.thread_id, result.request.work_name));
-                ui.add(egui::Label::new(theme::data(&result.request.locator, Role::Data.size(), theme::TEXT)).wrap());
+                ui.add(egui::Label::new(theme::data(&result.request.locator, Role::Data.size(), theme::text_ink())).wrap());
                 ui::gap(ui, theme::S3);
             } else if let Some(request) = state.pending() {
                 ui::caption(ui, &format!("Request #{} pending for work {} — {}", request.id, request.thread_id, request.work_name));
                 ui::caption(ui, "Already dispatched. Dismiss closes this sheet; it does not cancel the daemon request.");
-                ui.add(egui::Label::new(theme::data(&request.locator, Role::Data.size(), theme::TEXT)).wrap());
+                ui.add(egui::Label::new(theme::data(&request.locator, Role::Data.size(), theme::text_ink())).wrap());
                 ui::gap(ui, theme::S3);
             }
             ui::caption(ui, "Choose exactly one resource from this work’s current restore set. The daemon will attempt only this locator.");
@@ -405,7 +405,7 @@ pub fn sheet_contents(
                         ui.horizontal_top(|ui| {
                             let mark = ui::origin_mark(ui, id.with("mark"), chosen);
                             ui.add_space(theme::S2);
-                            ui.add(egui::Label::new(theme::data(locator, Role::Data.size(), if chosen { theme::ACCENT } else { theme::TEXT })).wrap());
+                            ui.add(egui::Label::new(theme::data(locator, Role::Data.size(), if chosen { theme::accent() } else { theme::text_ink() })).wrap());
                             mark.clicked()
                         }).inner
                     })
@@ -421,7 +421,7 @@ pub fn sheet_contents(
             if let Some(locator) = state.selected() {
                 ui::gap(ui, theme::S3);
                 ui::eyebrow(ui, "Exact locator selected");
-                ui.add(egui::Label::new(theme::data(locator, Role::Data.size(), theme::TEXT)).wrap());
+                ui.add(egui::Label::new(theme::data(locator, Role::Data.size(), theme::text_ink())).wrap());
             }
         });
     ui::gap(ui, theme::S3);

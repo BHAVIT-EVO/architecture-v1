@@ -1,4 +1,5 @@
 [package]
+publish = false
 name = "evo-desktop"
 version = "0.1.0"
 edition = "2024"
@@ -6,6 +7,8 @@ description = "Evo desktop shell — macOS-native presentation of the canonical 
 
 [dependencies]
 eframe = "0.35"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 egui = "0.35"
 evo-artifact = { path = "../evo-artifact" }
 evo-daemon = { path = "../evo-daemon" }
@@ -33,6 +36,9 @@ voice-wake = ["voice-audio", "evo-voice/wake-model"]
 # The notch/Dynamic-Island surface: engine + macOS window + occupancy
 # probe. Independent of audio; the voice wiring joins them at runtime.
 evo-notch = []
+
+[build-dependencies]
+cc = "1"
 
 [dev-dependencies]
 evo-capture = { path = "../evo-capture" }

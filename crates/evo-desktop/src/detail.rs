@@ -244,7 +244,7 @@ pub fn screen(
     // The stage plane: recessed — the work recedes by weight and the
     // panels float on it. One flat fill; the renderer has no gradient
     // primitive and Evo does not fake one.
-    painter.rect_filled(painted, 0.0, theme::RECESSED);
+    painter.rect_filled(painted, 0.0, theme::recessed());
 
     // The elapsed time since entry, shared with the panel row so the three
     // strips can stagger their own arrivals off the same clock. The entry
@@ -365,7 +365,7 @@ fn canvas_identity(ui: &mut egui::Ui, canon: &Canonical<'_>) {
         .unwrap_or(evo_engagement::Standing::Remembered);
     ui::eyebrow(ui, &format!("\u{25B8} {}", standing_label(standing)));
     ui::gap(ui, theme::S2);
-    ui.label(theme::display(&card.title, 34.0, theme::TEXT));
+    ui.label(theme::display(&card.title, 34.0, theme::text_ink()));
     ui::gap(ui, theme::S3);
 
     // The narrative, in the lede voice, wrapped to a measure that leaves
@@ -604,7 +604,7 @@ fn stage_panel(
     // explicitly, mixed toward the canvas they sit on.
     let painter = ui.painter_at(rect);
     let corner = egui::CornerRadius::same(theme::CORNER_SURFACE);
-    let fill = mix_colors(theme::RECESSED, theme::RAISED, arrive);
+    let fill = mix_colors(theme::recessed(), theme::raised(), arrive);
     painter.rect_filled(rect, corner, fill);
     painter.rect_stroke(
         rect,
@@ -612,7 +612,7 @@ fn stage_panel(
         egui::Stroke::new(
             1.0,
             mix_colors(
-                theme::RECESSED,
+                theme::recessed(),
                 if was_hovered || *open {
                     theme::border_strong()
                 } else {
@@ -674,7 +674,11 @@ fn stage_panel(
                     // The instrument icon: painter-drawn strokes in the
                     // label's own ink — the icon and the word are one voice,
                     // and no icon font is fabricated.
-                    let ink = if *open { theme::TEXT } else { theme::MUTED };
+                    let ink = if *open {
+                        theme::text_ink()
+                    } else {
+                        theme::muted_ink()
+                    };
                     panel_icon(ui, icon, ink);
                     ui.add_space(theme::S2);
                     ui.label(theme::eyebrow(label, ink));
@@ -683,7 +687,7 @@ fn stage_panel(
                         ui.label(theme::data(
                             count.to_string(),
                             Role::Data.size(),
-                            theme::TERTIARY,
+                            theme::tertiary_ink(),
                         ));
                     }
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -691,7 +695,7 @@ fn stage_panel(
                         ui.label(theme::text(
                             Role::Body,
                             if *open { "\u{2193}" } else { "\u{2191}" },
-                            theme::TERTIARY,
+                            theme::tertiary_ink(),
                         ));
                     });
                 },
@@ -910,7 +914,7 @@ fn overview_body(
                 ui,
                 Role::BodyStrong,
                 &state::execution_result_line(report),
-                theme::TEXT,
+                theme::text_ink(),
             );
             ui::gap(ui, theme::S2);
             for (index, attempt) in report.attempts().iter().enumerate() {
@@ -1081,7 +1085,11 @@ fn record_tabs(ui: &mut egui::Ui, workspace: &WorkspaceId, active: RecordTab) {
                 ui.painter().layout_no_wrap(
                     tab.label().to_owned(),
                     Role::Caption.font(),
-                    if is_active { theme::TEXT } else { theme::MUTED },
+                    if is_active {
+                        theme::text_ink()
+                    } else {
+                        theme::muted_ink()
+                    },
                 ),
                 Color32::WHITE,
             );
@@ -1091,7 +1099,7 @@ fn record_tabs(ui: &mut egui::Ui, workspace: &WorkspaceId, active: RecordTab) {
                         egui::pos2(rect.left() + theme::S2, rect.bottom() - 2.0),
                         egui::pos2(rect.right() - theme::S2, rect.bottom() - 2.0),
                     ],
-                    egui::Stroke::new(2.0, theme::TEAL),
+                    egui::Stroke::new(2.0, theme::accent()),
                 );
             }
             if response.clicked() {
@@ -1168,7 +1176,7 @@ fn place_nav(
         let id = ui.id().with(("evo-switch", card.id.to_string()));
         let (row, _) = ui::row(ui, id, |ui| {
             ui.horizontal_top(|ui| {
-                ui::one_line(ui, Role::Body, &card.title, theme::TEXT);
+                ui::one_line(ui, Role::Body, &card.title, theme::text_ink());
             });
         });
         if row.clicked() {
@@ -1220,7 +1228,7 @@ fn resume_answer(ui: &mut egui::Ui, canon: &Canonical<'_>, artifact_id: &str) {
     let subject = state::subject_for(canon.subjects, artifact_id);
     match subject {
         Some(subject) => {
-            ui::label(ui, Role::Display, subject, theme::TEXT);
+            ui::label(ui, Role::Display, subject, theme::text_ink());
             ui::gap(ui, theme::S2);
         }
         None => ui::unknown(ui, "Evo's record does not name this resource."),
@@ -1260,7 +1268,7 @@ fn next_step(ui: &mut egui::Ui, canon: &Canonical<'_>) {
     };
     ui::gap(ui, theme::S5);
     ui::eyebrow(ui, "Next step");
-    ui::label(ui, Role::BodyStrong, next.description(), theme::TEXT);
+    ui::label(ui, Role::BodyStrong, next.description(), theme::text_ink());
     ui::gap(ui, theme::S1);
     ui::provenance(
         ui,
@@ -1289,7 +1297,7 @@ fn blockers(ui: &mut egui::Ui, canon: &Canonical<'_>) {
             ui,
             Role::Body,
             &format!("— {}", blocker.description()),
-            theme::TEXT,
+            theme::text_ink(),
         );
         ui::gap(ui, theme::S1);
     }
@@ -1339,13 +1347,13 @@ fn pending_line(
         ui.horizontal_top(|ui| {
             ui.scope(|ui| {
                 ui.set_opacity(pulse);
-                ui::label(ui, Role::Body, "○", theme::MUTED);
+                ui::label(ui, Role::Body, "○", theme::muted_ink());
             });
             ui.add_space(theme::S3);
             ui.vertical(|ui| {
-                ui::one_line(ui, Role::Body, &label, theme::TEXT);
+                ui::one_line(ui, Role::Body, &label, theme::text_ink());
                 ui::gap(ui, theme::S1);
-                ui::label(ui, Role::Caption, action, theme::MUTED);
+                ui::label(ui, Role::Caption, action, theme::muted_ink());
             });
         });
     });
@@ -1481,7 +1489,11 @@ fn origin_list(
                     ui,
                     Role::Body,
                     &label,
-                    if chosen { theme::TEXT } else { theme::MUTED },
+                    if chosen {
+                        theme::text_ink()
+                    } else {
+                        theme::muted_ink()
+                    },
                 );
                 mark
             })
@@ -1569,20 +1581,20 @@ fn attempt_line(ui: &mut egui::Ui, canon: &Canonical<'_>, index: usize, attempt:
             ui.vertical(|ui| {
                 match label {
                     Some(label) => {
-                        ui::one_line(ui, Role::Body, &label, theme::TEXT);
+                        ui::one_line(ui, Role::Body, &label, theme::text_ink());
                     }
                     None => {
                         ui::one_line(
                             ui,
                             Role::Body,
                             "A resource Evo's record does not name",
-                            theme::MUTED,
+                            theme::muted_ink(),
                         );
                     }
                 }
                 if !reason.is_empty() {
                     ui::gap(ui, theme::S1);
-                    ui::label(ui, Role::Caption, reason, theme::MUTED);
+                    ui::label(ui, Role::Caption, reason, theme::muted_ink());
                 }
             });
         });
@@ -1610,7 +1622,7 @@ fn display_row(
     let label = state::describe_artifact(canon.kinds, canon.subjects, artifact_id);
     ui.horizontal_top(|ui| {
         ui.vertical(|ui| {
-            ui::one_line(ui, Role::Body, &label, theme::TEXT);
+            ui::one_line(ui, Role::Body, &label, theme::text_ink());
             ui::gap(ui, theme::S1);
             let (word, severity) = disposition;
             ui::status_word(ui, word, severity);
@@ -1618,7 +1630,7 @@ fn display_row(
                 && !reason.is_empty()
             {
                 ui::gap(ui, theme::S1);
-                ui::label(ui, Role::Caption, reason, theme::MUTED);
+                ui::label(ui, Role::Caption, reason, theme::muted_ink());
             }
         });
     });
@@ -1763,7 +1775,7 @@ fn grouping(ui: &mut egui::Ui, canon: &Canonical<'_>, tr: &mut Transient<'_>) {
             let id = ui.id().with(("evo-group", other));
             let (row, button) = ui::row(ui, id, |ui| {
                 ui.horizontal_top(|ui| {
-                    ui::one_line(ui, Role::Body, other, theme::MUTED);
+                    ui::one_line(ui, Role::Body, other, theme::muted_ink());
 
                     ui::control(ui, Control::quiet("Declare related"))
                 })
@@ -1924,11 +1936,11 @@ fn member_row(
     let drafted = tr.continuation_draft.is_some() && member != declared;
 
     let ink = if !member {
-        theme::RECEDED
+        theme::receded_ink()
     } else if drafted {
-        theme::MUTED
+        theme::muted_ink()
     } else {
-        theme::TEXT
+        theme::text_ink()
     };
 
     let id = ui.id().with(("evo-member", artifact_id));
@@ -1946,7 +1958,7 @@ fn member_row(
                     && !reason.is_empty()
                 {
                     ui::gap(ui, theme::S1);
-                    ui::label(ui, Role::Caption, reason, theme::MUTED);
+                    ui::label(ui, Role::Caption, reason, theme::muted_ink());
                 }
             });
             mark
@@ -2099,7 +2111,7 @@ fn witnessed_body(ui: &mut egui::Ui, canon: &Canonical<'_>) {
                             "— {}",
                             state::describe_artifact(canon.kinds, canon.subjects, artifact_id)
                         ),
-                        theme::MUTED,
+                        theme::muted_ink(),
                     );
                     ui::gap(ui, theme::S1);
                 }
@@ -2142,7 +2154,7 @@ fn witnessed_body(ui: &mut egui::Ui, canon: &Canonical<'_>) {
                 "— {}",
                 state::describe_artifact(canon.kinds, canon.subjects, artifact_id)
             ),
-            theme::MUTED,
+            theme::muted_ink(),
         );
         ui::gap(ui, theme::S1);
     }

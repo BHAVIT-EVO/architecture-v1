@@ -28,12 +28,12 @@
 //! app behavior.
 
 use std::collections::HashSet;
-use std::sync::Arc;
 use std::sync::mpsc::{Receiver, Sender};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use crate::restore::VoiceOutcome;
-use crate::wake::{WakeResult, detect_wake, sanitize_transcript};
+use crate::wake::{detect_wake, sanitize_transcript, WakeResult};
 
 /// Looks at [`VoiceEvent`]s without owning them: an accessory listener
 /// (the notch surface) subscribes to the same stream the UI consumes so
@@ -45,7 +45,7 @@ pub trait VoiceEventObserver {
 
 impl<T: VoiceEventObserver + ?Sized> VoiceEventObserver for std::sync::Mutex<T> {
     fn observe(&mut self, event: &VoiceEvent) -> bool {
-        self.lock().unwrap().observe(event)
+        self.get_mut().unwrap().observe(event)
     }
 }
 
@@ -337,6 +337,7 @@ pub struct VoiceDriver<Tr, Tp> {
     job_sender: Sender<TranscriptionJob>,
     result_receiver: Receiver<TranscriptionResult>,
     wake_rearm_at: Instant,
+    worker_error: Option<String>,
 }
 
 impl<Tr: UtteranceTranscriber + Send + Sync + 'static, Tp: TriggerTransport> VoiceDriver<Tr, Tp> {
@@ -354,10 +355,15 @@ impl<Tr: UtteranceTranscriber + Send + Sync + 'static, Tp: TriggerTransport> Voi
         let (result_sender, result_receiver) = std::sync::mpsc::channel();
         let transcriber = Arc::new(transcriber);
         let worker_transcriber = Arc::clone(&transcriber);
-        std::thread::Builder::new()
+        let worker_error = match std::thread::Builder::new()
             .name("evo-voice-transcriber".to_string())
             .spawn(move || transcription_worker(worker_transcriber, job_receiver, result_sender))
-            .expect("failed to spawn the voice transcription worker");
+        {
+            Ok(_) => None,
+            Err(error) => Some(format!(
+                "failed to spawn the voice transcription worker: {error}"
+            )),
+        };
         Self {
             transcriber,
             transport,
@@ -381,6 +387,7 @@ impl<Tr: UtteranceTranscriber + Send + Sync + 'static, Tp: TriggerTransport> Voi
             job_sender,
             result_receiver,
             wake_rearm_at: Instant::now(),
+            worker_error,
         }
     }
 
@@ -452,6 +459,9 @@ impl<Tr: UtteranceTranscriber + Send + Sync + 'static, Tp: TriggerTransport> Voi
     /// Returns `false` when the event sink is gone — the owner should stop
     /// the voice thread. Never panics on audio input.
     pub fn poll(&mut self) -> bool {
+        if let Some(error) = self.worker_error.take() {
+            return self.emit(VoiceEvent::Outcome(VoiceOutcome::Failed { reason: error }));
+        }
         // Worker results first: a completed final must reach the UI even
         // when a wake transition or the next capture step is also due.
         if !self.drain_transcriptions() {
@@ -578,9 +588,10 @@ impl<Tr: UtteranceTranscriber + Send + Sync + 'static, Tp: TriggerTransport> Voi
     /// `Listening` with the accumulated transcript as the live partial;
     /// the notch and main surface show Evo actively listening.
     fn poll_command_capture(&mut self) -> bool {
-        let started = self
-            .command_capture_started
-            .expect("polled in command-capture mode");
+        let Some(started) = self.command_capture_started else {
+            self.capture_open = false;
+            return false;
+        };
         let elapsed = started.elapsed();
         let at_cap = elapsed >= self.config.command_capture;
         if !at_cap && !self.command_endpoint_reached() {
@@ -978,8 +989,8 @@ fn command_text(text: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::Mutex;
     use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::Mutex;
 
     /// Returns scripted transcripts in order, ignoring the audio.
     struct ScriptTranscriber {
@@ -1388,7 +1399,10 @@ mod tests {
         );
 
         driver.ingest(chunk());
-        assert!(driver.poll(), "the residual tail is ignored during cooldown");
+        assert!(
+            driver.poll(),
+            "the residual tail is ignored during cooldown"
+        );
         assert!(
             !matches!(events.try_recv(), Ok(VoiceEvent::WakeGesture { .. })),
             "the same tail must not reopen the notch"

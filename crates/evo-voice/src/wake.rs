@@ -232,6 +232,12 @@ fn normalize(text: &str) -> String {
         .join(" ")
 }
 
+/// Normalized transcript text for diagnostics and replay evidence.
+#[allow(dead_code)]
+pub fn normalize_for_trace(text: &str) -> String {
+    normalize(&sanitize_transcript(text))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

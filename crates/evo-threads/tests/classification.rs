@@ -11,7 +11,7 @@
 mod common;
 
 use common::{all_anchor_resources, declare, ev, evw, t, thread_with_anchor};
-use evo_threads::{Declaration, Decision, Engine, Interaction};
+use evo_threads::{Decision, Declaration, Engine, Interaction};
 
 /// A resource that looks like leisure video. The engine knows nothing about
 /// what it is — that is the point; the person classifies it, not Evo.

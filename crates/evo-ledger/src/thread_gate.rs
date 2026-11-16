@@ -117,7 +117,7 @@ impl ThreadGateReport {
         let mut out = Vec::new();
         for (name, identity, participation) in &self.gates {
             let fails = |v: &Verdict| matches!(v, Verdict::Fail(_));
-            let both = fails(identity) && participation.as_ref().is_none_or(|v| fails(v));
+            let both = fails(identity) && participation.as_ref().is_none_or(fails);
             if both && !KNOWN_BOTH_READING_FAILURES.contains(&name.to_string().as_str()) {
                 out.push(name.to_string());
             }
@@ -132,7 +132,7 @@ impl ThreadGateReport {
         let mut out = Vec::new();
         for (name, identity, participation) in &self.gates {
             let fails = |v: &Verdict| matches!(v, Verdict::Fail(_));
-            let both = fails(identity) && participation.as_ref().is_none_or(|v| fails(v));
+            let both = fails(identity) && participation.as_ref().is_none_or(fails);
             if both && KNOWN_BOTH_READING_FAILURES.contains(&name.to_string().as_str()) {
                 out.push(name.to_string());
             }
@@ -433,9 +433,7 @@ fn evaluate_classified_gate(
         Gate::ClassifiedFoundsNothing => {
             for (_, witnesses) in threads {
                 if let Some(subject) = classified.iter().find(|c| witnesses.anchors.contains(*c)) {
-                    return Verdict::Fail(format!(
-                        "`{subject}` is classified yet anchors a work"
-                    ));
+                    return Verdict::Fail(format!("`{subject}` is classified yet anchors a work"));
                 }
             }
             Verdict::Pass
@@ -610,7 +608,7 @@ fn project_ledger_event(event: &crate::ObservedEvent) -> Event {
     };
     let weight = match interaction {
         Interaction::Typed => Some(event.keys.max(1)),
-        _ => Some(event.dwell_ms.min(600_000).max(1000)),
+        _ => Some(event.dwell_ms.clamp(1000, 600_000)),
     };
     Event {
         timestamp: event.timestamp_ms,
@@ -695,7 +693,9 @@ mod tests {
     #[test]
     fn a_work_presented_on_classified_witnesses_alone_fails_the_naming_gate() {
         let mut witnesses = ThreadWitnesses::default();
-        witnesses.companions.insert("https://video.example/x".into());
+        witnesses
+            .companions
+            .insert("https://video.example/x".into());
         let threads = vec![(7u64, witnesses)];
         let classified = BTreeSet::from(["https://video.example/x".to_string()]);
 

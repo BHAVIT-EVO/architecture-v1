@@ -1069,11 +1069,10 @@ mod imp {
         unsafe {
             let element = OwnedCf::new(AXUIElementCreateApplication(pid) as CFTypeRef)?;
             let value = copy_attribute(element.0 as AXUIElementRef, KAX_WINDOWS_ATTRIBUTE)?;
-            if let Some(value) = &value {
-                if CFGetTypeID(value.0) != CFArrayGetTypeID() {
+            if let Some(value) = &value
+                && CFGetTypeID(value.0) != CFArrayGetTypeID() {
                     return Err("Accessibility returned a non-array window list".to_string());
                 }
-            }
             Ok(value)
         }
     }
@@ -1093,15 +1092,14 @@ mod imp {
             for i in 0..count {
                 let item = CFArrayGetValueAtIndex(array, i);
                 let window_element = item as AXUIElementRef;
-                if let Some(title) = copy_string_attribute(window_element, KAX_TITLE_ATTRIBUTE)? {
-                    if !title.trim().is_empty() {
+                if let Some(title) = copy_string_attribute(window_element, KAX_TITLE_ATTRIBUTE)?
+                    && !title.trim().is_empty() {
                         out.push(WindowInfo {
                             title,
                             owner_pid: pid,
                             owner_name: owner_name.to_string(),
                         });
                     }
-                }
             }
             Ok(())
         }

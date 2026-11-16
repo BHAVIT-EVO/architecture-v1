@@ -26,8 +26,6 @@ pub mod work_understanding;
 pub mod workspace_replay;
 
 pub use builder::DaemonBuilder;
-pub use daemon::Daemon;
-pub use errors::DaemonError;
 pub use classification::ClassifiedSurfaces;
 pub use classification_rules::{
     ClassificationAssignment, ClassificationError, ClassificationInterval, ClassificationMatcher,
@@ -35,6 +33,8 @@ pub use classification_rules::{
     IntervalClassification, MatchOp, MatchOperator, RuleApplication, StructuralField,
     WitnessedFields, propose_repeated_dismissal_rule,
 };
+pub use daemon::Daemon;
+pub use errors::DaemonError;
 pub use name_index::NameIndex;
 pub use runtime::{
     RestorationInputBoundary, Runtime, VerticalPipeline, VerticalRuntimeHandle, WindowFocusRuntime,

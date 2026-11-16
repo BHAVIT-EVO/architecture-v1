@@ -9,6 +9,12 @@
 //! `@catch (...)` actually catch the C++ ones.
 
 fn main() {
+    // About shows when this binary was built, not when the crate was written.
+    let secs = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    println!("cargo:rustc-env=EVO_BUILD_TIME={secs}");
     println!("cargo:rerun-if-changed=objc/objc_try.mm");
     cc::Build::new()
         .file("objc/objc_try.mm")

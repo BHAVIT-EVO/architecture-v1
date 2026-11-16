@@ -943,7 +943,7 @@ fn content_adjacent_to_dominant(
     // store its own key).
     let mut group_keys: Vec<&String> = Vec::new();
     let mut dominant_keys: Vec<&String> = Vec::new();
-    for (key, _record) in pages {
+    for key in pages.keys() {
         match union.find(key.as_str()) {
             r if r == group_root => group_keys.push(key),
             r if r == dominant_root => dominant_keys.push(key),

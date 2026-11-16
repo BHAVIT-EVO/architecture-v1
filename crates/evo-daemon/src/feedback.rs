@@ -104,7 +104,7 @@ fn handle_connection(mut stream: UnixStream, root: &Path, sender: &Sender<MacOSS
                             "member state must be Active, Completed, Superseded, or Optional"
                                 .into(),
                         ),
-                    )
+                    );
                 }
             };
             match (
@@ -295,11 +295,13 @@ mod tests {
                 UNIX_EPOCH,
                 HashMap::new(),
             ),
-            Evidence::new(vec![ObservedFact::new(
-                schema.canonical_fact_name().unwrap(),
-                FactValue::Text(subject.into()),
-            )
-            .unwrap()]),
+            Evidence::new(vec![
+                ObservedFact::new(
+                    schema.canonical_fact_name().unwrap(),
+                    FactValue::Text(subject.into()),
+                )
+                .unwrap(),
+            ]),
         )
     }
 

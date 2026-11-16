@@ -147,6 +147,7 @@ pub mod imp {
     const UTF8_STRING_SEL: &[u8] = b"UTF8String\0";
     const IMAGE_NAMED_SEL: &[u8] = b"imageNamed:\0";
     const SET_TEMPLATE_SEL: &[u8] = b"setTemplate:\0";
+    const SET_ALPHA_VALUE_SEL: &[u8] = b"setAlphaValue:\0";
     const RETAIN_SEL: &[u8] = b"retain\0";
 
     /// NSVariableStatusItemLength = -1.
@@ -159,6 +160,8 @@ pub mod imp {
     const TAG_OPEN: isize = 10_001;
     const TAG_CYCLE: isize = 10_002;
     const TAG_BAR: isize = 10_004;
+    const TAG_PAUSE: isize = 10_005;
+    const TAG_QUIT: isize = 10_006;
     /// One-shot flag: ⌥Space asked for the Pod Bar; the app's frame loop
     /// drains it (it owns egui state).
     static mut BAR_TOGGLE_REQUESTED: bool = false;
@@ -250,6 +253,12 @@ pub mod imp {
                 PodCommand::Cycle
             } else if tag == TAG_BAR {
                 PodCommand::ToggleBar
+            } else if tag == TAG_PAUSE {
+                toggle_pause_from_menu();
+                return;
+            } else if tag == TAG_QUIT {
+                quit_app();
+                return;
             } else {
                 return;
             };
@@ -366,9 +375,17 @@ pub mod imp {
                 }
                 let button = msg_send_id(item, sel(BUTTON_SEL));
                 if !button.is_null() {
-                    // A text title is the simplest reliable status-item
-                    // identity; template images vary by name across macOS.
-                    let _ = msg_send_id2(button, sel(SET_TITLE_SEL), ns_string("Evo"));
+                    let image = msg_send_id1(
+                        class_ns_image() as Id,
+                        sel(IMAGE_NAMED_SEL),
+                        ns_string("EvoTemplate"),
+                    );
+                    if !image.is_null() {
+                        let _ = msg_send_bool1(image, sel(SET_TEMPLATE_SEL), 1);
+                        let _ = msg_send_id2(button, sel(SET_IMAGE_SEL), image);
+                    } else {
+                        let _ = msg_send_id2(button, sel(SET_TITLE_SEL), ns_string("Evo"));
+                    }
                 }
 
                 // The menu (items rebuilt in update_pods).
@@ -455,8 +472,10 @@ pub mod imp {
             }
         }
 
-        /// Rebuilds the menu: pods by recency (the active one checked),
-        /// Leave, Open. Called from the app's logic tick.
+        /// Rebuilds the menu: the status line, Pause or Resume, pods by
+        /// recency (the active one checked), Leave, Open, Quit. Called from
+        /// the app's logic tick; the paused state is read from the same store
+        /// the page uses, so the two can never disagree.
         pub fn update_pods(&mut self, pods: &[String], active: Option<String>) {
             unsafe {
                 // Clear the menu by removing all items.
@@ -468,6 +487,52 @@ pub mod imp {
                     let _ = msg_send_isize1(self._menu, sel(REMOVE_ITEM_AT_INDEX_SEL), count - 1);
                 }
                 std::ptr::write_volatile(std::ptr::addr_of_mut!(MENU_MAX_PODS), pods.len());
+
+                let voice_state = storage_root()
+                    .map(|root| crate::home::voice_status(&root))
+                    .unwrap_or("Off");
+                let paused = voice_state == "Paused";
+
+                unsafe {
+                    let button = msg_send_id(self._status_item, sel(BUTTON_SEL));
+                    if !button.is_null() {
+                        let alpha = if paused { 0.45 } else { 1.0 };
+                        let _ = msg_send_id_f64(button, sel(SET_ALPHA_VALUE_SEL), alpha);
+                    }
+                }
+
+                // Status and the kill switch come first: they are the two
+                // things a person reaches for without opening the window.
+                let status_title = match voice_state {
+                    "Listening" => "Listening for “Hey Evo”",
+                    "Paused" => "Paused",
+                    _ => "Off",
+                };
+                let status_item = msg_send_id4(
+                    self._menu,
+                    sel(ADD_ITEM_WITH_TITLE_ACTION_KEY_EQ_SEL),
+                    ns_string(status_title),
+                    ptr::null_mut(),
+                    ns_string(""),
+                );
+                if !status_item.is_null() {
+                    let _ = msg_send_id2(status_item, sel(SET_ENABLED_SEL), 0_isize as Id);
+                }
+                let pause_title = if paused { "Resume everything" } else { "Pause everything" };
+                let pause_item = msg_send_id4(
+                    self._menu,
+                    sel(ADD_ITEM_WITH_TITLE_ACTION_KEY_EQ_SEL),
+                    ns_string(pause_title),
+                    sel(MENU_ACTION_SEL) as Id,
+                    ns_string(""),
+                );
+                if !pause_item.is_null() {
+                    let _ = msg_send_id2(pause_item, sel(SET_TAG_SEL), TAG_PAUSE as Id);
+                    let _ = msg_send_id2(pause_item, sel(SET_TARGET_SEL), self._target);
+                }
+                let top_separator: Id =
+                    msg_send_id(class_ns_menu_item() as Id, sel(SEPARATOR_ITEM_SEL));
+                let _ = msg_send_id1(self._menu, sel(ADD_ITEM_SEL), top_separator);
 
                 let mut added_any = false;
                 for (index, pod_name) in pods.iter().take(8).enumerate() {
@@ -514,6 +579,81 @@ pub mod imp {
                 add_simple("Next pod  ⌘⇧E", TAG_CYCLE);
                 add_simple("Pod Bar  ⌥Space", TAG_BAR);
                 add_simple("Open Evo", TAG_OPEN);
+                let separator: Id =
+                    msg_send_id(class_ns_menu_item() as Id, sel(SEPARATOR_ITEM_SEL));
+                let _ = msg_send_id1(self._menu, sel(ADD_ITEM_SEL), separator);
+                add_simple("Quit Evo", TAG_QUIT);
+            }
+        }
+    }
+
+    /// The storage root the page and the menu share.
+    fn storage_root() -> Option<std::path::PathBuf> {
+        Some(evo_storage::canonical_storage_root())
+    }
+
+    /// Flips the kill switch from the menu bar and records it, exactly as the
+    /// page's `pause` command does. Rust owns the state either way.
+    fn toggle_pause_from_menu() {
+        let Some(root) = storage_root() else { return };
+        let mut state = crate::ui_state::UiState::load(&root);
+        state.paused = !state.paused;
+        let paused = state.paused;
+        state.record(
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_secs())
+                .unwrap_or(0),
+            if paused {
+                "Paused everything"
+            } else {
+                "Resumed everything"
+            },
+            "You used the menu bar",
+            None,
+        );
+        if let Err(err) = state.save(&root) {
+            eprintln!("EVO-PRESENCE: cannot save the kill switch: {err}");
+        }
+        // The page reads status on its own; nothing is pushed across threads.
+        eprintln!(
+            "EVO-PRESENCE: {}",
+            if paused { "paused" } else { "resumed" }
+        );
+    }
+
+    /// Quits the app from the menu, the way the app's own menu would.
+    fn quit_app() {
+        let keep_background = storage_root()
+            .map(|root| crate::ui_state::UiState::load(&root).keep_background)
+            .unwrap_or(false);
+        let uid = std::process::Command::new("id")
+            .arg("-u")
+            .output()
+            .ok()
+            .and_then(|out| String::from_utf8(out.stdout).ok())
+            .map(|uid| uid.trim().to_string());
+        if !keep_background {
+            if let Some(uid) = uid {
+                let target = format!("gui/{uid}/com.evo.agent");
+                let _ = std::process::Command::new("launchctl")
+                    .args(["bootout", &target])
+                    .status();
+            }
+        }
+        if let Some(root) = storage_root() {
+            if let Some(pid) = evo_daemon::daemon_lock::running_daemon_pid(&root) {
+                let _ = std::process::Command::new("kill")
+                    .args(["-TERM", &pid.to_string()])
+                    .status();
+            }
+        }
+        unsafe {
+            let app = msg_send_id(objc_getClass(c"NSApplication".as_ptr()) as Id, sel(b"sharedApplication\0"));
+            if !app.is_null() {
+                let function: extern "C" fn(Id, Sel, Id) =
+                    std::mem::transmute(objc_msgSend as *const ());
+                function(app, sel(b"terminate:\0"), ptr::null_mut());
             }
         }
     }

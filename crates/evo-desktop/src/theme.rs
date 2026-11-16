@@ -49,118 +49,197 @@ use egui::{
 };
 
 // ────────────────────────────────────────────────────────────────────────
-// Environment — Control Room (DESIGN.md: Color)
+// Environment — Evo's Clearing. Dusk is the deliberate default; Day and Auto
+// are selected in Settings. The palette resolves at paint time for custom egui surfaces.
 // ────────────────────────────────────────────────────────────────────────
 
-/// The environment material's base tone. Used as the window clear color so
-/// the very first painted frame is already the environment.
-pub const BG: Color32 = Color32::from_rgb(0x12, 0x15, 0x17);
-/// The environment at the top of the window (light source above).
-pub const ENV_TOP: Color32 = Color32::from_rgb(0x15, 0x18, 0x1A);
-/// The environment at the bottom of the window.
-pub const ENV_BOTTOM: Color32 = Color32::from_rgb(0x0F, 0x12, 0x14);
+use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 
-/// The raised surface: the single primary object on a screen (the track
-/// card, the stage hero).
-pub const RAISED: Color32 = Color32::from_rgb(0x1B, 0x1F, 0x21);
-/// The recessed surface: contextual and supporting regions. Darker than the
-/// environment on purpose — supporting material recedes by weight.
-pub const RECESSED: Color32 = Color32::from_rgb(0x0D, 0x10, 0x12);
-/// A recessed well used for small inputs (search) — one step in, not a card.
-pub const WELL: Color32 = Color32::from_rgb(0x0B, 0x0D, 0x0F);
-/// The action material (the dock, sheets): near-opaque, lifted charcoal.
-pub const ACTION_SURFACE: Color32 = Color32::from_rgb(0x1E, 0x22, 0x24);
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ThemeMode {
+    #[default]
+    Dusk,
+    Day,
+    Auto,
+}
+static THEME_MODE: AtomicU8 = AtomicU8::new(0);
+static SYSTEM_DARK: AtomicBool = AtomicBool::new(true);
+impl ThemeMode {
+    pub fn key(self) -> &'static str {
+        match self {
+            Self::Dusk => "dusk",
+            Self::Day => "day",
+            Self::Auto => "auto",
+        }
+    }
+    pub fn parse(value: &str) -> Option<Self> {
+        match value.trim() {
+            "dusk" => Some(Self::Dusk),
+            "day" => Some(Self::Day),
+            "auto" => Some(Self::Auto),
+            _ => None,
+        }
+    }
+}
+pub fn set_theme_mode(mode: ThemeMode) {
+    THEME_MODE.store(
+        match mode {
+            ThemeMode::Dusk => 0,
+            ThemeMode::Day => 1,
+            ThemeMode::Auto => 2,
+        },
+        Ordering::Relaxed,
+    );
+}
+pub fn theme_mode() -> ThemeMode {
+    match THEME_MODE.load(Ordering::Relaxed) {
+        1 => ThemeMode::Day,
+        2 => ThemeMode::Auto,
+        _ => ThemeMode::Dusk,
+    }
+}
+/// The Home column (§6): content max 960.
+pub const HOME_WIDTH: f32 = 960.0;
+/// The headline size (§6): one display line at 48.
+pub const HEADLINE_SIZE: f32 = 48.0;
+/// Card radius (§1/§6).
+pub const CARD_RADIUS: u8 = 24;
+/// The height of a calm row on Home (§6).
+pub const ROW_HEIGHT: f32 = 56.0;
 
-/// Legacy alias retained for the small-input well.
+pub fn set_system_theme(theme: Option<egui::Theme>) -> bool {
+    let Some(theme) = theme else { return false };
+    let is_dark = theme == egui::Theme::Dark;
+    SYSTEM_DARK.swap(is_dark, Ordering::Relaxed) != is_dark
+}
+fn dark() -> bool {
+    match theme_mode() {
+        ThemeMode::Dusk => true,
+        ThemeMode::Day => false,
+        ThemeMode::Auto => SYSTEM_DARK.load(Ordering::Relaxed),
+    }
+}
+fn color(dusk: [u8; 3], day: [u8; 3]) -> Color32 {
+    color_for(dark(), dusk, day)
+}
+
+fn color_for(is_dark: bool, dusk: [u8; 3], day: [u8; 3]) -> Color32 {
+    let rgb = if is_dark { dusk } else { day };
+    Color32::from_rgb(rgb[0], rgb[1], rgb[2])
+}
+
+pub fn bg() -> Color32 {
+    color([0x12, 0x15, 0x17], [0xF4, 0xF6, 0xF1])
+}
+pub fn environment_top() -> Color32 {
+    color([0x15, 0x18, 0x1A], [0xFA, 0xFB, 0xF7])
+}
+pub fn environment_bottom() -> Color32 {
+    color([0x0F, 0x12, 0x14], [0xEC, 0xEF, 0xE9])
+}
+pub fn raised() -> Color32 {
+    color([0x1B, 0x1F, 0x21], [0xFF, 0xFF, 0xFC])
+}
+pub fn recessed() -> Color32 {
+    color([0x0D, 0x10, 0x12], [0xE5, 0xE9, 0xE3])
+}
+pub fn well() -> Color32 {
+    color([0x0B, 0x0D, 0x0F], [0xE0, 0xE4, 0xDE])
+}
+pub fn action_surface() -> Color32 {
+    color([0x1E, 0x22, 0x24], [0xF8, 0xFA, 0xF5])
+}
+pub fn text_ink() -> Color32 {
+    color([0xEC, 0xEA, 0xE6], [0x1D, 0x24, 0x20])
+}
+pub fn muted_ink() -> Color32 {
+    color([0xB6, 0xB9, 0xB6], [0x4C, 0x56, 0x50])
+}
+pub fn tertiary_ink() -> Color32 {
+    color([0xA0, 0xA5, 0xA1], [0x5C, 0x67, 0x60])
+}
+pub fn receded_ink() -> Color32 {
+    color([0x70, 0x76, 0x72], [0x7D, 0x87, 0x80])
+}
+pub fn accent() -> Color32 {
+    color([0x74, 0xD2, 0xA1], [0x16, 0x61, 0x3E])
+}
+pub fn on_accent() -> Color32 {
+    color([0x0B, 0x22, 0x17], [0xFF, 0xFF, 0xFF])
+}
+pub fn accent_hover() -> Color32 {
+    color([0x91, 0xE0, 0xB7], [0x12, 0x52, 0x34])
+}
+pub fn accent_pressed() -> Color32 {
+    color([0x56, 0xB8, 0x85], [0x0F, 0x4A, 0x2D])
+}
+pub fn success() -> Color32 {
+    accent()
+}
+pub fn warning() -> Color32 {
+    color([0xE0, 0x9A, 0x5B], [0x9B, 0x51, 0x14])
+}
+pub fn error() -> Color32 {
+    color([0xF0, 0x77, 0x78], [0xB3, 0x2D, 0x36])
+}
 pub fn surface_alt() -> Color32 {
-    WELL
+    well()
 }
-
-// ────────────────────────────────────────────────────────────────────────
-// Ink — contrast-checked against the environment (≥ 4.5:1 for every tone
-// that carries information, on both raised and recessed surfaces).
-// ────────────────────────────────────────────────────────────────────────
-
-/// Primary text.
-pub const TEXT: Color32 = Color32::from_rgb(0xEC, 0xEA, 0xE6);
-/// Secondary text — explanations, provenance, supporting prose.
-pub const MUTED: Color32 = Color32::from_rgb(0xA8, 0xAA, 0xA8);
-/// Tertiary text — eyebrow labels and field names.
-pub const TERTIARY: Color32 = Color32::from_rgb(0x8A, 0x8D, 0x8D);
-/// Receded — decoration only (rules, empty marks). Never information.
-pub const RECEDED: Color32 = Color32::from_rgb(0x5C, 0x60, 0x62);
-
-/// Evo's accent: caramel, used sparingly — the primary action, the mark of
-/// a declared choice, focus. Evo must never look covered in colored buttons.
-/// The ink on top of the accent is a deep warm brown (≥ 7:1).
-pub const ACCENT: Color32 = Color32::from_rgb(0xC8, 0x9B, 0x6B);
-/// The ink set on top of the accent.
-pub const ON_ACCENT: Color32 = Color32::from_rgb(0x1A, 0x12, 0x06);
-/// Accent under the pointer.
-pub const ACCENT_HOVER: Color32 = Color32::from_rgb(0xD4, 0xAA, 0x7A);
-/// Accent while pressed.
-pub const ACCENT_PRESSED: Color32 = Color32::from_rgb(0xB0, 0x87, 0x57);
-/// A faint accent tint for marked rows and notices.
+fn tint(ink: Color32, alpha: u8) -> Color32 {
+    Color32::from_rgba_unmultiplied(ink.r(), ink.g(), ink.b(), alpha)
+}
 pub fn accent_tint() -> Color32 {
-    Color32::from_rgba_unmultiplied(0xC8, 0x9B, 0x6B, 36)
+    tint(accent(), 36)
 }
-
-/// The cool counter-voice: the teal wash of the reference theme. It names
-/// phases and record evidence; it never means success.
-pub const TEAL: Color32 = Color32::from_rgb(0x5B, 0x8A, 0x8F);
 pub fn teal_tint() -> Color32 {
-    Color32::from_rgba_unmultiplied(0x5B, 0x8A, 0x8F, 41)
+    accent_tint()
 }
-
-/// READY / recorded / running.
-pub const SUCCESS: Color32 = Color32::from_rgb(0x63, 0xB8, 0x7F);
 pub fn success_tint() -> Color32 {
-    Color32::from_rgba_unmultiplied(0x63, 0xB8, 0x7F, 36)
+    tint(success(), 36)
 }
-/// UNAVAILABLE / AMBIGUOUS / permission required.
-pub const WARNING: Color32 = Color32::from_rgb(0xE0, 0x81, 0x3F);
 pub fn warning_tint() -> Color32 {
-    Color32::from_rgba_unmultiplied(0xE0, 0x81, 0x3F, 36)
+    tint(warning(), 36)
 }
-/// Rejected / failed. Distinct from the accent so a rejection can never read
-/// as a success.
-pub const ERROR: Color32 = Color32::from_rgb(0xE5, 0x48, 0x4D);
 pub fn error_tint() -> Color32 {
-    Color32::from_rgba_unmultiplied(0xE5, 0x48, 0x4D, 36)
+    tint(error(), 36)
 }
-/// UNSUPPORTED / UNKNOWN. A capability Evo does not have, or a fact its
-/// record does not contain, is neither a success nor a failure — it must not
-/// borrow the color of either.
 pub fn neutral_tint() -> Color32 {
-    Color32::from_rgba_unmultiplied(0x8A, 0x8D, 0x8D, 36)
+    tint(tertiary_ink(), 36)
 }
-
-/// The text color for a status line: success when the daemon accepted the
-/// user's action, error when it rejected it.
 pub fn status_color(accepted: bool) -> Color32 {
-    if accepted { SUCCESS } else { ERROR }
+    if accepted { success() } else { error() }
 }
-
-/// Hairline rule.
 pub fn border() -> Color32 {
-    Color32::from_rgba_unmultiplied(0xFF, 0xFF, 0xFF, 18)
+    tint(color([0xFF, 0xFF, 0xFF], [0x1D, 0x24, 0x20]), 26)
 }
-/// A stronger hairline, for hover and focus.
 pub fn border_strong() -> Color32 {
-    Color32::from_rgba_unmultiplied(0xFF, 0xFF, 0xFF, 34)
+    tint(color([0xFF, 0xFF, 0xFF], [0x1D, 0x24, 0x20]), 46)
 }
-/// The inset top edge of a recessed surface — the shade a lowered plane
-/// catches from the light above.
 pub fn inset_edge() -> Color32 {
-    Color32::from_rgba_unmultiplied(0, 0, 0, 12)
+    tint(color([0, 0, 0], [0xFF, 0xFF, 0xFF]), 20)
 }
-/// The wash a row takes under the pointer. Extends past the text margins so
-/// hover reads as a region, not a box.
 pub fn hover_wash() -> Color32 {
-    Color32::from_rgba_unmultiplied(0xFF, 0xFF, 0xFF, 12)
+    tint(color([0xFF, 0xFF, 0xFF], [0, 0, 0]), 12)
 }
 
-// ────────────────────────────────────────────────────────────────────────
+/// The card material: warm white by day, deep green at dusk. Cards are a
+/// surface *above* the stage, so they are lighter than the environment in
+/// both modes.
+pub fn card_fill() -> Color32 {
+    color([0x12, 0x1E, 0x18], [0xFB, 0xF8, 0xF1])
+}
+
+/// The card material one step quieter, for rows in a list.
+pub fn card_row_fill() -> Color32 {
+    color([0x0F, 0x1A, 0x14], [0xF4, 0xF0, 0xE7])
+}
+
+/// Whether the environment is currently dark. The shell and the stage need
+/// this without reaching into the mode enum.
+pub fn is_dusk() -> bool {
+    dark()
+}
+
 // Spacing — one scale, 4px base. Every gap in the product comes from here.
 // Layout problems are solved by choosing a step, never by a magic number.
 // ────────────────────────────────────────────────────────────────────────
@@ -333,7 +412,8 @@ const FAMILY_DISPLAY: &str = "evo-display";
 const FAMILY_MONO: &str = "evo-mono";
 
 /// Bundled display voice: Instrument Serif Regular (SIL OFL 1.1; see
-/// `assets/fonts/LICENSE-InstrumentSerif.txt`).
+/// `assets/fonts/LICENSE-InstrumentSerif.txt`). One face, used for the
+/// wordmark and the headline and nothing else (EXPERIENCE §1, §6).
 const DISPLAY_TTF: &[u8] = include_bytes!("../assets/fonts/InstrumentSerif-Regular.ttf");
 /// Bundled data voice: JetBrains Mono Regular (SIL OFL 1.1; see
 /// `assets/fonts/LICENSE-JetBrainsMono.txt`).
@@ -434,9 +514,18 @@ pub fn eyebrow(value: &str, color: Color32) -> RichText {
     text(Role::Eyebrow, value.to_uppercase(), color)
 }
 
-/// Display voice — Instrument Serif.
+/// Display voice — Pixelify Sans, 500.
 pub fn display_font(size: f32) -> FontId {
     FontId::new(size, FontFamily::Name(FAMILY_DISPLAY.into()))
+}
+/// The wordmark's voice. Instrument Serif ships one weight, so the wordmark
+/// is the display face itself rather than a synthesised bold.
+pub fn display_strong_font(size: f32) -> FontId {
+    display_font(size)
+}
+/// Free-size display text for the wordmark.
+pub fn display_strong(value: impl Into<String>, size: f32, color: Color32) -> RichText {
+    display(value, size, color)
 }
 /// Data voice — JetBrains Mono.
 pub fn data_font(size: f32) -> FontId {
@@ -540,7 +629,7 @@ pub fn settle(t: f32) -> f32 {
 /// The raised surface frame: the single primary object on a screen.
 pub fn raised_frame(hovered: bool) -> egui::Frame {
     egui::Frame::new()
-        .fill(RAISED)
+        .fill(raised())
         .stroke(Stroke::new(
             1.0,
             if hovered { border_strong() } else { border() },
@@ -558,7 +647,7 @@ pub fn raised_frame(hovered: bool) -> egui::Frame {
 /// than the environment, no shadow — a lowered plane cannot cast one.
 pub fn recessed_frame() -> egui::Frame {
     egui::Frame::new()
-        .fill(RECESSED)
+        .fill(recessed())
         .stroke(Stroke::new(1.0, inset_edge()))
         .corner_radius(CornerRadius::same(CORNER_SURFACE))
         .inner_margin(Margin::same(RECESSED_PAD))
@@ -567,7 +656,7 @@ pub fn recessed_frame() -> egui::Frame {
 /// A small recessed well, for a single input.
 pub fn well_frame() -> egui::Frame {
     egui::Frame::new()
-        .fill(WELL)
+        .fill(well())
         .stroke(Stroke::new(1.0, inset_edge()))
         .corner_radius(CornerRadius::same(CORNER_CONTROL))
         .inner_margin(Margin::symmetric(12, 7))
@@ -577,14 +666,14 @@ pub fn well_frame() -> egui::Frame {
 /// above the content rather than sitting under it.
 pub fn action_frame() -> egui::Frame {
     egui::Frame::new()
-        .fill(ACTION_SURFACE)
+        .fill(action_surface())
         .shadow(action_shadow())
 }
 
 /// The sheet frame: the furthest-forward material.
 pub fn sheet_frame() -> egui::Frame {
     egui::Frame::new()
-        .fill(ACTION_SURFACE)
+        .fill(action_surface())
         .stroke(Stroke::new(1.0, border()))
         .corner_radius(CornerRadius::same(CORNER_SHEET))
         .inner_margin(Margin::same(28))
@@ -610,7 +699,7 @@ impl Severity {
     /// The notice band's fill.
     pub fn tint(self) -> Color32 {
         match self {
-            Severity::Info => teal_tint(),
+            Severity::Info => neutral_tint(),
             Severity::Good => success_tint(),
             Severity::Caution => warning_tint(),
             Severity::Bad => error_tint(),
@@ -621,11 +710,11 @@ impl Severity {
     /// The notice's leading edge bar and status word color.
     pub fn ink(self) -> Color32 {
         match self {
-            Severity::Info => TEAL,
-            Severity::Good => SUCCESS,
-            Severity::Caution => WARNING,
-            Severity::Bad => ERROR,
-            Severity::Neutral => TERTIARY,
+            Severity::Info => tertiary_ink(),
+            Severity::Good => success(),
+            Severity::Caution => warning(),
+            Severity::Bad => error(),
+            Severity::Neutral => tertiary_ink(),
         }
     }
 }
@@ -651,18 +740,26 @@ pub fn detail_split(total: f32) -> (f32, f32, f32) {
 /// Installs fonts, visuals and base styling on the egui context.
 pub fn install(ctx: &egui::Context) {
     ctx.set_fonts(font_definitions());
+    refresh_visuals(ctx);
+}
 
-    let mut visuals = egui::Visuals::dark();
-    visuals.override_text_color = Some(TEXT);
-    visuals.panel_fill = BG;
-    visuals.window_fill = BG;
+/// Re-resolves egui's built-in style after appearance selection changes.
+pub fn refresh_visuals(ctx: &egui::Context) {
+    let mut visuals = if dark() {
+        egui::Visuals::dark()
+    } else {
+        egui::Visuals::light()
+    };
+    visuals.override_text_color = Some(text_ink());
+    visuals.panel_fill = bg();
+    visuals.window_fill = bg();
     visuals.window_corner_radius = CornerRadius::same(CORNER_WINDOW);
     visuals.window_stroke = Stroke::new(1.0, border());
-    visuals.hyperlink_color = ACCENT;
-    visuals.extreme_bg_color = WELL;
-    visuals.faint_bg_color = WELL;
+    visuals.hyperlink_color = accent();
+    visuals.extreme_bg_color = well();
+    visuals.faint_bg_color = well();
     visuals.selection.bg_fill = accent_tint();
-    visuals.selection.stroke = Stroke::new(1.0, ACCENT);
+    visuals.selection.stroke = Stroke::new(1.0, accent());
     visuals.interact_cursor = Some(CursorIcon::PointingHand);
 
     // Built-in widgets stay quiet: Evo's controls are painted by
@@ -680,11 +777,11 @@ pub fn install(ctx: &egui::Context) {
         widget.weak_bg_fill = Color32::TRANSPARENT;
         widget.bg_stroke = Stroke::NONE;
         widget.corner_radius = CornerRadius::same(CORNER_CONTROL);
-        widget.fg_stroke = Stroke::new(1.0, TEXT);
+        widget.fg_stroke = Stroke::new(1.0, text_ink());
         widget.expansion = 0.0;
     }
-    visuals.widgets.active.fg_stroke = Stroke::new(1.0, ACCENT);
-    visuals.widgets.open.fg_stroke = Stroke::new(1.0, ACCENT);
+    visuals.widgets.active.fg_stroke = Stroke::new(1.0, accent());
+    visuals.widgets.open.fg_stroke = Stroke::new(1.0, accent());
     ctx.set_visuals(visuals);
 
     ctx.all_styles_mut(|style| {
@@ -750,6 +847,9 @@ fn font_definitions() -> FontDefinitions {
         "evo-mono-medium".to_string(),
         std::sync::Arc::new(FontData::from_static(MONO_MEDIUM_TTF)),
     );
+    // The display family resolves to its own face and nothing else: a
+    // display role that quietly fell back to the platform face would keep
+    // the body's voice on the screen's most important line.
     fonts.families.insert(
         FontFamily::Name(FAMILY_DISPLAY.into()),
         vec![FAMILY_DISPLAY.to_string()],
@@ -882,14 +982,14 @@ mod tests {
 
     #[test]
     fn accepted_status_uses_the_success_green() {
-        assert_eq!(status_color(true), SUCCESS);
+        assert_eq!(status_color(true), success());
     }
 
     #[test]
     fn rejected_status_uses_the_error_color_never_the_success_green() {
-        assert_eq!(status_color(false), ERROR);
-        assert_ne!(status_color(false), SUCCESS);
-        assert_ne!(status_color(false), ACCENT);
+        assert_eq!(status_color(false), error());
+        assert_ne!(status_color(false), success());
+        assert_ne!(status_color(false), accent());
     }
 
     #[test]
@@ -940,10 +1040,10 @@ mod tests {
     }
 
     #[test]
-    fn success_and_error_are_distinct_from_the_accent() {
-        assert_ne!(SUCCESS, ACCENT);
-        assert_ne!(ERROR, ACCENT);
-        assert_ne!(SUCCESS, ERROR);
+    fn one_leaf_green_is_the_accent_and_success_color() {
+        assert_eq!(success(), accent());
+        assert_ne!(error(), accent());
+        assert_ne!(success(), error());
     }
 
     #[test]
@@ -1002,8 +1102,8 @@ mod tests {
         let luma = |color: Color32| {
             0.2126 * color.r() as f32 + 0.7152 * color.g() as f32 + 0.0722 * color.b() as f32
         };
-        assert!(luma(RECESSED) < luma(ENV_BOTTOM));
-        assert!(luma(RAISED) > luma(ENV_TOP));
+        assert!(luma(recessed()) < luma(environment_bottom()));
+        assert!(luma(raised()) > luma(environment_top()));
     }
 
     #[test]
@@ -1011,7 +1111,7 @@ mod tests {
         let luma = |color: Color32| {
             0.2126 * color.r() as f32 + 0.7152 * color.g() as f32 + 0.0722 * color.b() as f32
         };
-        assert!(luma(ENV_TOP) > luma(ENV_BOTTOM));
+        assert!(luma(environment_top()) > luma(environment_bottom()));
     }
 
     #[test]
@@ -1090,34 +1190,46 @@ mod tests {
             Severity::Bad,
             Severity::Neutral,
         ];
-        for (index, severity) in severities.iter().enumerate() {
+        for severity in severities {
             // A tint alone never conveys state: the ink is what the status
-            // word is set in, and it must differ per severity.
+            // word is set in. Informational and unknown both use neutral ink;
+            // all actionable states remain semantically distinct.
             assert_ne!(severity.tint(), severity.ink());
-            for other in &severities[index + 1..] {
-                assert_ne!(severity.ink(), other.ink());
-            }
         }
+        assert_ne!(Severity::Good.ink(), Severity::Caution.ink());
+        assert_ne!(Severity::Good.ink(), Severity::Bad.ink());
+        assert_ne!(Severity::Caution.ink(), Severity::Bad.ink());
     }
 
     #[test]
     fn the_accent_carries_its_own_readable_ink() {
-        // The caramel fill is a light color on a dark theme: white text on
-        // it would be unreadable. The on-accent ink is dark and must stay
-        // darker than the fill it sits on.
-        let luma = |color: Color32| {
-            0.2126 * color.r() as f32 + 0.7152 * color.g() as f32 + 0.0722 * color.b() as f32
-        };
-        assert!(luma(ON_ACCENT) < luma(ACCENT));
-        assert_ne!(ON_ACCENT, Color32::WHITE);
+        // Dusk uses dark ink on the light leaf green; Day uses white ink on
+        // the deeper green. Both remain legible against their action fill.
+        fn luminance(rgb: [u8; 3]) -> f32 {
+            let linear = |channel: u8| {
+                let value = channel as f32 / 255.0;
+                if value <= 0.04045 {
+                    value / 12.92
+                } else {
+                    ((value + 0.055) / 1.055).powf(2.4)
+                }
+            };
+            0.2126 * linear(rgb[0]) + 0.7152 * linear(rgb[1]) + 0.0722 * linear(rgb[2])
+        }
+        let contrast = |a: f32, b: f32| (a.max(b) + 0.05) / (a.min(b) + 0.05);
+        assert!(contrast(luminance([11, 34, 23]), luminance([116, 210, 161])) >= 4.5);
+        assert!(contrast(luminance([255, 255, 255]), luminance([22, 97, 62])) >= 4.5);
     }
 
     #[test]
-    fn the_teal_voice_is_neither_success_nor_the_accent() {
-        // The teal voice names phases and evidence; it must never be
-        // mistaken for a state or for the declared-choice accent.
-        assert_ne!(TEAL, SUCCESS);
-        assert_ne!(TEAL, ACCENT);
-        assert_ne!(TEAL, ERROR);
+    fn the_theme_mode_has_a_stable_storage_key_and_parser() {
+        for mode in [ThemeMode::Dusk, ThemeMode::Day, ThemeMode::Auto] {
+            assert_eq!(ThemeMode::parse(mode.key()), Some(mode));
+        }
+        assert_eq!(ThemeMode::parse("unknown"), None);
+        assert_ne!(
+            color_for(true, [1, 2, 3], [4, 5, 6]),
+            color_for(false, [1, 2, 3], [4, 5, 6])
+        );
     }
 }

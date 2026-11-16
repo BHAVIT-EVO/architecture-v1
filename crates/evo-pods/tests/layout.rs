@@ -69,7 +69,11 @@ fn epsilon() -> f64 {
 
 #[test]
 fn every_region_resolves_inside_its_usable_frame() {
-    for screen in [screen(), offset_screen(), Frame::new(5.0, 5.0, 300.0, 200.0)] {
+    for screen in [
+        screen(),
+        offset_screen(),
+        Frame::new(5.0, 5.0, 300.0, 200.0),
+    ] {
         for region in regions() {
             let frame = region.frame(&screen);
             assert!(
@@ -115,7 +119,10 @@ fn region_defaults_and_clamps_are_the_documented_ones() {
 
     // Hostile fractions: clamped, never a sliver and never a NaN.
     assert_eq!(Region::Left(1.5).fraction(), 1.0);
-    assert_eq!(Region::Left(1.5).frame(&screen), Region::Full.frame(&screen));
+    assert_eq!(
+        Region::Left(1.5).frame(&screen),
+        Region::Full.frame(&screen)
+    );
     assert_eq!(Region::Left(0.0).fraction(), MIN_REGION_FRACTION);
     assert_eq!(Region::Right(-3.0).fraction(), MIN_REGION_FRACTION);
     for hostile in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
@@ -383,15 +390,30 @@ fn setpiece_shaped_json_deserializes_into_the_documented_slots() {
 
 #[test]
 fn split_ratios_clamp_on_construction_and_on_deserialization() {
-    assert_eq!(LayoutNode::hsplit(0.0, LayoutNode::leaf(), LayoutNode::leaf()).ratio(), MIN_RATIO);
-    assert_eq!(LayoutNode::hsplit(1.7, LayoutNode::leaf(), LayoutNode::leaf()).ratio(), MAX_RATIO);
-    assert_eq!(LayoutNode::vsplit(-0.5, LayoutNode::leaf(), LayoutNode::leaf()).ratio(), MIN_RATIO);
+    assert_eq!(
+        LayoutNode::hsplit(0.0, LayoutNode::leaf(), LayoutNode::leaf()).ratio(),
+        MIN_RATIO
+    );
+    assert_eq!(
+        LayoutNode::hsplit(1.7, LayoutNode::leaf(), LayoutNode::leaf()).ratio(),
+        MAX_RATIO
+    );
+    assert_eq!(
+        LayoutNode::vsplit(-0.5, LayoutNode::leaf(), LayoutNode::leaf()).ratio(),
+        MIN_RATIO
+    );
     assert_eq!(
         LayoutNode::vsplit(f64::NAN, LayoutNode::leaf(), LayoutNode::leaf()).ratio(),
         DEFAULT_RATIO
     );
 
-    for (written, expected) in [(0.0, MIN_RATIO), (1.0, MAX_RATIO), (2.0, MAX_RATIO), (-1.0, MIN_RATIO), (0.4, 0.4)] {
+    for (written, expected) in [
+        (0.0, MIN_RATIO),
+        (1.0, MAX_RATIO),
+        (2.0, MAX_RATIO),
+        (-1.0, MIN_RATIO),
+        (0.4, 0.4),
+    ] {
         let json = format!(
             r#"{{"kind":"vSplit","ratio":{written},"first":{{"kind":"leaf"}},"second":{{"kind":"leaf"}}}}"#
         );
@@ -401,7 +423,8 @@ fn split_ratios_clamp_on_construction_and_on_deserialization() {
         assert_eq!(slots.len(), 2);
         for slot in slots {
             assert!(
-                slot.rect.w >= MIN_SLOT_SIDE - epsilon() && slot.rect.h >= MIN_SLOT_SIDE - epsilon(),
+                slot.rect.w >= MIN_SLOT_SIDE - epsilon()
+                    && slot.rect.h >= MIN_SLOT_SIDE - epsilon(),
                 "a clamped split produced a sliver: {slot:?}"
             );
             assert!(slot.rect.x + slot.rect.w <= 1.0 + epsilon());
@@ -409,7 +432,8 @@ fn split_ratios_clamp_on_construction_and_on_deserialization() {
     }
 
     // A ratio the file cannot even express arrives as the default, not a panic.
-    let hostile = r#"{"kind":"hSplit","ratio":null,"first":{"kind":"leaf"},"second":{"kind":"leaf"}}"#;
+    let hostile =
+        r#"{"kind":"hSplit","ratio":null,"first":{"kind":"leaf"},"second":{"kind":"leaf"}}"#;
     let err = serde_json::from_str::<LayoutNode>(hostile);
     assert!(err.is_err(), "null ratio must be refused, never guessed");
 }
@@ -432,11 +456,24 @@ fn sticky_pass_preserves_a_window_already_in_its_slot() {
     assert_eq!(plan.slot_for(2, 20), Some(0));
     assert_eq!(plan.slot_for(3, 30), None, "no slot is left for the third");
     assert_eq!(plan.placements.len(), 2);
-    assert_eq!(plan.to_minimize.len(), 1, "the extra window is reported, not hidden");
+    assert_eq!(
+        plan.to_minimize.len(),
+        1,
+        "the extra window is reported, not hidden"
+    );
     assert_eq!(plan.to_minimize[0].window_id, 30);
     assert!(plan.empty_slots.is_empty());
     // A sticky match is placed at the slot's target rect, not the drifted one.
-    let drifted = window(4, 40, Frame::new(slots[0].x + 6.0, slots[0].y - 4.0, slots[0].w + 9.0, slots[0].h));
+    let drifted = window(
+        4,
+        40,
+        Frame::new(
+            slots[0].x + 6.0,
+            slots[0].y - 4.0,
+            slots[0].w + 9.0,
+            slots[0].h,
+        ),
+    );
     let plan = LayoutEngine::plan(&[drifted], &slots, &[]);
     assert_eq!(plan.placements[0].slot, 0);
     assert_eq!(plan.placements[0].frame, slots[0]);
@@ -465,7 +502,10 @@ fn sticky_match_stops_at_the_documented_tolerance() {
     let plan = LayoutEngine::plan(&[window(1, 1, inside)], &slots, &[]);
     assert_eq!(plan.placements[0].slot, 0);
     let plan = LayoutEngine::plan(&[window(1, 1, outside)], &slots, &[]);
-    assert_eq!(plan.placements[0].slot, 0, "the fill pass takes the lowest free slot");
+    assert_eq!(
+        plan.placements[0].slot, 0,
+        "the fill pass takes the lowest free slot"
+    );
     assert_eq!(plan.placements[0].frame, slots[0]);
 }
 
@@ -502,16 +542,25 @@ fn overflow_windows_are_reported_for_minimization_in_z_order() {
     let plan = LayoutEngine::plan(&windows, &slots, &[]);
     assert_eq!(plan.placements.len(), 3);
     assert_eq!(
-        plan.placements.iter().map(|p| p.window_id).collect::<Vec<_>>(),
+        plan.placements
+            .iter()
+            .map(|p| p.window_id)
+            .collect::<Vec<_>>(),
         vec![0, 1, 2]
     );
     assert_eq!(
-        plan.to_minimize.iter().map(|w| w.window_id).collect::<Vec<_>>(),
+        plan.to_minimize
+            .iter()
+            .map(|w| w.window_id)
+            .collect::<Vec<_>>(),
         vec![3, 4],
         "the overflow is the tail of the z-order"
     );
     // The overflow keeps the frame the caller needs to book a receipt.
-    assert_eq!(plan.to_minimize[0].frame, Frame::new(50.0, 50.0, 300.0, 200.0));
+    assert_eq!(
+        plan.to_minimize[0].frame,
+        Frame::new(50.0, 50.0, 300.0, 200.0)
+    );
     assert!(plan.empty_slots.is_empty());
 }
 
@@ -519,7 +568,11 @@ fn overflow_windows_are_reported_for_minimization_in_z_order() {
 fn empty_slots_are_reported_when_windows_run_out() {
     let screen = screen();
     let slots = LayoutId::Thirds.seed().resolved_slots(&screen);
-    let plan = LayoutEngine::plan(&[window(3, 9, Frame::new(10.0, 10.0, 100.0, 100.0))], &slots, &[]);
+    let plan = LayoutEngine::plan(
+        &[window(3, 9, Frame::new(10.0, 10.0, 100.0, 100.0))],
+        &slots,
+        &[],
+    );
     assert_eq!(plan.placements.len(), 1);
     assert_eq!(plan.placements[0].slot, 0);
     assert_eq!(plan.empty_slots, vec![1, 2]);
@@ -551,15 +604,15 @@ fn alternate_slot_geometry_keeps_a_work_in_place_when_the_dock_moved() {
     let layout = LayoutId::Halves.seed();
     let before_slots = layout.resolved_slots(&before);
 
-    let windows = vec![
-        window(1, 1, before_slots[1]),
-        window(2, 2, before_slots[0]),
-    ];
+    let windows = vec![window(1, 1, before_slots[1]), window(2, 2, before_slots[0])];
     let plan = LayoutEngine::plan_layout(&windows, &layout, &after, &[before]);
     assert_eq!(plan.slot_for(1, 1), Some(1), "the work kept its side");
     assert_eq!(plan.slot_for(2, 2), Some(0));
     let after_slots = layout.resolved_slots(&after);
-    assert_eq!(plan.placements[0].frame, after_slots[1], "the slot moved, the work did not");
+    assert_eq!(
+        plan.placements[0].frame, after_slots[1],
+        "the slot moved, the work did not"
+    );
 
     // Without the alternate geometry the windows are simply filled in
     // z-order: the front window takes slot 0.

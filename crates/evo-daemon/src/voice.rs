@@ -215,8 +215,7 @@ fn facts_from_observations(observations: &[Observation]) -> VoiceFacts {
                 if at < episode.span.0 || at > episode.span.1 {
                     continue;
                 }
-                if !crate::threads::project_observation(observation)
-                    .is_some_and(|event| event.resource == *resource)
+                if crate::threads::project_observation(observation).is_none_or(|event| event.resource != *resource)
                 {
                     continue;
                 }
@@ -828,6 +827,19 @@ fn name_lookup(names: &std::collections::BTreeMap<String, String>) -> evo_voice:
 }
 
 /// Handles a TRIGGER request: resolve the trigger text and restore.
+fn voice_trace(line: &str) {
+    if std::env::var("EVO_VOICE_TRACE").as_deref() != Ok("1") { return; }
+    if let Ok(home) = std::env::var("HOME") {
+        let p = std::path::PathBuf::from(home).join("Library/Application Support/Evo/logs/voice-trace.log");
+        let _ = std::fs::create_dir_all(p.parent().unwrap());
+        use std::io::Write;
+        if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(&p) {
+            let _ = writeln!(f, "{} {}", chrono_now(), line);
+        }
+    }
+}
+fn chrono_now() -> String { format!("{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs()) }
+
 fn handle_trigger(
     len_str: &str,
     reader: &mut impl Read,
@@ -869,8 +881,10 @@ fn handle_trigger(
         evo_voice::WakeResult::Absent => text,
     };
     if text.is_empty() {
+        voice_trace("no command heard");
         return VoiceOutcome::NoCommand;
     }
+    voice_trace(&format!("transcript={}", text));
 
     let facts = match voice_facts(storage_root) {
         Ok(facts) => facts,

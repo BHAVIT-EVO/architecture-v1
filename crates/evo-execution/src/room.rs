@@ -275,14 +275,13 @@ impl RoomController {
             {
                 continue;
             }
-            if let Ok(windows) = self.surface.windows_of(app.pid) {
-                if windows
+            if let Ok(windows) = self.surface.windows_of(app.pid)
+                && windows
                     .iter()
                     .any(|w| window_match(w, surface) != WindowMatch::None)
                 {
                     work_pids.insert(app.pid);
                 }
-            }
         }
 
         // The subtraction: hide every visible regular app that is not part
@@ -319,11 +318,10 @@ impl RoomController {
         // apps that were hidden before are unhidden for the room (and
         // re-hidden on leave).
         for &pid in &work_pids {
-            if let Some(app) = apps.iter().find(|a| a.pid == pid) {
-                if app.hidden && self.surface.unhide_app(pid).is_ok() {
+            if let Some(app) = apps.iter().find(|a| a.pid == pid)
+                && app.hidden && self.surface.unhide_app(pid).is_ok() {
                     lease.unhidden_apps.push(pid);
                 }
-            }
             let windows = match self.surface.windows_of(pid) {
                 Ok(windows) => windows,
                 Err(_) => continue,
@@ -336,13 +334,12 @@ impl RoomController {
                     continue;
                 }
                 let matched = window_match(window, surface);
-                if matched == WindowMatch::None {
-                    if !window.minimized
+                if matched == WindowMatch::None
+                    && !window.minimized
                         && self.surface.minimize_window(pid, window.window_id).is_ok()
                     {
                         lease.parked_windows.push((pid, window.window_id));
                     }
-                }
             }
         }
 
@@ -596,9 +593,12 @@ mod tests {
             documents: vec!["/Users/alice/notes/trek.md".into()],
             titles: vec!["Unisex Hiking & Trekking Clothes | Arc'teryx".into()],
             apps: vec!["ZCode".into()],
-            resource_apps: [("/Users/alice/notes/trek.md".to_string(), "ZCode".to_string())]
-                .into_iter()
-                .collect(),
+            resource_apps: [(
+                "/Users/alice/notes/trek.md".to_string(),
+                "ZCode".to_string(),
+            )]
+            .into_iter()
+            .collect(),
         }
     }
 

@@ -36,3 +36,12 @@ __pycache__/
 
 # Archived dead code / stale docs / old pitch material (never part of the build)
 /attic/
+
+# Mission transcripts and backups of paths: never shipped, never committed.
+/docs/mission/evidence/
+
+# Local ONNX Runtime provisioning (docs/RELEASE-CHECKLIST.md §1.2).
+/vendor/ort/
+
+# Generated code graph (graphify output) — regenerable, not source.
+/graphify-out/

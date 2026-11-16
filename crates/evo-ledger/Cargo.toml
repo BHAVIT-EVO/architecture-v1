@@ -1,11 +1,12 @@
 [package]
+publish = false
 name = "evo-ledger"
 version = "0.1.0"
 edition = "2021"
 description = "Deterministic activity ledger: groups observed events into work intervals using an identity chain, with FTS5 search."
 
 [dependencies]
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.41", features = ["bundled"] }
 serde = { version = "1", features = ["derive"] }
 # The shadow evaluator replays the canonical log through the work engine and
 # scores it by the same behavioral gates as the ledger's own grouping — the

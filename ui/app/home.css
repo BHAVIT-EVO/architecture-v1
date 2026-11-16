@@ -1,0 +1,164 @@
+/* Home layout, ported from mockup-home-v3.html. Components come from
+   components.css; this file is only where things sit. */
+
+body.home {
+  overflow: hidden;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* ── the world ─────────────────────────────────────────────────────── */
+body.home .scene { position: fixed; inset: 0; z-index: 0; }
+body.home .scene > canvas { object-fit: cover; }
+body.home .scene .veil { opacity: 1; }
+
+/* The notch hangs from the screen edge, over everything. */
+body.home .notch {
+  position: fixed;
+  left: 50%;
+  top: 0;
+  z-index: 60;
+  margin: 0 0 0 -75px;
+  transition: width var(--t-notch) var(--ease), height var(--t-notch) var(--ease),
+              margin var(--t-notch) var(--ease), border-radius var(--t-notch) var(--ease);
+}
+body.home .notch[data-on] { margin-left: -230px; }
+
+/* ── top bar ───────────────────────────────────────────────────────── */
+.bar {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 66px;
+  padding: 0 22px 0 20px;
+}
+.dots { display: flex; gap: 8px; width: 66px; }
+.dots i { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; }
+.dots i:nth-child(2) { background: #febc2e; }
+.dots i:nth-child(3) { background: #28c840; }
+.brand { display: flex; align-items: center; gap: 9px; font-weight: var(--w-semibold); font-size: 19px; }
+.logo {
+  width: 28px; height: 28px; border-radius: 9px;
+  background: var(--accent); color: var(--on-accent);
+  display: grid; place-items: center;
+}
+.sp { flex: 1; }
+.bar .search { width: 200px; }
+.bar .search input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 0;
+  outline: 0;
+  font: inherit;
+  color: var(--text);
+}
+.bar .search input::placeholder { color: var(--faint); }
+.bar .search kbd {
+  font: var(--w-medium) 11px/1 var(--sans);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+.bar svg.i { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── the left column ───────────────────────────────────────────────── */
+.left {
+  position: fixed;
+  z-index: 4;
+  left: 32px;
+  top: 92px;
+  bottom: 28px;
+  width: min(360px, calc(100vw - 64px));
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.left h1 { min-height: 2.05em; }
+.left h1 .caret {
+  display: inline-block;
+  width: 2px;
+  height: .75em;
+  margin-left: 3px;
+  background: var(--accent);
+  animation: blink 1s steps(1) infinite;
+}
+.left h1 .caret.done { animation: fade .6s forwards; }
+.sub { margin-top: -6px; color: var(--muted); font-size: 16px; max-width: 30ch; }
+
+.card { animation: arrive .9s .8s var(--ease) both; }
+.card .when { font-size: 13px; color: var(--faint); }
+.card h2 { margin-top: 8px; }
+.card .src { display: flex; align-items: center; gap: 8px; margin-top: 10px; color: var(--muted); font-size: 14px; }
+.card .src svg.i { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.card .act { display: flex; align-items: center; gap: 8px; margin-top: 20px; }
+.more {
+  width: 40px; height: 40px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  color: var(--faint);
+}
+.more:hover, .more[aria-expanded="true"] { background: rgba(240, 234, 216, .08); color: var(--text); }
+.more svg.i { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.act .menu-wrap { position: relative; }
+.act .menu { position: absolute; left: 0; bottom: calc(100% + 6px); z-index: 20; display: none; }
+.act .menu[data-open] { display: block; }
+
+.foot { margin-top: auto; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.link {
+  color: var(--muted);
+  font-weight: var(--w-medium);
+  font-size: 14px;
+  padding: 6px 2px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.link:hover { color: var(--text); }
+.soon { display: flex; gap: 8px; flex-wrap: wrap; }
+.soon span {
+  font-size: 13px;
+  color: var(--muted);
+  padding: 5px 12px;
+  border-radius: var(--r-pill);
+  border: 1.5px dashed rgba(240, 234, 216, .25);
+}
+.trust { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.trust button {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  color: var(--text);
+  font-weight: var(--w-medium);
+}
+.trust svg.i { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── list view ─────────────────────────────────────────────────────── */
+.list {
+  position: fixed;
+  z-index: 3;
+  right: 28px;
+  top: 84px;
+  bottom: 24px;
+  width: min(560px, calc(100vw - 460px));
+  min-width: 300px;
+  padding: 10px;
+  border-radius: var(--r-card);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  overflow: auto;
+  display: none;
+}
+body[data-view="list"] .list { display: block; }
+body[data-view="list"] .scene .hit { display: none; }
+
+/* ── motion ────────────────────────────────────────────────────────── */
+@keyframes blink { 50% { opacity: 0; } }
+@keyframes fade { to { opacity: 0; } }
+@keyframes arrive { from { opacity: 0; filter: blur(8px); transform: translateY(30px); } }
+
+@media (max-width: 860px) {
+  .dots, .bar .search, .chip.pri { display: none; }
+  .list { left: 28px; width: auto; }
+  .left h1 { font-size: 42px; }
+}

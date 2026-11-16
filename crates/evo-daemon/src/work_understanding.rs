@@ -103,9 +103,7 @@ fn is_identifier_title(title: &str) -> bool {
 
 /// Extracts only schema-defined, content-free activity from the canonical log.
 /// Unknown/reference-only observations are intentionally ignored.
-pub fn activity_evidence_from_observations(
-    observations: &[Observation],
-) -> Vec<ActivityEvidence> {
+pub fn activity_evidence_from_observations(observations: &[Observation]) -> Vec<ActivityEvidence> {
     observations
         .iter()
         .filter_map(|observation| {
@@ -379,13 +377,18 @@ fn activity_phrase(
         .anchors
         .iter()
         .map(|anchor| anchor.resource.as_str())
-        .chain(thread.companions.iter().map(|(resource, _)| resource.as_str()))
         .chain(
             thread
-                .episodes
+                .companions
                 .iter()
-                .flat_map(|episode| episode.participants.iter().map(|(resource, _)| resource.as_str())),
+                .map(|(resource, _)| resource.as_str()),
         )
+        .chain(thread.episodes.iter().flat_map(|episode| {
+            episode
+                .participants
+                .iter()
+                .map(|(resource, _)| resource.as_str())
+        }))
         .filter(|resource| !classified.is_classified(resource))
         .collect();
     if members.is_empty() {
@@ -393,10 +396,16 @@ fn activity_phrase(
     }
     let mut totals = std::collections::BTreeMap::<ActivityAction, u64>::new();
     let mut latest = std::collections::BTreeMap::<ActivityAction, (u64, String)>::new();
-    for witness in activity.iter().filter(|witness| members.contains(witness.resource.as_str())) {
+    for witness in activity
+        .iter()
+        .filter(|witness| members.contains(witness.resource.as_str()))
+    {
         *totals.entry(witness.action).or_default() += witness.weight;
         let candidate = (witness.observed_at, witness.resource.clone());
-        if latest.get(&witness.action).is_none_or(|current| candidate > *current) {
+        if latest
+            .get(&witness.action)
+            .is_none_or(|current| candidate > *current)
+        {
             latest.insert(witness.action, candidate);
         }
     }
@@ -406,11 +415,7 @@ fn activity_phrase(
             left_total
                 .cmp(right_total)
                 .then(left_action.cmp(right_action))
-                .then_with(|| {
-                    latest
-                        .get(left_action)
-                        .cmp(&latest.get(right_action))
-                })
+                .then_with(|| latest.get(left_action).cmp(&latest.get(right_action)))
         })
         .map(|(action, _)| action)?;
     let places = members.len();
@@ -429,9 +434,7 @@ fn activity_phrase(
 /// Structural shape only; the same test the ledger's identity chain uses, so
 /// no application list, domain list or file-type list enters here.
 fn is_address(resource: &str) -> bool {
-    resource.starts_with("http")
-        || resource.starts_with("file://")
-        || resource.starts_with('/')
+    resource.starts_with("http") || resource.starts_with("file://") || resource.starts_with('/')
 }
 
 /// One resource's name for *titling* purposes: what the surface said, else what
@@ -443,10 +446,7 @@ fn is_address(resource: &str) -> bool {
 /// string. A trail entry may legitimately show a raw address as context; a
 /// **title** may not, because a title is the identity the person will use to
 /// find this work again.
-fn title_or_structural(
-    names: &crate::name_index::NameIndex,
-    resource: &str,
-) -> Option<String> {
+fn title_or_structural(names: &crate::name_index::NameIndex, resource: &str) -> Option<String> {
     if let Some(witnessed) = names.enrich_surface(resource) {
         return Some(witnessed);
     }

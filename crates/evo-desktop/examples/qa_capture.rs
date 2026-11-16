@@ -642,7 +642,17 @@ impl eframe::App for Qa {
                 },
             );
 
-            shell::settings(ui, settings_open, &status, daemon, storage_root.as_path());
+            let mut theme_mode = theme::ThemeMode::Dusk;
+            let mut theme_preference_error = None;
+            shell::settings(
+                ui,
+                settings_open,
+                &status,
+                daemon,
+                storage_root.as_path(),
+                &mut theme_mode,
+                &mut theme_preference_error,
+            );
         }
         // ── end mirrored composition ───────────────────────────────────────
 

@@ -621,7 +621,10 @@ mod tests {
 
     // ── Surface classification (OBS-SURFACE-CLASSIFIED/v1) ─────────────────
 
-    fn classified_candidate(subject: &str, class: &str) -> (ObservationSchema, CandidateObservation) {
+    fn classified_candidate(
+        subject: &str,
+        class: &str,
+    ) -> (ObservationSchema, CandidateObservation) {
         let schema = ObservationSchema::surface_classified_v1();
         let concept = ObservationConcept::SurfaceClassified {
             subject: subject.to_string(),

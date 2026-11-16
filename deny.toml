@@ -1,0 +1,26 @@
+[advisories]
+ignore = [
+  { id = "RUSTSEC-2026-0370", reason = "Reviewed 2026-11-15: zvariant only in Linux atspi/accesskit_unix path; not in macOS tree" },
+  { id = "RUSTSEC-2026-0372", reason = "Reviewed 2026-11-15: zvariant only in Linux atspi/accesskit_unix path; not in macOS tree" },
+  { id = "RUSTSEC-2026-0192", reason = "Reviewed 2026-11-15: ttf-parser is transitive through winit; cargo-deny reports no safe upgrade" },
+  { id = "RUSTSEC-2026-0371", reason = "Reviewed 2026-11-15: zbus_names is Linux-only through accesskit_unix and has no safe upgrade" },
+]
+
+[licenses]
+allow = [
+  "Apache-2.0",
+  "BSL-1.0",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "CC0-1.0",
+  "ISC",
+  "MIT",
+  "MPL-2.0",
+  "OFL-1.1",
+  "Ubuntu-font-1.0",
+  "Unicode-3.0",
+  "Zlib",
+]
+
+[licenses.private]
+ignore = true

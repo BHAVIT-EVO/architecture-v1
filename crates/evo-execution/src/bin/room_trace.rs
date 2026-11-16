@@ -7,7 +7,7 @@ use evo_execution::room_macos::MacDesktopSurface;
 
 #[cfg(target_os = "macos")]
 fn main() {
-    let mut surface = MacDesktopSurface::new();
+    let surface = MacDesktopSurface::new();
     let apps = surface.running_apps().expect("apps");
 
     let work_surface = RoomSurface {

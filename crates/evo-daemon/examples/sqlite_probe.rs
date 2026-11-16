@@ -1,9 +1,14 @@
 fn main() {
-    let root = std::path::PathBuf::from(
-        std::env::var("HOME").unwrap() + "/Library/Application Support/evo",
-    );
-    let engine = evo_daemon::threads::engine_from_live_data(&root).expect("engine built");
-    let display = evo_daemon::threads::display_threads(&engine);
+    let root = std::env::var_os("EVO_STORAGE_ROOT")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| {
+            std::env::var_os("HOME")
+                .map(std::path::PathBuf::from)
+                .unwrap_or_default()
+                .join("Library/Application Support/Evo/storage")
+        });
+    let display = evo_daemon::threads::display_threads_from_storage(&root)
+        .expect("work list loaded from storage");
     println!("═{}═", "═".repeat(78));
     for (i, d) in display.iter().enumerate() {
         let u = &d.understanding;

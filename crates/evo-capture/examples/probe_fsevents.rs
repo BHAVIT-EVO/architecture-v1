@@ -75,15 +75,22 @@ fn main() {
     let home = std::env::var("HOME").unwrap();
     let c_path = std::ffi::CString::new(home.clone()).unwrap();
     unsafe {
-        let cf_string =
-            CFStringCreateWithCString(ptr::null(), c_path.as_ptr() as *const c_char, CFSTRING_ENCODING_UTF8);
+        let cf_string = CFStringCreateWithCString(
+            ptr::null(),
+            c_path.as_ptr() as *const c_char,
+            CFSTRING_ENCODING_UTF8,
+        );
         println!("cf_string: {:p}", cf_string);
         println!("cf_string typeid: 0x{:x}", CFGetTypeID(cf_string));
 
         let mut values = [cf_string as *const c_void];
         let array = CFArrayCreate(ptr::null(), values.as_mut_ptr(), 1, ptr::null());
         println!("array: {:p}", array);
-        println!("array typeid: 0x{:x} (expect array typeid 0x{:x})", CFGetTypeID(array), CFArrayGetTypeID());
+        println!(
+            "array typeid: 0x{:x} (expect array typeid 0x{:x})",
+            CFGetTypeID(array),
+            CFArrayGetTypeID()
+        );
 
         let mut context = FSEventStreamContext {
             version: 0,

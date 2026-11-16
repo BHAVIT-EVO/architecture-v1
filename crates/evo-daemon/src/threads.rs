@@ -181,7 +181,11 @@ pub fn display_threads_with_names(
     engine: &Engine,
     names: &crate::name_index::NameIndex,
 ) -> Vec<DisplayThread> {
-    display_threads_classified(engine, names, &crate::classification::ClassifiedSurfaces::empty())
+    display_threads_classified(
+        engine,
+        names,
+        &crate::classification::ClassifiedSurfaces::empty(),
+    )
 }
 
 /// [`display_threads`] enriched with the log's witnessed names: every card
@@ -278,11 +282,7 @@ pub fn display_threads_classified_with_activity(
         // the person saw the surface call itself, verbatim, before any
         // structural derivation.
         let understanding = crate::work_understanding::understand_classified_with_activity(
-            thread,
-            &bundle,
-            names,
-            classified,
-            activity,
+            thread, &bundle, names, classified, activity,
         );
 
         // The work's last activity: the most recent episode's end.
@@ -1565,7 +1565,11 @@ mod tests {
         );
         let after = engine_from_storage(&root).unwrap();
         assert!(after.is_dismissed(thread.id));
-        assert_eq!(after.threads().len(), 1, "dismissal does not delete replay state");
+        assert_eq!(
+            after.threads().len(),
+            1,
+            "dismissal does not delete replay state"
+        );
         assert!(after.activation_plan(thread.id, false).resources.is_empty());
         assert!(
             display_threads(&after).is_empty(),

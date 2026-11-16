@@ -346,8 +346,19 @@ impl RenderState {
             listening: engine.is_expanded(),
             partial: engine.voice.partial.clone(),
             outcome_content: engine.voice.outcome.clone(),
-            outcome: matches!(engine.voice.phase, crate::notch::VoicePhase::Outcome)
-                || visible == Some(ContentId::EvoOutcome),
+            outcome: matches!(
+                engine.voice.phase,
+                crate::notch::VoicePhase::Outcome
+                    | crate::notch::VoicePhase::Thinking
+                    | crate::notch::VoicePhase::Acting
+                    | crate::notch::VoicePhase::Done
+                    | crate::notch::VoicePhase::NeedsYou { .. }
+                    | crate::notch::VoicePhase::Error { .. }
+                    | crate::notch::VoicePhase::Paused
+            ) || matches!(
+                visible,
+                Some(ContentId::EvoOutcome) | Some(ContentId::EvoPaused)
+            ),
             choice,
             browse,
             hovered_chip: None,
@@ -621,18 +632,18 @@ const SURFACE: (f64, f64, f64, f64) = (0.0, 0.0, 0.0, 1.0);
 
 /// DESIGN.md color tokens — single source of truth for notch visuals.
 /// Environment: #15181A → #0F1214 (handled by transparent canvas + black card)
-const INK_PRIMARY: (f64, f64, f64, f64) = (0.93, 0.92, 0.90, 1.0); // #ECEAE6
+const INK_PRIMARY: (f64, f64, f64, f64) = (0.941176, 0.917647, 0.847059, 1.0); // #f0ead8
 const INK_MUTED: (f64, f64, f64, f64) = (0.659, 0.667, 0.659, 1.0); // #A8AAA8        // muted ink
-const TEAL_VOICE: (f64, f64, f64, f64) = (0.357, 0.541, 0.561, 1.0); // #5B8A8F — teal voice
-const CARAMEL: (f64, f64, f64, f64) = (0.784, 0.608, 0.420, 1.0); // #C89B6B — caramel accent
+const TEAL_VOICE: (f64, f64, f64, f64) = (0.560784, 0.878431, 0.658824, 1.0); // #8fe0a8
+const CARAMEL: (f64, f64, f64, f64) = (0.560784, 0.878431, 0.658824, 1.0); // #8fe0a8
 /// Chip fill grammar, lifted from the reference apps: every chip is a
 /// tinted-GLASS capsule, never a solid accent slab. The dark chips are
-/// white at 8% (hover 12%); the caramel pick is the accent itself at
+/// white at 8% (hover 12%); the selected pick is the accent itself at
 /// 20% (hover 30%). The label is the ink — "accent TEXT on tinted
 /// glass" — so there is no dark on-accent ink anywhere any more.
 const CHIP_BG: (f64, f64, f64, f64) = (1.0, 1.0, 1.0, 0.08);
 const CHIP_BG_HOVER: (f64, f64, f64, f64) = (1.0, 1.0, 1.0, 0.12);
-/// The caramel pick's glass opacity (Restore/Open): steady, then hover.
+/// The leaf-green pick's glass opacity (Restore/Open): steady, then hover.
 const CHIP_CARAMEL_FILL: f64 = 0.20;
 const CHIP_CARAMEL_FILL_HOVER: f64 = 0.30;
 /// The dark chips' label ink: white at 85% over their tinted glass.
@@ -691,7 +702,7 @@ fn text_row_h(size: f64) -> f64 {
 }
 
 /// The label a chip paints on the current surface. The works-browse
-/// carousel relabels its caramel pick to `Open` and its dismiss chip to
+/// carousel relabels its leaf-green pick to `Open` and its dismiss chip to
 /// `Close`; the listening card's rack chip now opens the browse, so its
 /// verb is `Browse`. The candidate carousel keeps the original verbs.
 fn chip_label(state: &RenderState, id: &str) -> Option<&'static str> {
@@ -708,8 +719,8 @@ fn chip_label(state: &RenderState, id: &str) -> Option<&'static str> {
 }
 
 /// The fill of one chip in the reference's tinted-glass grammar,
-/// returned as `(r, g, b, a)`: the caramel pick speaks CARAMEL on a
-/// caramel-tinted capsule (Restore/Open), every other chip is white on
+/// returned as `(r, g, b, a)`: the selected pick speaks leaf green on a
+/// leaf-green-tinted capsule (Restore/Open), every other chip is white on
 /// white-tinted glass, and hover raises only the glass opacity — never
 /// to a solid slab. Shared by the listening, outcome and carousel rows
 /// so all three can only ever disagree by id.
@@ -1011,7 +1022,7 @@ pub fn surface_layouts(state: &RenderState) -> Vec<Layer> {
             let body_h = chip_row_top + CHIP_H + CARD_INSET;
             let mut layers = vec![notch_shape_layer(bx, 0.0, body_w, body_h, "card")];
 
-            // 1. The eyebrow, in the caramel accent voice.
+            // 1. The eyebrow, in the leaf-green accent voice.
             layers.push(Layer {
                 x: bx + 16.0,
                 y: eyebrow_y,
@@ -1259,7 +1270,12 @@ fn compress_to_expand(
     ext: f64,
     direction: SpringDirection,
 ) {
-    let progress = spring_progress(ext, direction);
+    // `transition_frame` already maps time through the direction-specific
+    // spring. `expand` is geometry progress, not normalized time; applying a
+    // second spring here double-eases and breaks linear geometry, overshoot
+    // bounds, and the attached-notch silhouette.
+    let progress = ext.clamp(0.0, EXPAND_OVERSHOOT_LIMIT);
+    let _ = direction;
     if (progress - 1.0).abs() < f64::EPSILON {
         return;
     }
@@ -1279,8 +1295,8 @@ fn compress_to_expand(
             layer.h = band_h + (layer.h - band_h) * progress;
             // Radii ride the same expand factor, from the square-top
             // notch (0 / 8) to the reference card (19 / 24).
-            layer.top_radius =
-                CARD_COLLAPSED_TOP_RADIUS + (CARD_TOP_RADIUS - CARD_COLLAPSED_TOP_RADIUS) * progress;
+            layer.top_radius = CARD_COLLAPSED_TOP_RADIUS
+                + (CARD_TOP_RADIUS - CARD_COLLAPSED_TOP_RADIUS) * progress;
             layer.bottom_radius = CARD_COLLAPSED_BOTTOM_RADIUS
                 + (layer.bottom_radius - CARD_COLLAPSED_BOTTOM_RADIUS) * progress;
         } else if layer.id != "band" {
@@ -1672,6 +1688,14 @@ pub fn spawn() -> Option<NotchSurface> {
     // A live surface follows the active display. Hardware safe-area geometry
     // is preferred, with a centered synthetic surface on ordinary displays.
     let geometry = probe_notch_geometry();
+    if let Some(g) = geometry.as_ref() {
+        eprintln!(
+            "EVO-NOTCH geometry: notch_x={:.1} notch_w={:.1} notch_h={:.1} screen={}x{} (safe-area probe)",
+            g.notch_x, g.notch_w, g.notch_h, g.screen_frame.w, g.screen_frame.h
+        );
+    } else {
+        eprintln!("EVO-NOTCH geometry: no notch probe (synthetic/fallback path)");
+    }
     let notch = geometry.map(|g| (g.notch_w, g.notch_h));
     let foreign_notch_windows = if mode == NotchMode::Auto && geometry.is_some() {
         occupancy_probe()
@@ -1886,25 +1910,28 @@ fn surface_main(
                 Err(_) => break,
             }
         };
-        if input.is_none() {
-            if let Some(host) = host.as_ref() {
-                if let Some(next_geometry) = probe_notch_geometry() {
-                    if next_geometry != geometry {
-                        host.reanchor(next_geometry);
-                        geometry = next_geometry;
-                    }
-                }
-                host.reassert_visibility();
+        if input.is_none()
+            && let Some(host) = host.as_ref()
+        {
+            if let Some(next_geometry) = probe_notch_geometry()
+                && next_geometry != geometry
+            {
+                eprintln!(
+                    "EVO-NOTCH geometry changed: notch_x={:.1} notch_w={:.1} notch_h={:.1}",
+                    next_geometry.notch_x, next_geometry.notch_w, next_geometry.notch_h
+                );
+                host.reanchor(next_geometry);
+                geometry = next_geometry;
             }
+            host.reassert_visibility();
         }
         if let Some(input) = input {
-            if let Some(host) = host.as_ref() {
-                if let Some(next_geometry) = probe_notch_geometry() {
-                    if next_geometry != geometry {
-                        host.reanchor(next_geometry);
-                        geometry = next_geometry;
-                    }
-                }
+            if let Some(host) = host.as_ref()
+                && let Some(next_geometry) = probe_notch_geometry()
+                && next_geometry != geometry
+            {
+                host.reanchor(next_geometry);
+                geometry = next_geometry;
             }
             match input {
                 SurfaceInput::Voice(event) => {
@@ -2815,15 +2842,14 @@ pub(crate) mod objc {
             ];
             let mut hovered_idx = None;
             for (idx, chip_id) in chip_ids.iter().enumerate() {
-                if let Some(layer) = layers.iter().find(|l| l.id == *chip_id) {
-                    if local.0 >= layer.x
-                        && local.0 <= layer.x + layer.w
-                        && local.1 >= layer.y
-                        && local.1 <= layer.y + layer.h
-                    {
-                        hovered_idx = Some(idx);
-                        break;
-                    }
+                if let Some(layer) = layers.iter().find(|l| l.id == *chip_id)
+                    && local.0 >= layer.x
+                    && local.0 <= layer.x + layer.w
+                    && local.1 >= layer.y
+                    && local.1 <= layer.y + layer.h
+                {
+                    hovered_idx = Some(idx);
+                    break;
                 }
             }
             if let Some(steps) = painter.steps.as_ref() {
@@ -3666,8 +3692,7 @@ pub(crate) mod objc {
         let Some(bitmap) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             paint_into_scaled(&state, scale)
         }))
-        .ok()
-        else {
+        .ok() else {
             eprintln!("EVO notch: skipped a malformed paint frame");
             return;
         };
@@ -5075,14 +5100,12 @@ mod tests {
         // 0 → 19 on top (square at the closed notch) and 8 → 24 on the
         // bottom, on exactly the same expand factor the size rides. A
         // mid-flight frame must sit on the linear path, not snap.
-/// Radii now progress through Sapphire's motion grammar spring
-        // (response 0.40, damping 0.55 for expand): the effective progress is
-        // physics-based with controlled overshoot. Mid-flight frames may briefly
-        // exceed the final target before settling to exactly 1.0.
+        // The transition driver supplies its spring-shaped expand factor;
+        // the silhouette radii follow that geometry factor linearly.
         for (expand, top, bottom) in [
             (0.0, 0.0, 8.0),
-            (0.25, 42.76, 44.01),
-            (0.5, 9.55, 16.04),
+            (0.25, 4.75, 12.0),
+            (0.5, 9.5, 16.0),
             (1.0, 19.0, 24.0),
         ] {
             let state = RenderState {
@@ -5268,14 +5291,14 @@ mod tests {
             .clone();
         let bmp = paint_into(&listening);
         let center = (mic.x + mic.w / 2.0, mic.y + mic.h / 2.0);
-        let is_ring_caramel = |p: [u8; 4]| -> bool {
-            p[3] > 200 && p[0] > 180 && (130..180).contains(&p[1]) && (80..130).contains(&p[2])
+        let is_ring_green = |p: [u8; 4]| -> bool {
+            p[3] > 200 && (140..145).contains(&p[0]) && p[1] > 200 && (165..170).contains(&p[2])
         };
-        // The center dot is the caramel live mark (R~200, G~155, B~107).
+        // The center dot uses the leaf-green live mark (#74D2A1).
         let dot_px = bmp.pixel(center.0 as usize, center.1 as usize);
         assert!(
-            is_ring_caramel(dot_px),
-            "the ring's center dot is caramel, got {dot_px:?}"
+            is_ring_green(dot_px),
+            "the ring's center dot is leaf green, got {dot_px:?}"
         );
         assert!(
             (dot.x + dot.w / 2.0 - center.0).abs() < 1e-9
@@ -5283,8 +5306,8 @@ mod tests {
             "the dot is centered in the ring"
         );
         // A pixel inside the stroke band (radius 4.5..6) is solid
-        // caramel; a pixel in the track (radius 2..4, outside the dot) is
-        // the dim caramel@0.18 fill. Finding them by radius keeps the
+        // leaf green; a pixel in the track (radius 2..4, outside the dot)
+        // is the dim leaf-green@0.18 fill. Finding them by radius keeps the
         // test independent of the exact header metrics.
         let mut band_px = None;
         let mut track_px = None;
@@ -5304,15 +5327,15 @@ mod tests {
         let band_px = band_px.expect("a stroke-band pixel inside the ring rect");
         let track_px = track_px.expect("a track pixel inside the ring rect");
         assert!(
-            is_ring_caramel(band_px),
-            "the 1.5pt ring stroke is caramel, got {band_px:?}"
+            is_ring_green(band_px),
+            "the 1.5pt ring stroke is leaf green, got {band_px:?}"
         );
         assert!(
             track_px[3] > 200
-                && track_px[0] > track_px[1]
-                && track_px[1] > track_px[2]
-                && track_px[0] < 100,
-            "the ring track is dim caramel over the card, got {track_px:?}"
+                && track_px[1] > track_px[0]
+                && track_px[2] > track_px[0]
+                && track_px[1] < 100,
+            "the ring track is dim leaf green over the card, got {track_px:?}"
         );
         assert!(
             band_px[0] > track_px[0] + 40,
@@ -5330,7 +5353,7 @@ mod tests {
             (CANVAS_SIZE.0 as usize, CANVAS_SIZE.1 as usize)
         );
 
-        // Outcome: the caramel accent is INK on the eyebrow, never a
+        // Outcome: the leaf-green accent is INK on the eyebrow, never a
         // full-width band. The old assertion sampled the middle of the
         // `outcome_band` slab; that layer is gone on purpose (a full-width
         // accent rectangle measured 1.1:1 contrast against its own label).
@@ -5356,23 +5379,23 @@ mod tests {
             .find(|layer| layer.id == "eyebrow")
             .expect("outcome eyebrow");
         let bmp = paint_into(&outcome);
-        let is_caramel = |p: [u8; 4]| -> bool {
-            p[3] > 200 && p[0] > 150 && p[1] > 100 && p[2] < 140 && p[0] > p[2] + 30
+        let is_leaf_green = |p: [u8; 4]| -> bool {
+            p[3] > 200 && p[0] > 80 && p[0] < 160 && p[1] > 170 && p[2] > p[0]
         };
-        let mut caramel_ink = 0usize;
+        let mut accent_ink = 0usize;
         let mut row_total = 0usize;
         for py in eyebrow.y as usize..(eyebrow.y + eyebrow.h) as usize {
             for px in eyebrow.x as usize..(eyebrow.x + eyebrow.w) as usize {
                 row_total += 1;
-                if is_caramel(bmp.pixel(px, py)) {
-                    caramel_ink += 1;
+                if is_leaf_green(bmp.pixel(px, py)) {
+                    accent_ink += 1;
                 }
             }
         }
-        assert!(caramel_ink > 0, "the eyebrow label is caramel ink");
+        assert!(accent_ink > 0, "the eyebrow label uses leaf-green ink");
         assert!(
-            caramel_ink * 4 < row_total,
-            "caramel is sparse glyph strokes, not a slab ({caramel_ink}/{row_total})"
+            accent_ink * 4 < row_total,
+            "leaf green is sparse glyph strokes, not a slab ({accent_ink}/{row_total})"
         );
         // Past the end of the label the row is bare card, which is what
         // proves there is no accent rectangle behind the text.
@@ -5381,7 +5404,7 @@ mod tests {
             (eyebrow.y + eyebrow.h / 2.0) as usize,
         );
         assert!(
-            !is_caramel(tail) && tail[3] > 200,
+            !is_leaf_green(tail) && tail[3] > 200,
             "the eyebrow row's tail is bare card, got {tail:?}"
         );
 
@@ -5588,9 +5611,12 @@ mod tests {
             );
             assert!(a.y >= title.y + title.h, "chips sit below the title zone");
         }
-        // Restore carries the caramel accent; steps and dismiss are dark.
+        // Restore carries the leaf-green accent; steps and dismiss are dark.
         let restore = chips.iter().find(|l| l.id == "chip_restore").unwrap();
-        assert!(restore.r > 0.7 && restore.g > 0.5, "restore is caramel");
+        assert!(
+            (0.5..0.6).contains(&restore.r) && restore.g > 0.8 && restore.b > 0.6,
+            "restore carries the leaf-green accent"
+        );
     }
 
     #[test]
@@ -7137,7 +7163,10 @@ mod tests {
         );
         let dot = layers.iter().find(|l| l.id == "mic_dot").expect("mic dot");
         assert_eq!((dot.w, dot.h), (3.0, 3.0), "the center dot is 3pt");
-        assert!((dot.a - CARAMEL.3).abs() < 1e-9, "the dot is solid caramel");
+        assert!(
+            (dot.a - CARAMEL.3).abs() < 1e-9,
+            "the dot is solid leaf green"
+        );
         assert!(
             (dot.x + dot.w / 2.0 - (ring.x + ring.w / 2.0)).abs() < 1e-9
                 && (dot.y + dot.h / 2.0 - (ring.y + ring.h / 2.0)).abs() < 1e-9,
@@ -7368,7 +7397,10 @@ mod tests {
             .collect();
         assert_eq!(labels, ["Open", "Prev", "Next", "Close"]);
         let open = chips.iter().find(|l| l.id == "chip_restore").expect("open");
-        assert!(open.r > 0.7 && open.g > 0.5, "Open is the caramel pick");
+        assert!(
+            (0.5..0.6).contains(&open.r) && open.g > 0.8 && open.b > 0.6,
+            "Open carries the leaf-green pick"
+        );
     }
 
     #[test]

@@ -165,6 +165,7 @@ mod imp {
         fn sel_registerName(name: *const c_char) -> Sel;
 
         fn AXUIElementCreateApplication(pid: i32) -> AXUIElementRef;
+        fn AXIsProcessTrusted() -> bool;
         fn AXUIElementCopyAttributeValue(
             element: AXUIElementRef,
             attribute: CFStringRef,
@@ -251,6 +252,11 @@ mod imp {
     /// `NSApplicationActivationPolicyRegular`.
     const ACTIVATION_POLICY_REGULAR: usize = 0;
 
+    pub fn accessibility_trusted() -> bool {
+        // SAFETY: ApplicationServices reports the current process trust state.
+        unsafe { AXIsProcessTrusted() }
+    }
+
     // ── PodSurface implementation ────────────────────────────────────
 
     pub fn running_apps() -> Result<Vec<PodApp>, String> {
@@ -259,6 +265,7 @@ mod imp {
             if workspace.is_null() {
                 return Err("NSWorkspace unavailable".to_string());
             }
+
             let apps = msg_send_id(workspace, sel(RUNNING_APPLICATIONS_SEL));
             if apps.is_null() {
                 return Err("cannot enumerate running applications".to_string());
@@ -980,6 +987,10 @@ pub struct MacPodSurface;
 impl MacPodSurface {
     pub fn new() -> Self {
         Self
+    }
+
+    pub fn accessibility_trusted() -> bool {
+        imp::accessibility_trusted()
     }
 }
 

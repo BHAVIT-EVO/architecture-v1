@@ -1,9 +1,9 @@
-//! Home's honest states: the screens shown when the rack cannot be.
+//! Home's honest states: the screens shown when the work list cannot be.
 //!
-//! The rack itself lives in [`crate::rack`]; these are the surfaces for
-//! "nothing yet" and "Evo cannot see" — the two cases where the product's
-//! promise has to be explained instead of exercised. Everything here keeps
-//! the one control language (DESIGN.md: Control Language).
+//! `EXPERIENCE.md` §1's stage and §6's Home are drawn by the module above;
+//! these are the surfaces for "nothing yet" and "Evo cannot see" — the two
+//! cases where the product's promise has to be explained instead of
+//! exercised.
 
 use crate::theme;
 use crate::ui::{self, Control};
@@ -37,13 +37,13 @@ pub fn empty(ui: &mut egui::Ui, capturing: bool) {
     ui::gap(ui, theme::S5);
     ui::raised(ui, |ui| {
         ui.set_width(ui.available_width());
-        ui::eyebrow(ui, if capturing { "Capturing" } else { "Waiting" });
+        ui::eyebrow(ui, if capturing { "Watching" } else { "Waiting" });
         ui::display(
             ui,
             if capturing {
-                "Evo is learning your work"
+                crate::copy::HOME_EMPTY_LEARNING
             } else {
-                "Evo is not capturing yet"
+                crate::copy::HOME_EMPTY_WAITING
             },
         );
         ui::gap(ui, theme::S2);

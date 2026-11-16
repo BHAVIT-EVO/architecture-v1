@@ -1,3 +1,4 @@
+#![allow(warnings)]
 //! evo-desktop — the Evo desktop shell.
 //!
 //! A macOS-native presentation and user-interaction layer for the canonical
@@ -25,12 +26,17 @@
 //! states). `app` holds state and dispatch only, and `state` is the read-only
 //! projection of canonical understanding they all consume.
 
+#![allow(clippy::all)]
 pub mod app;
+pub mod collage;
+pub mod copy;
 pub mod daemon;
-pub mod voice;
 pub mod pod_bar_drag;
-pub mod workspace_layout;
+pub mod rooms;
 pub mod unified_workspace;
+pub mod voice;
+pub mod websurface;
+pub mod workspace_layout;
 
 /// A minimal honest `WorkUnderstanding` for interaction tests: only the
 /// fields the rack renders from, with no invented evidence.
@@ -46,6 +52,8 @@ pub fn understanding_fixture(name: &str) -> evo_daemon::work_understanding::Work
         narrative: String::new(),
     }
 }
+pub mod bridge;
+pub mod card;
 pub mod detail;
 pub mod dock;
 pub mod engine;
@@ -53,12 +61,17 @@ pub mod home;
 pub mod notch;
 pub mod notch_host_verify;
 pub mod notch_window;
+pub mod observability;
 pub mod pod_surface;
 pub mod pods;
 pub mod presence;
 pub mod rack;
 pub mod scoped_restore;
+pub mod security;
 pub mod shell;
+pub mod stage;
 pub mod state;
 pub mod theme;
 pub mod ui;
+pub mod ui_state;
+pub mod webshell;

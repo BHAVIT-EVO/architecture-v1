@@ -7,7 +7,7 @@
 use evo_daemon::runtime::Runtime;
 use evo_storage::Storage;
 use std::path::PathBuf;
-use std::time::{SystemTime, Duration};
+use std::time::{Duration, SystemTime};
 
 fn main() {
     let nanos = SystemTime::now()
@@ -21,7 +21,10 @@ fn main() {
     let result = runtime.start_vertical_runtime_with_storage_root(unique_root("probe"));
     match result {
         Ok((_handle, receiver)) => {
-            println!("runtime started; boundary receiver empty: {}", receiver.try_recv().is_err());
+            println!(
+                "runtime started; boundary receiver empty: {}",
+                receiver.try_recv().is_err()
+            );
             // Let real capture run for a moment, then tear down like the test.
             std::thread::sleep(Duration::from_secs(3));
             println!("dropping handle");

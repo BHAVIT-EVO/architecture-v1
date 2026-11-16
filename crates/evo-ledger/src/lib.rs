@@ -1,3 +1,4 @@
+#![allow(clippy::type_complexity)]
 //! # evo-ledger — the deterministic activity ledger.
 //!
 //! Groups observed computer-usage events into **work intervals** using a

@@ -32,6 +32,7 @@ pub const OWNING_PROCESS_NAME_CONTEXT_KEY: &str = "owning_process_name";
 
 /// Minimal structured macOS signal used by the adapter.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(clippy::large_enum_variant)] // Keep the public signal API unboxed; it is adapted at the capture boundary.
 pub enum MacOSSignal {
     /// A focused window was directly witnessed.
     ///

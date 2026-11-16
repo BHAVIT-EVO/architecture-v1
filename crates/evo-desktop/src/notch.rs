@@ -54,6 +54,8 @@ pub enum ContentId {
     EvoRack,
     /// The candidate-choice carousel (a temporary like EvoOutcome).
     EvoChoice,
+    /// The paused pill: Evo keeps the notch but captures nothing.
+    EvoPaused,
     /// The works-browse carousel: the rack as a resumable list (a
     /// temporary like EvoChoice, opened by explicit user intent).
     EvoBrowse,
@@ -118,6 +120,9 @@ pub mod priority {
     /// The candidate-choice carousel (temporary; preempts the outcome
     /// card priority so an Ambiguous answer always carries its picks).
     pub const CHOICE: i32 = 11;
+    /// Paused outranks everything: a paused Evo must never be covered by a
+    /// stale listening or outcome surface.
+    pub const PAUSED: i32 = 12;
 }
 
 // ─── Voice state machine ─────────────────────────────────────────────────────
@@ -141,6 +146,19 @@ pub enum VoicePhase {
         /// The focused candidate (0-based, wraps).
         index: usize,
     },
+    /// The command is understood and Evo is deciding — breathing, no
+    /// spinner (DESIGN_LAW §5).
+    Thinking,
+    /// Evo is opening the work.
+    Acting,
+    /// The work is open; the surface says so and then collapses.
+    Done,
+    /// Evo needs a decision: two explicit answers, no third option.
+    NeedsYou { first: String, second: String },
+    /// Something failed. `retry` is true when the command is still known.
+    Error { detail: String, retry: bool },
+    /// Paused by the person: no capture, no wake, nothing hidden.
+    Paused,
 }
 
 /// Visualization state for the view layer each frame.
@@ -219,9 +237,19 @@ pub struct NotchEngine {
     /// Coexistence: does Evo actually own the strip right now, or is it
     /// floating beside someone else's notch UI?
     pub owns_strip: bool,
+    /// True while the person has paused Evo (notch or tray).
+    paused: bool,
+    /// True exactly while audio is being captured. The mic indicator is
+    /// shown from this flag and nothing else.
+    capturing: bool,
+    /// When the wake word fired, and how long the surface took to say so.
+    wake_at: Option<Instant>,
+    wake_latency: Option<Duration>,
 }
 
-const VOICE_LISTENING_TENURE: Duration = Duration::from_secs(60);
+// Listening should not outlive the driver's bounded post-wake command window
+// when no fresh partials arrive. New Listening events refresh this deadline.
+const VOICE_LISTENING_TENURE: Duration = Duration::from_secs(10);
 
 impl Default for NotchEngine {
     fn default() -> Self {
@@ -237,6 +265,10 @@ impl Default for NotchEngine {
             },
             browse: None,
             owns_strip: true,
+            paused: false,
+            capturing: false,
+            wake_at: None,
+            wake_latency: None,
         }
     }
 }
@@ -306,11 +338,11 @@ impl NotchEngine {
     }
 
     fn restore_suspended(&mut self) {
-        if let Some(suspended) = self.suspended.take() {
-            if self.live.iter().any(|c| c.id == suspended.id) {
-                // Still active; nothing to do — visibility derives from
-                // live + temporary each frame.
-            }
+        if let Some(suspended) = self.suspended.take()
+            && self.live.iter().any(|c| c.id == suspended.id)
+        {
+            // Still active; nothing to do — visibility derives from
+            // live + temporary each frame.
         }
     }
 
@@ -353,10 +385,10 @@ impl NotchEngine {
 
     /// What the view renders: the visible content, preemption-aware.
     pub fn model(&self) -> Option<&Content> {
-        if let Some(temporary) = &self.temporary {
-            if temporary.id != ContentId::EvoIdle {
-                return Some(temporary);
-            }
+        if let Some(temporary) = &self.temporary
+            && temporary.id != ContentId::EvoIdle
+        {
+            return Some(temporary);
         }
         self.live
             .iter()
@@ -369,7 +401,15 @@ impl NotchEngine {
         self.browse.is_some()
             || matches!(
                 self.voice.phase,
-                VoicePhase::Listening | VoicePhase::Heard { .. } | VoicePhase::Choice { .. }
+                VoicePhase::Listening
+                    | VoicePhase::Heard { .. }
+                    | VoicePhase::Choice { .. }
+                    | VoicePhase::Thinking
+                    | VoicePhase::Acting
+                    | VoicePhase::Done
+                    | VoicePhase::NeedsYou { .. }
+                    | VoicePhase::Error { .. }
+                    | VoicePhase::Paused
             )
     }
 
@@ -377,8 +417,15 @@ impl NotchEngine {
 
     /// Feeds one driver event into the voice lifecycle.
     pub fn voice_event(&mut self, event: &evo_voice::VoiceEvent, now: Instant) {
+        // Paused means paused: no wake, no partials, no outcomes. Resuming is
+        // an explicit act, never an inferred one.
+        if self.paused {
+            return;
+        }
         match event {
             evo_voice::VoiceEvent::WakeGesture { .. } => {
+                self.wake_at = Some(now);
+                self.capturing = true;
                 // A fresh wake is a new session: it preempts an open
                 // browse carousel (which rides the same temporary slot).
                 self.browse = None;
@@ -397,6 +444,7 @@ impl NotchEngine {
             }
             evo_voice::VoiceEvent::Listening { partial } => {
                 // Refresh the tenure: an active speaker keeps listening.
+                self.capturing = true;
                 self.voice.partial = partial.clone();
                 self.voice.outcome = None;
                 if self.voice.phase == VoicePhase::Listening {
@@ -409,6 +457,12 @@ impl NotchEngine {
                 }
             }
             evo_voice::VoiceEvent::HeardCommand { command } => {
+                self.capturing = false;
+                // The surface has now answered the wake: record how long it
+                // took, from the wake gesture to showing the heard command.
+                if let Some(wake) = self.wake_at.take() {
+                    self.wake_latency = Some(now.saturating_duration_since(wake));
+                }
                 self.voice = VoiceState {
                     phase: VoicePhase::Heard {},
                     partial: Some(command.clone()),
@@ -431,11 +485,13 @@ impl NotchEngine {
                 // A candidate-bearing outcome becomes the choice
                 // carousel instead of the plain outcome card — the
                 // candidates are carried, never discarded.
-                let candidates: Vec<evo_voice::VoiceCandidate> = match outcome {
+                let mut candidates: Vec<evo_voice::VoiceCandidate> = match outcome {
                     evo_voice::VoiceOutcome::Ambiguous { candidates } => candidates.clone(),
                     evo_voice::VoiceOutcome::NotFound { recent } => recent.clone(),
                     _ => vec![],
                 };
+                // At most three choices: a fourth is noise, not a decision.
+                candidates.truncate(3);
                 if candidates.is_empty() {
                     let outcome_state = match outcome {
                         evo_voice::VoiceOutcome::Restored { title, summary, .. } => OutcomeState {
@@ -612,12 +668,211 @@ impl NotchEngine {
         self.temporary = None;
         self.suspended = None;
         self.browse = None;
+        self.capturing = false;
         self.voice = VoiceState {
             phase: VoicePhase::Idle,
             partial: None,
             outcome: None,
             since: now,
         };
+    }
+
+    // ── Pause ────────────────────────────────────────────────────────────
+
+    /// Pauses Evo from the notch or the tray. Capture stops immediately, the
+    /// paused pill takes the strip, and no voice event is accepted until
+    /// [`Self::resume`]. Paused outranks every other surface.
+    pub fn pause(&mut self, now: Instant) {
+        self.paused = true;
+        self.capturing = false;
+        self.browse = None;
+        self.voice = VoiceState {
+            phase: VoicePhase::Paused,
+            partial: None,
+            outcome: Some(OutcomeState {
+                eyebrow: "PAUSED".into(),
+                title: "Evo is paused".into(),
+                detail: "Listening and capture are off. Resume from here or the menu bar.".into(),
+            }),
+            since: now,
+        };
+        self.show_temporary(
+            ContentId::EvoPaused,
+            priority::PAUSED,
+            Tenure::Persistent,
+            now,
+        );
+    }
+
+    /// Resumes capture. The surface returns to hidden idle; nothing from
+    /// before the pause is replayed.
+    pub fn resume(&mut self, now: Instant) {
+        self.paused = false;
+        self.capturing = false;
+        self.hide_temporary(ContentId::EvoPaused);
+        self.voice = VoiceState {
+            phase: VoicePhase::Idle,
+            partial: None,
+            outcome: None,
+            since: now,
+        };
+    }
+
+    pub fn is_paused(&self) -> bool {
+        self.paused
+    }
+
+    // ── Capture indicator and wake budget ────────────────────────────────
+
+    /// True exactly while audio is being captured. The mic indicator reads
+    /// this flag; it is never inferred from the phase at paint time.
+    pub fn capturing(&self) -> bool {
+        self.capturing
+    }
+
+    /// Called by the host the moment the expanded listening surface is
+    /// painted, which closes the wake budget: wake gesture → visible reply.
+    pub fn listening_shown(&mut self, now: Instant) {
+        if let Some(wake) = self.wake_at.take() {
+            self.wake_latency = Some(now.saturating_duration_since(wake));
+        }
+    }
+
+    /// The last measured wake-to-surface latency, if one was recorded.
+    pub fn wake_latency(&self) -> Option<Duration> {
+        self.wake_latency
+    }
+
+    // ── Typed commands and the executing states ─────────────────────────
+
+    /// The type-to-Evo fallback: a typed command enters the same pipeline as
+    /// a spoken one, with no microphone involved. Returns false while
+    /// paused, so the caller can tell the person why nothing happened.
+    pub fn type_to_evo(&mut self, text: &str, now: Instant) -> bool {
+        let command = text.trim();
+        if self.paused || command.is_empty() {
+            return false;
+        }
+        self.capturing = false;
+        self.browse = None;
+        self.voice = VoiceState {
+            phase: VoicePhase::Heard {},
+            partial: Some(command.to_string()),
+            outcome: None,
+            since: now,
+        };
+        self.begin_thinking(now);
+        true
+    }
+
+    /// The command is understood; Evo is deciding. Breathing, no spinner.
+    pub fn begin_thinking(&mut self, now: Instant) {
+        self.capturing = false;
+        self.voice = VoiceState {
+            phase: VoicePhase::Thinking,
+            partial: self.voice.partial.clone(),
+            outcome: Some(OutcomeState {
+                eyebrow: "THINKING".into(),
+                title: "Working out which work".into(),
+                detail: "Matching what you said to your work.".into(),
+            }),
+            since: now,
+        };
+        self.show_temporary(
+            ContentId::EvoListening,
+            priority::LISTENING,
+            Tenure::For(VOICE_LISTENING_TENURE),
+            now,
+        );
+    }
+
+    /// Evo is opening the work.
+    pub fn begin_acting(&mut self, title: &str, now: Instant) {
+        self.voice = VoiceState {
+            phase: VoicePhase::Acting,
+            partial: None,
+            outcome: Some(OutcomeState {
+                eyebrow: "OPENING".into(),
+                title: title.to_string(),
+                detail: "Bringing your windows back.".into(),
+            }),
+            since: now,
+        };
+        self.show_temporary(
+            ContentId::EvoOutcome,
+            priority::OUTCOME,
+            Tenure::For(Duration::from_secs(8)),
+            now,
+        );
+    }
+
+    /// The work is open.
+    pub fn finish_done(&mut self, title: &str, now: Instant) {
+        self.capturing = false;
+        self.voice = VoiceState {
+            phase: VoicePhase::Done,
+            partial: None,
+            outcome: Some(OutcomeState {
+                eyebrow: "DONE".into(),
+                title: title.to_string(),
+                detail: "Ready for you.".into(),
+            }),
+            since: now,
+        };
+        self.show_temporary(
+            ContentId::EvoOutcome,
+            priority::OUTCOME,
+            Tenure::For(Duration::from_secs(3)),
+            now,
+        );
+    }
+
+    /// Something failed. Retry is offered when the command is still known.
+    pub fn fail(&mut self, detail: &str, retry: bool, now: Instant) {
+        self.capturing = false;
+        self.voice = VoiceState {
+            phase: VoicePhase::Error {
+                detail: detail.to_string(),
+                retry,
+            },
+            partial: None,
+            outcome: Some(OutcomeState {
+                eyebrow: "COULDN'T OPEN".into(),
+                title: "That work isn't reachable".into(),
+                detail: detail.to_string(),
+            }),
+            since: now,
+        };
+        self.show_temporary(
+            ContentId::EvoOutcome,
+            priority::OUTCOME,
+            Tenure::For(Duration::from_secs(8)),
+            now,
+        );
+    }
+
+    /// Evo needs an answer and offers exactly two.
+    pub fn needs_you(&mut self, first: &str, second: &str, now: Instant) {
+        self.capturing = false;
+        self.voice = VoiceState {
+            phase: VoicePhase::NeedsYou {
+                first: first.to_string(),
+                second: second.to_string(),
+            },
+            partial: None,
+            outcome: Some(OutcomeState {
+                eyebrow: "TWO WORKS MATCH".into(),
+                title: "Which one?".into(),
+                detail: "Pick one and Evo opens it.".into(),
+            }),
+            since: now,
+        };
+        self.show_temporary(
+            ContentId::EvoChoice,
+            priority::CHOICE,
+            Tenure::For(Duration::from_secs(12)),
+            now,
+        );
     }
 }
 
@@ -1182,5 +1437,139 @@ mod tests {
     fn surface_yields_only_when_the_probe_finds_a_foreign_owner() {
         assert_eq!(decide_surface(0), SurfaceDecision::Own);
         assert_eq!(decide_surface(1), SurfaceDecision::Float);
+    }
+
+    // ── S3: pause, capture, typed commands, the wake budget ──────────────
+
+    #[test]
+    fn pause_takes_the_surface_and_ignores_wake() {
+        let mut e = engine();
+        let now = Instant::now();
+        e.pause(now);
+
+        assert!(e.is_paused());
+        assert!(!e.capturing(), "paused means no microphone");
+        assert_eq!(e.model().map(|c| c.id), Some(ContentId::EvoPaused));
+        assert_eq!(e.voice.phase, VoicePhase::Paused);
+
+        e.voice_event(&evo_voice::VoiceEvent::WakeGesture { score: None }, now);
+        assert_eq!(
+            e.voice.phase,
+            VoicePhase::Paused,
+            "a paused Evo never wakes"
+        );
+        assert!(e.type_to_evo("open my notes", now) == false);
+    }
+
+    #[test]
+    fn resume_returns_to_hidden_idle() {
+        let mut e = engine();
+        let now = Instant::now();
+        e.pause(now);
+        e.resume(now);
+
+        assert!(!e.is_paused());
+        assert!(!e.capturing());
+        assert!(e.model().is_none());
+        assert!(!e.has_content());
+        assert_eq!(e.voice.phase, VoicePhase::Idle);
+    }
+
+    #[test]
+    fn the_microphone_is_on_exactly_while_listening() {
+        let mut e = engine();
+        let now = Instant::now();
+        assert!(!e.capturing(), "idle is not capturing");
+
+        e.voice_event(&evo_voice::VoiceEvent::WakeGesture { score: None }, now);
+        assert!(
+            e.capturing(),
+            "the mic indicator follows capture, not the phase"
+        );
+
+        e.voice_event(
+            &evo_voice::VoiceEvent::HeardCommand {
+                command: "open my notes".into(),
+            },
+            now,
+        );
+        assert!(!e.capturing(), "capture ends when the command is heard");
+    }
+
+    #[test]
+    fn a_typed_command_enters_thinking_without_a_microphone() {
+        let mut e = engine();
+        let now = Instant::now();
+        assert!(e.type_to_evo("  open my notes  ", now));
+        assert_eq!(e.voice.phase, VoicePhase::Thinking);
+        assert_eq!(e.voice.partial.as_deref(), Some("open my notes"));
+        assert!(!e.capturing());
+        assert!(e.has_content());
+        assert!(e.is_expanded());
+    }
+
+    #[test]
+    fn every_state_in_section_five_can_be_reached() {
+        let now = Instant::now();
+
+        let mut e = engine();
+        e.voice_event(&evo_voice::VoiceEvent::WakeGesture { score: None }, now);
+        assert_eq!(e.voice.phase, VoicePhase::Listening);
+
+        e.begin_thinking(now);
+        assert_eq!(e.voice.phase, VoicePhase::Thinking);
+
+        e.begin_acting("Yesterday's notes", now);
+        assert_eq!(e.voice.phase, VoicePhase::Acting);
+
+        e.finish_done("Yesterday's notes", now);
+        assert_eq!(e.voice.phase, VoicePhase::Done);
+        assert!(e.is_expanded(), "done shows before it collapses");
+
+        e.needs_you("Notes", "Morning writing", now);
+        assert!(matches!(e.voice.phase, VoicePhase::NeedsYou { .. }));
+
+        e.fail("That page isn't open any more.", true, now);
+        assert!(matches!(
+            e.voice.phase,
+            VoicePhase::Error { retry: true, .. }
+        ));
+
+        e.pause(now);
+        assert_eq!(e.voice.phase, VoicePhase::Paused);
+    }
+
+    #[test]
+    fn choices_are_capped_at_three() {
+        let mut e = engine();
+        let now = Instant::now();
+        let many: Vec<_> = (0..6)
+            .map(|i| evo_voice::VoiceCandidate::work(i.to_string(), format!("Work {i}")))
+            .collect();
+        e.voice_event(
+            &evo_voice::VoiceEvent::Outcome(evo_voice::VoiceOutcome::Ambiguous {
+                candidates: many,
+            }),
+            now,
+        );
+        match &e.voice.phase {
+            VoicePhase::Choice { candidates, .. } => assert_eq!(candidates.len(), 3),
+            other => panic!("expected a choice, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn the_wake_budget_measures_wake_to_surface() {
+        let mut e = engine();
+        let wake = Instant::now();
+        e.voice_event(&evo_voice::VoiceEvent::WakeGesture { score: None }, wake);
+        e.listening_shown(wake + Duration::from_millis(24));
+
+        let latency = e.wake_latency().expect("a wake records its latency");
+        assert_eq!(latency, Duration::from_millis(24));
+        assert!(
+            latency < Duration::from_millis(100),
+            "the wake response must stay under 100ms, measured {latency:?}"
+        );
     }
 }

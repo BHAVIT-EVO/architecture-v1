@@ -366,7 +366,17 @@ fn compose(
         },
     );
 
-    shell::settings(ui, &mut tr.settings_open, &status, daemon, storage_root);
+    let mut theme_mode = theme::ThemeMode::Dusk;
+    let mut theme_preference_error = None;
+    shell::settings(
+        ui,
+        &mut tr.settings_open,
+        &status,
+        daemon,
+        storage_root,
+        &mut theme_mode,
+        &mut theme_preference_error,
+    );
 }
 
 // ── extracting facts from the laid-out shapes ──────────────────────────────
@@ -584,7 +594,7 @@ fn report(shot: Shot, facts: &Facts) -> String {
             out,
             "  {color}  x{count:<4} largest={:.0}px²  contrast-vs-BG {:.2}:1",
             area,
-            contrast(parse_hex(color), theme::BG)
+            contrast(parse_hex(color), theme::bg())
         );
     }
 

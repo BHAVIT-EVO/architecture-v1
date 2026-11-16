@@ -457,7 +457,10 @@ mod tests {
             document.starts_with("Continue in the banner chat | "),
             "natural language leads the document: {document:?}"
         );
-        assert!(document.contains("https://claude.ai/chat/abc"), "{document:?}");
+        assert!(
+            document.contains("https://claude.ai/chat/abc"),
+            "{document:?}"
+        );
         assert!(document.contains("claude.ai"), "{document:?}");
     }
 
@@ -465,7 +468,10 @@ mod tests {
     /// no caller can accidentally auto-restore on match-floor evidence.
     #[test]
     fn restore_floor_is_stricter_than_the_match_floor() {
-        assert!(RETRIEVAL_FLOOR < RETRIEVAL_RESTORE_FLOOR, "{RETRIEVAL_FLOOR} vs {RETRIEVAL_RESTORE_FLOOR}");
+        assert!(
+            RETRIEVAL_FLOOR < RETRIEVAL_RESTORE_FLOOR,
+            "{RETRIEVAL_FLOOR} vs {RETRIEVAL_RESTORE_FLOOR}"
+        );
         assert!(RETRIEVAL_RESTORE_FLOOR < 1.0);
     }
 

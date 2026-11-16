@@ -94,7 +94,7 @@ impl Engine {
     fn brief_from_view(view: &ThreadView, bundle: ResumeBundle) -> WorkBrief {
         WorkBrief {
             thread_id: view.id,
-            status: view.status.clone(),
+            status: view.status,
             anchors: view
                 .anchors
                 .iter()

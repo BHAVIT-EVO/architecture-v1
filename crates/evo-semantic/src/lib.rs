@@ -325,7 +325,11 @@ impl<TId: Copy + Ord> SemanticIndex<TId> {
     /// An empty query or empty index ranks nothing without consulting the
     /// embedder. Ties break on canonical id order so replays agree. Invalid
     /// query vectors return an error, never an empty ranking.
-    pub fn rank(&self, query: &str, embedder: &dyn Embedder) -> Result<Vec<(TId, f64)>, EmbedError> {
+    pub fn rank(
+        &self,
+        query: &str,
+        embedder: &dyn Embedder,
+    ) -> Result<Vec<(TId, f64)>, EmbedError> {
         if query.trim().is_empty() || self.documents.is_empty() {
             return Ok(Vec::new());
         }

@@ -35,15 +35,30 @@ use std::collections::BTreeMap;
 const QUERIES: &[(&str, &str)] = &[
     ("benchmark arena", "hit: names a witnessed work's words"),
     ("the codex docs page", "hit: names a witnessed URL's words"),
-    ("custom email banner for investor outreach", "hit: near-verbatim witnessed title"),
+    (
+        "custom email banner for investor outreach",
+        "hit: near-verbatim witnessed title",
+    ),
     ("the overleaf paper", "hit: names a host"),
-    ("the claude chat about the banner", "near-hit: host + topic; two claude works share the host"),
-    ("I was working on the pitch thing", "vague: no work says 'pitch'"),
-    ("that doc I had open yesterday", "vague: time + document deixis"),
+    (
+        "the claude chat about the banner",
+        "near-hit: host + topic; two claude works share the host",
+    ),
+    (
+        "I was working on the pitch thing",
+        "vague: no work says 'pitch'",
+    ),
+    (
+        "that doc I had open yesterday",
+        "vague: time + document deixis",
+    ),
     ("what I was looking at earlier", "vague: pure deixis"),
     ("you know, the thing from before", "vague: pure deixis"),
     ("the thing with the website", "vague: category only"),
-    ("open whatever I was just doing", "vague: continuation intent"),
+    (
+        "open whatever I was just doing",
+        "vague: continuation intent",
+    ),
     ("my writing", "miss: no work says 'writing'"),
     ("résumé help", "miss: topic word, no matching work"),
     ("order a pizza for dinner", "control: unrelated"),
@@ -69,7 +84,8 @@ fn main() {
     let observations = records
         .iter()
         .map(|record| {
-            evo_daemon::persistence::decode_observation_record_pub(record).expect("canonical record")
+            evo_daemon::persistence::decode_observation_record_pub(record)
+                .expect("canonical record")
         })
         .collect::<Vec<_>>();
     println!("observations: {}", observations.len());
@@ -86,8 +102,7 @@ fn main() {
         let bundle = engine.resume_bundle(thread.id);
         let understanding =
             evo_daemon::work_understanding::understand_named(thread, &bundle, &names);
-        let material =
-            thread_document_with_surface(thread, &[understanding.next_step.as_str()]);
+        let material = thread_document_with_surface(thread, &[understanding.next_step.as_str()]);
         let witnessed: Vec<_> = thread
             .anchors
             .iter()
@@ -111,32 +126,33 @@ fn main() {
     // structural material. The question: does extra natural-language surface
     // help vague phrases without diluting the true hits (generic boilerplate
     // shared by all documents adds mutual mass and shrinks differences)?
-    let variant = |extra: &dyn Fn(&evo_threads::ThreadView, &evo_threads::ResumeBundle) -> String| {
-        engine
-            .threads()
-            .iter()
-            .map(|thread| {
-                let material = thread_document(thread);
-                let bundle = engine.resume_bundle(thread.id);
-                let witnessed: Vec<_> = thread
-                    .anchors
-                    .iter()
-                    .map(|a| a.resource.as_str())
-                    .chain(thread.companions.iter().map(|(r, _)| r.as_str()))
-                    .filter_map(|r| names.name_of(r))
-                    .collect();
-                let names_part = witnessed.join(" | ");
-                let extra = extra(thread, &bundle);
-                let document = match (names_part.is_empty(), extra.is_empty()) {
-                    (true, true) => material,
-                    (true, false) => format!("{extra} | {material}"),
-                    (false, true) => format!("{names_part} | {material}"),
-                    (false, false) => format!("{names_part} | {extra} | {material}"),
-                };
-                (thread.id, document)
-            })
-            .collect::<Vec<_>>()
-    };
+    let variant =
+        |extra: &dyn Fn(&evo_threads::ThreadView, &evo_threads::ResumeBundle) -> String| {
+            engine
+                .threads()
+                .iter()
+                .map(|thread| {
+                    let material = thread_document(thread);
+                    let bundle = engine.resume_bundle(thread.id);
+                    let witnessed: Vec<_> = thread
+                        .anchors
+                        .iter()
+                        .map(|a| a.resource.as_str())
+                        .chain(thread.companions.iter().map(|(r, _)| r.as_str()))
+                        .filter_map(|r| names.name_of(r))
+                        .collect();
+                    let names_part = witnessed.join(" | ");
+                    let extra = extra(thread, &bundle);
+                    let document = match (names_part.is_empty(), extra.is_empty()) {
+                        (true, true) => material,
+                        (true, false) => format!("{extra} | {material}"),
+                        (false, true) => format!("{names_part} | {material}"),
+                        (false, false) => format!("{names_part} | {extra} | {material}"),
+                    };
+                    (thread.id, document)
+                })
+                .collect::<Vec<_>>()
+        };
     let resume_reason_variant = variant(&|_, bundle| bundle.resume_reason.clone());
     let next_step_variant = variant(&|thread, bundle| {
         evo_daemon::work_understanding::understand_named(thread, bundle, &names).next_step
@@ -148,7 +164,8 @@ fn main() {
         evo_daemon::work_understanding::understand_named(thread, bundle, &names).narrative
     });
     let proposed_variant = variant(&|thread, bundle| {
-        let understanding = evo_daemon::work_understanding::understand_named(thread, bundle, &names);
+        let understanding =
+            evo_daemon::work_understanding::understand_named(thread, bundle, &names);
         let mut surface = Vec::new();
         if !bundle.resume_reason.is_empty() && bundle.resume_reason != "Last seen: nothing." {
             surface.push(bundle.resume_reason.clone());
@@ -166,7 +183,10 @@ fn main() {
     // different path; the two must agree byte for byte (a divergence is a bug
     // in this example, not in the daemon).
     assert!(
-        documents.iter().zip(&next_step_variant).all(|(a, b)| a.1 == b.1),
+        documents
+            .iter()
+            .zip(&next_step_variant)
+            .all(|(a, b)| a.1 == b.1),
         "production and +next_step* document compositions diverged"
     );
 
@@ -232,7 +252,10 @@ fn main() {
             if candidates.len() == 1 {
                 format!("RESTORE work {} @ {best:.4}", candidates[0])
             } else {
-                format!("Ambiguous {candidates:?} (all >= {:.4})", RETRIEVAL_MARGIN * best)
+                format!(
+                    "Ambiguous {candidates:?} (all >= {:.4})",
+                    RETRIEVAL_MARGIN * best
+                )
             }
         } else {
             let nearest: Vec<u64> = scored.iter().take(NEAREST_K).map(|(id, _)| *id).collect();

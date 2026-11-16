@@ -53,7 +53,8 @@ impl Transcriber {
     /// state-allocation and backend-initialization cost while the notch is
     /// already counting down its listening tenure.
     pub fn warm_up(&self) -> Result<(), String> {
-        self.transcribe(&vec![0.0; SAMPLE_RATE as usize]).map(|_| ())
+        self.transcribe(&vec![0.0; SAMPLE_RATE as usize])
+            .map(|_| ())
     }
 
     /// Transcribes 16kHz mono f32 audio samples to text.
@@ -79,7 +80,9 @@ impl Transcriber {
                 .map_err(|e| format!("failed to create whisper state: {e}"))?;
             *state_guard = Some(created);
         }
-        let state = state_guard.as_mut().expect("just initialized");
+        let Some(state) = state_guard.as_mut() else {
+            return Err("whisper state was not initialized".to_string());
+        };
 
         // Greedy decoding is materially faster than beam search on the
         // CPU-only base model and keeps final command latency bounded. The

@@ -112,8 +112,8 @@ impl NameIndex {
                 if let (Some(subject), Some(name)) = (subject, name) {
                     index.record(&subject, &name, at_ms);
                 }
-            } else if schema.name() == "OBS-WINDOW-FOCUS-GAINED" {
-                if let Some(app) = observation
+            } else if schema.name() == "OBS-WINDOW-FOCUS-GAINED"
+                && let Some(app) = observation
                     .provenance()
                     .context()
                     .get(evo_capture::OWNING_PROCESS_NAME_CONTEXT_KEY)
@@ -121,7 +121,6 @@ impl NameIndex {
                 {
                     index.witnessed_app_names.insert(app.trim().to_string());
                 }
-            }
         }
         index
     }

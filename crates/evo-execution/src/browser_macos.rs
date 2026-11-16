@@ -850,10 +850,9 @@ fn http_get(config: &LocalDevToolsConfig, path: &str) -> Result<String, String> 
     let (headers, body) = text
         .split_once("\r\n\r\n")
         .ok_or_else(|| "local DevTools response has no HTTP header boundary".to_string())?;
-    if !headers
+    if headers
         .lines()
-        .next()
-        .is_some_and(|line| line.split_whitespace().nth(1) == Some("200"))
+        .next().is_none_or(|line| line.split_whitespace().nth(1) != Some("200"))
     {
         return Err("local DevTools endpoint refused the exact request".into());
     }

@@ -238,6 +238,10 @@ pub struct EvoApp {
     first_run: Option<u8>,
     /// Whether the Settings sheet is open.
     settings_open: bool,
+    /// Local presentation preference; not canonical work evidence.
+    theme_mode: theme::ThemeMode,
+    /// Preference persistence outcome shown in Settings when it fails.
+    theme_preference_error: Option<String>,
 
     /// The honest reason canonical storage could not be read, when it could
     /// not be read.
@@ -313,7 +317,7 @@ fn rename_control_panel(
                 .hint_text(theme::text(
                     theme::Role::Body,
                     "What do you call this work?",
-                    theme::MUTED,
+                    theme::muted_ink(),
                 ))
                 .desired_width(ui.available_width().min(360.0)),
         );
@@ -389,7 +393,11 @@ fn manual_grouping_control(
     note: &mut Option<String>,
 ) {
     ui::gap(ui, theme::S4);
-    ui.collapsing("Group two works manually", |ui| {
+    // The card menu's "Merge with…" opens this panel; the panel owns the
+    // decision, so a menu click can never group anything on its own.
+    egui::CollapsingHeader::new("Merge with…")
+        .default_open(true)
+        .show(ui, |ui| {
         ui::caption(ui, "If two cards describe one intention, choose both. Being open together is not enough evidence to group them.");
         let old_pair = (*source, *target);
         for (label, selected) in [("First work", &mut *source), ("Second work", &mut *target)] {
@@ -432,8 +440,13 @@ fn manual_grouping_control(
             if ui::control(ui, Control::quiet("Cancel grouping")).clicked() {
                 *armed = false;
             }
-        }
-    });
+            }
+            if ui::control(ui, Control::quiet("Close")).clicked() {
+                ui.data_mut(|data| {
+                    data.insert_temp(egui::Id::new("evo-home-merge-open"), false)
+                });
+            }
+        });
 }
 
 impl EvoApp {
@@ -537,6 +550,11 @@ impl EvoApp {
             engine_rebuild_in_flight: false,
             first_run: shell::first_run_pending(),
             settings_open: false,
+            theme_mode: std::fs::read_to_string(storage_root.join("preferences/theme"))
+                .ok()
+                .and_then(|value| theme::ThemeMode::parse(&value))
+                .unwrap_or_default(),
+            theme_preference_error: None,
             status: None,
             last_reload: Instant::now(),
             last_signature: None,
@@ -556,6 +574,8 @@ impl EvoApp {
         // The login agent is the sole microphone/notch owner. Opening the
         // desktop must not create a second listener or competing overlay, and
         // quitting it must not terminate the independent voice interaction.
+        theme::set_theme_mode(app.theme_mode);
+        theme::refresh_visuals(&cc.egui_ctx);
         app.reload();
         app
     }
@@ -1309,11 +1329,21 @@ impl EvoApp {
     /// contextual continuation panel lives inside that detail screen and is
     /// never the application's navigation.
     fn ui_impl(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        if theme::set_system_theme(ui.ctx().input(|input| input.raw.system_theme)) {
+            theme::refresh_visuals(ui.ctx());
+        }
         let max = ui.max_rect();
         // The environment. A soft vertical band, not a flat page fill: it is
         // what the surfaces above it are lit against, and it is the only thing
         // in the window that is allowed to be a gradient.
-        ui::paint_environment(ui.painter(), max);
+        // Home is drawn on the stage (§1): the painted backdrop, full bleed.
+        // Every other screen keeps the neutral wash until it is moved over
+        // in its own session.
+        if self.selected.is_none() {
+            crate::stage::paint(ui.painter(), max, theme::is_dusk());
+        } else {
+            ui::paint_environment(ui.painter(), max);
+        }
 
         // The first-run gate owns the whole window. No chrome, because there
         // is nothing to navigate yet.
@@ -1365,15 +1395,21 @@ impl EvoApp {
             max.min,
             egui::pos2(max.max.x, max.min.y + theme::HEADER_HEIGHT),
         );
-        let body_rect = egui::Rect::from_min_max(
-            egui::pos2(max.min.x, max.min.y + theme::HEADER_HEIGHT),
-            max.max,
-        );
-        if shell::header(ui, header_rect, &daemon_status) {
+        let view = state::ShellView::from_selection(self.selected.as_ref(), &self.workspaces);
+        // Home carries its own top bar (wordmark, status, search, gear); the
+        // shared header would be a second bar saying the same things, and
+        // the body must start at the window's top edge so that bar is the
+        // screen's first line rather than a band below an empty one.
+        let body_top = if matches!(view, state::ShellView::Home) {
+            max.min.y
+        } else {
+            max.min.y + theme::HEADER_HEIGHT
+        };
+        let body_rect = egui::Rect::from_min_max(egui::pos2(max.min.x, body_top), max.max);
+        if !matches!(view, state::ShellView::Home) && shell::header(ui, header_rect, &daemon_status)
+        {
             self.settings_open = true;
         }
-
-        let view = state::ShellView::from_selection(self.selected.as_ref(), &self.workspaces);
         // Individual field bindings, so the canonical record can be read while
         // the user's own transient state is written. The split is the point:
         // what Evo knows is handed over immutably, what the user is in the
@@ -1432,51 +1468,67 @@ impl EvoApp {
 
                 match view {
                     state::ShellView::Home => {
-                        if let Some(note) = self.restore_note.as_deref() {
-                            ui::caption(ui, note);
-                            ui::gap(ui, theme::S3);
-                        }
                         if let Some(err) = self.engine_error.as_deref() {
                             // Do not offer stale cards as though a failed
                             // canonical refresh had confirmed them.
                             shell::storage_error(ui, err);
                             return;
                         }
-                        // The rack is the primary surface: up to three
-                        // track cards, the stack behind them, and the way
-                        // into a work's pod.
-                        let rack_request = ui::scroll(ui, |ui| {
-                            let request = rack::rack(
-                                ui,
-                                &self.engine_threads,
-                                &[],
-                                &mut self.stack_open,
-                                &mut self.merge_armed,
-                                &mut self.search_query,
-                            );
-                            if self.engine_threads.len() >= 2 {
-                                manual_grouping_control(
+                        if self.engine_rebuild_in_flight && self.engine_threads.is_empty() {
+                            crate::home::loading(ui);
+                            return;
+                        }
+                        // Home (§6): the stage, one Continue card, calm
+                        // rows, a quiet hint and Coming next. The grouping
+                        // and rename panels keep their home at the foot of
+                        // the list, where a correction belongs.
+                        let panel_ctx = ui.ctx().clone();
+                        let voice_state = crate::home::voice_status(storage_root);
+                        // The note is read once for the page header; the
+                        // footer below still owns writing the next one.
+                        let note = self.restore_note.clone();
+                        let request = crate::home::home(
+                            ui,
+                            &self.engine_threads,
+                            &mut self.search_query,
+                            voice_state,
+                            note.as_deref(),
+                            |ui| {
+                                // Home shows the merge panel only when a
+                                // card's "Merge with…" asked for it; there is
+                                // no standing link-a-record paragraph on the
+                                // main screen.
+                                let merge_open: bool = ui
+                                    .data(|data| {
+                                        data.get_temp(egui::Id::new("evo-home-merge-open"))
+                                    })
+                                    .unwrap_or(false);
+                                if self.engine_threads.len() >= 2 && merge_open {
+                                    manual_grouping_control(
+                                        ui,
+                                        &self.engine_threads,
+                                        storage_root,
+                                        &mut self.group_source,
+                                        &mut self.group_target,
+                                        &mut self.group_confirm,
+                                        &mut self.restore_note,
+                                    );
+                                }
+                                rename_control_panel(
                                     ui,
                                     &self.engine_threads,
                                     storage_root,
-                                    &mut self.group_source,
-                                    &mut self.group_target,
-                                    &mut self.group_confirm,
+                                    &mut self.rename_thread,
+                                    &mut self.rename_draft,
                                     &mut self.restore_note,
+                                    &panel_ctx,
                                 );
-                            }
-                            let panel_ctx = ui.ctx().clone();
-                            rename_control_panel(
-                                ui,
-                                &self.engine_threads,
-                                storage_root,
-                                &mut self.rename_thread,
-                                &mut self.rename_draft,
-                                &mut self.restore_note,
-                                &panel_ctx,
-                            );
-                            request
-                        });
+                            },
+                        );
+                        if request.open_settings {
+                            *settings_open = true;
+                        }
+                        let rack_request = request.action;
                         match rack_request {
                             None => {}
                             Some(rack::RackAction::RestoreSelected(thread_id)) => {
@@ -1604,7 +1656,7 @@ impl EvoApp {
                                         }
                                         None => {
                                             self.restore_note =
-                                                Some("Evo has not yet linked this work to its record; it is entered as a pod. The stage follows once the record connects them.".to_string());
+                                                Some("Evo has not linked this work to its history yet. It opens on its own until it does.".to_string());
                                         }
                                     }
                                 }
@@ -1638,7 +1690,7 @@ impl EvoApp {
                                     ui::raised(ui, |ui_inner| {
                                         ui_inner.set_width(ui_inner.available_width());
                                         ui::eyebrow(ui_inner, "Capture partial");
-                                        ui::display(ui_inner, "File saves, URLs and commits are recorded. Window focus needs Accessibility.");
+                                        ui::display(ui_inner, "Some capture sources are available; window focus needs Accessibility.");
                                         ui::gap(ui_inner, theme::S2);
                                         ui::caption(ui_inner,
                                             &format!("{detail}\nGrant Accessibility in System Settings, then click Check again.",),
@@ -1726,13 +1778,19 @@ impl EvoApp {
             // stage announces; false on Home, where there is no plan.
             continuable,
         };
-        match dock::show(
-            ui,
-            dock_rect,
-            &dock_ctx,
-            &self.continue_phase,
-            self.execution_result.as_ref(),
-        ) {
+        // §6: Home has no dock. One Continue card is the whole ask, and a
+        // second floating action bar underneath it would be a second answer.
+        match if matches!(view, state::ShellView::Home) {
+            None
+        } else {
+            dock::show(
+                ui,
+                dock_rect,
+                &dock_ctx,
+                &self.continue_phase,
+                self.execution_result.as_ref(),
+            )
+        } {
             Some(dock::DockAction::Library) => {
                 *selected = None;
             }
@@ -1774,6 +1832,8 @@ impl EvoApp {
             &daemon_status,
             daemon,
             storage_root.as_path(),
+            &mut self.theme_mode,
+            &mut self.theme_preference_error,
         );
         self.show_workspace_layout_settings(ui.ctx());
 
@@ -1801,29 +1861,37 @@ impl EvoApp {
             .anchor(egui::Align2::CENTER_BOTTOM, egui::vec2(0.0, -34.0))
             .show(ctx, |ui| {
                 // Drag-to-learn target: the shelf is the card. We use a small
-        // explicit drag source on the shelf itself (a 320x28 strip over the
-        // work-tile row) whose drop teaches the active work's recipe. That is
-        // the smallest gesture that can honestly be called learn_drag and it
-        // keeps the teaching path inside this card instead of a pointer-release
-        // coincidence anywhere on the shelf.
-        let teaching_pos = pod_bar_drag::update_state(ctx, egui::Id::new("evo-pod-bar-shelf"));
-        if let Some(hover) = teaching_pos {
-            let frame = evo_pods::surface::Frame {
-                x: hover.x as f64 - 160.0,
-                y: hover.y as f64 - 100.0,
-                w: 320.0,
-                h: 200.0,
-            };
-            if let Some(workspace) = self.display.as_ref() {
-                let pod_id = evo_pods::pod::PodId(
-                    workspace.id().as_str().to_string().strip_prefix("pod-")
-                        .and_then(|s| s.parse::<u64>().ok())
-                        .unwrap_or(0),
-                );
-                let resource = workspace.id().as_str().to_string();
-                self.pods.borrow_mut().core.learn_frame(pod_id, &resource, frame);
-            }
-        }
+                // explicit drag source on the shelf itself (a 320x28 strip over the
+                // work-tile row) whose drop teaches the active work's recipe. That is
+                // the smallest gesture that can honestly be called learn_drag and it
+                // keeps the teaching path inside this card instead of a pointer-release
+                // coincidence anywhere on the shelf.
+                let teaching_pos =
+                    pod_bar_drag::update_state(ctx, egui::Id::new("evo-pod-bar-shelf"));
+                if let Some(hover) = teaching_pos {
+                    let frame = evo_pods::surface::Frame {
+                        x: hover.x as f64 - 160.0,
+                        y: hover.y as f64 - 100.0,
+                        w: 320.0,
+                        h: 200.0,
+                    };
+                    if let Some(workspace) = self.display.as_ref() {
+                        let pod_id = evo_pods::pod::PodId(
+                            workspace
+                                .id()
+                                .as_str()
+                                .to_string()
+                                .strip_prefix("pod-")
+                                .and_then(|s| s.parse::<u64>().ok())
+                                .unwrap_or(0),
+                        );
+                        let resource = workspace.id().as_str().to_string();
+                        self.pods
+                            .borrow_mut()
+                            .core
+                            .learn_frame(pod_id, &resource, frame);
+                    }
+                }
                 ui.horizontal(|ui| {
                     ui.label(egui::RichText::new("Work tiles").strong());
                     if ui
@@ -1840,11 +1908,26 @@ impl EvoApp {
                         (evo_pods::layout::LayoutId::Thirds, "Thirds"),
                         (evo_pods::layout::LayoutId::Quads, "Quads"),
                         (evo_pods::layout::LayoutId::MainSide, "Main + Side"),
-                        (evo_pods::layout::LayoutId::LeftSplitRight, "Left split + right"),
-                        (evo_pods::layout::LayoutId::LeftRightSplit, "Left + right split"),
-                        (evo_pods::layout::LayoutId::MainSideVertical, "Main + side (vertical)"),
-                        (evo_pods::layout::LayoutId::HalvesVertical, "Halves (vertical)"),
-                        (evo_pods::layout::LayoutId::ThirdsVertical, "Thirds (vertical)"),
+                        (
+                            evo_pods::layout::LayoutId::LeftSplitRight,
+                            "Left split + right",
+                        ),
+                        (
+                            evo_pods::layout::LayoutId::LeftRightSplit,
+                            "Left + right split",
+                        ),
+                        (
+                            evo_pods::layout::LayoutId::MainSideVertical,
+                            "Main + side (vertical)",
+                        ),
+                        (
+                            evo_pods::layout::LayoutId::HalvesVertical,
+                            "Halves (vertical)",
+                        ),
+                        (
+                            evo_pods::layout::LayoutId::ThirdsVertical,
+                            "Thirds (vertical)",
+                        ),
                         (evo_pods::layout::LayoutId::HeroRails, "5–8"),
                         (evo_pods::layout::LayoutId::Stack, "Stack"),
                     ] {
@@ -1867,7 +1950,6 @@ impl EvoApp {
     /// A drag source state for the pod bar shelf. Holds the dragged frame so
     /// the drop can teach the arrangement. One shelf per bar; the drag is
     /// the explicit gesture the user performs.
-
 
     /// A small workspace-layout control inside Settings. Presets are the same
     /// Setpiece-derived seeds used by the native arranger; automatic mode
@@ -1898,11 +1980,26 @@ impl EvoApp {
                         (evo_pods::layout::LayoutId::Thirds, "Thirds"),
                         (evo_pods::layout::LayoutId::Quads, "Quads"),
                         (evo_pods::layout::LayoutId::MainSide, "Main + Side"),
-                        (evo_pods::layout::LayoutId::LeftSplitRight, "Left split + right"),
-                        (evo_pods::layout::LayoutId::LeftRightSplit, "Left + right split"),
-                        (evo_pods::layout::LayoutId::MainSideVertical, "Main + side (vertical)"),
-                        (evo_pods::layout::LayoutId::HalvesVertical, "Halves (vertical)"),
-                        (evo_pods::layout::LayoutId::ThirdsVertical, "Thirds (vertical)"),
+                        (
+                            evo_pods::layout::LayoutId::LeftSplitRight,
+                            "Left split + right",
+                        ),
+                        (
+                            evo_pods::layout::LayoutId::LeftRightSplit,
+                            "Left + right split",
+                        ),
+                        (
+                            evo_pods::layout::LayoutId::MainSideVertical,
+                            "Main + side (vertical)",
+                        ),
+                        (
+                            evo_pods::layout::LayoutId::HalvesVertical,
+                            "Halves (vertical)",
+                        ),
+                        (
+                            evo_pods::layout::LayoutId::ThirdsVertical,
+                            "Thirds (vertical)",
+                        ),
                         (evo_pods::layout::LayoutId::HeroRails, "5–8"),
                         (evo_pods::layout::LayoutId::Stack, "Stack"),
                     ] {
