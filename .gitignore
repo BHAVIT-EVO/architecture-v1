@@ -77,3 +77,10 @@ __pycache__/
 /AGENTS.md
 /CLAUDE.md
 /opencode.jsonc
+
+# Agent session bookkeeping: mission briefs, task scratch, session notes.
+/docs/mission/
+/docs/fix/
+/NOTES_status_309ops.md
+/docs/FIX_RULES.md
+/scripts/mission-verify.sh
