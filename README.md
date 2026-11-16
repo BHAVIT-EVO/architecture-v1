@@ -147,7 +147,7 @@ bash scripts/install-agents.sh
 open /Applications/Evo.app
 ```
 
-Then say “Hey Evo” — after step 5, below, because the passive build has no microphone.
+That build is passive: it observes, groups and reopens, but it cannot hear you, because it has no microphone compiled in. For “Hey Evo”, take [the voice build](#the-voice-build) below.
 
 ### The voice build
 
