@@ -1,2 +1,0 @@
-(function(){var e=class extends AudioWorkletProcessor{batch=new Float32Array(256);offset=0;stopped=!1;constructor(){super(),this.port.onmessage=()=>{this.stopped=!0}}process(e){if(this.stopped)return!1;let t=e[0]?.[0];if(!t?.length)return!0;for(let e=0;e<t.length;){let n=Math.min(t.length-e,256-this.offset);this.batch.set(t.subarray(e,e+n),this.offset),this.offset+=n,e+=n,this.offset===256&&(this.port.postMessage(this.batch.slice()),this.offset=0)}return!0}};registerProcessor(`audio-capture-processor`,e)})();
-//# sourceMappingURL=audioWorkletProcessor-CnX3dOu7.js.map

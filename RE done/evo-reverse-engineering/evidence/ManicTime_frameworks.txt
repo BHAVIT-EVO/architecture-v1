@@ -1,1 +1,0 @@
-ls: /Applications/ManicTime.app/Contents/Frameworks/: No such file or directory

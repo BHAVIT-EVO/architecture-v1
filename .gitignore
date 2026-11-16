@@ -45,3 +45,20 @@ __pycache__/
 
 # Generated code graph (graphify output) — regenerable, not source.
 /graphify-out/
+
+# Reverse-engineering research dumps and design sketches. Local reference
+# material: large, third-party artefacts, never part of the build.
+/RE done/
+/notch idea/
+
+# Stray images pasted at the repository root. No code references them.
+/assets/
+
+# A screenshot of this machine's desktop, taken for a session.
+/screenshot.png
+
+# Local staging copies and scratch directories.
+/backups/
+/staging-new-app/
+/staging-voice-test/
+/.tmp-shot/

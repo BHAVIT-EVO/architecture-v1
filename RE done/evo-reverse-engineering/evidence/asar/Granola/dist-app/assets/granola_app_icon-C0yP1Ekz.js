@@ -1,2 +1,0 @@
-try{let e=typeof window<`u`?window:typeof global<`u`?global:typeof globalThis<`u`?globalThis:typeof self<`u`?self:{},t=new e.Error().stack;t&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[t]=`5d5f4952-c667-48d9-9cfb-c742e154c83c`,e._sentryDebugIdIdentifier=`sentry-dbid-5d5f4952-c667-48d9-9cfb-c742e154c83c`)}catch{}var e=``+new URL(`granola_app_icon-BrcYvQhU.png`,import.meta.url).href;export{e as t};
-//# sourceMappingURL=granola_app_icon-C0yP1Ekz.js.map

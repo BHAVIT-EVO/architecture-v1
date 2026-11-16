@@ -1,4 +1,6 @@
-# Design System — Evo "Control Room"
+# Design System — Evo's Clearing
+
+> **Current contract:** The desktop Clearing direction supersedes the legacy Control Room palette and dark-only decision below. See [`crates/evo-desktop/SPEC.md`](crates/evo-desktop/SPEC.md) and [`crates/evo-desktop/ADR-0001-clearing-visual-system.md`](crates/evo-desktop/ADR-0001-clearing-visual-system.md).
 
 The design contract for evo-desktop's frontend. Every visual decision in
 `theme.rs` and `ui.rs` implements this document; a screen that bypasses it is a
@@ -17,13 +19,9 @@ presentation only.
 
 ## Aesthetic Direction
 
-- **Direction:** Control Room — a dark warm-charcoal studio, lit like hardware
-  at night. Workspaces are tracks; Evo is the deck.
-- **Decoration level:** intentional. The caramel accent does the expressive
-  work; everything else is hairline edges, two shadow depths, and one banded
-  vertical wash. No gradients on controls, no glow, no noise textures.
-- **Mood:** calm, warm, precise. The user glances, picks a track, continues.
-  Evo watches; it does not perform.
+- **Direction:** Evo's Clearing — quiet, legible, and centered on witnessed work. Dusk is default; Day and Auto are available.
+- **Decoration level:** restrained. A single leaf-green accent does the expressive work; surfaces, spacing, and type establish hierarchy. No fake blur or decorative noise.
+- **Mood:** calm, clear, precise. The user sees what can be continued and why. Evo watches; it does not perform.
 - **References:** the user-supplied dark music-studio theme (2 images + video,
   measured: 73–87% dark pixels; teal wash #4C6F75 family; caramel tiers
   #C8A372/#887055/#635240).
@@ -70,28 +68,12 @@ Three voices, one per job:
 
 ## Color
 
-- **Approach:** restrained — one warm accent on a cool substrate.
-- **Environment:** `#15181A` → `#0F1214` (16-band top-lit wash; the only
-  gradient in the app).
-- **Raised (track cards, hero):** `#1B1F21` · **Recessed:** `#0D1012` ·
-  **Well (inputs):** `#0B0D0F` · **Dock / action / sheet:** `#1E2224`.
-- **Ink:** text `#ECEAE6` · muted `#A8AAA8` · tertiary `#8A8D8D` ·
-  receded `#5C6062` (decoration only). Contrast: all information-bearing inks
-  hold ≥4.5:1 on both raised and recessed surfaces; receded is never
-  information.
-- **Accent — caramel (approved D2):** primary `#C89B6B`, hover `#D4AA7A`,
-  pressed `#B08757`, tint 14% alpha; on-accent ink `#1A1206` (≥7:1 on the
-  accent). Caramel means *continue / declared choice* — never status.
-- **Teal voice (approved D2):** `#5B8A8F` for phases, record evidence, and the
-  informational ink; tint 16% alpha. Teal never means success (the semantic
-  green does that).
-- **Semantic:** success `#63B87F` · warning `#E0813F` · error `#E5484D` ·
-  neutral `#8A8D8D` — meanings unchanged from the prior system; a rejection can
-  still never borrow success's color. Status word tints stay alpha-based over
-  their surface.
-- **Dark mode:** dark **only** (approved D1). The light warm-paper palette was
-  retired with this contract. Do not reintroduce a theme toggle without a new
-  decision.
+- **Approach:** one leaf-green accent on a quiet substrate.
+- **Dusk:** default, warm charcoal environment; raised/recessed surfaces and legible ink are resolved through the shared theme tokens.
+- **Day:** warm paper environment with dark ink and accessible leaf-green action states.
+- **Auto:** follows the system theme reported to egui; when unavailable, falls back to Dusk.
+- **Accent:** leaf green is shared by primary actions, selected states, and positive status. Warnings and errors remain semantically distinct. Status is never communicated by color alone.
+- **Legacy:** the Control Room caramel/teal palette and dark-only decision are retained in this document's dated decision log for history only; they are not the current desktop contract.
 
 ## Spacing
 

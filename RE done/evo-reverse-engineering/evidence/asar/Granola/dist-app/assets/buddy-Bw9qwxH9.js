@@ -1,2 +1,0 @@
-try{let e=typeof window<`u`?window:typeof global<`u`?global:typeof globalThis<`u`?globalThis:typeof self<`u`?self:{},t=new e.Error().stack;t&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[t]=`5ccd45ea-91ab-4a55-8bd8-ed3194d351ec`,e._sentryDebugIdIdentifier=`sentry-dbid-5ccd45ea-91ab-4a55-8bd8-ed3194d351ec`)}catch{}var e=``+new URL(`buddy-BJMYu-fL.png`,import.meta.url).href;export{e as t};
-//# sourceMappingURL=buddy-Bw9qwxH9.js.map
