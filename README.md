@@ -8,7 +8,7 @@
 
 [Screenshots](#screenshots) · [How it works](#how-it-works) · [Build it](#build-it) · [What is in 0.1.0](#what-is-in-010) · [What is coming](#what-is-coming) · [What is real](#what-is-real-and-what-is-not)
 
-<sub>macOS 13+ · native shell over a local Rust runtime · no account, no server, no network client</sub>
+<sub>0.1.0 · macOS 13+ · native shell over a local Rust runtime · no account, no server, no network client</sub>
 
 </div>
 
@@ -91,6 +91,30 @@ Full detail in [`ARCHITECTURE.md`](ARCHITECTURE.md) and [`docs/adr/`](docs/adr/)
 1. **No screenshots, ever.** Evo reads the focused window's title, its document and its URL. There is no screen recording, no keystroke log, and `crates/evo-desktop/tests/trust_constraints.rs` fails the build if a capture or HTTP crate appears anywhere in the workspace.
 2. **Audio never leaves RAM.** The wake word and the transcript are local; audio is not written to disk. Voice is compiled in and declared to macOS only when you build with `EVO_VOICE=on`.
 3. **Nothing happens invisibly.** Every capability has a scope, an action and a mode (ask every time / ask for risky actions / act within scope). Out-of-scope is refused in every mode. One switch pauses capture, listening and every action, from the notch, the menu bar or a shortcut.
+
+---
+
+## Jurisdiction for AI agents
+
+Ask an agent to "carry on with what I was doing" and it will open a folder — the one you typed into a box. It has no idea that `draft-v3.docx` belongs to the funding application and `notes.md` belongs to a different client, because that distinction was never written down anywhere a machine could read.
+
+That is not a memory problem. It is a **jurisdiction** problem: where one body of work ends and the next begins, and what an agent is allowed to touch once it knows.
+
+Evo's whole job is to derive that boundary on the device, without a model, and then make it answerable. Three ideas do the work.
+
+**The person legislates; the engine adjudicates.** Evo does not learn. No weights, no fine-tuning, no feedback loop. Every resource sits in exactly one of three states — `DERIVED` (the engine placed it, from evidence it witnessed), `DECLARED` (a person overrode or confirmed it, and the log holds that), or `REFUSED` (the engine declined to place it at all).
+
+**Merging is sacred; splitting is free.** Six declarations exist in the engine, and `SeparateWork` is the load-bearing one — not a score that tilts inference, but a standing prohibition, honoured on every replay:
+
+> *"These are separate works; inference will never put them together."*
+
+The engine can never override the person, and no inference path can reach a merge. A wrong merge is irreversible; a wrong split is one click.
+
+**Refusal is a result.** When attention produced nothing and recurred nowhere, nothing is minted. A 47,000-second film is still not a project. The engine would rather be silent than fuse a trek with a jacket.
+
+Where these three lead: an agent that asks Evo for context gets a **scope** — these resources, this evidence, this is what it nearly chose instead — rather than a folder and a guess. Sending that scope anywhere would be the person's explicit decision, on a device that today has no transport at all.
+
+> **Status, honestly:** no agent surface ships in 0.1.0. The engine implements all six declaration kinds and honours them on replay, and the daemon validates every one. There is no MCP server, socket or tool endpoint exposed to outside agents yet — it is the next layer, listed under [what is coming](#what-is-coming), not something you can install today.
 
 ---
 
@@ -194,8 +218,10 @@ Named here so you can hold us to it. None of it has a date.
 
 | | What it means |
 |---|---|
+| **Jurisdiction for agents** | A query surface so an agent can ask *which work is this, and what may I touch* — and get a scope plus the evidence behind it, instead of a directory listing. The declarations already exist in the engine; the endpoint does not. |
 | **Memory** | Evo keeps the thread between sessions — what a work was *for*, not just where it was. Shown in the app today only as a quiet “coming soon” label, with no fake button behind it. |
 | **Autopilot** | Small chores inside a scope you set, asking first for anything risky. Off until you turn it on. The permission model it needs is already built and tested; the acting is not. |
+| **Cross-device sync** | Continuity across your own machines — an encrypted record of where each work is, restored on another Mac, not a copy of its contents. Off by default and opt-in per device. It is listed here rather than promised because it is the one feature that would touch the offline guarantee: today no transport exists anywhere in the workspace, and a test enforces that. Sync arrives only with that test, and this paragraph, rewritten. |
 | **Ten people outside the company, for thirty days** | Everything above is speculation until the boundary is proven on more than one machine. This is the next real thing, not a feature. |
 | **A signed, notarised installer** | The download page's buttons lead to the setup page today because no signed build is attached. Signing needs an Apple Developer account and there is no way around that. |
 

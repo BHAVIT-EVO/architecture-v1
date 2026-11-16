@@ -62,3 +62,18 @@ __pycache__/
 /staging-new-app/
 /staging-voice-test/
 /.tmp-shot/
+
+# Assistant/editor scaffolding. Useful while working here, noise in a
+# repository: the project must read as the product, not the tooling.
+/.agents/
+/.claude/
+/.codex/
+/.freebuff/
+/.gstack/
+/.kilo/
+/.kiro/
+/.omnirush/
+/.serena/
+/AGENTS.md
+/CLAUDE.md
+/opencode.jsonc
