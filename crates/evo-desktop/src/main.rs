@@ -44,6 +44,14 @@ fn main() -> eframe::Result {
         ],
     );
 
+    // "Hey Evo" lives in a per-user LaunchAgent, not in this process. Check it
+    // on every launch and install it when it is missing, off the main thread
+    // so a cold bootstrap cannot delay the window.
+    std::thread::spawn(|| match evo_desktop::voice_agent::ensure_agent_running() {
+        Ok(outcome) => eprintln!("EVO-VOICE: {}", outcome.describe()),
+        Err(err) => eprintln!("EVO-VOICE: {err}"),
+    });
+
     // EVO_UI selects the shell. `native` (the default) is the egui interface;
     // `web` hosts the new HTML UI in a WKWebView over the same window. The
     // egui interface stays compiled either way (ADR 0002).

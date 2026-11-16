@@ -654,11 +654,16 @@ impl Backend {
 
     fn status(&self) -> Result<Value, BridgeError> {
         let state = crate::ui_state::UiState::load(&self.root);
-        let voice_state = std::fs::read_to_string(self.root.join("voice.status"))
+        let reported = std::fs::read_to_string(self.root.join("voice.status"))
             .map(|value| value.trim().to_string())
             .ok()
-            .filter(|value| matches!(value.as_str(), "listening" | "paused" | "off"))
-            .unwrap_or_else(|| if state.paused { "paused" } else { "off" }.into());
+            .filter(|value| matches!(value.as_str(), "listening" | "paused" | "off"));
+        // Report what is running, not what a file last said: the LaunchAgent
+        // never writes `voice.status`, so the old answer was "off" for a live
+        // agent and "listening" for one that had been killed.
+        let agent_running = crate::voice_agent::agent_is_running();
+        let voice_state =
+            crate::voice_agent::derive_state(state.paused, agent_running, reported.as_deref());
         Ok(json!({
             "paused": state.paused,
             "capture": if evo_daemon::daemon_lock::daemon_is_running(&self.root) {
@@ -666,6 +671,7 @@ impl Backend {
             } else {
                 "stopped"
             },
+            "agent": if agent_running { "running" } else { "stopped" },
             "voice_state": voice_state,
             "listening": voice_state == "listening",
         }))

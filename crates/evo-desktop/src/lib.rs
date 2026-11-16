@@ -35,6 +35,7 @@ pub mod pod_bar_drag;
 pub mod rooms;
 pub mod unified_workspace;
 pub mod voice;
+pub mod voice_agent;
 pub mod websurface;
 pub mod workspace_layout;
 

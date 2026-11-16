@@ -46,10 +46,10 @@ Read this first; continue from the first unfinished step.
 - 1.4 install + launch + verify checks — DONE — evidence/1.4-install.txt, evidence/1.4-verify.txt
 
 ## Phase 2 — the voice helper
-- 2.1 diagnose (incl. BTM disabled item) — TODO
-- 2.2 install/bootstrap/kickstart at app start — TODO
-- 2.3 truthful get_voice_state — TODO
-- 2.4 live proof — TODO
+- 2.1 diagnose (incl. BTM disabled item) — DONE — evidence/2.1-diagnose.txt (`launchctl print` → `Could not find service "com.evo.agent"`; plist present at ~/Library/LaunchAgents; nothing in crates/evo-desktop/src invokes `evo-agent-install` at startup)
+- 2.2 install/bootstrap/kickstart at app start — DONE — crates/evo-desktop/src/voice_agent.rs (`ensure_agent_running`: `launchctl print` → bundled `evo-agent-install` → bounded re-poll) called on a background thread from main.rs; evidence/2.2-install-at-startup.txt: job absent before, `registered 3s after launch`, `state = running`, app logged `EVO-VOICE: agent installed and started`
+- 2.3 truthful get_voice_state — DONE — `voice.status` is written only by the in-process voice loop and was absent with a live LaunchAgent, so status answered "off"; bridge `status()` now reports `derive_state(paused, agent_running, reported)` plus an `agent: running|stopped` field, with the launchctl answer cached 5 s — evidence/2.3-voice-state.txt: 6 tests pass, TESTS_EXIT=0, job `state = running` while `voice.status` absent
+- 2.4 live proof — PASS — evidence/2.4-agent-returns.txt: `kill -9` of the installed agent, `new agent pid 3573 after 354 ms`, `state = running` (budget ≤15 s)
 
 ## Phase 3 — Continue reopens work
 - 3.1 classify the 6 newest works — DONE — evidence/3.1-reproduce.txt (work 68 stores a real URL but was refused as permission_needed; works 69 and 66 hang in `open`)
