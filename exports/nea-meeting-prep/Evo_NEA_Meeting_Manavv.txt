@@ -1,0 +1,1590 @@
+THE COMMERCIAL HALF — MANAVV (CBO)
+Plain-text fallback of the 35-page PDF. Same content, no layout.
+==============================================================================
+
+----- page 1 -----
+PRIVATE  ·  PREPARED FOR MANAVV  ·  DO NOT SHARE
+The Commercial Half
+Your role in the first call with
+Thomas Joshi, Associate, NEA
+Monday 19 October 2026  ·  Pacific Time
+MEETING Thomas Joshi — Associate, Technology Investing, NEA
+YOUR ROLE ON THE CALL CBO — market, pricing, competition, GTM
+YOUR JOB IN ONE LINE Make the market legible and the plan credible. Do not pitch.
+ASK ON THE TABLE $1.5M on a $12M post-money SAFE
+PREPARED FOR Manavv — CBO, Evo
+This is not a shorter version of Bhavit's book. It is the other half. He carries the product and the engineering; you carry the
+market, the pricing, the competition and the go-to-market. On a first call with an associate, those are the questions that
+decide whether the memo says 'big enough' or 'niche tool'.
+
+----- page 2 -----
+Contents
+00 Your job on this call 3
+01 Who you are talking to, from a commercial angle 4
+02 The market, built bottom-up — and how to defend it 5
+03 Positioning: the sentence that wins the category 7
+04 The competitive map — and the five names he will say 8
+05 Pricing: $108, and the arithmetic behind it 9
+06 Go-to-market: the first 5,000 users 11
+07 The business model he will test to destruction 12
+08 The fifteen commercial questions 13
+09 The numbers you own 16
+10 Working the call with Bhavit 17
+11 When to stay quiet 18
+12 Your follow-up: the market appendix 19
+13 Cheat sheet 20
+14 The comparables, and exactly what each one proves 21
+15 How category winners described themselves early 23
+16 What kills prosumer companies — and which of these you have 24
+17 Pre-seed benchmarks: what "good" looks like 25
+18 The launch playbook, in detail 26
+19 The ninety days after a yes 28
+20 Rehearsal drills 29
+21 Your own narrative 30
+22 Final checklist 31
+23 Three objections, scripted in full 32
+24 Evidence appendix: what each figure is worth 34
+The Commercial Half  ·  Manavv  ·  Confidential page 2
+
+----- page 3 -----
+00  Your job on this call
+Associates at funds the size of NEA are not usually the person who kills a pre-seed on the market. 
+They kill it on fit : is this a venture-scale opportunity, or a very good product with a ceiling? That 
+question is yours. Bhavit will win the argument that the thing works. You have to win the argument 
+that it can become large. 
+00.1  The three things you must land
+What you must land The evidence Where in this book
+The market is bigger than a Mac
+utility, and the expansion path is
+specific.
+6.1M US computer/mathematical professionals as
+the beachhead; 70.7M management and
+professional; ~1B knowledge workers as the ceiling.
+Then cross-device, then the agent context layer.
+Section 02
+The pricing is deliberate, not
+guessed.
+$108/year against Granola ($18/mo), Raycast Pro
+($8/mo), ChatGPT Pro ($20/mo), Workona
+(~$7–8/mo). Free core is the acquisition engine; Pro
+is the retention product.
+Section 05
+The go-to-market is a demo, not
+an ad budget.
+The 'Hey Evo, continue' clip is the entire top of
+funnel; Show HN, Product Hunt, Mac power-user
+newsletters, creator videos, and a 300-person warm
+list.
+Section 06
+00.2  The one thing you must not do
+WARNING
+Do not answer a product or engineering question. If he asks how classification works, how restoration 
+is implemented, or why Rust — hand it to Bhavit in one sentence: "That's Bhavit's area — the short 
+version is the engine is 16 crates with a regression gate; he can go deeper." A CBO who improvises on 
+architecture reads as a founder who does not know his own company. A CBO who defers cleanly reads 
+as a team that knows its own split. 
+00.3  How the call will actually flow for you
+Minutes What is happening Your state
+0–5 Bhavit opens, frames, states the problem. Muted. On camera. Listening. Do not nod
+continuously — it reads as nervous on video.
+5–11 Demo. Watch the chat panel. If he types a question
+during the demo, answer it in text so Bhavit does
+not break the flow.
+11–20 Bhavit takes product and technical questions. Take notes on every question he asks. You will
+need them for the follow-up.
+20–27 You get the commercial questions: market,
+pricing, competition, GTM.
+Answer in the order given in section 08. Short
+answers, one number each.
+27–30 Bhavit closes, asks for next step. One sentence of support at most. Do not add a
+second close.
+The Commercial Half  ·  Manavv  ·  Confidential page 3
+
+----- page 4 -----
+01  Who you are talking to, from a
+commercial angle
+You do not need his biography — Bhavit's book has it. You need to know what he believes about 
+markets, because your answers should be shaped by it. 
+01.1  Four beliefs that shape how he hears your market answer
+His belief Where it comes from What it means for you
+Generalist AI is
+commoditising; specialised
+companies win on a
+proprietary corpus, a closed
+loop, and a verifier.
+"The Neolab Wild West", NEA blog,
+June 2026 (co-authored with Lila
+Tretikov).
+Do not sell a horizontal 'AI memory for
+everyone'. Sell a wedge with a corpus that
+compounds and an outcome that is
+verifiable.
+The exit for AI-native
+companies is a strategic that
+is buying capability it cannot
+build, not a general
+acquisition.
+Same essay: strategics "are
+buying specific capability, not
+general intelligence"; top-decile
+software trades at 15–18× NTM
+revenue.
+Your exit story should name capability
+buyers, not just 'a big company'. Think
+Atlassian, Adobe, Microsoft, Notion,
+Raycast's acquirer profile.
+AI products need
+outcome-grounded metrics
+inside production workflows,
+not lab benchmarks.
+His NEA profile. Never quote a TAM without a conversion
+assumption attached. He will ask what the
+funnel actually is.
+Craft matters — he says he
+can tell when a product was
+made with love.
+His NEA profile. Talk about the product the way a user
+would, not the way a consultant would.
+Specific beats strategic.
+01.2  What he is comparing you to
+Every associate has a mental set of comps. For Evo, the likely set is: 
+Company Why it is in his head The lesson to draw
+Granola Mac-first meeting notetaker; $4.25M seed
+(2023) → $125M Series C at $1.5B (March
+2026). The closest prosumer-Mac success of the
+last three years.
+Started with a narrow job (meeting notes),
+expanded into context infrastructure, and
+never abandoned the prosumer wedge for
+enterprise. That is exactly Evo's sequence.
+Raycast Mac power-user launcher; $47.9M raised; Pro at
+$8/mo; expanding to Windows and iOS.
+A Mac-only prosumer tool can become a
+platform. But it took three years of free
+usage before monetising — a reminder
+that the free core is a strategy, not a
+giveaway.
+Rewind /
+Limitless
+NEA portfolio company; $33M+ raised; Mac app
+killed December 2025; team to Meta.
+The cautionary comp. Continuous capture
+without restoration did not retain
+mainstream users. Your answer must
+separate Evo on scope and on the
+restoration outcome.
+Wispr NEA portfolio; $280M Series B at $2B in August
+2026, expanding from dictation into meeting
+notes.
+Adjacent surface, same user, and NEA
+already believes in the 'ambient input
+layer' thesis. Useful ally, not a threat.
+Obsidian Bootstrapped local-first notes; ~1.5M MAU;
+estimated $2–25M ARR.
+The ceiling of pure local-first without a
+paid expansion layer. Your answer must
+explain why Evo is not this.
+The Commercial Half  ·  Manavv  ·  Confidential page 4
+
+----- page 5 -----
+GOOD TO KNOW
+You will score points by naming these before he does. An associate who hears a founder say "our 
+closest comparable is Granola, and here is why we are earlier in the journey but structurally similar" 
+relaxes, because it means the founder has done the work he was about to do. 
+02  The market, built bottom-up — and how
+to defend it
+02.1  The three layers
+Layer Number Source What it is for
+Beachhead 6.1M US Bureau of Labor Statistics, Current
+Population Survey 2024, computer and
+mathematical occupations
+This is who you build for
+first: developers, data,
+design engineers.
+Adjacent
+professional
+70.7M BLS CPS 2024, management,
+professional and related occupations
+The first expansion: PMs,
+consultants, analysts,
+founders.
+Ceiling ~1B Gartner estimate, knowledge workers
+worldwide
+Only ever as a ceiling.
+Never as a plan.
+Device reach (not
+people)
+2.5B Apple active
+devices · 1.4B+
+Windows
+Apple Q1 FY2026 earnings; Microsoft Why cross-platform
+matters: the same user
+has two machines and a
+phone.
+WARNING
+The trap in every market slide: adding the layers together and calling it a TAM. He will divide your 
+number by your price and ask how you get there. Never present the 1B figure without immediately 
+saying what the first-year conversion assumption is. 
+02.2  The bottom-up version — the one to say out loud
+SAY THIS
+I don't think a top-down TAM is useful for a product that isn't launched. Here's the bottom-up. There 
+are about 6.1 million computer and mathematical professionals in the US. If we get 1.6% of them to 
+activate in the first year — that's 100,000 users — and 9% of those convert to Pro at $108 a year, 
+that's about $970K in ARR. That's the month-12 number on the last slide. It doesn't require a new 
+category to exist; it requires a good Mac app and a launch. 
+GOOD TO KNOW
+This is the single strongest commercial sentence available to you, because it is arithmetic a partner 
+can check in their head: 6.1M × 1.6% = ~100K; × 9% = ~9,000 paying; × $108 = ~$970K ARR. 
+Memorise the three numbers and the multiplication. 
+02.3  If he pushes on the ceiling
+His challenge Your answer
+"6 million developers is not a
+venture-scale market."
+"It isn't, on its own. It's the beachhead. The product is not developer-only — it's
+anyone whose work lives across more than one app. The 70.7 million is the
+second ring; the 1 billion is the ceiling. And the monetisation expands before
+the audience does: Pro is cross-device and automation, and Teams is a
+per-seat motion."
+The Commercial Half  ·  Manavv  ·  Confidential page 5
+
+----- page 6 -----
+His challenge Your answer
+"Prosumer tools don't reach
+venture scale."
+"Most don't, because they price at $5 and never build a paid layer beyond the
+core. Our paid layer is different: sync, cross-device continuity, automation of
+learned workflows. That is the thing a professional cannot replace with a free
+alternative. Granola is the proof that a $10–20 prosumer product can become a
+billion-dollar company if the paid layer is the workflow, not the feature."
+"Why not go enterprise first?
+Higher ACV."
+"Because the buyer is not the user. Enterprise buys continuity for teams, and
+teams don't feel this pain until individuals do. Bottom-up is the only motion
+that produces the retention evidence an enterprise buyer will accept. Teams is
+the third act, not the first."
+"What if the market is just
+'people who like productivity
+apps'?"
+"That's the failure mode and I take it seriously. The filter is: does your work
+span more than three apps and more than one project at a time? If yes, you
+have the pain. If you work in one tool all day, you don't. That's why the wedge
+is developers, designers and founders — the three groups where the answer is
+always yes."
+The Commercial Half  ·  Manavv  ·  Confidential page 6
+
+----- page 7 -----
+03  Positioning: the sentence that wins the
+category
+03.1  What you are, in six words
+Everyone remembers. Nobody restores. That line is already on slide 8 and it is the best line in the 
+deck. Your job is to make him repeat it to a partner. 
+03.2  The three-layer positioning, and why each layer is needed
+Layer The claim Why it is needed What it must not
+become
+Category "Work continuity" — not search,
+not memory, not a second brain.
+Every competitor is positioned as
+memory or search. A new name
+creates a separate budget and a
+separate evaluation.
+Do not say "we're
+creating a new
+category" without a
+demo. Arc did that and
+died of it.
+Differentiato
+r
+Local-first, on-device, no cloud, no
+screenshots, no audio.
+It converts the biggest objection
+(permissions, privacy) into the
+reason to choose you.
+Do not claim it as a
+moat on its own. It is
+the licence to operate;
+the moat is restoration
+and classification.
+Proof It restores the whole workspace,
+not a link to it.
+This is the only claim no
+competitor can make today. It is
+the demo.
+Do not extend it to "any
+app, perfectly" — say
+capability tiers and be
+honest about the 20%.
+03.3  The sentences to use, and the ones to avoid
+Say Not
+"Evo puts you back in the work." "Evo is your second brain."
+"It restores the whole workspace — apps, files, tabs, the terminal." "It remembers everything you do."
+"Local-first: metadata on your Mac, nothing in the cloud." "It's like Rewind but better."
+"The observation layer is commoditising. We own classification and
+restoration."
+"Nobody else is doing this."
+"Free core, $108 a year for cross-device and automation." "We'll figure out monetisation later."
+"The wedge is developers, designers and founders with parallel
+projects."
+"Everyone who uses a computer."
+WARNING
+The comparison to Rewind is the most dangerous sentence you can say. If you say "like Rewind but 
+better", you have accepted their framing and their failure. The correct separation is: they recorded 
+everything and restored nothing; we record metadata and restore the workspace. 
+The Commercial Half  ·  Manavv  ·  Confidential page 7
+
+----- page 8 -----
+04  The competitive map — and the five
+names he will say
+04.1  The map, in the order he will think of them
+Who What they actually do Where they stop Your one-line
+separation
+OpenAI —
+Computer History
+(Aug 2026)
+Accessibility-based activity stream,
+summarised into searchable
+memories and a timeline; opt-in;
+macOS; Pro/Business/Enterprise.
+Cloud processing for the
+summaries; no restoration; no
+project classification; no
+Windows.
+"They built a
+searchable memory.
+Nobody goes back to
+the workspace."
+Microsoft —
+Recall
+Local screenshots on Copilot+ PCs,
+encrypted, opt-in, searchable
+timeline.
+Windows-only; screenshots not
+metadata; no restoration;
+damaged brand.
+"Recall is a screenshot
+archive. We're a
+restoration engine."
+Raycast Launcher, now with agents, memory
+and screen awareness (v2.0, Aug
+2026).
+Command-driven; launches
+apps rather than restoring
+state; no cross-day body of
+work.
+"Raycast launches the
+app. Evo restores the
+work inside it."
+Granola Mac meeting notetaker → enterprise
+context layer; $1.5B valuation.
+Only sees meetings; no desktop
+observation; no restoration.
+"Granola hears your
+meetings. Evo sees
+your work."
+Rewind / Limitless Screen + audio recording,
+searchable; pivoted to a pendant;
+acquired by Meta; Mac app killed
+Dec 2025.
+Everything. "They recorded
+everything and
+restored nothing.
+That's the lesson we
+were built on."
+04.2  The five names he will say, and the answer for each
+If he says… Do not say… Say
+"What about ChatGPT?" "It doesn't do what we
+do."
+"It's a general assistant with a memory of your activity. It
+answers questions about your day. It doesn't reopen the twelve
+windows you need to continue. And it processes the activity on
+its servers; the memory files it writes back are unencrypted
+Markdown. That's a different trust posture."
+"Recall?" "Microsoft already
+failed."
+"Recall is a good product with a bad launch, and it's
+Windows-only. It also stores screenshots — we store metadata,
+which is a different privacy argument, and a much smaller
+storage footprint."
+"Raycast could build
+this."
+"They won't." "Raycast is the one I watch. They have our user and paid
+distribution. But their model is command-first — they launch.
+Restoration is about holding state across apps and days, which is
+a different architectural commitment. If they move, we have a
+head start on the corpus."
+"Isn't this just a session
+manager?"
+"No, it's AI." "Session managers restore what you saved. Evo reconstructs
+what you were doing, without you saving anything. That's the
+difference between a bookmark and a memory."
+"What about the
+open-source capture
+tools?"
+"They're toys." "They're not toys — some are good, and they commoditise
+observation, which is fine. Observation was never the moat.
+Classification and restoration are."
+04.3  The competitor you should worry about most — and say so
+If he asks "who worries you?", the answer that earns respect is the honest one: Raycast , because it 
+already owns the user, the distribution and the paid relationship, and it has begun shipping memory 
+and screen awareness. Naming your strongest competitor unprompted is a signal of judgement, not 
+weakness. 
+The Commercial Half  ·  Manavv  ·  Confidential page 8
+
+----- page 9 -----
+SAY THIS
+Raycast worries me most, and I'd rather say that than pretend otherwise. They have the exact user, 
+they have a paid base, and they've started shipping memory. What they don't have is a reason to take 
+over other people's windows. If they decide that's their future, we'd have to be faster than them — 
+which is why the next twelve months are about depth in restoration, not breadth in features. 
+05  Pricing: $108, and the arithmetic behind
+it
+05.1  The price in context
+Product Price What it is What it tells you
+Evo Pro $108 / year ($9/mo) Unlimited workspaces,
+cross-device continuation,
+encrypted sync,
+learned-workflow automation
+—
+Granola ~$18/mo individual;
+$14/user/mo business;
+$35 enterprise
+Meeting notes and context Prosumer AI can hold
+~$200/yr if the job is daily.
+Raycast Pro $8/mo annual (+$8 for
+advanced AI)
+Launcher and AI Mac power users pay, but
+the ceiling is low.
+ChatGPT Pro $20/mo General assistant The reference price in the
+user's head.
+Workona ~$7–8/mo Tab workspaces The closest cheap substitute
+— and it only does tabs.
+Rewind
+(historical)
+~$10–20/mo Screen memory Priced like a utility; churned
+like one.
+WARNING
+Your deck says "Free to trust. $9 a month to live in." That is good copy, but $9 × 12 is $108, not a $9 
+monthly plan — make sure the slide doesn't imply monthly billing. He will notice the discrepancy 
+because it is his job to notice unit economics. 
+05.2  The unit economics — say these numbers, not adjectives
+Metric Value How it is derived
+Blended ARPU (paying) $108/yr Annual-only Pro plan.
+Free-to-paid assumption 9% of activated users by month 5 Your deck's 1,500 paying out of 25,000 users.
+State it as an assumption, not a forecast.
+Month-12 arithmetic ~$970K ARR 100,000 users × 9% × $108 = $972,000.
+Gross margin Very high — software plus a small
+sync cost
+Local processing means near-zero marginal
+compute per user until sync is on.
+CAC Unproven — the bet is that the
+demo is the ad
+Organic launch channels, no paid acquisition in
+year one.
+Payback Immediate if CAC is near zero One year at $108 covers a user acquired for
+under $50.
+The Commercial Half  ·  Manavv  ·  Confidential page 9
+
+----- page 10 -----
+GOOD TO KNOW
+The strongest pricing argument you have is structural, not numerical: the free tier is not generosity, it 
+is the acquisition channel. A local-first product has no server cost per free user, so a free user is almost 
+free to serve. That is a structural advantage against any cloud competitor, and it is the answer to "how 
+do you acquire users without a budget?" 
+05.3  The four pricing questions he will ask
+Question Answer
+"Why not charge from day
+one?"
+"Because retention is the only thing that matters in year one, and a paywall
+before habit exists kills the retention data. Pro at month three gives us two
+months of clean cohort data before anyone pays."
+"Why $108 and not $60 or
+$180?"
+"$60 doesn't fund sync infrastructure and support at the volume we expect.
+$180 puts us above ChatGPT Pro in the user's head, and we are not the assistant
+— we are the thing that makes the assistant's context useful. Nine dollars a
+month is below the 'ask my manager' line and above the 'hobby tool' line."
+"What's in Pro that isn't free?" "Cross-device continuation, encrypted sync, unlimited workspaces, and
+automation of learned workflows. The free core captures, classifies and restores
+on one device — forever. The paid layer is the same work, on all your devices,
+without you rebuilding it."
+"What's the Teams price?" "Not set. The design is per-seat with admin controls and shared handoffs. I don't
+want to price it before I know what a team actually shares, because the wrong
+answer here caps the enterprise motion."
+The Commercial Half  ·  Manavv  ·  Confidential page 10
+
+----- page 11 -----
+06  Go-to-market: the first 5,000 users
+06.1  The plan, as four motions
+Motion What it is Target Why it works for this product
+1. The demo as
+the ad
+The 'Hey Evo, continue the investor
+deck' clip, 20–30 seconds, native to X,
+LinkedIn, TikTok and YouTube Shorts.
+Top of funnel Restoration is visually
+undeniable. It is one of the few
+products where a screen
+recording is the pitch.
+2. Launch
+surfaces
+Show HN, Product Hunt, r/macapps,
+Mac power-user newsletters
+(MacStories, 512 Pixels style), and
+20+ creator videos.
+5,000 activated
+by week 6
+Mac power users congregate in
+exactly these places, and they
+reward local-first and privacy.
+3. The warm 300 Personal outreach to every person
+who said they wanted it, at launch.
+First 300
+activations
+Highest-intent cohort you will
+ever have. They also become
+your first retention cohort.
+4. Referral Invite a friend to unlock sync — the
+free tier gets sync only through a
+referral.
+~45K of the
+100K path
+Sync is the paid feature; giving
+it away for a referral is cheaper
+than buying the user.
+06.2  What the plan is worth, honestly
+Your deck's path to 100K is: launch spikes (Show HN, Product Hunt, 20+ creator videos) ≈ 25K, referral 
+≈ 45K, Windows and iPhone launches ≈ 30K. That is a plausible shape, but each number is an 
+assumption. Do not defend them as forecasts — defend them as a plan with checkpoints . 
+SAY THIS
+The 100K number is a plan, not a forecast. The checkpoint that matters is week six: 5,000 activated. If 
+we don't hit it, the launch motion is wrong and I'd rather know that in six weeks than in six months. I'll 
+publish the number either way. 
+GOOD TO KNOW
+Offering to publish a number whether or not you hit it is the single most credible thing a CBO can say 
+to an investor, because it prices your own accountability. Very few founders do it. 
+06.3  The channels, ranked by likelihood of working
+Ran
+k
+Channel Realistic first-month contribution Risk
+1 Show HN 3,000–30,000 visits on a front-page
+day; 50–400 signups
+A technically literate audience will
+interrogate the permissions and the
+privacy claim. Be ready.
+2 Product Hunt 1,000–5,000 visitors for a top-10 day;
+30–150 signups
+Declining platform; needs a warm
+audience before launch day.
+3 Creator videos Highly variable; one good video can
+outperform every other channel
+Costs money or equity; the creator
+must actually use it.
+4 r/macapps Small but high-intent Strict self-promotion rules; 30-day
+account age and karma minimums.
+5 The warm 300 Highest conversion of any channel Only 300 people; not a growth engine.
+The Commercial Half  ·  Manavv  ·  Confidential page 11
+
+----- page 12 -----
+07  The business model he will test to
+destruction
+At pre-seed nobody expects a proven model. They expect a model that is coherent — where the 
+pricing, the product, the distribution and the retention story all point the same way. Here is the 
+coherence argument, and the three places it is weakest. 
+07.1  The coherence argument, in one paragraph
+SAY THIS
+The product has three properties that make it a business rather than a feature. It is local , so the free 
+tier costs us almost nothing to serve — free is an acquisition strategy, not a subsidy. It compounds , 
+because classification improves with tenure, so the switching cost grows with time rather than 
+shrinking. And it expands naturally : the same body of work follows you to a second device, which is 
+exactly where the paid layer sits. Local, compounding, cross-device — that's the whole model. 
+07.2  The three weakest points — name them before he does
+Weakness Why it is real How to answer it
+Prosumer churn Point Nine's classic critique: prosumer
+products have high churn and low
+expansion. $9/mo buyers cancel.
+"Churn is the number I'd bet the company
+on. The counter is tenure: the product's value
+grows with the corpus, so month six should
+be stickier than month one. If it isn't, the
+thesis is wrong and I'd rather find that out
+with 1,000 users than 100,000."
+Expansion is weak One user, one seat. No team buyer in year
+one.
+"True in year one. Teams is month 12+ and it
+is a different product: shared handoffs and
+admin controls. I'm not going to claim a team
+motion before the individual one retains."
+Distribution is
+unproven
+No paid acquisition experience, no
+audience, no launch yet.
+"I don't have a distribution advantage. What I
+have is a product that demonstrates in 20
+seconds, which is the cheapest distribution
+there is if the clip works. The week-six
+number tells us whether that's true."
+07.3  The comparison he may make, and the answer
+Scaling prosumer acquisition is insanely hard... The problem with the
+prosumer segment is that it has a high churn and a low account revenue
+expansion potential.
+— Point Nine Capital, 2017 — still the standard bear case on prosumer SaaS
+SAY THIS
+I know that argument and I think it's right for a $5 utility. It's less right for a product that accumulates 
+state. Obsidian, 1Password and Granola all live in this segment and all beat the churn problem by 
+making the product the place where the user's own material lives. Evo is the same shape: after a 
+month, leaving means starting from amnesia. 
+The Commercial Half  ·  Manavv  ·  Confidential page 12
+
+----- page 13 -----
+08  The fifteen commercial questions
+These are the questions that will come to you. Answer each in under 45 seconds, with one number, 
+then stop. The silence after a short answer is where he decides you are credible. 
+CQ1.  "How big is the market?"
+SAY THIS
+Bottom-up: 6.1 million US computer and mathematical professionals. If we activate 1.6% in year one 
+that's 100,000 users; 9% paying at $108 is about $970K ARR. The adjacent ring is 70.7 million 
+management and professional occupations, and the ceiling is roughly a billion knowledge workers 
+worldwide. 
+WARNING
+Do not open with the billion. 
+CQ2.  "Who is the customer, exactly?"
+SAY THIS
+A developer, designer or founder who works on three or more projects at once, across more than five 
+apps, and loses their place at least once a day. Not 'knowledge workers'. That person, described 
+precisely. 
+WARNING
+The narrower the description, the more credible the market. 
+CQ3.  "Why would someone pay $9 a month for this?"
+SAY THIS
+Because the alternative is ten minutes a day of reconstruction. At a $60/hour blended rate, ten 
+minutes a day is $2,500 a year. Nine dollars a month is a rounding error against that — but only if we 
+actually save the ten minutes, which is what the retention number proves. 
+WARNING
+Never argue from 'it's cheap'. Argue from the value of the time. 
+CQ4.  "What's the CAC?"
+SAY THIS
+Unproven. The plan is organic: the demo clip, Show HN, Product Hunt, creator videos and a warm list of 
+300. If the clip doesn't travel, we'll know in six weeks and the model changes. 
+WARNING
+Do not invent a CAC number. 'Unproven' is a legitimate pre-seed answer. 
+CQ5.  "What's the churn assumption?"
+SAY THIS
+I don't have one I'd defend. The design assumption is that churn falls with tenure because the 
+product's value compounds. The first 1,000 users will tell us whether that's true. 
+WARNING
+An invented churn number is worse than none. 
+The Commercial Half  ·  Manavv  ·  Confidential page 13
+
+----- page 14 -----
+CQ6.  "How do you get the first 5,000 users?"
+SAY THIS
+Three motions in parallel: the demo as the ad, launch surfaces — Show HN, Product Hunt, r/macapps, 
+Mac newsletters — and personal outreach to the 300 people who already asked for it. Target is week 
+six. 
+WARNING
+Name the week, not the quarter. 
+CQ7.  "Why won't a big company just bundle this?"
+SAY THIS
+They will bundle a shallow version — Apple with Spotlight, Microsoft with Recall, OpenAI with Computer 
+History. None of them restores third-party application state across operating systems. That is the part 
+that requires taking over other vendors' windows, and it's the part they have no incentive to own. 
+WARNING
+Concede the shallow version. Defend the deep one. 
+CQ8.  "What's the expansion path?"
+SAY THIS
+Three steps: cross-device at month five, which is where the paid layer lives; the agent context API at 
+month six to twelve, where every agent needs to know what state the work is in; and Teams after that, 
+where the buyer becomes a company. 
+WARNING
+Each step should have a price and a metric attached. 
+CQ9.  "What's the exit?"
+SAY THIS
+A strategic buying capability it can't build: a productivity platform, an OS vendor, or an AI platform that 
+needs a desktop context layer. Atlassian paid $610M for The Browser Company because it needed a 
+browser it couldn't build. The same logic applies to context. 
+WARNING
+Name the logic, not a wish. 
+CQ10.  "Who are your competitors?"
+SAY THIS
+OpenAI Computer History, Microsoft Recall, Raycast, Granola, and the previous generation — Rewind, 
+Workona, session managers. All of them stop at retrieval or at saving. None restores a workspace. 
+WARNING
+Never say 'no competition'. 
+The Commercial Half  ·  Manavv  ·  Confidential page 14
+
+----- page 15 -----
+CQ11.  "Why is this a company and not a feature?"
+SAY THIS
+Because it accumulates. A feature is something you turn on. Evo is something that gets better the 
+longer you use it, and the switching cost is the corpus. Features don't have switching costs. 
+WARNING
+This is the best answer in the book. Learn it verbatim. 
+CQ12.  "Why Mac first?"
+SAY THIS
+Because the users with the pain are disproportionately on Macs, the permissions model is more 
+mature, and a Mac-only product can be built by two people. Windows is the expansion, not the origin. 
+WARNING
+Do not say 'because we only know Mac'. 
+CQ13.  "What about enterprise sales?"
+SAY THIS
+Not in year one. The individual product has to prove retention before a team buyer will believe a 
+continuity pitch. Teams is month 12+, with admin controls, policy and shared handoffs. 
+WARNING
+Enterprise-first at pre-seed reads as a fantasy. 
+CQ14.  "What does the next round need to look like?"
+SAY THIS
+Seed at month 12 on roughly $1M ARR run-rate and a retention curve that has flattened. That's what 
+the $1.5M is designed to produce — not a bigger TAM slide. 
+WARNING
+This answer tells him you understand NEA's economics. 
+CQ15.  "What would make you shut this down?"
+SAY THIS
+If D30 retention didn't hold above 25% at a thousand users, I'd stop. The whole thesis is that the 
+product compounds; if it doesn't, the product is wrong. 
+WARNING
+A founder with a kill criterion is a founder who can be trusted with money. 
+The Commercial Half  ·  Manavv  ·  Confidential page 15
+
+----- page 16 -----
+09  The numbers you own
+Bhavit owns the engineering numbers. You own these. Know them cold — not approximately. 
+Number Value Source / derivation
+US beachhead 6.1M BLS CPS 2024, computer and mathematical
+occupations
+US adjacent ring 70.7M BLS CPS 2024, management, professional and
+related
+Global ceiling ~1B knowledge workers Gartner estimate
+Free-to-paid 9% Your deck: 1,500 paying of 25,000 users at
+month 5
+Pro price $108/yr Deck, slide 9
+Month-12 users 100,000 Deck, slide 11
+Month-12 ARR ~$970K 100,000 × 9% × $108
+Month-5 paying 1,500 Deck, slide 5
+Week-6 activated 5,000 Deck, slide 5 — the checkpoint that matters
+Round $1.5M at $12M post Deck, slide 11; 12.5% dilution
+Runway 18 months Deck, slide 11; seed from month 12
+Use of funds 60% team / 30% growth / 10%
+infra, security, legal
+Deck, slide 11
+WARNING
+Two of these numbers are assumptions, not data: the 9% conversion and the 100,000 users. If he asks 
+"where does 9% come from?", the honest answer is "it's a planning assumption based on comparable 
+prosumer conversion, not a measured number — the first 1,000 users will replace it." Do not dress an 
+assumption as a benchmark. 
+The Commercial Half  ·  Manavv  ·  Confidential page 16
+
+----- page 17 -----
+10  Working the call with Bhavit
+10.1  The handoff signals
+Signal What it means What you do
+Bhavit says "Manavv, do you
+want to take the market
+side?"
+He is handing you a question he
+knows is yours.
+Take it immediately, no preamble.
+Answer, then stop.
+Bhavit pauses and looks at the
+camera after a question
+He does not want to answer it; it is
+yours.
+Count one second, then answer.
+Bhavit starts explaining
+pricing or competition
+He is covering for you. That is a failure
+of the split.
+Interject once, politely: "Can I add the
+number on that?" and then give it.
+Thomas addresses you
+directly by name
+He is testing whether the CBO is real. Answer with a number, not an opinion.
+Bhavit says "we" and looks at
+you
+He wants corroboration, not a new
+point.
+One sentence of agreement with a
+fact attached.
+10.2  Three sentences you should have ready at any moment
+• "The bottom-up is 6.1 million US professionals; 1.6% activation and 9% conversion gets us to 
+about $1M ARR at month 12." 
+• "Free core, $108 a year for cross-device and automation — the free tier is the acquisition channel 
+because local-first costs us nothing to serve." 
+• "Everyone remembers. Nobody restores. That's the whole company." 
+10.3  What you add that he cannot
+Bhavit built the thing; you have looked at 90+ market and competitor studies and captured a $300K 
+market across APAC and Europe. That is your credential, and it should appear exactly once, when he 
+asks why you are the CBO — not before. 
+SAY THIS
+I've run 90+ market and competitor studies on this category, and before this I helped capture a $300K 
+market across APAC and Europe. What that taught me is that positioning beats features in this 
+segment — the product that wins is the one that names the job better than the incumbent. That's why 
+'everyone remembers, nobody restores' is the line, and not a feature list. 
+The Commercial Half  ·  Manavv  ·  Confidential page 17
+
+----- page 18 -----
+11  When to stay quiet
+The most valuable thing a CBO can do on a first call is not speak. Every extra voice is another 
+chance to contradict the founder, and associates are trained to notice inconsistency between 
+co-founders. 
+Situation Why silence is right
+Bhavit is answering a technical question Two answers to one question reads as a team that hasn't reconciled its
+story.
+Thomas is thinking The pause after a question is where he decides what he actually cares
+about. Filling it costs you information.
+Bhavit is telling the origin story It is his story. Interrupting it breaks the only emotional beat in the
+meeting.
+Thomas is describing NEA's process He is telling you how to win. Write it down; do not comment.
+The demo is running Any narration competes with the visual. Let the restore be the
+argument.
+GOOD TO KNOW
+Speak when: a commercial question is addressed to the room, a number is needed, or Bhavit explicitly 
+hands you the floor. That is roughly four times in thirty minutes. Four good interventions is a strong 
+performance; ten average ones is a weak one. 
+The Commercial Half  ·  Manavv  ·  Confidential page 18
+
+----- page 19 -----
+12  Your follow-up: the market appendix
+Within 24 hours of the call, send a three-page market appendix . Not the deck again — the 
+document he cannot write himself, and the one that gets pasted into the memo's market section. 
+Page Contents Why it earns its place
+Page 1 — The
+bottom-up
+The 6.1M → 1.6% → 100K → 9% → ~$1M ARR
+arithmetic, with every assumption labelled as an
+assumption.
+It is the only version of the market
+he can check in his head.
+Page 2 — The map The competitor table from section 04, with one line
+per company on where it stops.
+It proves you have looked, which is
+rarer than it should be.
+Page 3 — The first
+90 days
+Week 1–6 launch plan, the channels, the 5,000-user
+checkpoint, and the retention metric you will
+publish.
+It converts the conversation into a
+plan with dates, which is what a
+memo needs.
+SAY THIS
+I've attached a three-page appendix — the bottom-up market, the competitive map, and the first 
+ninety days. I've labelled the assumptions as assumptions so you can see where the risk is. If any of it 
+is wrong, tell me and I'll correct it. 
+The Commercial Half  ·  Manavv  ·  Confidential page 19
+
+----- page 20 -----
+13  Cheat sheet
+13.1  Your five answers
+Question Your answer, in one breath
+Market "6.1M US professionals, 1.6% activation, 9% conversion, ~$1M ARR at month 12."
+Pricing "Free core, $108 a year for cross-device and automation. Free is the acquisition channel
+because local-first costs us nothing to serve."
+Competition "Everyone remembers. Nobody restores. OpenAI and Microsoft stop at retrieval; Raycast
+stops at launching."
+GTM "The demo is the ad. Show HN, Product Hunt, Mac newsletters, 20+ creators, and 300
+warm people."
+Why a company "It accumulates. A feature doesn't have a switching cost; a corpus does."
+13.2  The four numbers to have on a sticky note
+# Number What it is
+1 6.1M US beachhead
+2 9% Free-to-paid assumption (label it an assumption)
+3 $108 Annual Pro price
+4 ~$970K Month-12 ARR, derived — not forecast
+13.3  The three things never to say
+DO NOT
+"Everyone who uses a computer." The market is a specific person, described precisely. 
+DO NOT
+"We'll figure out monetisation later." The model is the reason he is listening. 
+DO NOT
+"No one else is doing this." Someone always is. Name them and explain where they stop. 
+13.4  The night before
+• Read section 08 out loud once. Time yourself. Every answer under 45 seconds. 
+• Write the bottom-up arithmetic on paper until you can do it without looking. 
+• Read the competitor table until you can name, for each company, the sentence that separates 
+you. 
+• Agree the handoff signals with Bhavit in a 10-minute call. Decide who answers pricing before you 
+are both on the line. 
+• Sleep. You are not the one doing the demo, and a calm second founder is worth more than a 
+rehearsed one. 
+The Commercial Half  ·  Manavv  ·  Confidential page 20
+
+----- page 21 -----
+14  The comparables, and exactly what each
+one proves
+You will be asked "who has done this before?" The answer is not one company — it is a set of 
+companies that each prove one piece of your model. Learn the numbers, because the numbers are 
+what make the comparison credible rather than decorative. 
+14.1  Granola — the prosumer-Mac proof
+Round Date Amount Valuation Lead
+Seed May 2023 $4.25M — Lightspeed, betaworks
+Series A Oct 2024 $20M — Spark Capital
+Series B May 2025 $43M $250M NFDG (Nat Friedman, Daniel Gross)
+Series C Mar 2026 $125M $1.5B Index Ventures (Danny Rimer)
+What it proves: a Mac-first product for a narrow job (meeting notes) can go from a $4.25M seed to a 
+$1.5B valuation in under three years — if it expands from the job into the context layer around it. 
+Granola added team Spaces, a personal API, an enterprise API, and an MCP server. The expansion was 
+the valuation, not the notetaker. 
+What it does not prove: that Evo gets there. Granola's adoption was driven by a visible, 
+socially-transmissible moment — a meeting where the notes appear without a bot joining. Evo's 
+equivalent moment is the restore, which is private. That is your distribution risk, and you should name it 
+before he does. 
+14.2  Raycast — the Mac power-user proof
+Fact Value
+Total raised $47.9M across seed ($2.7M, 2020), Series A ($15M, 2021), Series B ($30M, Sep 2024)
+Series B lead Atomico; Accel, Coatue, YC, Atlassian Ventures, World Innovation Lab participated
+Angels Guillermo Rauch (Vercel), Thomas Dohmke (GitHub), Tobi Lütke (Shopify)
+Monetisation Free forever tier; Pro $8/mo annual
+Time to monetisation Roughly three years after launch
+Expansion Windows and iOS announced with the Series B
+What it proves: a Mac-only prosumer tool can raise a real Series B — but it took three years of free usage 
+to build the base, and the expansion to Windows and iOS was the growth story, not the Mac product. 
+This is the closest structural analogue for Evo's platform plan, and it is also a warning about how long the 
+free period lasts. 
+14.3  Obsidian, 1Password, Setapp — the local-first economics
+Company Scale Monetisation Lesson
+Obsidian ~1.5M MAU (estimate);
+bootstrapped, $0 raised;
+estimated $2–25M ARR — a
+wide, undisclosed band
+Free app; paid Sync
+($5/mo) and Publish
+($10/mo)
+Local-first can build a huge user
+base; the paid layer is sync and
+publishing, not the editor.
+1Password $620M raised at a $6.8B
+valuation (2022); >$400M ARR
+by 2025
+Individual and team
+subscriptions; >75% of
+later revenue from
+businesses
+Trust plus local encryption became
+an identity business, not a
+password utility.
+Setapp ~12,500 paid users and ~$1.5M
+ARR in its first year
+Bundled Mac app
+subscription
+Mac users will pay for a bundle
+when the curation is the value.
+The Commercial Half  ·  Manavv  ·  Confidential page 21
+
+----- page 22 -----
+Company Scale Monetisation Lesson
+Tailscale ~$45M ARR (2025 estimate);
+~$1.5B valuation
+Free for personal, paid for
+teams
+Local-first networking monetised
+by expanding into organisations.
+WARNING
+Do not quote Obsidian's or Tailscale's revenue as fact. Both are third-party estimates and the spread 
+on Obsidian is enormous ($2M to $25M). If he asks, say "estimates, not disclosed" — he will respect the 
+precision and it protects you if he knows the real number. 
+14.4  The failures, and what they teach
+Company What happened The lesson for Evo
+Rewind →
+Limitless → Meta
+$33M+ raised; Mac app killed 19 Dec
+2025; team to Reality Labs.
+Continuous capture without a restoration outcome
+did not retain mainstream users. NEA funded this
+— the ghost in the room.
+Arc → Dia →
+Atlassian
+Arc in maintenance from May 2025; Dia
+acquired for $610M announced (filed at
+$488.3M).
+Leading with category-creation language and a
+new interaction paradigm is expensive. Evo should
+describe the job, not invent a category name.
+Workona, session
+managers
+Small, cheap, still alive, never
+venture-scale.
+Proves the demand exists at the low end, and
+proves that saving a session is not the same as
+restoring a body of work.
+Humane $116M for the assets against ~$230–241M
+raised.
+The downside case for hardware-led personal AI.
+Evo is software-only, which is the right call.
+The Commercial Half  ·  Manavv  ·  Confidential page 22
+
+----- page 23 -----
+15  How category winners described
+themselves early
+This is the section most founders never read, and it changes how you pitch. A study of how 
+category-defining companies described themselves in their earliest public words — compared to 
+how they describe themselves now — found a consistent pattern: almost every winner started 
+narrow, concrete, and unglamorous. The expansive category language came later, after the narrow 
+product worked. 
+Company Earliest public description Current description The gap
+Slack "an instant-message-based team
+communication tool" (2013)
+"a cloud-based team
+communication platform"
+The original was
+smaller, not bigger.
+Loom "easy-to-use screen recorder" "the video messaging platform for
+work"
+Same.
+Raycast "a command-line inspired native app to
+save developers time on non-coding
+tasks" (Show HN, 2020)
+"a collection of powerful
+productivity tools within an
+extendable launcher"
+Same.
+Tailscale "a fully functional mesh VPN that can be
+deployed in minutes" (2020)
+"Zero Trust Networking" Same.
+Figma "a technology startup that will allow
+users to creatively express themselves
+online" (2012)
+"a collaborative web application
+for interface design"
+The early version was
+vaguer, not grander.
+Arc "a brand new category of software"
+(2022)
+"your home on the internet" The only one that led
+with category creation
+— and it is the one that
+was folded into an
+acquisition.
+SAY THIS
+We describe Evo as the thing that puts you back in the work. Not 'a new category'. The category exists 
+— people already pay for bad versions of it. We just happen to be the first one that restores instead of 
+searching. 
+GOOD TO KNOW
+That sentence is your positioning answer, and it is stronger than any category-creation claim. It also 
+pre-empts the "you're inventing a market" objection: you are not, you are taking an existing budget 
+(session managers, tab managers, note tools, launchers) and producing a better outcome. 
+The Commercial Half  ·  Manavv  ·  Confidential page 23
+
+----- page 24 -----
+16  What kills prosumer companies — and
+which of these you have
+There is a well-established bear case against prosumer software, and it is mostly right. Your job is 
+not to refute it. It is to show which parts apply to Evo, which do not, and what would tell you if you 
+were wrong. 
+Failure mode The argument Does it apply to
+Evo?
+What you say
+High churn Point Nine: prosumer products have
+high churn, because a $10 buyer
+cancels without a meeting.
+Possibly. Unproven
+either way.
+"Churn is the number I'd bet the
+company on. The design bet is that
+it falls with tenure. If it doesn't, the
+thesis is wrong."
+Weak expansion One user, one seat; no procurement;
+no land-and-expand.
+Yes, in year one. "Teams is month 12+, and it is a
+different product. I'm not going to
+claim a team motion before the
+individual one retains."
+Acquisition
+treadmill
+Paid acquisition for low-ARPU
+products rarely pays back.
+No, by design. "No paid acquisition in year one.
+The demo is the ad. The free tier
+costs us nothing to serve, which is
+a structural advantage over any
+cloud competitor."
+Apple absorbs it A native, free, good-enough version
+appears.
+Partly. "Apple will build the shallow
+version. Restoration requires
+orchestration of third-party app
+state across OSes, which is not a
+feature Apple wants to own."
+CEILING: it stays a
+beloved $2–25M
+ARR utility
+The most common outcome for
+excellent Mac software.
+This is the real risk. "That is the failure I take most
+seriously. The answer is that the
+product expands before the
+audience does: cross-device, then
+the agent context layer. If we're still
+a $5M Mac app in 24 months, I will
+have failed."
+16.1  The honest ceiling, stated once
+Published research on this exact segment puts the realistic ceiling for a paid prosumer Mac utility at 
+$5M–$40M ARR, and the defensible serviceable market for a new entrant at $1M–$4M ARR in three to 
+five years. That is the gravity you are fighting. Do not pretend it does not exist — use it. 
+SAY THIS
+The honest version of this market is that a Mac utility with our pricing tops out somewhere between 
+five and forty million in ARR. That is a good business and a bad venture outcome, and I know the 
+difference. The reason Evo isn't that is the same reason Granola isn't a notetaker any more: the 
+product has a second act — cross-device continuity — and a third — the context layer for agents. If 
+neither happens, you're right and we're a $20M company. I'm asking you to bet on the second act, and 
+I'm telling you exactly which number proves it. 
+GOOD TO KNOW
+Naming the ceiling yourself is the highest-status move available to you in this meeting. Associates 
+hear "we're going to be a billion-dollar company" twenty times a week; they almost never hear a 
+founder describe the gravity of their own market accurately. 
+The Commercial Half  ·  Manavv  ·  Confidential page 24
+
+----- page 25 -----
+17  Pre-seed benchmarks: what "good" looks
+like
+17.1  The round in the market
+Metric Value Source quality
+Median post-money SAFE cap,
+$1M–$2.5M rounds
+~$15M Carta-derived, secondary
+reporting
+Median pre-seed pre-money
+valuation
+~$7.7M (Q3 2025) PitchBook-NVCA via secondary
+reporting
+Share of pre-seed rounds using
+SAFEs
+~90% (Q1 2025) Carta primary, State of
+Pre-Seed
+Typical pre-seed round size $500K–$2.5M Multiple secondary sources;
+consistent
+Pre-seed → seed graduation Roughly 45–55%, as a planning heuristic
+— not a published Carta table
+Explicitly an estimate
+Seed → Series A within two years ~30.6% (2018 cohort) vs ~15% (2022
+cohort)
+Carta-derived, secondary
+Your position: $1.5M at $12M post is slightly below the median cap for this round size, which is a 
+deliberate and defensible choice — you are trading valuation for speed and for a clean cap table. Say 
+that if he asks. Founders who price below the median and can explain why look disciplined; founders who 
+price at the top of the range without a reason look like they are optimising the wrong variable. 
+17.2  The traction bar at pre-seed
+Metric Weak Credible Strong Where Evo sits
+Waitlist / intent <200 signups 200–1,000 1,000+ engaged 300+ verbal —
+between weak and
+credible
+D7 retention <25% 25–40% >40% 22/26 (85%) — but
+method unclear, so
+unproven
+D30 retention <10% 10–20% >25% with a flattening
+curve
+19/26 (73%) — same
+caveat
+Activation <15% 15–25% >25% Not yet measured;
+instrument at launch
+Paid conversion 0% 2–5% >5% Not applicable — Pro
+launches month 3
+Qualitative No signal Repeated unprompted
+use
+Users ask for more Strong: 50+
+interviews, people
+asking for access
+WARNING
+Do not present the D30 number in the same breath as "strong". Present the number, then the method, 
+then the caveat. The caveat is what makes the number believable. 
+The Commercial Half  ·  Manavv  ·  Confidential page 25
+
+----- page 26 -----
+18  The launch playbook, in detail
+18.1  The first four weeks
+Wee
+k
+Do Measure Decision gate
+0 Landing page live with a real waitlist and
+an email capture. Demo clip cut to 20
+seconds.
+Visitors, email
+conversion
+If email conversion is under 10%,
+the clip is wrong.
+1 Show HN, Tuesday morning US time. Title
+describes the job, not the category.
+Front-page rank,
+signups
+Front page → proceed. Flopped →
+rewrite the title and retry in two
+weeks.
+2 Product Hunt. Line up 50 supporters
+beforehand; the launch is choreography,
+not luck.
+Top-10 placement,
+signups
+Top 10 → proceed. Outside → the
+audience was too small; go to
+creators.
+3 20 creator videos; Mac newsletters;
+r/macapps (check the self-promotion
+rules first).
+Activation per channel Kill any channel with <50
+activations and double the best
+one.
+4 Personal outreach to the 300-person
+warm list.
+Activation rate This cohort becomes your first
+retention cohort.
+18.2  The launch post, written before the launch
+The single highest-leverage artefact in the whole GTM is the first three sentences of the Show HN post. 
+Draft it now, so that it is not written at 2 AM by two people who have not slept. 
+Show HN: Evo — it reopens your entire workspace when you say "continue"
+I kept losing 20 minutes every morning rebuilding the same 26 windows. So
+I built a local-first macOS app that watches what you work on, groups it into
+bodies of work, and rebuilds the whole environment when you say "Hey Evo,
+continue the investor deck".
+Everything runs on-device: no cloud, no screenshots, no audio. It's Rust, ~16
+crates. It restores apps, files, tabs and terminal directories. It does not do
+every app perfectly — there's a capability tier system and I'll tell you which
+ones fail.
+Happy to answer anything about the Accessibility permission, the
+classification engine, or why I think search is the wrong primitive.
+— Draft — rewrite in your own voice before posting
+GOOD TO KNOW
+Notice what the draft does: it names the pain in the first person, states the outcome in one sentence, 
+declares the privacy posture, and pre-empts the two things HN will attack — permissions and the claim 
+of universal restoration. That last paragraph is the difference between a hostile thread and a good one. 
+18.3  The channels, with their real rules
+The Commercial Half  ·  Manavv  ·  Confidential page 26
+
+----- page 27 -----
+Channel The rule that catches founders What to do
+Show HN Technical audience; promotional framing
+gets flagged and killed.
+Lead with what you built and what does not work.
+Product Hunt Needs an audience before launch day; the
+platform amplifies, it does not create.
+50 committed supporters, launch at 12:01 AM PT,
+respond to every comment.
+r/macapps Self-promotion rules: account age and
+karma minimums; affiliation disclosure
+required.
+Build the account for 30 days before posting; ask
+the mods first.
+Mac newsletters Editors want a story, not a press release. Offer an exclusive angle: the privacy architecture,
+or the Rust engine.
+Creator videos Paid, and the creator must actually use the
+product.
+Give a lifetime licence plus a fee; never pay for a
+scripted endorsement.
+The Commercial Half  ·  Manavv  ·  Confidential page 27
+
+----- page 28 -----
+19  The ninety days after a yes
+If he asks "what does the money buy, week by week?", this is the answer. It is also the plan you will 
+be held to, so make sure you believe it. 
+19.1  Hiring plan on $1.5M
+Role When Why this role first Cost assumption
+Engineer #1 — macOS /
+restoration
+Week 1–2 Restoration coverage per app is the
+bottleneck on the product's core claim.
+Market rate in India; roughly
+$30–45K/yr fully loaded
+Engineer #2 — Windows
+capture
+Week 3–6 The Windows public beta is the first
+expansion and the cheapest way to
+double the addressable users.
+Same
+Growth #1 — launch and
+content
+Week 2 The launch is a project, not a marketing
+function.
+$25–40K
+Growth #2 — creator and
+community
+Month 3 Distribution after launch day. Same
+Contract: security audit Before sync
+ships
+Local-first is a security promise; get it
+examined.
+$15–30K one-off
+Legal / incorporation /
+SAFE
+Week 1 Nothing else can close without it. $5–15K
+NOTE
+These are planning assumptions, not quotes. If he asks for a budget, give him the shape — team is 
+60%, launch and growth 30%, infrastructure/security/legal 10% — and say the exact numbers are 
+being priced this month. Do not invent precise salaries. 
+19.2  The milestones, and what each one unlocks
+Milestone Date Unlocks
+macOS public beta + landing page +
+waitlist instrumented
+Week 2 The first measurable funnel.
+5,000 activated users Week 6 Proof the launch motion works — the number to
+publish either way.
+Encrypted sync + iPhone capture Month 2–5 The paid layer becomes real; Pro can launch.
+Pro live; 1,500 paying; 25,000 users Month 5 Revenue, and the first cohort of payers to retain.
+Evo API for agents; first team pilots Month 6–12 The third act, and the seed narrative.
+100,000 users; 9,000+ Pro; ~$1M ARR
+run-rate
+Month 12 The seed round, on numbers rather than deck.
+19.3  What you will be measured on, whether or not he says so
+• D30 retention at 1,000 users. Not at 26. The first cohort that can survive a statistical challenge. 
+• Paid conversion at month 5. The 9% assumption either holds or it does not. 
+• The published number. If you promise weekly retention and then go quiet, that is the story he 
+tells. 
+• Time-to-restore. Your product claim, measured, per release. 
+The Commercial Half  ·  Manavv  ·  Confidential page 28
+
+----- page 29 -----
+20  Rehearsal drills
+20.1  The four drills, in order
+Drill How to run it Pass condition
+1. The 45-second
+answer
+Bhavit fires the fifteen commercial questions in
+random order. You answer each in under 45
+seconds, no notes.
+Every answer contains exactly one
+number and ends with a full stop, not a
+trailing 'and, you know…'
+2. The hostile
+follow-up
+For each answer, he asks 'why?' twice. You must
+not repeat yourself.
+The second 'why' produces a new fact,
+not a louder version of the first answer.
+3. The handoff He starts answering a commercial question
+badly; you have to take it without contradicting
+him.
+You take the floor in one sentence,
+answer, and hand it back.
+4. The silence After each answer, he stays quiet for five full
+seconds.
+You do not fill the silence. This is the
+hardest drill and the most valuable.
+20.2  The five sentences to memorise verbatim
+1. "6.1 million US professionals; 1.6% activation and 9% conversion gets us to about $1M ARR at 
+month 12." 
+2. "Free core, $108 a year for cross-device and automation — and free costs us almost nothing 
+because everything runs locally." 
+3. "Everyone remembers. Nobody restores." 
+4. "Apple will build the shallow version. Restoration is the deep version, and it's against their 
+interest." 
+5. "The honest ceiling for a Mac utility is five to forty million ARR. We're not building a Mac utility 
+— that's what the next two acts are for." 
+The Commercial Half  ·  Manavv  ·  Confidential page 29
+
+----- page 30 -----
+21  Your own narrative
+Bhavit's story is 'the user who became the builder'. Yours must be different, and it must explain 
+why a company with one technical founder needs a CBO on day one — because in the room, that is 
+the question underneath every question addressed to you. 
+21.1  The 45-second version
+SAY THIS
+I'm the commercial half. I've done 90+ market and competitor studies on this category, and before Evo 
+I helped capture a $300K market across APAC and Europe. What that work taught me is that in a 
+crowded category, positioning beats features — the company that wins is the one that names the job 
+better than the incumbent. That's my job here: make sure Evo is the product that owns the word 
+'restore' before anyone else does, and that the pricing and the launch are built around that word rather 
+than around a feature list. 
+21.2  What you own, stated as responsibilities
+Function What you actually do How it shows up in a diligence call
+Positioning Owns the category language, the competitor
+map, and the one-line pitch.
+You will be the person a partner calls to ask
+'how is this different from X?'
+Pricing Owns the free/Pro split, the price, and the
+expansion logic.
+You will be asked to defend the 9%
+conversion assumption.
+Channels Owns launch, creators, newsletters, community,
+and the referral design.
+You will be asked what the CAC is and why
+the demo travels.
+Market model Owns the bottom-up arithmetic and the
+milestone plan.
+You will be asked to show the model, not the
+TAM slide.
+21.3  The question you will get, and the answer
+What does a CBO do at a two-person pre-seed company?
+— The question behind the question: is this co-founder necessary, or is this a friend?
+SAY THIS
+At two people, the CBO is the person who makes the market legible before we spend a rupee on it. 
+That means the positioning, the pricing, the competitor map, and the launch plan — and then running 
+the launch, because there is nobody else. In year two it becomes hiring and partnerships. Right now 
+it's the difference between launching into a market and launching into a void. 
+The Commercial Half  ·  Manavv  ·  Confidential page 30
+
+----- page 31 -----
+22  Final checklist
+22.1  The night before
+✓ Item
+☐ The bottom-up arithmetic, written from memory, three times.
+☐ The fifteen commercial questions, answered out loud in under 45 seconds each.
+☐ The competitor table memorised: for each company, one sentence on where it stops.
+☐ The handoff signals agreed with Bhavit — who answers pricing, who answers market, who closes.
+☐ Camera, mic, lighting and background tested on the actual call platform.
+☐ The three-page market appendix drafted, ready to send within 24 hours.
+22.2  During the call
+✓ Item
+☐ Camera on, muted by default, notes open in a second window.
+☐ Every question he asks, written down verbatim — the follow-up depends on it.
+☐ Four interventions maximum. Quality over presence.
+☐ One number per answer. Then stop talking.
+☐ No contradictions of Bhavit, ever, in front of him.
+22.3  After the call
+✓ Item
+☐ The three-page market appendix, sent within 24 hours.
+☐ The list of questions he asked, with the answers you gave, so nothing is repeated inconsistently.
+☐ Any number you were unsure about, verified and corrected in the next message — before he asks.
+☐ The competitor he mentioned, researched properly so the next conversation is sharper.
+The Commercial Half  ·  Manavv  ·  Confidential page 31
+
+----- page 32 -----
+23  Three objections, scripted in full
+These are the three commercial objections that most often end a pre-seed memo. Each script is 
+written to be spoken — roughly 60–90 seconds — with the structure: concede the true part, 
+reframe the frame, give the number, name the test. Do not memorise the words; memorise the 
+four moves. 
+Objection 1 — "This is a feature, not a company."
+The move: concede that the observation layer is a feature. Then show that the thing you own is not the 
+observation. 
+SAY THIS
+I agree with the premise, and it's the reason I don't pitch this as a memory product. Watching what 
+happens on a screen is a feature — it's a weekend project now, there are open-source versions, and 
+OpenAI ships it for free inside ChatGPT. If that were the company, you'd be right to pass. What we own 
+is two things that aren't features: the classification that decides which body of work an activity belongs 
+to, and the execution layer that reopens the machine in the right state. Both of those require a local 
+daemon, a per-app capability model, and a corpus that accumulates per user. That's not a feature; 
+that's a system. And the test is simple — if it were a feature, a competitor could ship it in a quarter. 
+Nobody has, in a year and a half. 
+WARNING
+The trap is getting louder about the feature claim. Concede it fully in the first sentence, then move the 
+frame to what is not a feature. If you argue that observation is hard, you lose — because it isn't any 
+more. 
+Objection 2 — "The market is a niche of Mac power users."
+The move: accept the shape of the beachhead, then show the monetisation expands before the audience 
+does. 
+SAY THIS
+The beachhead is narrow — I'd rather have a narrow beachhead than a broad maybe. But two things 
+expand, and they expand in a specific order. First the product: the same Mac app becomes a paid 
+cross-device product at month five, so revenue per user triples before the audience changes at all. 
+Second the platform: Windows doubles the addressable base and the iPhone capture surface makes 
+the corpus continuous, which is the thing that makes the paid layer feel necessary. The audience that 
+matters in year one is 6.1 million US computer and mathematical professionals, and we need 1.6% of 
+it. That's not a niche argument — that's a penetration argument. 
+GOOD TO KNOW
+The phrase "revenue per user triples before the audience changes" is the strongest sentence in this 
+book. It answers the market-size objection with the pricing model rather than with a TAM. 
+Objection 3 — "Prosumer subscriptions never become
+venture-scale."
+The move: agree with the base rate, then show the two structural differences that make Evo not a 
+typical prosumer subscription. 
+The Commercial Half  ·  Manavv  ·  Confidential page 32
+
+----- page 33 -----
+SAY THIS
+The base rate says you're right: most prosumer subscriptions don't get there, because they charge five 
+dollars for a utility, acquisition costs more than the lifetime value, and the user can substitute a free 
+tool. Two things are different here. One is cost: because everything runs locally, a free user costs us 
+almost nothing to serve, so we can be free for as long as it takes to build the habit — that's the 
+structural advantage a cloud competitor cannot match. The other is switching cost: the product 
+accumulates the user's own work memory, so the value grows with tenure instead of decaying. 
+Granola is the proof that this shape can reach a billion-dollar valuation, and it started as a free Mac 
+app for a narrower job than ours. 
+WARNING
+Do not say "we're not a prosumer company". You are. Own the category and differentiate inside it. 
+Denying the label makes you look like you don't know your own business model. 
+23.4  The one-line answers, if you have ten seconds
+Objection Ten-second answer
+"Feature, not a company." "Observation is a feature. Classification and restoration are a system."
+"Niche market." "Narrow beachhead, and revenue per user triples before the audience changes."
+"Prosumer never scales." "Free costs us nothing because it's local — so the free period can last as long as it
+needs to."
+"Apple will build it." "Apple builds the shallow version. Restoring third-party app state across OSes isn't a
+feature they want to own."
+"Rewind failed." "Rewind recorded everything and restored nothing. That's the thesis we were built
+against."
+"Why not enterprise?" "Enterprise buys continuity for teams; teams don't feel it until individuals do."
+"What's the exit?" "A strategic buying capability it can't build — the $610M for The Browser Company is
+the shape."
+"What's your CAC?" "Unproven. The bet is that the demo is the ad; week six tells us if that's true."
+The Commercial Half  ·  Manavv  ·  Confidential page 33
+
+----- page 34 -----
+24  Evidence appendix: what each figure is
+worth
+Every commercial number in this book, graded. If a number is a C, do not present it as fact to an 
+investor — present it as an estimate, or do not present it. 
+Figure Value Source Gra
+de
+How to say it
+US computer & mathematical
+professionals
+6.1M BLS CPS 2024 A "BLS, 2024."
+US management, professional
+& related
+70.7M BLS CPS 2024 A "BLS, 2024."
+Knowledge workers worldwide ~1B Gartner estimate C "Gartner's estimate — I
+use it as a ceiling only."
+Apple active devices 2.5B Apple Q1 FY2026 earnings A "Apple's own number."
+Windows active devices 1.4B+ Microsoft statements B "Microsoft's figure,
+approximate."
+Granola Series C $125M at $1.5B, Mar
+2026
+TechCrunch, Bloomberg,
+company blog
+A As stated.
+Granola seed $4.25M, May 2023 TechCrunch A As stated.
+Raycast total raised $47.9M PitchBook, company blog,
+TechCrunch
+A As stated.
+Raycast Pro price $8/mo annual Company pricing page A As stated.
+Obsidian ARR $2–25M (estimate) Third-party estimates;
+undisclosed
+D "Undisclosed; estimates
+range widely." — better
+to omit.
+1Password ARR >$400M (2025) Company/press reporting B "Reported."
+Rewind total raised >$33M TechCrunch, company
+statement
+A As stated.
+Rewind Mac app shutdown 19 Dec 2025 Company page, 9to5Mac A As stated.
+Atlassian / Browser Company $610M announced;
+$488.3M filed
+Atlassian filing A "Filed at $488.3M."
+Median pre-seed SAFE cap
+($1M–2.5M rounds)
+~$15M Carta-derived, secondary B "Around $15M by Carta's
+data."
+Median pre-seed pre-money ~$7.7M (Q3 2025) PitchBook-NVCA via
+secondary
+B "Roughly $7.7M."
+SAFEs share of pre-seed ~90% (Q1 2025) Carta, State of Pre-Seed A As stated.
+Pre-seed → seed graduation 45–55% Estimate, not a Carta table D "Roughly half, as a
+planning heuristic."
+Prosumer ceiling for a Mac
+utility
+$5–40M ARR Research estimate in your
+own repo's digest
+C Present as "the honest
+ceiling", not as data.
+Point Nine on prosumer churn Quote, 2017 Point Nine's own Medium post A "Point Nine's argument,
+and it's mostly right."
+Free-to-paid 9% Assumption Your deck N/A "A planning assumption,
+not a measured number."
+100K users by month 12 Plan Your deck N/A "A plan with a checkpoint
+at week six."
+WARNING
+The two figures to avoid entirely: Obsidian's ARR (the estimate band is too wide to be useful) and the 
+45–55% pre-seed graduation rate (it is a synthesis, not a Carta table). If either comes up, say 
+"undisclosed" or "roughly half, as a heuristic" and move on. 
+The Commercial Half  ·  Manavv  ·  Confidential page 34
+
+----- page 35 -----
+24.1  The three things you can say with total confidence
+1. The beachhead is 6.1 million US professionals and you need 1.6% of it to reach 100,000 users. 
+Government data plus arithmetic. 
+2. The free tier is structurally cheap because everything runs locally. This is an architectural fact, 
+not a forecast. 
+3. Nobody restores the whole workspace. Verified against OpenAI's documentation, Microsoft's 
+Recall, Raycast's v2.0 release, Granola, and the open-source capture tools. 
+24.2  The one thing you cannot say yet
+"We know it retains." You have a 26-person cohort from a previous build, measured by a method you 
+should check before Monday. That is a signal, not knowledge. Everything else in this book survives 
+being pushed. That one does not — so say it as a signal, and name the test that would turn it into 
+knowledge. 
+The Commercial Half  ·  Manavv  ·  Confidential page 35

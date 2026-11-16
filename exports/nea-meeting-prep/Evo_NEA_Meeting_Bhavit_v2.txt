@@ -1,0 +1,2789 @@
+
+
+===== PAGE 1 =====
+
+PRIVATE · PREPARED FOR BHAVIT
+The NEA Meeting
+Everything you need for the thirty minutes that decide whether this is a
+company.
+MEETING
+Thomas Joshi, Associate — NEA
+Friday 23 October 2026 · 11:00am Pacific
+WHERE
+Zoom · thirty minutes · 11:30pm your time
+CAME VIA
+Lila Tretikov, Partner, Head of AI Strategy
+THE ASK
+$1.5M on a $12M post-money SAFE
+Prepared for Bhavit Saini. Private and confidential. Every claim in this book carries a confidence grade and a source — see
+Section 23.
+
+
+===== PAGE 2 =====
+
+Contents
+PART I — ORIENTATION
+00
+How to use this book
+3
+01
+The thirty minutes, minute by minute
+4
+02
+What changed in the code
+5
+PART II — THE COUNTERPARTY
+03
+Thomas Joshi, in detail
+7
+04
+NEA: the machine behind him
+9
+05
+The memo he has to write about you
+11
+PART III — THE HONEST COMPANY
+06
+The claim ledger
+13
+07
+The traction conversation
+16
+08
+The vibe-coding answer
+18
+09
+What the code actually does
+20
+10
+Incorporation and visas
+24
+PART IV — THE MEETING
+11
+The first four minutes
+26
+12
+The demo
+28
+13
+The forty questions
+30
+14
+The ten that decide it
+37
+15
+When you don't know
+38
+PART V — THE CLOSE
+16
+Your questions for him
+41
+17
+The ask, the cap, the negotiation
+43
+18
+After the call
+46
+19
+If it's a no, and if it's a yes
+48
+PART VI — REFERENCE
+20
+The one-page card
+49
+21
+Numbers you must know cold
+50
+22
+Do not say
+51
+23
+Sources and confidence
+52
+Sections 00-05 are the ones to read tonight. Section 05 explains the whole meeting in three pages. Section 20 is the card you
+keep next to you on the call.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+2
+
+
+===== PAGE 3 =====
+
+START HERE
+00 How to use this book
+This book exists for one meeting: Friday 23 October 2026, 11:00am Pacific, thirty minutes,
+Zoom, with Thomas Joshi, Associate at NEA. Nothing else. It is not a general fundraising guide
+and it does not cover any earlier project of yours.
+You are a first-time founder and you have two days. So the book is built backwards from a single
+question: what does Thomas need to believe at 11:30am on Friday that he does not believe at
+11:00am? Everything here serves that.
+Read it in this order
+1. Section 01 and 20. The run of show and the one-page card. Read these first, tonight. They tell
+you what the thirty minutes actually look like.
+2. Sections 03, 04 and 05. Who Thomas is, what NEA is, and — the most important section in the
+book — the memo he has to write about you after the call. If you understand the memo, every
+answer in the meeting becomes obvious.
+3. Sections 06 to 10. The honest company: what your deck overstates, what the code actually does,
+how to say the vibe-coding thing, and the visa answer.
+4. Sections 11 to 15. The words. Opening, demo, forty questions, the ten that decide it, and what to
+say when you don't know.
+5. Sections 16 to 19. The close, the ask, and what happens afterwards.
+Four rules for the thirty minutes
+Rule
+What it means in practice
+Never invent a number
+Not once. One invented figure contaminates every true one, and an associate's
+job is to check. If you don't know, say so — Section 15 gives you the exact words.
+Short answers
+Twenty to forty seconds. He will ask a follow-up if he wants more. Long answers
+read as anxiety and eat the clock.
+Correct your own deck
+before he does
+Every overstatement in your deck is a trap you set for yourself. Section 06 lists
+them and gives you the sentence that defuses each.
+Ask for the next step out
+loud
+He will not offer one unprompted. The last ninety seconds are yours and most
+founders waste them.
+Two layers, everywhere
+Every answer in this book comes in two layers: one sentence you can say out loud , then the
+deeper layer if he leans in. You do not need to memorise the deeper layer. You need to know it
+exists, so that a follow-up doesn't knock you over.
+WHY THIS WORKS
+You are not being tested on being impressive. You are being tested on whether you are legible,
+honest, and specific. Thomas has met hundreds of founders. He cannot tell in thirty minutes
+whether Evo will win. He can tell, very quickly, whether you are the kind of person who knows
+what he knows and what he doesn't. That is the whole game.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+3
+
+
+===== PAGE 4 =====
+
+RUN OF SHOW
+01 The thirty minutes, minute by minute
+Thirty minutes is short. It is roughly four thousand words of conversation in total, both sides. If
+you spend the first six minutes on a monologue, you have spent a fifth of the meeting.
+Assume this shape. It will not go exactly like this — he may open with questions — but knowing the
+shape stops you from panicking when it drifts.
+Clock
+What is happening
+Your job
+0:00–0:02
+He says hello, thanks you, maybe apologises
+for rescheduling. Small talk.
+Be warm, be brief. Do not fill silence.
+0:02–0:05
+"Tell me about Evo." This is the only open
+invitation you will get.
+Deliver the four-minute opening in Section 11,
+verbatim or close to it.
+0:05–0:12
+Either a demo, or he starts drilling.
+Offer the demo explicitly: "I can show you in
+three minutes, or keep talking — your call."
+Then follow his answer.
+0:12–0:25
+Questions. This is where the meeting is won
+or lost.
+Sections 13 and 14. Short answers. Concede
+fast where you're weak.
+0:25–0:29
+Your turn.
+Ask three questions from Section 16. The first
+one is always what happens next and on what
+timeline.
+0:29–0:30
+Close.
+One sentence on what you'll send. Then stop
+talking.
+The only thing you must not do
+Do not let the meeting end without knowing what the next step is and what would make it a
+yes. If you leave and cannot answer those two questions, the meeting failed regardless of how well
+the conversation went. Section 16 gives you the exact phrasing so it doesn't sound like begging.
+CAREFUL
+The meeting is at 11:00am Pacific on Friday 23 October. That is 11:30pm IST. If the call is at
+11:00am PT and the window is an hour, you will be on the call from 11:30pm to midnight your
+time. Eat before. Turn every notification off. Do not take it from a bed or a moving car. Section 20
+has the physical checklist — read it the night before, not the morning of.
+Before Friday, do these five things
+1. Confirm the exact start time and ask for the Zoom link if you don't already have it. Two lines,
+no paragraph. He has asked for times twice already; he responds to short emails, so keep it short.
+2. Run cargo test --workspace once. You will be asked, directly or obliquely, how the
+codebase is. You want a number from this week, not from September.
+3. Record a 90-second screen demo with narration, and put it in a link you can paste in one line. It
+is your fallback and your follow-up asset.
+4. Write the three sentences you will say about traction (Section 07). Say them out loud until
+they don't sound defensive.
+5. Read Section 05 twice. The memo is the whole book compressed.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+4
+
+
+===== PAGE 5 =====
+
+SINCE YOUR LAST PREP
+02 What changed in the code — and why it
+changes the conversation
+Your repo moved a long way between late September and mid-October. That matters for this
+meeting, because the strongest version of your story is no longer "I built an app that
+restores windows." It is "I built an engine that reports what it actually did, and refuses when it
+cannot be sure." That is a very different, and much more investable, sentence.
+What is actually new
+Surface
+What it does now
+Why an investor should care
+Pods
+A body of work became a first-class object you
+switch between: a card with a name, a colour, a
+mini-stage, a one-line reason for where it
+resumes, and hotkeys. Entering one arranges its
+windows into a layout the work remembers
+across days.
+This is the first visible product
+surface that is not a list. It shows the
+model, not the machinery.
+Restore receipts
+Every restoration now reports per-target, in
+three buckets — opened, raised (brought an
+existing window forward), or
+unopened-with-reason — plus a separate
+verification result: Verified, Unverified, Failed.
+It means the product can tell you
+what it didn't do. Almost no
+consumer product does this.
+Thomas's whole thesis is about
+evaluation; this is evaluation shipped
+as UI.
+The
+ground-truth
+gate went hard
+A committed corpus from one real recorded day
+— 10,392 events, 164 hand-labelled resources
+across six bodies of work — replays through the
+engine inside cargo test, with hard assertions:
+no thread may fuse two labelled works, no
+leisure resource may anchor a work, and replay
+must be deterministic.
+It converts "we have a model" into
+"we have a test that fails when the
+model is wrong." This is the single
+most impressive thing in the repo to
+a technical investor.
+Gestures are
+declarations
+Dragging a window onto a pod card, merging
+two cards, ejecting a window — each emits the
+engine's own Declaration. The physical
+correction is the merge path. There is no code
+path from inference to a merge.
+It answers "what happens when it's
+wrong?" with architecture instead of
+promises.
+Voice that reads
+the engine
+ASK and BRIEF verbs narrate the actual engine
+state — "You made Evo desktop. You left off at
+Evo desktop." — computed at request time, so
+the spoken answer is as fresh as the log.
+The voice is not a chatbot bolted on.
+It is a read-out of the same evidence
+the rest of the product uses.
+The restoration
+audit
+An engineering pass that found and fixed real
+defects: a wrong-window risk on duplicate titles,
+a voice path reading a different authority than
+the read path, an embedding loader that could
+reach the network.
+It exists as a written document in the
+repo. If he asks "how do you know it
+works?", you can point at a document
+that lists what does not.
+Three numbers to carry in your head
+16 crates
+Rust workspace, roughly 138,500 lines. Native daemon, native desktop shell, no
+Electron.
+~1,270 tests
+1,272 passed, 0 failed, 4 ignored, across 59 suite results at the last recorded
+full offline run (5 October 2026). The September figure was 1,087 across 57
+suites. Re-run it before Friday so you can say this week.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+5
+
+
+===== PAGE 6 =====
+
+1 real corpus
+10,392 events, 164 hand labels, six works, two days of one person's actual
+machine. Small. Say it's small.
+CAREFUL
+Do not say "1,087 tests" on Friday if the repo says 1,272. Do not say "CI runs on every commit" —
+there is no .github directory in the repo. What is true is that the gate is a hard test inside the
+workspace suite, and that the same check exists as a CLI that exits non-zero. Say that. Section 09
+gives you the exact phrasing.
+The one-paragraph version of the new story
+SAY THIS
+"The thing I'd want you to see is not the window count. It's that the engine has to be honest.
+Every restore now reports what it opened, what it brought forward, and what it couldn't open —
+three buckets, no silent skips. And there's a corpus of a real working day in the test suite that fails
+the build if two separate bodies of work ever merge. I'd rather ship a product that tells you what
+it didn't do than one that looks seamless and lies."
+WHY THIS WORKS
+This paragraph does something no amount of enthusiasm can: it makes you sound like an
+engineer to an engineer, without claiming to be one. It is also completely true, which means it
+survives any follow-up.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+6
+
+
+===== PAGE 7 =====
+
+THE COUNTERPARTY
+03 Thomas Joshi, in detail
+He is an Associate. That word matters more than founders realise, and it cuts both ways. He cannot
+write you a cheque on his own. But he is the person who decides whether the partners ever hear
+your name — and in a firm that runs on partner time, that is real power.
+The facts on the record
+Role
+Associate, Technology Investing Team. Joined 2025. Covers seed / early stage
+and growth.
+Background
+AI researcher and AI engineer before investing. Built infrastructure supporting
+language and classification models for conversational AI in healthcare.
+Education
+B.Sc. in Artificial Intelligence, Columbia University.
+Known for
+Co-author of Stanford DSPy — the prompt-programming framework; one of the
+most widely used pieces of research software to come out of Stanford AI.
+Published
+Co-wrote "The AI Neolab Wild West" (17 June 2026) with Lila Tretikov, Madison
+Faulkner and Andrew Schoen. Co-wrote the CuspAI follow-on post (23 July
+2026).
+Deals on his page
+Anyscale (first invested 2019), Metabase (2019), Factory (2025). Led
+Namespace Labs' Series A; NEA participated in their $42M Series B announced
+late September 2026, led by Scale Venture Partners.
+Also public
+Organised a Neolab event at NEA with Snowflake, Factory and Blackstone,
+where he gave a deep dive on recursive self-improvement. Hosts a podcast.
+Active on X.
+The five things he has actually said
+These are worth learning close to verbatim, because they are his words and using them back to
+him is not flattery — it is evidence that you did the reading. Do it once, lightly, and never twice.
+The utility problem in AI. We have a working recipe for capability, but the second half is
+about defining the right problems and owning evaluation so products create real
+economic value.
+— Thomas Joshi, NEA profile
+We need to treat evaluation, task design, and human-in-the-loop feedback as its own new
+layer.
+— Thomas Joshi, NEA profile
+Living benchmarks, longitudinal memory and agency, and outcome-grounded metrics.
+— Thomas Joshi, NEA profile — his description of what the field needs
+You can tell when a product has been infused with love.
+— Thomas Joshi, NEA profile
+We led their Series A after identifying an emerging bottleneck in the software
+development lifecycle, and knew that [the founder] was the perfect person to address it.
+— Thomas Joshi, on Namespace Labs, X, October 2026
+Why those five quotes are a gift
+Look at what they add up to. He is not a momentum investor. He is not looking for the biggest TAM
+slide. He is looking for a bottleneck in a real workflow, a person unusually positioned to
+remove it, and evidence that the removal can be measured.
+That is almost a description of Evo. Your bottleneck is context reconstruction. You are unusually
+The NEA Meeting  ·  Bhavit  ·  Confidential
+7
+
+
+===== PAGE 8 =====
+
+positioned because you lived the problem and built the engine. And the measurement exists — it's
+the corpus and the recovery buckets.
+SAY THIS
+"The way I'd frame what we're doing, in your language: the bottleneck in knowledge work isn't
+intelligence any more, it's context. The models are good enough; they just don't know where you
+were. That's an emerging bottleneck in a workflow, and it's measurable — either the workspace
+came back or it didn't."
+WHY THIS WORKS
+"Emerging bottleneck" and "measurable" are his own phrases from his own post about
+Namespace. You are not quoting him at him; you are showing that you understand what he looks
+for. Say it once, in the opening, then never again.
+The uncomfortable read
+Now the part nobody will tell you. Look at the deals above: Anyscale, Factory, Metabase,
+Namespace, CuspAI. That is infrastructure for AI applications, developer tooling, and
+frontier research. Enterprise or deep-tech, in almost every case.
+Evo is a consumer Mac app with a prosumer price point. On paper, that is not his pattern. There
+are three honest readings of why he took this call anyway, and you should hold all three at once:
+1. Lila forwarded it. She is Head of AI Strategy and she wrote the Neolab post. A partner
+forwarding your email is the single strongest asset you have in this meeting. It is also not the same
+as conviction.
+2. NEA is actively building a memory thesis. NEA's own fellowship write-ups describe fellows
+working on exactly that: "the AI memory thesis and building out a people intelligence layer." Evo is
+a memory company. You are on-thesis even if you are not on-pattern.
+3. He is curious and it cost him nothing. Associates take thirty-minute calls. It is cheap
+optionality. Do not read enthusiasm into politeness, and do not read politeness as a no either.
+CAREFUL
+The most likely failure mode of this meeting is not that you say something wrong. It is that you
+spend thirty minutes being impressive about a prosumer Mac utility, and he writes a memo that
+says "nice product, too small for us." Section 05 is the antidote, and it is the most important
+section in this book.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+8
+
+
+===== PAGE 9 =====
+
+THE COUNTERPARTY
+04 NEA: the machine behind him
+You need to understand one thing about NEA before you decide how to pitch: the arithmetic of a
+very large fund. Not because it is fatal, but because it explains every strange thing that might
+happen in the meeting.
+The scale
+Founded
+1977. One of the oldest venture firms in the world.
+Assets
+More than $38 billion under management as of 30 June 2026. $35 billion at 31
+December 2025. The figure moves; quote it as "roughly $38 billion" if you must
+quote it at all.
+Current fund
+NEA 19, roughly $5.5 billion target, first close around December 2025 – January
+2026.
+Track record
+More than 285 portfolio company public listings and 515+ mergers and
+acquisitions, on the firm's own count.
+Stage
+Seed through IPO. Historically very IPO-heavy for a venture firm.
+Typical seed round at
+NEA
+Tracxn counts 241 seed investments at an average round size of about $4.4M.
+That is the round, not the cheque.
+The arithmetic that nobody says out loud
+Run this once, privately, and then forget the number:
+$1.5M into NEA 19 is 0.027% of the fund.
+If Evo returned 100× , NEA's $1.5M becomes $150M — about 2.7% of the fund.
+To return the whole fund, that single $1.5M cheque would have to become $5.5 billion.
+This is why large funds often pass on genuinely good small companies, and it is why the phrase
+"too early for us" usually means "too small for the fund." It is not an insult and it is not about you.
+But — and this is the part founders miss — it does not kill you. Firms this size routinely write
+small cheques for three reasons: to keep a relationship warm, to buy an option on a category, and
+because a partner championed it. Your job is to give Thomas a reason that is one of those three,
+and to be the obvious choice if the category turns out to be real.
+SAY THIS
+"I know a $1.5M round is small for NEA 19. I'm not asking you to make it the fund's return. I'm
+asking whether the category is one you want a position in before the seed, and whether we're the
+right team to hold it."
+CAREFUL
+Do not open with that. It is a closing argument, not an opening one. It works at 0:25, when he has
+already decided you are interesting. Said at 0:05, it is a reason to say no.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+9
+
+
+===== PAGE 10 =====
+
+The process, as best it can be reconstructed
+Step
+What happens
+What it means for you
+1. Associate call
+This meeting. Screening. No decision.
+Goal: he wants to keep talking.
+Nothing more.
+2. Deeper diligence
+Two to six further calls, a technical session,
+references, sometimes a customer call.
+Goal: survive the boring questions.
+3. Partner meeting
+Monday partnership meetings are part of
+NEA's long-standing rhythm. Partners vote —
+historically yes, yes-with-reservations, or no —
+with a second vote later.
+Goal: arm Thomas with the memo
+he can defend in that room.
+4. Term sheet and
+close
+Legal, then wire.
+Goal: don't celebrate until the wire
+lands.
+Realistically, from a first associate call to money is four to eight weeks if it happens at all. Plan
+for that. Do not stop fundraising, and do not spend the money before it lands.
+What "on-thesis" means at NEA right now
+Three current threads you should be able to speak to, because they are the water he swims in:
+Vertical AI and workflow data. NEA's stated AI framework leans toward industry-specific agents
+that process unstructured information and integrate with existing business software, where newly
+captured workflow data becomes the advantage. Your per-user work graph is workflow data
+captured at the source.
+The Neolab thesis. Proprietary domain corpus + closed loop + domain-specific verifier. You are
+not a neolab — don't pretend to be — but the three-layer logic maps onto Evo one level up: the
+corpus is the per-user evidence graph, the loop is restore-and-correct, the verifier is whether the
+person kept working in the restored workspace.
+Evaluation as a product problem. This is his most consistent theme. Your recovery buckets and
+the ground-truth gate are the direct answer, and almost no pre-seed company has them.
+NOTE
+A small tactical point that punches above its weight: NEA's own fellowship cohort has been
+working on an AI memory thesis and a people intelligence layer. That means there is probably an
+internal document somewhere that already argues your category matters. You cannot cite it, but
+you can speak to the shape of it. If he says "memory is a crowded space," you can say: "It is — but
+almost all of it is memory of conversations. Almost none of it is memory of work."
+The NEA Meeting  ·  Bhavit  ·  Confidential
+10
+
+
+===== PAGE 11 =====
+
+THE WHOLE MEETING, COMPRESSED
+05 The memo he has to write about you
+Here is the single most useful thing in this book. After the call, Thomas will write a short internal
+memo. It will be two or three paragraphs. If it is good, partners read it. If it is bad, nothing else you
+did matters.
+You cannot see it. But you can predict its shape, because memo-shaped writing is formulaic. It will
+answer five questions in roughly this order.
+The five lines, and what decides each
+Line in the memo
+What fills it
+How you win it
+What is it?
+One sentence. If he can't write one
+sentence, you've lost.
+Give him the sentence yourself, early, and
+repeat it at the end. "A memory layer for
+work that restores your whole workspace
+when you say continue."
+Why now?
+What changed recently that makes this
+possible or necessary.
+Three things, concretely: on-device models
+got small enough; capture APIs matured; and
+an OpenAI product made the category
+legible. Section 13 gives you the exact
+phrasing, including the honest caveat.
+Why this team?
+Is there a reason these people win, or
+are they interchangeable?
+Not "I'm technical." The honest version: you
+lived the problem for two years, you designed
+a behaviour that is genuinely hard to copy,
+and you know exactly which parts you did not
+build. Section 08.
+Is it working?
+Evidence, graded. He will discount
+enthusiasm to zero.
+The corpus. The recovery buckets. The gate.
+And the honest traction number, which is
+smaller than your deck says. Section 07.
+Is it big enough?
+This is the one you are most likely to
+lose.
+Not TAM. The path from a $108 utility to the
+context layer that agents query before they
+act. Section 13, question 31.
+The best possible memo
+Imagine the paragraph Thomas wishes he could write. It looks like this:
+Pre-seed, $1.5M at $12M post. Founder built a local-first work memory for Mac — it
+watches app/file/tab activity on-device and reconstructs the whole workspace on
+command. Unusually for pre-seed, he has an evaluation harness: a labelled corpus from a
+real working day, hard regression gates against work fusion, and per-target restore
+receipts. Traction is early and verbal, but the product is real and he uses it daily.
+Category just got validated by OpenAI's Computer History. Risk: prosumer price point
+and single founder. Angle: this is the context/jurisdiction layer for agents, which is our
+Namespace/Factory thesis one layer down. Worth a partner meeting.
+— What you are aiming for — not a quote from anyone
+Read that again. Notice what is not in it: no TAM number, no "10x better," no adjective about how
+big this could be. It is specific, it concedes the risk, and it names a thesis the firm already holds.
+That last move is the one that gets you a second meeting.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+11
+
+
+===== PAGE 12 =====
+
+The worst possible memo
+Consumer Mac utility that records what you do and reopens your windows. Solo founder,
+pre-revenue, no written traction. Competing with OpenAI and Microsoft. $12M post feels
+rich for a feature. Pass.
+— What you are trying to avoid
+Everything in that paragraph is either true or arguable. That is what makes it dangerous. Your job
+on Friday is to make the first paragraph easier to write than the second — and the way you do that
+is by naming the risk yourself, first, and then showing the path through it.
+WHY THIS WORKS
+This is counter-intuitive and it works almost every time. A founder who says "the honest risk here
+is that this looks like a feature" is treated as an operator. A founder who waits to be accused of it
+is treated as a salesperson. Same fact, opposite outcome.
+The one sentence to leave in the room
+If he remembers one line on Monday morning, you want it to be this:
+SAY THIS
+"Every agent is getting memory. Almost none of them are getting jurisdiction — knowing which of
+your things belong to which job. That's what we produce, and we produce it as a side effect of
+being useful every morning."
+It is short, it is his vocabulary (memory, agents), it reframes you away from "window restorer," and
+it is true. Say it once, near the end, and then stop.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+12
+
+
+===== PAGE 13 =====
+
+EVERY NUMBER IN YOUR DECK, GRADED
+06 The claim ledger
+Your deck has eleven slides and roughly twenty-five factual claims. Most are defensible. Five are
+not, and one of those five will end the meeting if he catches it before you do. This section grades
+every one of them, so that you are never surprised.
+The grades: A — you can defend it with a source or a measurement. B — directionally true but
+softer than it sounds. C — you should reframe it before he asks. D — do not repeat it on the call.
+The deck, slide by slide
+Slide
+Claim
+Grade
+What to say instead
+Problem
+25 min 26 s average time before
+people return to interrupted work
+(Mark et al., CHI 2005)
+A, with
+a
+caveat
+Keep it, but know what it measures: the average time
+before a worker returns to the original task, during
+which they do other work. It is not literally time spent
+reconstructing. If he pushes: "It's the return-to-task
+figure, not a stopwatch on re-orientation."
+Problem
+~1,200 app toggles per workday
+(HBR 2022)
+A
+Fine. It's 137 users across 20 teams in 3 Fortune
+500s, and the paper puts reorientation at just under 4
+hours a week. Don't over-quote it.
+Problem
+Interrupted every 2 minutes
+(Microsoft WTI 2025)
+B
+It's telemetry from Microsoft 365, and the 2-minute
+figure is for the top 20% of users by notification
+volume. Say "up to" or "for the heaviest-notified
+users."
+Product
+MVP running today on macOS
+A
+True. Add the honest qualifier: "It's a working build I
+use; it's not a signed, notarised public release."
+How it
+works
+Everything on your device. Everything
+encrypted.
+C
+"Everything runs on the device. The local store is
+protected by FileVault and the app sandbox today;
+per-record encryption with a Keychain key is required
+before sync ships." Don't claim encryption you haven't
+built.
+How it
+works
+learn their state / "classification
+engine is our core IP"
+B
+The grouping is real and evidence-based. The learning
+is not — there's no fitted model yet. Say "the engine
+accumulates evidence and obeys corrections; fitting
+per-user weights is the next layer." See Section 09.
+Traction
+300+ organic waitlist sign-ups
+D
+There is no list. Say: "I've spoken to 300-plus people
+at hackathons, college events and through work —
+PMs, founder's-office people, SDEs, strategy analysts.
+It's verbal, not a list. I can name where and when."
+Traction
+26 MVP testers running it on their
+work machines
+D
+Nobody has run the current build on their own
+machine. Say: "26 people used an earlier build; 19
+said they'd use it daily once it's finished. Nobody's on
+the current build yet."
+Traction
+19 of 26 still active at day 30 / D7
+22/26, D30 19/26
+D
+This is the danger. It was a previous build, informal,
+measured by whether people came back — not
+instrumented. Say: "That was an earlier build,
+measured informally. I'm not going to present it as
+retention data."
+Traction
+50+ user interviews
+B
+True in substance if you can name who and where. Be
+ready with two specifics: a role, a place, and the
+sentence they said.
+Traction
+Three user testimonial quotes
+D
+They're composites written to convey what people
+said about the concept. If asked: "Those are
+paraphrases of what people told me, not verbatim
+quotes from daily users." Never present them as
+logged feedback.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+13
+
+
+===== PAGE 14 =====
+
+Slide
+Claim
+Grade
+What to say instead
+Why now
+Apple ships a 3B model to every
+Apple-silicon Mac
+C
+Approximate. Safer: "Apple ships on-device foundation
+models through a public framework, which wasn't
+true two years ago." Don't quote the parameter count.
+Why now
+40% of enterprise apps ship
+task-specific agents by end-2026
+(Gartner)
+B
+It's a Gartner projection, not a measurement. Say
+"Gartner projects" and move on.
+Why now
+Microsoft Recall's privacy revolt,
+Rewind shut down
+C
+Rewind didn't shut down — Meta acquired Limitless
+in December 2025 and the Mac app was discontinued.
+Recall didn't fail; it's shipping, Windows-only. Say:
+"Recall launched into a backlash and stayed
+Windows-only; Rewind's Mac app was discontinued
+after the Meta acquisition. There's no trusted
+mass-market answer on Mac."
+Market
+6.1M / 70.7M / ~1B
+A
+BLS 2024 for the first two; the ~1B is a Gartner-scale
+estimate. Label the last one as an estimate.
+Competiti
+on
+ChatGPT Computer History — cloud,
+EU/UK-blocked
+C
+It launched EU/UK-blocked in August 2026 and was
+extended to the EEA, Switzerland and UK for
+Enterprise in September. Correct it before he does:
+"It's now in Europe. What hasn't changed is that the
+raw event stream is processed on OpenAI's servers."
+Competiti
+on
+Everyone remembers. Nobody
+restores.
+B
+Strong line, mostly true, but Microsoft Recall does
+have a "jump back in" feature for Office. Keep it as
+positioning, not as fact.
+Business
+Pro $108/yr
+B
+A hypothesis. No one has paid. Say "that's the
+hypothesis" if asked.
+Business
+Free to trust, $9/month to live in
+B
+Good line. Nothing behind it yet.
+GTM
+5,000 activated users by week 6
+C
+This is a target, not a plan with a budget attached. If
+asked how: name the channels and the assumption.
+Do not defend the number as a forecast.
+Ask
+$1.5M at $12M post-money SAFE, 18
+months runway
+A
+Arithmetic. 1.5 ÷ 18 = $83K/month. Know that he will
+do this division in his head — see Section 17.
+Ask
+Seed from month 12
+C
+That means you start raising a seed with roughly six
+months of cash left, on the strength of 100K users and
+~$1M ARR. It is a plan, not a forecast. Don't oversell
+it.
+Team
+Built Evo's Rust + SQLite engine
+D as
+written
+You designed it and directed it; you did not hand-write
+138,000 lines. Section 08 gives you the full answer.
+Do not let the deck's phrasing stand unchallenged —
+correct it yourself.
+Team
+Buildspace S5 / B.Sc. CS, Delhi /
+Manavv's background
+A
+Your own history. Fine.
+The three sentences that fix almost all of it
+You do not need to memorise the table. You need three sentences, deployed at the right moment.
+The trick is to say them before he asks, because a correction you volunteer reads as rigour and a
+correction he extracts reads as a caught exaggeration. Same words, opposite meaning.
+SAY THIS
+"Before we go further — two things in that deck are softer than they look, and I'd rather say them
+now."
+Then: the waitlist is verbal, the retention number is from an earlier build, the quotes are
+paraphrases, and the engine doesn't fit its own weights yet. Four sentences, twenty seconds, and
+the temperature of the meeting drops in your favour.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+14
+
+
+===== PAGE 15 =====
+
+WHY THIS WORKS
+This is the highest-leverage move available to you on Friday, and almost nobody does it. An
+associate's default assumption about a pre-seed founder is that the numbers are inflated. When
+you pre-emptively correct your own deck, you invert that assumption: now everything you don't
+correct is presumed true. You are buying credibility with information he was going to find
+anyway.
+CAREFUL
+Do not overcorrect into self-flagellation. Four sentences, said once, calmly, then move forward. If
+you spend five minutes listing your weaknesses he will conclude you don't believe in the company.
+The rehearsal that actually works
+Do not read the table again. Do this instead, out loud, tonight, twice:
+1. Say the four corrections — waitlist is verbal, retention is an earlier build, quotes are
+paraphrases, the engine doesn't fit its weights — into an empty room, at normal volume. Time it. It
+should take under twenty-five seconds.
+2. Say the opening from Section 11 without looking at the page. If you reach for the page, you
+have not learned it.
+3. Answer "why won't this be Rewind?" three times, differently each time, until you find the
+version that sounds like you rather than like this book.
+The test is not whether you can recite the answers. It is whether the answers sound like they are
+yours. A memorised paragraph delivered perfectly sounds worse than a slightly ragged one
+delivered from understanding.
+NOTE
+If you only do one of those three, do the first. The four corrections are the thing most likely to
+ambush you, because they will come up early, in response to your own deck, and you will be
+tempted to defend a number that cannot be defended.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+15
+
+
+===== PAGE 16 =====
+
+THREE VERSIONS, CHOOSE BY CONTEXT
+07 The traction conversation
+You have almost no traction in the sense an investor means, and you have a surprising amount in
+the sense that actually predicts companies. The mistake would be to argue about which definition
+is right. The move is to give him the real shape of it, in a way that shows you know the difference.
+What is actually true
+What happened
+What it is
+What it is not
+You spoke to 300+ people at
+hackathons, college tech events and in
+work conversations — PMs,
+founder's-office interns, SDEs, strategy
+analysts.
+A real, large, qualitative signal
+that the problem is recognised on
+contact.
+A waitlist. There is no list, no
+emails collected, no dates.
+26 people used an earlier build for some
+days.
+A genuine small-scale use test of a
+much earlier prototype.
+Users of the current product.
+Nobody has run the current
+build on their own machine.
+19 of 26 said they would use it daily
+once it was finished.
+Stated intent, at close range, from
+people who had used something.
+Retention. Intent is not
+behaviour, and this was a
+different build.
+You showed the product at a hackathon
+and the room responded.
+Live product-market resonance —
+the thing that is hardest to fake.
+Adoption. Applause is not a
+metric.
+Version one — the twenty-second answer
+Use this when he asks "what's your traction?" in passing, early.
+SAY THIS
+"Pre-revenue by choice, and thin. About 300 conversations at hackathons and college events —
+PMs, SDEs, founder's-office people — and 26 who used an early build for a few days, 19 of whom
+said they'd use it daily once it's finished. No written list, no instrumented retention. What I do
+have is a working build and a person who uses it every day, which is me."
+Version two — the ninety-second answer
+Use this when he leans in, or when you volunteer the correction yourself.
+SAY THIS
+"I'll give you the honest version rather than the deck version. The deck says 300-plus waitlist and
+19 of 26 retained at day 30. What's actually true: I've had 300-plus conversations, mostly at
+hackathons and college tech events, and the pattern is consistent — people describe the exact
+behaviour before I finish the sentence. There's no written list. The 19 of 26 was an earlier build,
+used informally for a few days by classmates and people I know, and I measured it by asking, not
+by instrumenting. So I treat it as a signal, not as retention. What I'd rather show you is the
+engine: there's a corpus from a real working day in the test suite and it fails if two works ever
+merge. That's evidence I can defend."
+The NEA Meeting  ·  Bhavit  ·  Confidential
+16
+
+
+===== PAGE 17 =====
+
+WHY THIS WORKS
+That answer does something specific: it moves the conversation from a number you cannot defend
+to an artefact you can. He will remember the corpus, not the missing waitlist.
+Version three — if he pushes hard
+Some associates push. Let them. Do not get defensive and do not add new numbers to compensate.
+SAY THIS
+"I could give you a bigger number and you'd have no way to check it. I'd rather be the founder
+whose small numbers are real. If it helps: the thing I'd want you to underwrite is not the traction,
+it's whether the engine can be right about which work a window belongs to. That's testable and I
+can show you the test."
+CAREFUL
+Never say "we have 300 users." Never say "19 of 26 retained." The moment you compress "people
+I spoke to" into "users," you have made a statement that diligence will falsify, and a falsified
+traction claim at pre-seed is close to fatal — not legally, but reputationally, in a small industry
+that talks.
+What to do between now and Friday
+If you have two hours, the single highest-value thing you can create is one page titled something
+like Signal log . Four columns: who, where, what they said, what they'd pay. Ten rows. Real names
+or roles, real events, real sentences. It converts "300 conversations" from a claim into a document,
+and it is the first thing you'd send after the call.
+WHY THIS WORKS
+Ten real rows beat three hundred claimed ones. An associate who sees a messy, honest log
+believes it instantly, because nobody fabricates something that unglamorous.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+17
+
+
+===== PAGE 18 =====
+
+HOW TO SAY THE HARDEST TRUE THING
+08 The vibe-coding answer
+This is the question you are most afraid of, and it is the one where honesty pays the most —
+because the alternative is being caught. Thomas co-authored a framework used by Meta and
+Microsoft. If you imply you hand-wrote 138,000 lines of Rust, one question about borrow-checker
+pain will expose it, and the meeting will end politely and permanently.
+But here is the thing you may not have noticed: the honest answer is strong, not weak. It
+describes a real and increasingly common way to build software. What it requires is that you can
+demonstrate the two things that matter: that you understand what the system does, and that you
+can tell what is wrong with it.
+The core answer — thirty seconds
+SAY THIS
+"I should be direct about how it was built. I'm a product-first founder, not a systems engineer. I
+designed how Evo behaves — the evidence model, the rule that production defines identity and
+attention doesn't, the fact that a shared resource abstains rather than voting — and I directed AI
+coding agents to implement it. What I can do is read the architecture, run the test suite, and tell
+you exactly which parts are solid and which aren't. And the first hire from this round is a senior
+Rust and macOS engineer to own the core."
+Why that answer works
+It answers rather than deflects. Deflection is what he's listening for.
+It puts the value in the design decisions , which are genuinely yours and genuinely hard —
+"production defines identity, attention doesn't" is a real insight that most engineers would not have
+arrived at.
+It names the hire , which converts a weakness into a use-of-funds line. That is the move that turns
+an objection into a plan.
+It is checkable and true , so nothing later can contradict it.
+If he asks "so can you code?"
+Do not inflate. Do not grovel. Give him a calibrated answer.
+SAY THIS
+"Not at the level this codebase needs. I can read it, I can run it, I can tell you when something is
+wrong, and I can write enough to test a hypothesis. I can't own a 138,000-line Rust workspace.
+That's why the first hire is the person who can."
+If he asks "show me the code" or "what's the worst part of it?"
+This is the moment that decides whether he believes you. Have a real answer ready , and make it
+specific. The best answer is a genuine known weakness, named precisely, with the fix you already
+have in mind.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+18
+
+
+===== PAGE 19 =====
+
+SAY THIS
+"The worst part is the browser. Restoring a URL is easy; restoring the exact tab in the exact
+profile with the session intact is an adapter problem per browser, and right now the honest status
+is that the adapter exists and is tested against a configured endpoint, but I don't have a clean
+end-to-end receipt on a second machine. The second-worst is unsaved buffers — if you haven't
+saved, nothing can bring it back, and pretending otherwise is how you lose a user's trust on day
+one."
+WHY THIS WORKS
+That answer is worth more than a demo. It proves three things at once: you know the codebase,
+you know what's broken, and you don't lie about it. Associates remember the founder who told
+them the worst thing unprompted.
+CAREFUL
+Do not say "I built it myself" as a shorthand, even casually. Do not say "I'm technical" without a
+qualifier. Do not say "it's mostly AI but I review everything" and then fail to name a single thing
+you changed. The claim is not the problem — the unearned specificity is.
+The reframe, if you want one
+There is a legitimate strategic point here, and it is worth making once, briefly, without
+defensiveness:
+SAY THIS
+"There's a real argument that the scarce skill at this stage isn't writing the code, it's knowing
+what to build and being able to tell whether it works. I've got the second one — the corpus and
+the receipts are how I tell. What I'm buying with this round is the first one."
+Then stop. Do not elaborate. The more you explain, the more it sounds like an excuse.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+19
+
+
+===== PAGE 20 =====
+
+TECHNICAL TRUTH
+09 What the code actually does — and the
+four things it can't
+You will not be asked to explain the architecture. You may be asked to demonstrate that you
+understand it. This section gives you a plain-English model you can hold in your head, then the
+specifics for follow-ups.
+The pipeline, in six sentences
+1. Capture. A background process reads macOS Accessibility events — which window has focus,
+what document it holds, what URL, what path — plus file saves and input activity counts. It never
+takes screenshots.
+2. Ledger. Those events go into a local append-only SQLite log with full-text search. It is the single
+source of truth, and it is deterministic.
+3. Episodes. The log is cut into bounded stretches where attention stayed on a stable working set.
+Boundaries come from content-tested resumption first, dip absorption second, and the clock only
+as fallback.
+4. Bodies of work. Episodes are assigned to works. Identity comes from production — what you
+typed, saved, downloaded, committed — not from what was merely open. Attention-only resources
+become companions and decay.
+5. Retrieval. A request — typed or spoken — resolves to one work, or honestly reports ambiguity, or
+reports no match. It never silently widens scope.
+6. Restoration. Each resource becomes an action: open a URL, open a file, or raise an existing
+window if one already shows that exact document. Every attempt lands in a bucket and is
+reported.
+The four ideas that are actually yours
+If he asks what is novel — and he will — these are the four, and they are real:
+Idea
+Plain English
+Why it matters
+Production defines
+identity
+What you made decides which job a
+thing belongs to. What you merely
+looked at doesn't get a vote.
+This is why fifteen open windows across
+four jobs don't confuse it. It is the single
+rule the whole engine rests on.
+Shared resources
+abstain
+If a browser or terminal genuinely
+serves two jobs, it votes for neither. The
+engine forks and shows both instead of
+guessing.
+It converts the hardest classification case
+from a guess into a question. No
+competitor does this.
+A merge requires a
+declaration
+There is no code path from inference to
+merging two works. Only the person can
+merge.
+Silent wrongness — a client's work
+appearing in another client's room —
+becomes structurally impossible.
+Every restore is
+receipted
+Opened, raised, or
+unopened-with-reason. Plus verified,
+unverified, or failed.
+The product can tell you what it didn't do.
+That is the trust mechanism, not the
+privacy claim.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+20
+
+
+===== PAGE 21 =====
+
+How you evaluate it — the answer to his favourite question
+This is the one to get right. He wrote that the field's missing half is "owning evaluation." So the
+answer to "how do you know it works?" is the most important technical answer you will give.
+SAY THIS
+"Two layers, and I'll be precise about what each proves. There's a corpus from a real recorded day
+of mine — about ten thousand events, a hundred and sixty hand-labelled resources across six
+bodies of work. It replays through the engine inside the test suite and hard-fails on three
+properties: no thread may fuse two different labelled works, no leisure resource may anchor a
+work, and replay must be deterministic. The same check runs as a CLI that exits non-zero. That
+proves I haven't broken safety. It does not prove accuracy — it's one person, two days, and a
+conservative engine mints few threads, so a clean run is necessary and not sufficient. I know
+that."
+Then, if he wants more:
+SAY THIS
+"The next layer is per-user evaluation. Every correction a person makes — merge these, keep
+these apart, this isn't mine — is a labelled pair by definition, and it's the only ground truth that
+scales past one person's corpus. That's what I'd build with the round."
+CAREFUL
+Do not say "the gate runs on every commit in CI." There is no CI configuration in the repo. The
+true sentence is: "It's a hard test in the workspace suite — 59 suites, about 1,270 tests, green at
+the last full run — and the same check exists as a CLI with an exit code, so wiring it into CI is an
+hour of work." That is a better answer anyway, because it shows you know the difference between
+a test and a pipeline.
+The four things it cannot do
+Volunteer these. All four, briefly, in one breath, before he finds them. Nothing buys credibility
+faster than a founder naming his own limits in technical language.
+1. No learning in the weights. The engine accumulates evidence and obeys corrections. It does not
+fit a per-user model. Anyone who says otherwise is describing a roadmap.
+2. No browser session fidelity. It can reopen a URL, and there's an adapter for a configured
+DevTools endpoint that can focus an exact tab — but authenticated sessions, form state and
+navigation history are not restored.
+3. No unsaved buffers. If you didn't save it, nothing can recover it. Any product claiming otherwise
+is lying or screenshotting.
+4. macOS only, Apple silicon, no public release. No signing and notarisation pipeline, no
+auto-update, no Windows.
+If he asks about the test numbers
+Suites
+59 at the last full offline run. 57 at the September close-out.
+Tests
+1,272 passed, 0 failed, 4 ignored on 5 October. 1,087 passed, 0 failed on 30
+September. Re-run before Friday and quote the fresh one.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+21
+
+
+===== PAGE 22 =====
+
+What the tests do not
+prove
+They do not prove restoration works on real hardware end to end. The repo's
+own release audit says the full capture-to-UI receipt, the cold Accessibility
+probe and a real browser profile receipt remain unpassed. That document exists
+and you should mention it — it's evidence of engineering maturity, not a
+liability.
+Language, size
+Rust. 16 crates. Roughly 138,500 lines.
+Network
+No HTTP client anywhere in the workspace. The daemon makes no outbound
+calls. That is checkable, and it is the strongest form of the privacy claim you can
+make.
+WHY THIS WORKS
+That last one is worth memorising. "There is no HTTP client in the codebase" is a much stronger
+sentence than "we don't send your data anywhere," because it is architecture rather than a
+promise.
+If he asks to see the repo
+Say yes immediately. Then tell him where to look, because a 138,000-line workspace with no guide
+reads as noise and makes you look like you're hiding in it.
+Send him to
+Because it proves
+README.md
+The product claim, the layer boundaries, and the fact that the repo openly
+says it is an engineering build and not a release.
+docs/BUILD-LOG.md
+A chronological, evidence-carrying log of every round, with test counts and
+known gaps. This is the document that makes people believe the project is
+real.
+docs/architecture/LOCAL-WORK-REST
+ORATION.md
+The audit that found the wrong-window risk, the duplicate voice authority
+and the downloading embedder — and fixed them. Honest engineering,
+written down.
+crates/evo-threads/tests/ground_truth.rs
+The three hard assertions. Two minutes of reading and he understands your
+quality bar.
+crates/evo-execution/src/restore.rs
+The opened / raised / unopened-with-reason contract, explained in the
+module doc comment.
+SAY THIS
+"Start with the build log and the restoration audit. If you read those two and still think it's a
+wrapper, I'd rather know that now."
+WHY THIS WORKS
+Offering your own repo as evidence, with a suggested reading order, is the opposite of what an
+insecure founder does. It also means his diligence lands where you are strongest: the written
+record, not the line count.
+What to say if he finds something bad
+He might. The repo contains an honest list of its own unpassed gates. If he quotes one back at you,
+agree with him:
+The NEA Meeting  ·  Bhavit  ·  Confidential
+22
+
+
+===== PAGE 23 =====
+
+SAY THIS
+"Yes — that's in the release checklist, and it's accurate. The end-to-end capture-to-UI receipt isn't
+done, and neither is a real browser profile receipt. I wrote that list so I couldn't lie to myself about
+where I am. Those are the first two things the round buys."
+Built, partial, and not built — the honest grid
+If you remember one table from this section, remember this one. It is the entire product state in
+nine rows, and every cell is defensible.
+Capability
+State
+The honest words
+Observe window, document, URL,
+path
+Built
+"It reads what's focused and what it holds. No
+screenshots, no keystrokes."
+Local ledger, FTS5, deterministic
+replay
+Built
+"Append-only, SQLite, replays identically."
+Group activity into bodies of work
+Built, imperfect
+"It works and it's the part that needs the most work.
+That's what the corpus is for."
+Restore files, folders, URLs
+Built
+"Opens, raises, or reports why not."
+Voice: wake word, transcription,
+intent
+Built, local
+"Whole path on-device. No cloud speech."
+Exact browser tab in exact profile
+Partial
+"Adapter exists against a configured endpoint. No clean
+second-machine receipt yet."
+Terminal working directory
+Partial
+"Where the shell exposes it."
+Per-user learned model
+Not built
+"It compounds memory, not parameters."
+Cross-device encrypted sync
+Not built
+"Month two to five. It's why the round is 1.5 and not
+500K."
+CAREFUL
+Notice that the "not built" column includes the two things investors most want: learning and sync.
+That is uncomfortable and it is correct. A founder who can name what he hasn't built is trusted
+about what he has; a founder who elides it gets a diligence call that ends the process quietly.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+23
+
+
+===== PAGE 24 =====
+
+THE BORING THING THAT CAN END A ROUND
+10 The incorporation and visa question
+Sooner or later — probably in this meeting, certainly in diligence — someone asks whether you can
+legally run a US company and be in the United States. Most first-time founders improvise, and it
+shows. You will not.
+The one-line answer
+SAY THIS
+"We're incorporated in Delaware — that's the entity you'd wire into. Neither of us needs a visa to
+run it or to raise. What we need a visa for is being on the ground, and the round funds that: we
+file I-941 under the International Entrepreneur Rule on close, because the investment clears the
+threshold several times over. Worst case we're on O-1s. Either way it doesn't gate the business."
+Why each clause is true
+Clause
+The fact behind it
+Incorporated in Delaware
+You do not need citizenship, residency, an SSN, a US address or physical
+presence to form and own a Delaware C-corp. It is a filing, not an
+immigration event. If you are currently an Indian entity, the standard
+structure is a new US parent with the Indian company as a subsidiary —
+normal, but know it before he asks.
+Neither of us needs a visa
+to run it
+The company is a US legal person regardless of where its officers sit. Board
+meetings over Zoom are fine. This is corporate law, not immigration law.
+I-941 on close
+International Entrepreneur Parole requires: a US entity formed within five
+years; at least 10% ownership; a central and active role; and at least
+$311,071 in qualified investment from a qualified investor within the prior 18
+months. A $1.5M round clears that roughly five times. NEA clears the
+qualified-investor test without effort. Grants up to 2.5 years, renewable once
+— five years total. Up to three founders per company.
+Worst case O-1
+Since January 2025 USCIS explicitly permits a founder's own company to
+petition for them, provided there's an independent director with authority.
+You need three of eight criteria. No cap, no lottery, three years initially,
+premium processing in fifteen business days.
+It doesn't gate the business
+Your first market is the US, not your address. You can be in front of
+customers on B-1 for meetings and demos while longer-term status processes.
+The trap
+CAREFUL
+Do not tell him you are moving to San Francisco on a date. If your pitch is "we relocate after the
+round," you have just told an investor that your go-to-market depends on a discretionary
+government decision you do not control. I-941 is parole, not a visa: it is granted case by case, it
+cannot be appealed if denied, and it does not lead to a green card on its own. Never put that on
+the critical path of the pitch.
+Say instead: the US is the market before it is the address. That is stronger, cheaper, and true.
+Two founders in San Francisco on $83K a month is a choice; two founders in India with a US sales
+presence is a strategy — and it is the reason $1.5M buys eighteen months instead of six.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+24
+
+
+===== PAGE 25 =====
+
+If he drills
+Question
+Answer
+"Can you work in the US right
+now?"
+Not as a resident. B-1 for meetings and customer conversations, which is
+what this trip would be. The company is a Delaware C-corp and I'm its
+CEO regardless of where I'm sitting.
+"When will you move?"
+When the status lands, not before. I'm not going to promise you a date
+that a government agency controls. What I will commit to is being in front
+of US customers from month one.
+"Is this a diligence problem?"
+It's a documented path with a threshold we clear by roughly five times.
+I'd rather show you the plan than tell you it's fine.
+"Why not just stay in India?"
+Engineering stays. Sales doesn't. The cost base is why $1.5M buys
+eighteen months, and I'm not going to spend it on rent before we have
+revenue.
+"Is the cap table clean?"
+Two founders, [X]% each, no SAFEs yet, no advisor grants. Know your
+actual numbers before Friday. If it isn't clean, say what's messy — a
+messy cap table disclosed is fine; one discovered is fatal.
+Four things to have done before Friday
+1. Know your incorporation status exactly. Entity name, state, date, who is on the cap table and
+at what percentage. If you are not yet a Delaware C-corp, decide now whether you will be — a US
+parent with an Indian subsidiary is standard, and "we're forming it now" is an acceptable answer.
+2. Start the EIN if you haven't. Without an SSN the IRS route takes 10 to 35 business days , not
+two. You cannot open a US bank account or receive a wire without it.
+3. Respect the 83(b) clock. 30 days from founder stock issuance. No extensions, no remedy.
+Missing it means ordinary income tax on every vesting tranche of stock you can't sell.
+4. Budget $8–15K for immigration counsel inside the use of funds. It is a line item that signals
+competence and it is genuinely needed — I-941 petitions fail on thin evidence, not on thresholds.
+NOTE
+One thing to get advice on but not to improvise: if you run a Delaware C-corp from India, Indian
+tax law has a place of effective management concept that can treat a foreign company as an
+Indian tax resident. If he asks about the India/US structure, "we've taken advice on India-side tax
+residency and the entity structure reflects it" ends the topic. Not having thought about it starts a
+diligence problem.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+25
+
+
+===== PAGE 26 =====
+
+WORD FOR WORD
+11 The first four minutes
+He will say something like "tell me about Evo" within the first two minutes. That is your only open
+invitation. Most founders spend it on the problem, because the problem is the easy part. Do not.
+Spend it on the sentence he needs to write in his memo.
+The opening — say this, roughly
+SAY THIS
+"Thanks for making the time. Thirty seconds of context, then I'll show you rather than tell you.
+Every knowledge worker has a second job they don't get paid for: reconstructing what they were
+doing before they were interrupted. The files, the tabs, the decisions. Nobody has solved it
+because it isn't a search problem — the answer isn't on the web, it's on your laptop, in the state of
+your machine.
+Evo watches work happen locally, groups it into bodies of work, and rebuilds the whole
+workspace when you say continue. It's a native Rust system, sixteen crates, about a hundred and
+thirty-eight thousand lines. Nothing leaves the device — there's no HTTP client in it at all.
+The thing I'd want you to judge me on isn't the demo. It's that the engine has to be honest. Every
+restore reports what it opened, what it brought forward, and what it couldn't open. And there's a
+corpus from a real working day in the test suite that fails the build if two separate bodies of work
+ever merge.
+Can I show you? It's about three minutes."
+Why this opening, specifically
+Sentence
+What it is doing
+"Thirty seconds of context, then I'll
+show you"
+Sets a contract. Signals you will not monologue, and gives him
+permission to interrupt — which makes him relax.
+"a second job they don't get paid for"
+A concrete, human framing of the problem. Not "context switching
+costs the economy $X billion."
+"it isn't a search problem"
+This is the positioning move, and it is the most important sentence
+in the opening. It distinguishes you from Recall, Rewind, Granola,
+Raycast and ChatGPT in one clause.
+"native Rust… sixteen crates… no HTTP
+client"
+Three specifics that prove there is a real system. An associate's
+instinct is "is this a wrapper?" — this answers it in eight seconds.
+"the thing I'd want you to judge me on
+isn't the demo"
+Reframes the meeting from entertainment to underwriting. It tells
+him you know what he's actually doing.
+"Can I show you?"
+Asking permission rather than launching. He says yes 90% of the
+time, and now he is participating instead of evaluating.
+CAREFUL
+Do not open with the market size. Do not open with "we're the ChatGPT of X." Do not open with
+your background. Do not open with the traction slide. Every one of those is a reason for him to
+categorise you as generic before you have said anything that only you could say.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+26
+
+
+===== PAGE 27 =====
+
+If he asks you to update the deck
+He might say the deck overstates something, or that it reads as consumer rather than
+infrastructure. Do not defend it. Agree, and ask what he would change — then actually change it
+and send it back within 48 hours. A revised deck that reflects his feedback is the cheapest possible
+signal that you listen.
+SAY THIS
+"You're right, and I'd rather fix it than defend it. If you were writing that slide, what would it
+say?"
+This is a small thing that lands disproportionately, because most founders treat their deck as an
+artefact to be protected rather than a document to be improved. The ones who come back with a
+better version get remembered.
+If he opens differently
+Associates often skip the invitation and go straight to a question. Handle these three, then take the
+wheel.
+He says
+You say
+"I read the deck — give me the
+short version."
+The opening above, but cut the middle. Keep the second-job framing,
+the "not a search problem" line, and the honesty line. Drop the crate
+count.
+"How did Lila end up forwarding
+this?"
+Be brief and don't gloat. "I read her Neolab post and it described the
+problem I'd been building against for a year, so I wrote to her about that
+specifically rather than sending a deck cold." Then move on.
+"What does it actually do?"
+Give one concrete example, not a description. "I was working on the
+investor deck Friday. I come in Monday, say 'continue the pitch deck,'
+and the deck, the two tabs I was reading and the folder are there. That's
+it. That's the whole product."
+The NEA Meeting  ·  Bhavit  ·  Confidential
+27
+
+
+===== PAGE 28 =====
+
+THREE MINUTES, AND WHAT TO DO WHEN IT BREAKS
+12 The demo
+You have a working build. That is your single biggest advantage over every other pre-seed founder
+he will meet this week. Do not waste it on a tour of the interface. A demo is an argument, not a
+walkthrough — every click should prove a claim you could otherwise only assert.
+The four beats, in order
+Beat
+What you do
+What it proves
+1. Resume
+"I was on the pitch deck Friday." Say: "Hey
+Evo, continue the pitch deck." Let it rebuild.
+Point at the clock when it lands.
+That restoration is an action, not a
+search result. This is the whole
+product in eight seconds.
+2. Memory across
+time
+"It knows this from a session two days ago. I
+didn't tell it."
+That the state is durable rather than
+session-scoped. This is the
+"longitudinal" word he uses.
+3. Separation
+Show two works that share a browser.
+"Same browser, both jobs. It doesn't guess
+which — it abstains and asks."
+The hardest technical claim, made
+visible. No competitor demonstrates
+this because none of them can.
+4. Correction
+Drag a window into the wrong pod. It
+merges, and stays merged. "One gesture.
+Permanent."
+That wrongness is cheap and
+reversible, and that the correction
+outranks inference. This is the trust
+answer, demonstrated.
+Before the call — the thirty-minute ritual
+1. Confirm the daemon has events for today. A cold machine demos nothing.
+2. Create production in each of the three works you plan to show. Type a line, save a file, run a
+command or make a commit. Production is what mints identity — a work you only looked at might
+not exist as a work.
+3. Open the pod bar and check that the three works are there. If one is wrong, fix it now with a
+merge — and then that becomes a demo beat rather than a liability.
+4. Close everything you don't need. A cluttered screen reads as a cluttered product.
+5. Turn off notifications, Slack, mail, and every badge. Put the machine on charge.
+6. Have the 90-second recording open in a tab, and say so out loud at the start.
+Say this before you share your screen
+SAY THIS
+"Two things before I share. I've recorded a ninety-second version in case the screen share fights
+me — live demos fail for boring reasons and I'd rather not spend your thirty minutes on a
+permission dialog. And if it does something wrong while you're watching, tell me, because that's
+the most useful thing that could happen in this call."
+WHY THIS WORKS
+Both halves of that are strategic. The recording is insurance, and announcing it makes you look
+prepared rather than defensive. Inviting him to catch errors converts the demo from a
+performance into a shared diagnosis — and it means a glitch costs you nothing.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+28
+
+
+===== PAGE 29 =====
+
+When it breaks
+What happens
+What you say
+What you do not do
+Restore opens the
+wrong work
+"That's the interesting failure. It's merged these
+two — let me show you the correction, because
+that's the actual design."
+Do not apologise repeatedly.
+Do not close the window and
+pretend.
+Nothing opens
+"It's not finding it. Give me fifteen seconds — I'll
+switch to the recording rather than debug live."
+Do not troubleshoot for two
+minutes in silence. The
+silence is what he
+remembers.
+Permissions dialog
+appears
+Handle it calmly, narrate what it's asking for and
+why. This is actually a useful beat: it shows the
+permission model.
+Do not panic-click. Do not say
+"this never happens."
+Voice doesn't hear you
+Type it. "It's the mic, not the engine." Then move
+on.
+Do not repeat the wake word
+five times. Do not blame the
+laptop.
+The YouTube-tab question
+You mentioned wanting to show a video you had been playing. Be careful here, and the reason is
+architectural rather than presentational. The engine's own test suite hard-asserts that a
+leisure resource never anchors a work. If you play a random video and Evo files it into a work,
+you are demonstrating the exact failure your own gate forbids.
+So either leave it out, or use it deliberately — and if you use it, frame it:
+SAY THIS
+"This tab is reference material for the deck, so it rides along as context. But notice it can't found a
+work — a video I just watched doesn't get to claim that I was working on something. Only
+production does that."
+WHY THIS WORKS
+That is a superb beat, because it turns a potential embarrassment into an explanation of the core
+rule. But only do it if the tab is genuinely attached to a work. If it's leisure, leave it out entirely —
+the risk outweighs the ten seconds of interest.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+29
+
+
+===== PAGE 30 =====
+
+ANSWERS
+13 The forty questions he will actually ask
+Grouped the way he will ask them. Every answer is thirty to forty-five spoken seconds. The first
+sentence is the answer; the rest is evidence; then stop.
+A. The opening five
+1. "Tell me about Evo."
+Section 11. Do not improvise a new version on the day.
+2. "Who is this for, concretely?"
+SAY THIS
+"Developers, designers and founders who run three or four projects in parallel on one machine.
+The tell is that they already have a ritual for recovering — a saved tab group, a notes file called
+'where I was', a rule about never closing the laptop. People who feel the tax daily build their own
+bad version of this."
+3. "Why you?"
+SAY THIS
+"Because I lived it for two years and then spent a year building the unglamorous half. The easy
+part is reopening windows. The hard part is deciding which of your fifteen open things belong to
+the same job, and I've got a rule for that which most engineers wouldn't have reached: what you
+produced defines the work, what you merely looked at doesn't."
+4. "Why now?"
+SAY THIS
+"Three things landed in about two years. On-device models got small enough to run on a laptop
+without a battery cost worth mentioning. macOS exposed the capture APIs that make this possible
+without screenshotting. And an OpenAI product made the category legible to normal people —
+which is good for us, because they showed everyone they want this and they did it in the cloud
+with a wall around it."
+5. "Why is this a company and not a feature?"
+SAY THIS
+"Because the hard part isn't a capability, it's a corpus. Knowing which of your windows are one
+job takes months of your own evidence, on your machine. A platform vendor can ship the button;
+they can't ship your six months of context. And the switching cost is tenure, not features — after a
+month, starting over means amnesia."
+The NEA Meeting  ·  Bhavit  ·  Confidential
+30
+
+
+===== PAGE 31 =====
+
+B. Product
+6. "What exactly gets restored?"
+SAY THIS
+"Files, folders, URLs in the browser they were seen in, and window positions for apps I have
+adapters for. Five things at most by design — it reopens the neighbourhood, not the museum.
+What it does not restore is unsaved buffers, authenticated session state, or form contents."
+7. "Why not Spaces, Stage Manager, browser session restore, Raycast?"
+SAY THIS
+"Because all of them save state and none of them save meaning. Spaces saves a desktop, not a
+project. Session restore gives you back forty tabs with no idea which ten mattered. Raycast finds
+things when you know what you're looking for. The gap is knowing which of your things are the
+same job — and that needs evidence over time, not a launcher."
+8. "What's the activation moment?"
+SAY THIS
+"The first time they say continue and the thing comes back. That's it. Everything before that is
+setup and everything after is habit."
+9. "How long is setup? Which permissions?"
+SAY THIS
+"Accessibility, which is the big one, plus optionally microphone for voice. Five minutes and one
+restart. The Accessibility grant is the real friction and I'm not going to pretend otherwise."
+10. "Does it work offline?"
+SAY THIS
+"It works only offline. There's no server to be online to. The embedding model for voice runs
+locally."
+C. Technical
+11. "Why Rust?"
+SAY THIS
+"Because it's a long-running local process touching the filesystem, the window server and SQLite
+at once, and I wanted memory safety without a garbage-collection pause in the middle of a
+restore. The honest second reason is that a daemon has to outlive the UI, and Rust makes that
+boundary clean."
+The NEA Meeting  ·  Bhavit  ·  Confidential
+31
+
+
+===== PAGE 32 =====
+
+12. "Walk me through the pipeline."
+Section 09. Six sentences. Do not go deeper unless asked.
+13. "How do you evaluate classification? What's your ground truth?"
+Section 09. This is the most important technical answer in the meeting — it is his stated area of
+interest. Do not rush it.
+14. "What happens when it gets it wrong?"
+SAY THIS
+"It gets things wrong. The design question is what happens next, and the failures aren't
+symmetric. Fusing two works is expensive — a client's material shows up in another client's room.
+Splitting one work is cheap. So the engine prefers splitting: when two candidates are close it
+forks and shows you both, and a resource that genuinely serves two works votes for neither. A
+merge only happens if the person declares it — there is no code path from inference to a merge.
+So wrongness is visible, cheap, reversible, and one gesture from permanent."
+WHY THIS WORKS
+This answer is far stronger than "it's smart enough to get it right," which is unfalsifiable and
+invites "what's your error rate?" It is also the answer that tells a technical investor you
+understand failure modes — which is what separates an engineer from an enthusiast.
+15. "How does it handle Electron apps, browser tabs, terminals?"
+SAY THIS
+"Three different problems with three different answers. Browser tabs are the furthest along —
+there's an adapter that can focus an exact tab in an exact profile. Terminals restore the working
+directory where the shell exposes it. Electron apps are the weak spot, because they expose wildly
+different automation surfaces; some give you a document, some give you a window title and
+nothing else. That's why it's a capability tier per app rather than a promise."
+16. "Is there a model? Which one?"
+SAY THIS
+"There's a local embedding model — MiniLM, 384 dimensions — used for matching a request to a
+work. The classification itself is deterministic evidence scoring, not a neural network. That's
+deliberate: a three-billion-parameter model running continuously on a laptop is a battery and
+thermal problem, and it would make the product worse."
+17. "Does it learn?"
+SAY THIS
+"Today it compounds memory, not parameters. Every correction is permanent and outranks
+anything the engine infers, but it doesn't fit its own weights yet. The next layer is exactly that: the
+corrections are labelled pairs — merge these, keep these apart — and a few hundred weights
+fitted on-device would resolve the near-ties the rules currently fork on. Deterministic core for
+safety, learned layer for arbitration."
+The NEA Meeting  ·  Bhavit  ·  Confidential
+32
+
+
+===== PAGE 33 =====
+
+CAREFUL
+Do not say "it learns automatically and gets better." He will ask what the update rule is, what the
+label is, and where the loss is — and there are no answers in the code. "It accumulates evidence
+and obeys corrections" is true and defensible.
+18. "Multi-device sync?"
+SAY THIS
+"Not built. It's month two to five, and it's why the round is $1.5M and not $500K. The design
+constraint is that the server never sees plaintext — client-side encryption, opaque blobs, and the
+append-only ledger means conflicts resolve by merging evidence rather than last-write-wins."
+19. "Windows?"
+SAY THIS
+"Scoped, not built. Capture is tractable — UI Automation and Win32 give you window and
+document identity. Restoration is the expensive half, because every app exposes a different
+surface. Capture first in the six weeks after the round; full restore is months per app family."
+20. "How big is the codebase, and who maintains it?"
+Section 08. Answer it plainly, name the first hire, then stop.
+21. "What breaks on a macOS update?"
+SAY THIS
+"Everything that touches Accessibility. It's an unsupported surface in practice, and Apple changes
+behaviour between minor versions. That's why the capture layer is isolated behind one boundary
+and why I test against real windows rather than mocks."
+D. Privacy and trust
+22. "You're asking for Accessibility. That's what keyloggers use."
+SAY THIS
+"Four distinctions. We use Accessibility to read which window is focused and what document it
+holds — not Input Monitoring, which is the permission that intercepts keystrokes, and we never
+ask for it. We don't capture screenshots or audio by default. We store metadata about activity, not
+content. And there's no server in the loop at all — there's no HTTP client in the codebase. It has to
+be defensible to a security researcher, not just to a user, because one bad write-up ends a
+local-first company."
+23. "What if malware reads the local store?"
+SAY THIS
+"Then it has your activity metadata, which is a real risk and I'm not going to wave it away. Today
+the protection is FileVault and the sandbox. Per-record encryption with a Keychain key is a
+requirement before sync ships, and it's on the plan for month two."
+The NEA Meeting  ·  Bhavit  ·  Confidential
+33
+
+
+===== PAGE 34 =====
+
+24. "GDPR? Enterprise?"
+SAY THIS
+"Consumer first, so GDPR is a later problem — but the architecture helps, because the data never
+leaves the machine. The hard part will be the employee's activity being visible to an employer,
+and I'd want to solve that with the employee holding the key, not the company."
+25. "How do you prove nothing leaves the device?"
+SAY THIS
+"Three ways, in increasing strength. There's no HTTP client in the dependency graph, so it's
+checkable by reading the manifest. The daemon has no network code path. And the release
+checklist requires offline packaging tests with the network denied. I haven't shipped a third-party
+audit yet — that's in the use of funds."
+E. Competition and market
+26. "OpenAI shipped Computer History in August. Why are you not dead?"
+SAY THIS
+"Because they answered a different question. Computer History makes ChatGPT remember — it
+sends your interaction events to OpenAI, turns them into memories, and gives you a timeline
+inside ChatGPT. Evo restores your actual workspace, whichever AI you use, and the events never
+leave the machine. If OpenAI ships full workspace restore on-device, I have a problem — and the
+thing that would save me is tenure, not features."
+WHY THIS WORKS
+Naming the risk in the answer, rather than waiting to be caught, is what makes the preceding
+sentence believable. Associates discount optimism; they trust calibration.
+27. "What about Microsoft Recall?"
+SAY THIS
+"Recall is the most technically impressive thing in the space and it's Windows-only, on new
+hardware, with a privacy history it will never fully outrun. There is no trusted equivalent on the
+Mac. That's the gap."
+28. "Why won't this be Rewind?"
+SAY THIS
+"That's the right question and I think about it a lot. Rewind recorded everything and gave you
+search — it was a very expensive archive you had to remember to consult. This is the opposite: it
+does one thing at the moment of return, and the archive is a side effect. Rewind also needed
+constant screen capture, which is why it was heavy and why it scared people. We capture
+metadata, which is cheap and defensible."
+The NEA Meeting  ·  Bhavit  ·  Confidential
+34
+
+
+===== PAGE 35 =====
+
+29. "What does Apple do?"
+SAY THIS
+"Apple will do the on-device half well and will never do the cross-vendor half. They won't restore
+your Chrome profile into Arc, and they won't build a layer that works better because you also use
+ChatGPT and Claude. Platform owners make the floor; the layer above the floor is where products
+live."
+30. "Bottom-up market size?"
+SAY THIS
+"6.1 million US computer and mathematical professionals is the beachhead. I need 1.6% of that to
+reach a hundred thousand users. At 9% paying $108 a year, that's about $970K of ARR. Then 70.7
+million management and professional occupations is the same product one segment over."
+31. "Is this big enough?"
+The most important answer in the meeting. Slow down for this one.
+SAY THIS
+"As a paid Mac utility, honestly, no — that's a five to forty million dollar ARR business and I'd be
+fine saying so. The reason I think it's bigger is that the thing we accumulate isn't a feature, it's
+the boundary map of a person's work. Every agent shipping right now has memory and no
+jurisdiction — it knows facts about you, it doesn't know that this repo is one client and that deck
+is a different job. So it can't safely act on your desktop. We produce that boundary as a side effect
+of being useful every morning, and then agents query it. That's the layer."
+CAREFUL
+Do not answer this with TAM. He has heard "$1B knowledge workers" four times this week.
+Answer it with the sequence: wedge, then asset, then layer — and concede the ceiling of the
+wedge, because conceding it is what makes the layer claim credible.
+F. Traction, team, fundraising
+32. "What's your traction?"
+Section 07, version one or two depending on the temperature.
+33. "You're a solo founder?"
+SAY THIS
+"Two of us — I'm CEO and CTO, Manavv runs commercial. But on the engineering side I'm
+effectively solo today, and the honest risk is bus factor. The first hire from the round is a senior
+Rust and macOS engineer, and I've already scoped what they own."
+34. "What are you weakest at?"
+SAY THIS
+"Systems engineering at depth, and distribution. I can design the behaviour and tell when it's
+wrong; I can't own a large Rust workspace. And I've never run a paid acquisition channel. Those
+are the two hires."
+The NEA Meeting  ·  Bhavit  ·  Confidential
+35
+
+
+===== PAGE 36 =====
+
+35. "How do you recruit a senior Rust engineer?"
+SAY THIS
+"The honest answer is that it's the hardest part of the plan and I'd take help. What I have going
+for me is that it's an unusually good problem — local-first systems, macOS internals, deterministic
+state. That's a specialist's dream project, not a CRUD job."
+36. "Why $1.5M?"
+SAY THIS
+"Eighteen months to a seed on 100K users and roughly a million of ARR run-rate. The 1.5 is 83K a
+month — two founders, two engineers from month four, and the launch budget. It's a milestone
+budget, not a wish."
+37. "At $12M post?"
+Section 17. Have the number, and have the flexibility.
+38. "Who else is in the round?"
+SAY THIS
+Answer honestly. If it's nobody: "Nobody committed yet. I started with the people whose thesis
+this actually is rather than running a broad process." That is a legitimate strategy and it flatters
+him slightly without lying.
+39. "What do you want from us beyond money?"
+SAY THIS
+"Two things. A partner meeting, because I think the category argument is better made to
+someone who owns a fund thesis than to me in thirty minutes. And help on the first senior hire —
+you've backed infrastructure companies, you know what a good systems engineer looks like and I
+don't have that network in the US."
+40. "What would make this a no?"
+SAY THIS
+"If the honest read is that it's a nice utility with no path to a layer, that's a fair no. What would
+change my mind about that being the read is if you think the context boundary is a real asset or
+just a feature of this app. I'd genuinely like to know which one you think it is."
+WHY THIS WORKS
+Asking for the objection at the end is disarming and it works. It also gets you information you
+cannot otherwise obtain — associates rarely volunteer the real reason.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+36
+
+
+===== PAGE 37 =====
+
+HARDEST FIRST
+14 The ten questions that decide it
+These are the ones where a weak answer loses the meeting regardless of everything else. If you
+only rehearse ten answers, rehearse these. Say each one out loud until it takes under forty
+seconds.
+1. "Is this a feature OpenAI ships next quarter?" — Section 13.26, plus the concession. The
+concession is the answer.
+2. "How do you evaluate it?" — Section 09. The corpus, the three hard assertions, and what they
+don't prove.
+3. "Does it actually learn?" — "It compounds memory, not parameters." Never bluff this one.
+4. "Who built the code?" — Section 08. Direct, unapologetic, names the hire.
+5. "What's your traction, really?" — Section 07. Volunteer the correction.
+6. "Why won't this be Rewind?" — The archive-versus-return distinction.
+7. "Is it big enough?" — Wedge, asset, layer. Concede the wedge ceiling.
+8. "Why you?" — The production-defines-identity insight, which is genuinely yours.
+9. "What happens when it's wrong?" — Fork, abstain, declare, receipt.
+10."Can I speak to a user?" — Have one name ready, with permission, who will take the call. If you
+don't have one, say: "Not yet — the current build hasn't gone out. That's the first thing the round
+changes."
+CAREFUL
+Number ten is the one founders forget to prepare, and it is the one that converts a good meeting
+into diligence. Have a name. Ask that person tonight whether you can put them forward.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+37
+
+
+===== PAGE 38 =====
+
+THE MOST USEFUL SKILL IN THE ROOM
+15 When you don't know
+He can ask anything and you cannot know everything. That is normal and he expects it. What he is
+testing is not your knowledge — it is whether you know the edges of your own knowledge ,
+because that is the trait that predicts whether you'll be honest with him for the next five years.
+The four beats — fifteen seconds, never more
+1. Acknowledge. "I don't know — that's a real gap." No flinch, no filler.
+2. Give the nearest true thing. "What I do know is ___."
+3. Say how you'd find out, and when. "The way I'd answer it is ___; I can have that to you by
+Tuesday."
+4. Turn it. "How would you test it?" or "What would you need to see?"
+SAY THIS
+"I don't know. That's a gap, not a hedge. What I do know is the shape of the answer — it's a
+storage-growth question and I'd measure it on my own machine over a week rather than guess. I
+can send you the number by Wednesday. How would you sanity-check it?"
+WHY THIS WORKS
+That answer costs you nothing and gains you three things: honesty, a deadline you set yourself,
+and a question that makes him talk. Founders who admit a gap early get believed on everything
+else.
+For design questions — show the axes
+If it's not a fact you're missing but a decision you haven't made, do not fake an answer. Show the
+trade-off:
+SAY THIS
+"That's a decision I haven't made. The trade-off is privacy against usefulness: cross-device sync is
+the thing people ask for, and it's also the first time anything leaves the machine. My instinct is
+encrypted sync where the key never touches the server, but I haven't pressure-tested it. How
+have you seen other local-first companies handle that?"
+The three you genuinely don't know, pre-loaded
+Question
+Your answer
+"What's your storage growth per
+user per day?"
+"Order of megabytes — the ledger is event metadata, not content. I
+haven't measured it precisely and I'd rather instrument it during the beta
+than give you a number I invented."
+"What does Windows cost you?"
+"Scoped, not built. Capture is weeks; restoration is months per app
+family. I haven't written a line of Windows code."
+"What's your CAC?"
+"Unknown. I haven't spent a dollar on acquisition. My hypothesis is that
+the demo clip carries the launch and the first cohort is organic, and that's
+exactly what the launch budget is for — to find out."
+The NEA Meeting  ·  Bhavit  ·  Confidential
+38
+
+
+===== PAGE 39 =====
+
+What never to do
+Never invent a number. Not a percentage, not a growth rate, not a market size. One fabricated
+figure, discovered later, retroactively invalidates everything true you said.
+Never say "I'll get back to you" without a date. A promise without a deadline is a deflection,
+and he will notice.
+Never argue with a question. If he says "this looks like a feature," do not say "no it isn't." Say
+"that's the risk I think about most" and then give him the counter-argument.
+Never blame the market, the timing, or other investors. It is the fastest way to look junior.
+Nine things to say when you have nothing
+Sometimes the honest answer is short. These are complete answers, not deflections — each one
+names a limit and then leaves the door open. Learn the shape, not the words.
+The question
+The fifteen-second answer
+"What's your conversion rate?"
+"Not measured. No Pro tier yet — that's month three. I'd rather tell you it's
+unknown than give you a number from a survey."
+"What's your churn?"
+"Unknown, and I'd be making it up. The honest proxy is that the 19 people who
+said they'd use it daily are the ones I'd instrument first."
+"What's your CAC?"
+"Zero spent so far. The launch budget exists to find out, and I don't have a
+number I'd defend."
+"How many people are on the
+team?"
+"Two founders. No employees. The first hire is in the plan and named in the
+use of funds."
+"What's your legal structure?"
+"Delaware C-corp, [state the cap table]. If there's anything messy I'd rather
+show you now than have it surface in diligence."
+"Who are your advisors?"
+"Nobody formal. I've taken advice from [name the real people] and I'd rather
+have a formal advisor who owns something specific than a logo."
+"Why hasn't anyone built this?"
+"People have tried — Rewind, Recall, and OpenAI just shipped a version. The
+difference is doing it on-device and doing the grouping rather than the
+search."
+"What's your unfair advantage?"
+"Time on the problem, and a rule about identity that took a year to get right.
+Neither is a moat on its own — the moat is the evidence a user accumulates."
+"What keeps you up at night?"
+"That I'm one person on the engineering side of a system that needs three.
+That's the hire, and it's the first line of the budget."
+WHY THIS WORKS
+Every one of these has the same structure: a plain admission, a reason it's unknown, and no
+apology. That is what calibrated sounds like. The alternative — a confident number that turns out
+to be invented — is the only unrecoverable mistake available to you in this meeting.
+CAREFUL
+One caution on "who are your advisors": if you have named someone as an advisor, even
+informally, tell Thomas the same thing you'd tell a lawyer. Verbal advisor equity promises are the
+single most common cap-table surprise at pre-seed, and finding one in diligence after being told
+"nobody formal" reads as concealment rather than as an oversight.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+39
+
+
+===== PAGE 40 =====
+
+Nine things to say when you have nothing
+Sometimes the honest answer is short. These are complete answers, not deflections — each one
+names a limit and then leaves the door open. Learn the shape, not the words.
+The question
+The fifteen-second answer
+"What's your conversion rate?"
+"Not measured. No Pro tier yet — that's month three. I'd rather tell you it's
+unknown than give you a number from a survey."
+"What's your churn?"
+"Unknown, and I'd be making it up. The honest proxy is that the 19 people who
+said they'd use it daily are the ones I'd instrument first."
+"What's your CAC?"
+"Zero spent so far. The launch budget exists to find out, and I don't have a
+number I'd defend."
+"How many people are on the
+team?"
+"Two founders. No employees. The first hire is in the plan and named in the
+use of funds."
+"What's your legal structure?"
+"Delaware C-corp, [state the cap table]. If there's anything messy I'd rather
+show you now than have it surface in diligence."
+"Who are your advisors?"
+"Nobody formal. I've taken advice from [name the real people] and I'd rather
+have a formal advisor who owns something specific than a logo."
+"Why hasn't anyone built this?"
+"People have tried — Rewind, Recall, and OpenAI just shipped a version. The
+difference is doing it on-device and doing the grouping rather than the
+search."
+"What's your unfair advantage?"
+"Time on the problem, and a rule about identity that took a year to get right.
+Neither is a moat on its own — the moat is the evidence a user accumulates."
+"What keeps you up at night?"
+"That I'm one person on the engineering side of a system that needs three.
+That's the hire, and it's the first line of the budget."
+WHY THIS WORKS
+Every one of these has the same structure: a plain admission, a reason it's unknown, and no
+apology. That is what calibrated sounds like. The alternative — a confident number that turns out
+to be invented — is the only unrecoverable mistake available to you in this meeting.
+CAREFUL
+One caution on "who are your advisors": if you have named someone as an advisor, even
+informally, tell Thomas the same thing you'd tell a lawyer. Verbal advisor equity promises are the
+single most common cap-table surprise at pre-seed, and finding one in diligence after being told
+"nobody formal" reads as concealment rather than as an oversight.
+Write them down
+Keep one sheet of paper next to you during the call. Every question you can't answer goes on it.
+Then answer all of them in writing within 24 hours. A founder who returns with a written
+answer the next day is more impressive than one who improvised in the moment, because it proves
+the loop works.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+40
+
+
+===== PAGE 41 =====
+
+EIGHT, RANKED
+16 Your questions for him
+You get roughly four minutes at the end. Most founders waste them on questions whose answers
+are on the website. These eight are chosen because each one either gives you information you
+cannot get elsewhere, or makes him say something he'll have to stand behind later.
+The three you must ask
+1. "What happens next, and on what timeline?"
+Ask it every time, at the end, regardless of how the call went. It is not pushy — it is the question a
+founder who has done this before asks. Whatever he says, write it down and repeat it back: "So I'll
+send the technical write-up Tuesday and we'll speak again the week after — does that sound right?"
+Repeating it back converts a vague intention into a commitment.
+2. "What would make this a yes for you?"
+This is the highest-value question in the meeting. It tells you what to build or prove next, and it
+tells you whether he has a specific bar or is just being polite. If the answer is vague, that is
+information too.
+3. "What's your biggest concern right now?"
+Almost nobody asks this and it works almost every time. It gives you the objection while you still
+have time to answer it — and if you can answer it well in thirty seconds, you have removed the
+thing that would have killed you in the memo.
+The three that tell you how to play the next month
+4. "How does NEA decide on a round this size, and who's in the room?"
+A $1.5M pre-seed at a $38B firm is an unusual shape. You genuinely need to know whether this
+goes to partnership, whether an associate can champion a cheque this small, and how long it takes.
+Asking directly is not rude; pretending you already know is worse.
+5. "Would it help if I sent you the technical write-up, or would you rather dig into
+the code yourself?"
+Both options flatter him, and his answer tells you how technical his diligence will be. If he wants
+the code, you have a real advantage — the repo is genuinely well-documented and the audit
+document is honest.
+6. "Are there parts of this you'd want me to go deeper on before we speak again?"
+This converts the meeting into a homework assignment. It also makes the second call easier to
+earn, because you arrive having answered the exact questions he cared about.
+The two to use sparingly
+7. "What did you think of Computer History when it launched?"
+A genuinely interesting question for a person who has written about exactly this. It also invites him
+to make a judgment in front of you, which is useful — you learn his taste. Use it if the call is going
+well and you have spare time. Do not use it if you are behind.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+41
+
+
+===== PAGE 42 =====
+
+8. "Would it make sense to meet a partner?"
+Only ask this if the call has gone well and you are near the end. Phrased as "would it make sense,"
+it is not a demand. If the answer is "too early," you have lost nothing. If the answer is "yes, let me
+think about who," you have just skipped a step.
+CAREFUL
+Do not ask: "What's your check size?", "What's your process?", "Do you lead?", or "How much
+runway do you have?" — all four are answered on NEA's website or make you sound like you're
+shopping. And never ask him to sign an NDA. It is the fastest way to end a venture conversation.
+What his answers tell you
+Ask the questions, then listen to the shape of the reply. The shape is the information — not the
+content.
+If he says
+It means
+What you do next
+"Let me think about it and come
+back to you."
+Polite non-commitment. He has not
+decided.
+Send the forwardable paragraph.
+Make his thinking easy.
+"Send me X and we'll talk next
+week."
+A real next step. He wants a reason
+to say yes again.
+Deliver X within 48 hours, better
+than he expects, and reference his
+exact wording.
+"I'd want a partner to meet you."
+You have cleared the screen.
+Ask who, and what they care about,
+and prepare for that person
+specifically.
+"Honestly, this might be too early for
+us."
+The most likely real outcome. Not a
+judgement on the company.
+Ask what specific milestone would
+change it. Then go hit it and come
+back.
+"Who else are you talking to?"
+He is checking whether there is a
+process, and whether anyone has
+validated you.
+Tell the truth. If it's nobody, say
+nobody, and say why that's
+deliberate.
+WHY THIS WORKS
+The single most useful thing you can extract from the last four minutes is a specific answer to
+"what would make this a yes." If you get one, you have a to-do list instead of a hope. If you get a
+vague answer, that tells you he isn't convinced yet — and you should treat the meeting as an
+opening rather than a near-close.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+42
+
+
+===== PAGE 43 =====
+
+NUMBERS
+17 The ask, the cap, and the negotiation
+You are asking for $1.5M on a $12M post-money SAFE, 18 months of runway. That is a
+reasonable, defensible ask. What follows is what he will think when you say it, and how to handle
+each thought.
+The arithmetic he will do in his head
+He thinks
+Because
+What you should have ready
+"1.5 divided by 18 is
+83K a month."
+It's the first thing anyone does with a
+runway number.
+A bottom-up budget, not a division.
+Section 17, next page.
+"That's 12.5% dilution."
+1.5 ÷ 12 = 12.5%.
+That is a low dilution for pre-seed,
+which is good for you and he knows it.
+Don't apologise for the cap.
+"$12M is below median
+for a $1M–$2.4M
+round."
+Carta's Q2 2026 data puts the
+median post-money cap at $18M for
+rounds of $1M–$2.4M. The older
+$15M figure is now out of date.
+Which means your cap is conservative,
+not aggressive. If he pushes back on
+valuation, you are on the wrong side of
+the argument — you are cheap, and you
+should know that before he tells you.
+"This is small for NEA
+19."
+It's 0.027% of a $5.5B fund.
+Section 04. Do not raise it; be ready for
+it.
+The budget, bottom-up
+Do not say "$83K a month." Say what it buys. This table is the answer to "how did you arrive at
+1.5?"
+Line
+Monthly
+Notes
+Two founder salaries
+$16.7K
+2 × $100K a year. Modest, and say so.
+Two engineers from month 4
+$25.0K
+The first hire is the senior Rust/macOS engineer.
+This is the line that matters.
+Payroll tax and benefits
+$7.5K
+~18% on salaries.
+Co-working / desk
+$2.5K
+Cheap. Do not claim a San Francisco office.
+Legal and accounting
+$2.5K
+Includes the immigration counsel.
+Infrastructure and dev accounts
+$1.3K
+Low, because there is no inference bill — the
+product runs on the user's machine.
+Recruiting
+$3.0K
+Amortised. A senior systems hire costs real money
+to source.
+Travel and events
+$3.0K
+US customer and investor travel from India.
+Contract design and security review
+$5.0K
+The audit is in the plan.
+Insurance and buffer
+$4.0K
+Don't skip this line; it signals maturity.
+Base total
+~$70K
+21 months at this rate.
+With buffer and FX
+~$83K
+18 months. This is the number in the deck.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+43
+
+
+===== PAGE 44 =====
+
+SAY THIS
+"Seventy thousand a month at full team, eighty-three with a buffer for FX and overruns. That's
+twenty-one months at base, eighteen at full. The biggest line is the second engineer, and that's
+deliberate — it's the hire that de-risks everything else."
+WHY THIS WORKS
+This is a much better answer than the division, because it shows you have thought about what the
+money does rather than what it costs. It also quietly explains why you're in India, without you
+having to defend it.
+If he says the round is too small for NEA
+This is the single most likely objection, and it is the one most founders handle badly by either
+getting defensive or immediately offering a bigger round. Neither works. Do this instead.
+SAY THIS
+"I know. It's a small cheque for a fund your size and I'm not going to pretend otherwise. Two
+honest options. One: you take a small position now because you think the category is real and
+you'd rather be in it before the seed — in which case I'd rather have you at $250K with your name
+on it than a larger cheque from someone who doesn't care about the space. Two: if the answer is
+that it's too small, tell me now and I'll come back at the seed with the numbers, and I'd rather
+have that relationship than a polite maybe."
+WHY THIS WORKS
+Offering the small cheque yourself is counter-intuitive and it is the strongest move available. It
+removes the awkwardness, it makes the conversation about conviction rather than size, and it is
+the only version of this conversation in which a $38B firm can say yes quickly.
+If he asks "would you take more?"
+Say yes, with the arithmetic already done. A larger round at the same cap means more dilution; a
+larger round at a higher cap means less. Know both.
+If NEA wants to put in
+At $12M post
+At $15M post
+What it buys
+$1.5M
+12.5%
+10.0%
+18 months — the plan as written
+$2.0M
+16.7%
+13.3%
+~24 months, or the same 18 with
+more headroom
+$3.0M
+25.0%
+20.0%
+~30 months and a proper
+seed-round team
+SAY THIS
+"I'd take two at the same cap, and I'd tell you honestly that it changes the plan — it buys a second
+engineer sooner and it means I'm not raising again in eighteen months. At three I'd want to talk
+about whether the cap moves, because twenty-five percent at pre-seed is a lot to give up before a
+seed."
+The NEA Meeting  ·  Bhavit  ·  Confidential
+44
+
+
+===== PAGE 45 =====
+
+CAREFUL
+Do not negotiate against yourself. If he hasn't asked for a bigger round, do not offer one. And
+never move the cap in the meeting — "I'd want to think about that" is a complete sentence.
+If he pushes on the cap
+He probably will, not because $12M is high but because that is what associates do — it is their job
+to test whether a founder has a reason for his number or just picked one.
+He says
+You say
+"That feels rich for
+pre-revenue."
+"It might be. It's below the median cap for a round this size — Carta had it
+around $18M for $1–2.5M rounds last quarter — so I'm not asking for a
+premium. What I'm buying with it is eighteen months and a hire, and if that's
+not worth twelve to you I'd rather understand why than argue about the
+number."
+"Would you come down?"
+"At a smaller cheque, yes. I'd rather have a smaller round at a fair cap than a
+bigger one at a number I'd have to defend to a seed investor in a year. What
+did you have in mind?"
+"We'd want a discount for
+being first money in."
+"I understand the instinct. The counter is that first money in is also the money
+that makes the seed possible, and the seed is where you make the return. I'm
+open to structure — I'm not open to a cap that makes the next round
+impossible."
+WHY THIS WORKS
+Note what is happening in all three: you concede the possibility without conceding the number,
+you ask a question back, and you keep the conversation about the plan rather than the price. A
+founder who defends a valuation looks like a founder who needs the money. A founder who asks
+what the other person had in mind looks like one who can walk away.
+NOTE
+One structural fact worth having ready: a post-money SAFE fixes the cap, so the only variables
+are cheque size and cap. There is no "structure" to negotiate beyond those two, which means this
+conversation is shorter than it feels. If he wants more than 20% of the company at pre-seed, the
+cap has to move — that is arithmetic, not stubbornness.
+If he asks about a lead
+SAY THIS
+"There's no lead yet. I started with the people whose thesis this actually is rather than running a
+broad process, which is either smart or naive and I'll know in a month. If NEA wants to lead, that
+changes the shape of the round and I'd want to talk about it properly."
+The NEA Meeting  ·  Bhavit  ·  Confidential
+45
+
+
+===== PAGE 46 =====
+
+AFTER THE CALL
+18 Two hours, two days, two weeks
+The meeting is not the thing. The meeting produces a memo, and the memo is written from
+memory plus whatever you send. What you send, and how fast, is therefore part of the meeting.
+Within two hours
+One short email. Not a deck — he has the deck. Three things, in this order:
+1. One line of thanks, no grovelling. "Thanks for the time — I enjoyed the question about X."
+2. The three-line recap. What you agreed the product is, what you agreed the open question is, and
+what you said you'd send.
+3. The links, inline. The 90-second recording, and the one-page claim note if you wrote one. Never
+attach more than one file.
+The forwardable paragraph
+This is the highest-value artefact you can produce, and almost no founder does it. Write a
+paragraph he can paste into the memo. Not a pitch — a draft of his summary, in his voice, with
+the risk already in it. Founders who do this get forwarded, because they have done the associate's
+hardest writing task for him.
+SAY THIS
+"Pre-seed, $1.5M at $12M post. Local-first work memory for macOS: observes app/file/tab activity
+on-device, models bodies of work, reconstructs the workspace on command. 16-crate Rust system,
+~138K lines, 1,270 tests, no HTTP client. Unusual for pre-seed: a labelled corpus from a real
+working day with hard regression gates against work fusion, plus per-target restore receipts.
+Traction is early and verbal. Risks: single founder on the engineering side, prosumer ACV,
+competing with OpenAI's Computer History. Angle: the context/jurisdiction layer for agents — one
+layer below our Namespace/Factory thesis."
+Send it as text in the email body, not as an attachment, and label it something like "in case it's
+useful for your notes." That framing makes it a gift rather than an instruction.
+Within 48 hours
+Answer every question you wrote down , in writing, in one document. Even the ones you
+half-answered. Number them to match the order he asked them.
+Send the technical note if he wanted one. Two pages: the pipeline, the four novel decisions,
+what the code cannot do, and the test numbers from this week.
+Log the meeting. Date, what he asked, what he reacted to, what he didn't, what he said the next
+step was. You will need this in three weeks and you will not remember.
+Within two weeks
+If he's engaged
+If he's quiet
+Send a real update — a shipped feature, a user quote,
+a number that moved. One email, no follow-up
+question.
+One polite nudge at day 7, one at day 14, then stop.
+"Circling back in case this fell through the cracks —
+happy to be told it's a no."
+The NEA Meeting  ·  Bhavit  ·  Confidential
+46
+
+
+===== PAGE 47 =====
+
+If he's engaged
+If he's quiet
+Ask what would make the partner conversation easy.
+Keep the relationship. A no at pre-seed is often a yes
+at seed if you come back with numbers.
+Assume four to eight weeks to a term sheet, and keep
+raising in parallel until the wire lands.
+Never let one firm's silence become your fundraising
+strategy.
+The email itself, drafted
+Copy this, cut it to your own words, and have it ready in drafts before the call so that sending it
+takes one minute rather than forty.
+Subject: Evo — thanks + the two links
+Thomas — thanks for the time. The question about [X] was the useful one and I've been
+thinking about it since.
+Three lines as I understood them: Evo reconstructs a workspace from on-device activity
+evidence; the hard part is deciding which windows are one job, and the rule we use is
+that production defines identity; the open question for you is whether that becomes a
+layer or stays a utility.
+Two links: the ninety-second recording [link], and the technical note [link]. I've answered
+your storage question at the bottom of the note — you were right that I didn't have the
+number.
+Next step from your side was [what he actually said]. Happy to work to your timeline.
+Bhavit
+— The template — one screen, no attachment except one
+WHY THIS WORKS
+Three things make this email work. It quotes his own question back, so he knows you were
+listening. It states the open question in his framing, which is what he will actually paste into the
+memo. And it answers the one thing he caught you on, which is the single highest-signal move
+available in a follow-up.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+47
+
+
+===== PAGE 48 =====
+
+TWO FUTURES
+19 If it's a no, and if it's a yes
+If it's a no
+It probably will be, and that is the base rate — not because Evo is bad, but because most first
+meetings with most firms are no. What matters is the shape of the no, and there are three.
+The no
+What it means
+What you do
+"Too early for us."
+Usually means "come back at seed."
+This is the best no available.
+Ask what specific milestone would make
+it a yes. Then go hit it. Email them the
+day you hit it.
+"Too small for the
+fund."
+Honest, structural, not about you.
+Ask for an intro to a pre-seed fund they
+respect. A warm intro from an associate
+is a real asset and costs him nothing.
+"We don't believe the
+category."
+The only no worth arguing with —
+once, and only in writing.
+Ask which premise they doubt. Answer
+it in one page. Do not argue twice.
+WHY THIS WORKS
+Whatever the no is, ask one question before you hang up: "If you were me, what would you do
+next?" Associates give real answers to that, and it is often worth more than the meeting.
+If it's a yes — or a maybe
+A "yes, let's go deeper" is not a yes. Between the first call and money there is diligence, and
+diligence on a pre-seed company with an AI-built codebase is specific. Have these ready before he
+asks.
+What he'll want
+What you need to have
+Incorporation documents
+Certificate, bylaws, EIN, cap table, founder stock agreements, 83(b) filings
+with dates.
+IP assignment
+Every founder and contractor has assigned IP to the company in writing. If
+you used AI agents, that's fine — but a human must have assigned the output.
+The cap table
+Who owns what, on a fully diluted basis, including any advisor grants or
+promises you've made verbally. Verbal equity promises are the most common
+pre-seed disaster.
+A security overview
+One page: what's captured, what's stored, where the keys are, what leaves
+the device (nothing), what the permissions are.
+The technical note
+Two pages. Pipeline, four novel decisions, known limits, test numbers.
+Two references
+People who have seen the product. Not family.
+CAREFUL
+The single most common thing that kills a pre-seed at diligence is a cap table that doesn't match
+what the founder said on the call. Know your percentages to the decimal before Friday, including
+anything you've promised verbally to an advisor or a friend.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+48
+
+
+===== PAGE 49 =====
+
+PRINT THIS. READ IT AT 10:55PM.
+20 The one-page card
+The four sentences
+1. "Every knowledge worker has a second job they don't get paid for: reconstructing what they
+were doing before they were interrupted — and it isn't a search problem."
+2. "Evo watches work happen locally, groups it into bodies of work, and rebuilds the workspace
+when you say continue. Sixteen crates of Rust, no HTTP client in it."
+3. "The engine has to be honest — every restore reports what it opened, what it couldn't, and
+there's a corpus of a real working day that fails the build if two works ever merge."
+4. "Every agent is getting memory. Almost none are getting jurisdiction — knowing which of your
+things belong to which job."
+The four honest concessions
+Traction: verbal, no list, 19-of-26 was an earlier build. Code: directed, not hand-written; first hire
+owns it. Learning: compounds memory, not parameters. Size: the Mac utility alone is a $5–40M
+business; the layer is the reason to care.
+The four questions to ask him
+What happens next and on what timeline. What would make this a yes. What's your biggest
+concern. How does NEA decide on a round this size.
+The physical checklist
+Before
+Check
+T-minus 60 min
+Eat. Water. Laptop charged. Phone on silent, face down, out of reach.
+T-minus 30 min
+Daemon running, three works visible, production created in each, notifications off,
+desktop clean. Recording tab open.
+T-minus 10 min
+Zoom audio and screen share tested with a recording, not just opened. Backup
+hotspot connected and ready. Second device on the same call as a fallback mic.
+T-minus 2 min
+One sheet of paper, one pen. Section 20 open. Timer visible but not shared.
+During
+Every unanswerable question goes on the paper. Note the clock at 0:25.
+T-plus 2 hours
+The email is sent. Not drafted. Sent.
+CAREFUL
+You are taking this call at 11:30pm IST. The single most common way a call like this goes wrong
+is not a bad answer — it is a tired founder at midnight, on a bad connection, with a laptop at 8%
+battery. Treat the logistics as seriously as the pitch.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+49
+
+
+===== PAGE 50 =====
+
+DRILL
+21 Numbers you must know cold
+Number
+What it is
+Say it how
+$1.5M
+The raise
+On a $12M post-money SAFE.
+18 months
+Runway
+At $83K a month, ~$70K of it base.
+12.5%
+Dilution
+1.5 ÷ 12. Don't volunteer it unless asked.
+16 crates
+Rust workspace
+About 138,500 lines.
+~1,270
+Tests
+Re-run before Friday. 59 suites, 0 failed.
+10,392
+Events in the corpus
+One real day. Two days of activity, actually.
+164
+Hand-labelled resources
+Across six bodies of work.
+6.1M
+US computer & mathematical
+professionals
+BLS 2024. The wedge.
+100K
+Users at month 12
+1.6% of the wedge.
+~$1M
+ARR run-rate at month 12
+9% paying × $108.
+$108/yr
+Pro price
+"The hypothesis."
+25 min 26 s
+Return-to-task time
+Mark et al., CHI 2005. Not a reconstruction
+stopwatch.
+~1,200
+App toggles per day
+HBR 2022.
+Aug 13 2026
+OpenAI Computer History launch
+The category validation and the threat, in one date.
+$311,071
+IER investment threshold
+The round clears it ~5×.
+If he asks about numbers you don't have
+There are five numbers an associate may ask for that you genuinely cannot produce. Have the
+shape of each answer ready, because an improvised number is worse than a missing one.
+He asks
+You don't have it because
+What you say
+Cost to acquire a user
+You've spent nothing on
+acquisition.
+"Zero spent, so no CAC. The launch budget is
+precisely to find out, and I'd rather report the first
+real number than model one."
+Activation rate
+No instrumentation.
+"Not measured yet. Instrumenting the next
+thousand users from day one is the first
+engineering task after the round."
+Paid conversion
+Pro doesn't exist until month three.
+"Undefined — there's no paid tier to convert into. I
+know that's an unsatisfying answer and I'm not
+going to dress it up."
+Storage per user
+Not benchmarked across a long
+history.
+"Order of megabytes a day, and I'd rather measure
+it over a week on my own machine than guess at a
+decimal."
+Support cost
+No users at scale.
+"Unknown, and I'd expect it to be the real cost
+driver at a $9 price point rather than
+infrastructure. That's a hypothesis, not a number."
+The NEA Meeting  ·  Bhavit  ·  Confidential
+50
+
+
+===== PAGE 51 =====
+
+THE LIST
+22 Do not say
+Fourteen phrases that cost founders meetings. Some are dishonest, some are just signals of
+inexperience. All of them are avoidable.
+Never say
+Because
+Say instead
+"We have 300 users."
+You don't. It's conversations.
+"Three hundred conversations, no list."
+"19 of 26 retained."
+Different build, informal
+measurement.
+"An earlier build, measured by asking, not
+instrumenting."
+"We're the ChatGPT of work."
+Category-by-analogy is the mark of
+a founder who hasn't decided what
+he's building.
+The one-sentence description.
+"Nobody else is doing this."
+Verifiably false and it destroys
+credibility in one sentence.
+"Everyone remembers. Almost nobody
+restores."
+"It learns and gets better
+automatically."
+There's no fitted model. He will ask
+what the update rule is.
+"It compounds memory, not parameters."
+"We have CI on every commit."
+There's no .github directory.
+"It's a hard test in the workspace suite; the
+CLI gate exits non-zero."
+"The market is $1 trillion."
+It's not a market, it's a population.
+The bottom-up: 6.1M, 1.6%, 9%, $970K.
+"It's end-to-end encrypted."
+It isn't yet. Per-record encryption is
+roadmap.
+"FileVault and the sandbox today;
+per-record keys before sync."
+"We're moving to San
+Francisco."
+Puts a government agency on your
+critical path.
+"The US is our market before it's our
+address."
+"Our AI is proprietary."
+Meaningless. Everything is
+proprietary or nothing is.
+"The rules are ours; the embedding model
+is off the shelf."
+"We just need a technical
+co-founder."
+Signals you know what you lack
+and have no plan.
+"The first hire is a senior Rust/macOS
+engineer; here's what they own."
+"If we build it, they will come."
+No plan.
+The three channels and the assumption
+behind each.
+"Our competitor is bad."
+Attacking competitors reads
+insecure.
+"They answer a different question."
+"Can you sign an NDA?"
+Venture firms don't, and it ends
+conversations.
+Nothing. Never ask.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+51
+
+
+===== PAGE 52 =====
+
+WHAT TO TRUST IN THIS BOOK
+23 Sources and confidence
+Everything factual here is graded. A means a primary source or the repo. B means a reputable
+secondary source or a reasonable inference. C means directional — useful, but don't quote it as fact
+in the room.
+About Thomas and NEA
+Claim
+Confidenc
+e
+Source
+Associate, Technology, joined 2025, seed/early and
+growth
+A
+nea.com/team/thomas-joshi
+Columbia B.Sc. AI; co-author of DSPy; ex-AI engineer in
+healthcare conversational AI
+A
+Same profile
+Portfolio: Anyscale 2019, Metabase 2019, Factory 2025;
+Namespace Labs Series A; CuspAI follow-on
+A
+Profile, NEA blog, X posts
+The five quoted lines about evaluation, utility and craft
+A
+Profile, verbatim or near-verbatim
+NEA ~$38B AUM as of 30 June 2026
+A
+NEA's own fellowship site
+NEA 19 ~$5.5B target, first close around Dec 2025–Jan
+2026
+B
+Dealroom summary; not confirmed by NEA
+directly
+NEA seed rounds average ~$4.4M across 241 deals
+B
+Tracxn
+Monday partnership meetings and YE/YS/NO voting
+C
+Fortune, 2011 — old, and practice will
+have evolved. Treat as cultural texture, not
+procedure.
+NEA fellowship cohort working on an AI memory thesis
+A
+NEA's own 2026 fellows blog post
+About the market and competition
+Claim
+Confiden
+ce
+Source
+OpenAI Computer History launched 13 August 2026, macOS,
+opt-in, Pro/Business/Enterprise, interaction events not
+screenshots, processed server-side, memories stored locally
+as Markdown
+A
+OpenAI documentation and changelog;
+corroborated by press
+Computer History extended to EEA, Switzerland and UK in
+Aug–Sept 2026
+A
+OpenAI changelog
+Microsoft Recall: Copilot+ only, opt-in, local, encrypted
+A
+Microsoft documentation
+Rewind → Limitless → acquired by Meta Dec 2025; Mac app
+discontinued
+B
+Press reporting
+NEA led Rewind's $12M at a $350M valuation in 2023
+B
+Contemporaneous press. Do not raise
+this in the meeting.
+Median post-money SAFE cap $18M for $1M–$2.4M rounds
+(Q2 2026)
+B
+Carta data via secondary summaries
+~93% of US pre-seed rounds use SAFEs
+B
+Carta via secondary
+Mark et al. 2005: 25 min 26 s average return-to-task, 24
+workers
+A
+CHI 2005 paper
+The NEA Meeting  ·  Bhavit  ·  Confidential
+52
+
+
+===== PAGE 53 =====
+
+About the code
+All A — read directly from the repository at commit 7af333bb .
+16 crates, ~138,507 lines of Rust across crates/ /src/ / .rs .
+docs/BUILD-LOG.md : 57 suites / 1,087 tests (30 Sep);
+docs/architecture/LOCAL-WORK-RESTORATION.md : 59 suites / 1,272 tests (5 Oct).
+crates/evo-threads/tests/ground_truth.rs : the three hard assertions.
+tools/threads-regression/ : 10,392 events, 164 labels.
+crates/evo-execution/src/restore.rs : opened / raised / unopened-with-reason.
+No reqwest , hyper , ureq or websocket dependency anywhere in the workspace.
+No .github/ directory — there is no CI configuration.
+docs/RELEASE-CHECKLIST.md (6 Oct): end-to-end capture→daemon→UI, cold Accessibility probe, and
+a real browser profile receipt remain unpassed .
+CAREFUL
+The last one is the most important line in this book. If he asks whether the product is
+release-ready, the honest answer is: "It runs and I use it. What I don't have is a signed, notarised
+build with an end-to-end receipt on a second machine — and the repo documents exactly which
+gates are unpassed." That answer is far stronger than a confident yes, because it proves you know
+the difference between a demo and a release.
+One last thing. You got this meeting by writing one specific email to one specific person
+about something she had written. That is the same skill this call requires: say the true,
+specific thing to the person in front of you, and stop talking. You already know how to do it.
+The NEA Meeting  ·  Bhavit  ·  Confidential
+53

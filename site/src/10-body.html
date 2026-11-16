@@ -1,0 +1,392 @@
+<script>document.documentElement.classList.add('js');</script>
+<noscript><style>
+.pin{height:auto}.pin .stage{height:auto;position:relative;display:block;padding:44px 0}
+.pin canvas{display:none}.pin .hud{display:none}
+.pin .cap{position:static;opacity:1;transform:none;max-width:none;margin:0 0 20px}
+</style></noscript>
+<div class="top">
+  <a class="brand" href="#top"><i></i>EVO</a>
+  <div class="ticks" aria-hidden="true">
+    <b data-t="1"></b><b data-t="2"></b><b data-t="3"></b><b data-t="4"></b><b data-t="5"></b><b data-t="6"></b><b data-t="7"></b><b data-t="8"></b><b data-t="9"></b><b data-t="10"></b>
+  </div>
+  <div class="tw mono">
+    <a href="demo.html">Console</a>
+    <a href="source.html">Source</a>
+    <a class="go" href="#ask">Ask it ↓</a>
+  </div>
+  <div class="bar" aria-hidden="true"></div>
+</div>
+
+<header class="cover" id="top">
+  <div class="cmeta mono">
+    <span>Field note 001</span>
+    <span>31.10.2026 — Gurugram</span>
+    <span>Ship Happens / AWS × ADIGPS</span>
+  </div>
+
+  <div class="cover-grid">
+    <div class="cover-main">
+      <h1 class="huge">
+        <span class="ln"><span style="--d:0">Every agent is</span></span>
+        <span class="ln"><span style="--d:1">told where its</span></span>
+        <span class="ln"><span style="--d:2">work begins.</span></span>
+        <span class="ln"><span style="--d:3"><em>Evo derives it.</em></span></span>
+      </h1>
+
+      <div class="cbelow">
+        <p class="lede">The boundary layer for agents: where one body of work ends and the next begins — derived on the device, without a model, so an agent can act on a real machine without a human labelling every folder first.</p>
+        <div>
+          <div class="eight" aria-hidden="true"><i class="c"></i><i class="x"></i><i class="c"></i><i class="x"></i><i class="x"></i><i class="x"></i><i class="x"></i><i class="x"></i></div>
+          <div class="scrollcue" style="margin-top:12px"><span class="l"></span>Scroll · it is a report</div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="ledger" aria-hidden="true" id="ledger"></aside>
+  </div>
+
+  <div class="cfoot mono">
+    <span>two days · 8 bodies of work · 2 claimed · 6 refused</span>
+    <span>no model · no network · no HTTP client</span>
+  </div>
+</header>
+
+<main>
+
+<!-- 01 ------------------------------------------------------------------ -->
+<section class="sec first" data-ch="1" id="tax">
+  <div class="wrap">
+    <div class="row tight">
+      <div class="rail"><span class="n">01</span><span class="k">The tax</span><span class="sub">measured,<br>not asserted</span></div>
+      <div>
+        <h2 class="display"><span class="ln"><span>The work is not lost.</span></span><span class="ln"><span><em>The boundary is.</em></span></span></h2>
+        <p class="lede dim">You know exactly where you were. You just cannot get back there quickly, and nobody has ever measured how much that costs the machine.</p>
+
+        <div class="stats">
+          <div class="stat rv">
+            <div class="fig" data-count="275" data-to="275">0<u>times a day</u></div>
+            <div class="c">The most-pinged fifth of knowledge workers are interrupted roughly <b>every two minutes</b>. Not the average worker — the top 20% by notification volume.<span class="src">Microsoft Work Trend Index 2025 · telemetry to Feb 2025</span></div>
+          </div>
+          <div class="stat rv" style="--d:1">
+            <div class="fig" data-count="23.25" data-style="clock">0:00<u>to refocus</u></div>
+            <div class="c">to get back to the original task after an interruption — before any of the new work is even useful.<span class="src">Mark, Gudith &amp; Klocke · CHI 2008</span></div>
+          </div>
+          <div class="stat rv" style="--d:2">
+            <div class="fig" data-count="47" data-to="47">0<u>seconds</u></div>
+            <div class="c">average attention on a single screen. It was <b>2.5 minutes in 2004</b>, 75 seconds in 2012.<span class="src">Gloria Mark, UC Irvine · 2023</span></div>
+          </div>
+        </div>
+
+        <div class="strip rv">
+          <svg id="dayticks" viewBox="0 0 1000 58" preserveAspectRatio="none" aria-hidden="true"></svg>
+          <span class="lbl">A single day · 275 interruptions</span>
+        </div>
+
+        <blockquote class="pull rv">Only 7% of interrupted sessions resume without first re-navigating the code by hand.
+          <cite>Parnin &amp; Rugaber · 10,000 sessions, 86 developers · 2011</cite>
+        </blockquote>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 ------------------------------------------------------------------ -->
+<section class="sec" data-ch="2" id="reconstruction">
+  <div class="wrap">
+    <div class="row tight">
+      <div class="rail"><span class="n">02</span><span class="k">Reconstruction</span><span class="sub">the part<br>nobody bills</span></div>
+      <div>
+        <h2 class="display"><span class="ln"><span>You spend the first</span></span><span class="ln"><span>ten minutes becoming</span></span><span class="ln"><span><em>yourself again.</em></span></span></h2>
+        <p class="lede dim">Not recalling the task. Rebuilding the shape of it — which of the forty-seven open windows mattered, which tab was the thread, which document was only ever open because something was cited in it.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="pin" id="pinRecon">
+    <div class="stage">
+      <canvas id="cRecon" aria-label="Illustration: scattered windows resolving into one bounded body of work"></canvas>
+      <div class="hud">windows open<b id="hudWindows">47</b></div>
+      <div class="cap" data-band="0"><b>Forty-seven surfaces. One of them is the job.</b>The machine keeps all of them. It does not keep the shape — what was made, what you returned to, what you only glanced at.</div>
+      <div class="cap" data-band="1"><b>So you rebuild it by hand, every time.</b>A hundred and sixty-three times a day, in the background, for free.</div>
+      <div class="cap" data-band="2"><b>Evo derives the shape instead.</b>From the making, the returning and the glancing. One boundary, drawn from evidence, on the device.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 ------------------------------------------------------------------ -->
+<section class="sec" data-ch="3" id="folder">
+  <div class="wrap">
+    <div class="row tight">
+      <div class="rail"><span class="n">03</span><span class="k">The category error</span><span class="sub">bytes are<br>not meaning</span></div>
+      <div>
+        <h2 class="display"><span class="ln"><span>A folder is not a boundary.</span></span></h2>
+        <p class="lede dim">It is a decision you made before the work existed — a name, a menu, a filing cabinet. Real work does not arrive like that. And two people can hold identical bytes for entirely different reasons.</p>
+
+        <div class="dual">
+          <div class="col">
+            <div class="hd"><span>Person A</span><b>Funding application</b></div>
+            <div class="f">draft-v3.docx <span>written</span></div>
+            <div class="f">notes.md <span>returned to ×41</span></div>
+            <div class="f">budget.xlsx <span>edited</span></div>
+            <div class="f">council-guidance.pdf <span>read once</span></div>
+            <div class="verdict">eight resources, one job<b>claim: a work</b></div>
+          </div>
+          <div class="col">
+            <div class="hd"><span>Person B</span><b>Client engagement</b></div>
+            <div class="f">draft-v3.docx <span>written</span></div>
+            <div class="f">notes.md <span>returned to ×39</span></div>
+            <div class="f">budget.xlsx <span>edited</span></div>
+            <div class="f">council-guidance.pdf <span>never opened</span></div>
+            <div class="verdict">eight resources, another job<b>claim: a different work</b></div>
+          </div>
+        </div>
+
+        <div class="prose rv" style="margin-top:30px">
+          <p>The boundary is not in the bytes. It is in how the work arrived: <b>what you made, what you returned to, and what you merely glanced at.</b> That distinction is the entire engine — and it is why an agent cannot read it out of the file system, no matter how long its context window.</p>
+        </div>
+
+        <blockquote class="pull rv">A boundary that guesses is not a boundary.
+          <cite>The design constraint the whole engine is built around</cite>
+        </blockquote>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 04 ------------------------------------------------------------------ -->
+<section class="sec night" data-ch="4" id="engine">
+  <div class="wrap">
+    <div class="row tight">
+      <div class="rail"><span class="n">04</span><span class="k">The engine</span><span class="sub">deterministic<br>fold</span></div>
+      <div>
+        <h2 class="display"><span class="ln"><span>Every event, in order.</span></span><span class="ln"><span>Eight bodies of work out.</span></span><span class="ln"><span><em>Two it will defend.</em></span></span></h2>
+        <p class="lede dim">No model. No embeddings. No sampling. A fold over the log that produces the same boundary every time it runs — because a boundary that changes tomorrow is not something you can give an agent permission to act on.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="pin" id="pinEngine">
+    <div class="stage">
+      <canvas id="cEngine" aria-label="Illustration: 10,392 events clustering into eight bodies of work, six of which are refused"></canvas>
+      <div class="hud">works claimed<b id="hudClaimed">0 / 8</b><s>synthetic replay</s></div>
+      <div class="cap" data-band="0"><b>Every event, in order.</b>Two days on one machine: what was typed, what was focused, what was visited and for how long.</div>
+      <div class="cap" data-band="1"><b>Attention becomes episodes. Episodes become works.</b>Points are pulled to the bodies of work they earned — not the ones they resemble.</div>
+      <div class="cap" data-band="2"><b>Six are refused.</b>Not because the engine is weak — because a wrong merge is irreversible and a refusal costs nothing.</div>
+      <div class="cap" data-band="3"><b>Two are claimed, and defended by a test.</b>The gate asserts no fusion, no leisure anchor, and determinism. It never asserts coverage.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 05 ------------------------------------------------------------------ -->
+<section class="sec" data-ch="5" id="gate">
+  <div class="wrap">
+    <div class="row tight">
+      <div class="rail"><span class="n">05</span><span class="k">The gate</span><span class="sub">try to<br>break it</span></div>
+      <div>
+        <h2 class="display"><span class="ln"><span>The gate never asks</span></span><span class="ln"><span>how much it caught.</span></span></h2>
+        <p class="lede dim">It asks whether it broke anything. Three assertions, run on every build. Fail one and the build fails — which is the only reason a boundary is worth trusting.</p>
+
+        <div class="gate">
+          <div class="panel">
+            <table>
+              <tbody id="gateRows">
+                <tr><td><span class="pill">pass</span></td><td><div class="gname">no two works fuse</div><div class="gwhy">fused 0 · 28 candidate pairs, none merged</div></td></tr>
+                <tr><td><span class="pill">pass</span></td><td><div class="gname">no leisure anchor</div><div class="gwhy">leisure anchor false · a 47,000-second film is still not a project</div></td></tr>
+                <tr><td><span class="pill">pass</span></td><td><div class="gname">determinism</div><div class="gwhy">same log twice = identical threads</div></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <div class="acts">
+              <button class="btn" id="btnInfer">Merge these by inference <span>→</span></button>
+              <button class="btn p" id="btnDeclare">Declare them the same work <span>→</span></button>
+              <button class="btn" id="btnReset" style="border-color:var(--rule);color:var(--ink-55)">Reset <span>↺</span></button>
+            </div>
+            <div class="gout" id="gateOut">Pick a work. Ask the machine to fuse it. Then do it yourself.</div>
+          </div>
+        </div>
+        <p class="mono lc dim rv" style="margin-top:22px;max-width:56ch">Simulated locally so you can watch the gate trip — it does not write to the engine. The real assertions live in <span class="sig">crates/evo-threads/tests/ground_truth.rs</span> and fail the build.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 06 ------------------------------------------------------------------ -->
+<section class="sec" data-ch="6" id="handoff">
+  <div class="wrap">
+    <div class="row tight">
+      <div class="rail"><span class="n">06</span><span class="k">The handoff</span><span class="sub">concept film<br>no video file</span></div>
+      <div>
+        <h2 class="display"><span class="ln"><span>Pick it up on</span></span><span class="ln"><span><em>the other machine.</em></span></span></h2>
+        <p class="lede dim">The boundary does not belong to a device. A note captured on a phone arrives attached to the work it was about — not in a feed, not in an inbox, but in the shape of the job.</p>
+
+        <div class="filmwrap">
+          <div class="film" id="film">
+            <div class="ph">loading film</div>
+            <iframe id="filmFrame" title="Concept film: the cross-device handoff" data-src="film.html" scrolling="no"></iframe>
+          </div>
+          <div class="filmcap">
+            <span>Concept film · 68 seconds · plays on load · ↺ replays</span>
+            <span>Hand-built in HTML &amp; CSS — no video file, no After Effects, no screen recording</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 07 ------------------------------------------------------------------ -->
+<section class="sec" data-ch="7" id="jurisdiction">
+  <div class="wrap">
+    <div class="row tight">
+      <div class="rail"><span class="n">07</span><span class="k">Jurisdiction</span><span class="sub">not learning —<br>legislation</span></div>
+      <div>
+        <h2 class="display"><span class="ln"><span>It does not learn.</span></span><span class="ln"><span><em>The person legislates.</em></span></span></h2>
+        <p class="lede dim">Six kinds of declaration exist in the engine. Each one is permanent, recorded in the log, and honoured on every replay. There is no feedback loop that can quietly undo a person's decision.</p>
+
+        <div class="tri rv">
+          <div><h3>Derived</h3><p>The engine placed it, from evidence it witnessed.</p></div>
+          <div><h3>Declared</h3><p>The person overrode or confirmed it, and the log holds that.</p></div>
+          <div><h3>Refused</h3><p>The engine declined to place it at all.</p></div>
+        </div>
+
+        <table class="ledger-t">
+          <thead><tr><th>Declaration</th><th class="hidesm">The person says</th><th>What the engine does</th></tr></thead>
+          <tbody>
+            <tr><td class="kw">SameWork</td><td class="hidesm note">“These belong together”</td><td class="note">The only merge path in the system.</td></tr>
+            <tr class="hot"><td class="kw">SeparateWork</td><td class="hidesm note">“These are separate”</td><td class="note">A standing prohibition. Inference can never rejoin them — not by score, not by evidence, not ever.</td></tr>
+            <tr><td class="kw">NotMine</td><td class="hidesm note">“This is not my work”</td><td class="note">Permanent quarantine. Never evidence again.</td></tr>
+            <tr><td class="kw">Classified</td><td class="hidesm note">“This surface is of a class”</td><td class="note">Gates founding and titling only. Keeps the attention it earned.</td></tr>
+            <tr><td class="kw">WorkDismissed</td><td class="hidesm note">“Don’t show this work”</td><td class="note">Evidence retained; hidden from the rack.</td></tr>
+            <tr><td class="kw">MemberState</td><td class="hidesm note">A lifecycle correction</td><td class="note">Applies to that one member.</td></tr>
+          </tbody>
+        </table>
+
+        <blockquote class="pull rv">These are separate works; inference will never put them together.
+          <cite>assign.rs — recorded in the log, honoured on every replay</cite>
+        </blockquote>
+
+        <p class="mono lc dim rv" style="max-width:58ch">The engine implements all six and honours them on replay. The service exposes no endpoint for them yet — today a declaration is made by replaying a log, not by calling an API. That is the next thing to build, and we would rather say so than imply otherwise.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 08 ------------------------------------------------------------------ -->
+<section class="sec" data-ch="8" id="proof">
+  <div class="wrap">
+    <div class="row tight">
+      <div class="rail"><span class="n">08</span><span class="k">Proof</span><span class="sub">run it<br>yourself</span></div>
+      <div>
+        <h2 class="display"><span class="ln"><span>An agent asks.</span></span><span class="ln"><span>The boundary <em>answers.</em></span></span></h2>
+        <p class="lede dim">This is a real MCP transcript from the repository — handshake, tool list, call, and the decision that comes back with its evidence and what it rejected.</p>
+
+        <div class="term" id="term" style="margin-top:30px">
+          <div class="hd"><i></i><i></i><i></i><span>evo-boundary · mcp over stdio</span></div>
+          <div class="ln" id="termBody"></div>
+        </div>
+
+        <div class="num-grid rv">
+          <div><b data-count="10392" data-to="10392">0</b><s>events · real corpus</s></div>
+          <div><b data-count="164" data-to="164">0</b><s>resources hand-labelled</s></div>
+          <div><b>2 / 8</b><s>works claimed</s></div>
+          <div><b>0</b><s>HTTP clients · enforced by test</s></div>
+          <div><b>874<span style="font-size:.4em">ms</span></b><s>50k observations → boundary</s></div>
+          <div><b>4.2<span style="font-size:.4em">ms</span></b><s>reload from the log</s></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 09 ------------------------------------------------------------------ -->
+<section class="sec" id="ask" data-ch="9">
+  <div class="wrap">
+    <div class="row tight">
+      <div class="rail"><span class="n">09</span><span class="k">Try it</span><span class="sub">synthetic<br>corpus</span></div>
+      <div>
+        <h2 class="display"><span class="ln"><span>Ask it something.</span></span><span class="ln"><span>Then ask it something <em>it should refuse.</em></span></span></h2>
+        <p class="lede dim">Eight invented bodies of work for an invented person, so that publishing the demo does not publish anyone's browsing history. Two are claimed. Six are refused. It will still answer questions about them.</p>
+
+        <div class="askbox">
+          <div class="askline">
+            <input id="q" type="text" placeholder="where did I look for flats to rent?" autocomplete="off" spellcheck="false" aria-label="Ask the boundary">
+            <button id="go">Ask →</button>
+          </div>
+          <div class="chips">
+            <button class="chip" data-q="where did I look for flats to rent">flats to rent</button>
+            <button class="chip" data-q="which chapter was I writing">the chapter</button>
+            <button class="chip" data-q="did I send the invoice">the invoice</button>
+            <button class="chip" data-q="what is the capital of france">not a job</button>
+          </div>
+          <div class="ans" id="ans"><div class="idle">The answer comes back with its evidence, its share of the evidence, and the work it nearly picked instead.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- colophon ------------------------------------------------------------ -->
+<section class="sec" id="real" data-ch="10">
+  <div class="wrap">
+    <div class="row tight">
+      <div class="rail"><span class="n">10</span><span class="k">Colophon</span><span class="sub">what is real<br>and what is not</span></div>
+      <div>
+        <h2 class="display"><span class="ln"><span>We would rather you trust</span></span><span class="ln"><span>two works than be impressed</span></span><span class="ln"><span>by eight.</span></span></h2>
+
+        <div class="colo">
+          <div>
+            <h4>Real</h4>
+            <ul>
+              <li>16 Rust crates. A deterministic fold over an event log.</li>
+              <li>The gate: no fusion, no leisure anchor, determinism. It fails the build.</li>
+              <li>10,392 real events. 164 resources labelled by hand.</li>
+              <li>An HTTP service and an MCP server, both local.</li>
+              <li>Local-first enforced by a test that walks every manifest.</li>
+            </ul>
+          </div>
+          <div>
+            <h4>Simulated</h4>
+            <ul>
+              <li>The gate buttons on this page. They show the verifier tripping; they do not write to the engine.</li>
+              <li>This site's corpus. Synthetic, eight invented works.</li>
+              <li>The concept film. A motion study, not a screen recording.</li>
+            </ul>
+          </div>
+          <div>
+            <h4>Not yet</h4>
+            <ul>
+              <li>An endpoint for declarations. The engine honours them; the service cannot be asked for them.</li>
+              <li>Ten people outside the company running it for thirty days.</li>
+              <li>Cross-device sync. The film is what it looks like when it lands.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="prose rv" style="margin-top:34px">
+          <p class="dim" style="font-size:.94rem">One person, one machine, two days. Every number on this page is either in the corpus above, in the repository, or in a named published study. Where a figure could not be traced to a primary source — the widely repeated 78% MCP figure, for instance — we left it out rather than repeat it.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="end">
+  <div class="wrap">
+    <h2 class="display">Every agent shipping right now has memory. <em>None of them have jurisdiction.</em></h2>
+    <div class="links">
+      <a href="demo.html">Open the full console →</a>
+      <a href="source.html">Read the source excerpts →</a>
+      <a href="#ask">Ask the boundary again</a>
+      <a href="https://github.com/BHAVIT-EVO/architecture-v1">Source · private, ask for access</a>
+      <a href="#top">Back to the top ↑</a>
+    </div>
+    <div class="legal">
+      <span>Evo · field note 001 · 31.10.2026</span>
+      <span>Built at Ship Happens, Juspay Gurugram</span>
+      <span>No model in the decision path</span>
+    </div>
+  </div>
+</section>
+
+</main>
