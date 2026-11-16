@@ -204,7 +204,7 @@ fn validate_surface(root: &Path, subjects: &[String]) -> Result<(), String> {
                 return Err(format!(
                     "Evo has not witnessed the subject {subject:?} as a resource, so it cannot be \
                      declared in a continuation surface (no canonical object resolves to it)"
-                ))
+                ));
             }
             Err(err) => return Err(format!("could not validate a surface subject: {err}")),
         }
@@ -240,7 +240,9 @@ pub fn submit_continuation_surface(
         stream
             .write_all(format!("{}\n", subject.len()).as_bytes())
             .map_err(continuation_io)?;
-        stream.write_all(subject.as_bytes()).map_err(continuation_io)?;
+        stream
+            .write_all(subject.as_bytes())
+            .map_err(continuation_io)?;
     }
     stream.flush().map_err(continuation_io)?;
     let mut response = String::new();
@@ -296,7 +298,9 @@ mod tests {
                 UNIX_EPOCH,
                 HashMap::new(),
             ),
-            Evidence::new(vec![ObservedFact::new(fact_name, FactValue::Text(subject.into())).unwrap()]),
+            Evidence::new(vec![
+                ObservedFact::new(fact_name, FactValue::Text(subject.into())).unwrap(),
+            ]),
         )
     }
 
@@ -341,20 +345,30 @@ mod tests {
         let _listener = spawn_continuation_listener(root.clone(), sender);
 
         let socket = continuation_surface_socket_path(&root);
-        for _ in 0..100 {
-            if socket.exists() {
-                break;
+        // The socket file existing is not the same as the listener accepting:
+        // bind may still be settling or a connect may race the listener's
+        // accept loop on a loaded machine, so retry the FIRST submission
+        // briefly. Everything after it runs against a proven-live socket.
+        let subjects = ["/tmp/a.md".to_string(), "/tmp/b.md".to_string()];
+        let mut response = None;
+        for _ in 0..50 {
+            match submit_continuation_surface(&root, &subjects) {
+                Ok(reply) => {
+                    response = Some(reply);
+                    break;
+                }
+                // Not-reachable means the listener wasn't accepting yet:
+                // the only retryable outcome. Anything else is the real
+                // answer and surfaces below.
+                Err(DaemonError::Designation(msg))
+                    if msg.contains("not running or not reachable") =>
+                {
+                    std::thread::sleep(Duration::from_millis(20));
+                }
+                Err(err) => panic!("submission should work: {err:?}"),
             }
-            std::thread::sleep(Duration::from_millis(20));
         }
-
-        // No content observations exist yet: every subject is unwitnessed, so
-        // the declaration is rejected honestly.
-        let response = submit_continuation_surface(
-            &root,
-            &["/tmp/a.md".to_string(), "/tmp/b.md".to_string()],
-        )
-        .expect("submission should work");
+        let response = response.expect("the listener socket never accepted a submission");
         assert!(matches!(response, ContinuationResponse::Rejected(_)));
         assert!(
             receiver.try_recv().is_err(),
@@ -366,11 +380,9 @@ mod tests {
 
         // The declaration is accepted and forwarded with canonical ordering
         // (ascending; the smallest subject is the Required Subject).
-        let response = submit_continuation_surface(
-            &root,
-            &["/tmp/b.md".to_string(), "/tmp/a.md".to_string()],
-        )
-        .expect("submission should work");
+        let response =
+            submit_continuation_surface(&root, &["/tmp/b.md".to_string(), "/tmp/a.md".to_string()])
+                .expect("submission should work");
         assert_eq!(response, ContinuationResponse::Accepted);
         let signal = receiver
             .recv_timeout(Duration::from_secs(5))
@@ -378,7 +390,10 @@ mod tests {
         let MacOSSignal::ContinuationSurface { subjects, .. } = signal else {
             panic!("forwarded signal must be ContinuationSurface");
         };
-        assert_eq!(subjects, vec!["/tmp/a.md".to_string(), "/tmp/b.md".to_string()]);
+        assert_eq!(
+            subjects,
+            vec!["/tmp/a.md".to_string(), "/tmp/b.md".to_string()]
+        );
     }
 
     #[test]
@@ -388,23 +403,18 @@ mod tests {
         let _listener = spawn_continuation_listener(root.clone(), sender);
 
         let socket = continuation_surface_socket_path(&root);
-        for _ in 0..100 {
-            if socket.exists() {
-                break;
-            }
-            std::thread::sleep(Duration::from_millis(20));
-        }
+        crate::socket_test_support::wait_for_listener(&socket);
         witness(&root, &["/tmp/a.md"]);
 
         // One subject: rejected — a single-subject continuation declaration
         // belongs to the designation contract (RFC-0011).
-        let response = submit_continuation_surface(
-            &root,
-            &["/tmp/a.md".to_string()],
-        )
-        .expect("submission should work");
+        let response = submit_continuation_surface(&root, &["/tmp/a.md".to_string()])
+            .expect("submission should work");
         assert!(matches!(response, ContinuationResponse::Rejected(_)));
-        assert!(receiver.try_recv().is_err(), "no partial declaration ever exists");
+        assert!(
+            receiver.try_recv().is_err(),
+            "no partial declaration ever exists"
+        );
     }
 
     #[test]
@@ -414,12 +424,7 @@ mod tests {
         let _listener = spawn_continuation_listener(root.clone(), sender);
 
         let socket = continuation_surface_socket_path(&root);
-        for _ in 0..100 {
-            if socket.exists() {
-                break;
-            }
-            std::thread::sleep(Duration::from_millis(20));
-        }
+        crate::socket_test_support::wait_for_listener(&socket);
 
         // Witness only the first subject: the declaration is rejected.
         witness(&root, &["/tmp/a.md"]);
@@ -429,7 +434,10 @@ mod tests {
         )
         .expect("submission should work");
         assert!(matches!(response, ContinuationResponse::Rejected(_)));
-        assert!(receiver.try_recv().is_err(), "no partial declaration ever exists");
+        assert!(
+            receiver.try_recv().is_err(),
+            "no partial declaration ever exists"
+        );
     }
 
     #[test]
@@ -439,20 +447,16 @@ mod tests {
         let _listener = spawn_continuation_listener(root.clone(), sender);
 
         let socket = continuation_surface_socket_path(&root);
-        for _ in 0..100 {
-            if socket.exists() {
-                break;
-            }
-            std::thread::sleep(Duration::from_millis(20));
-        }
+        crate::socket_test_support::wait_for_listener(&socket);
         witness(&root, &["/tmp/a.md"]);
 
-        let response = submit_continuation_surface(
-            &root,
-            &["/tmp/a.md".to_string(), "/tmp/a.md".to_string()],
-        )
-        .expect("submission should work");
+        let response =
+            submit_continuation_surface(&root, &["/tmp/a.md".to_string(), "/tmp/a.md".to_string()])
+                .expect("submission should work");
         assert!(matches!(response, ContinuationResponse::Rejected(_)));
-        assert!(receiver.try_recv().is_err(), "no partial declaration ever exists");
+        assert!(
+            receiver.try_recv().is_err(),
+            "no partial declaration ever exists"
+        );
     }
 }

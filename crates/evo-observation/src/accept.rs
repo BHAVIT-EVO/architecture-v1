@@ -76,9 +76,8 @@ mod tests {
         let source = ObservationSource::new("test_source").unwrap();
         let provenance = Provenance::new(source, SystemTime::now(), HashMap::new());
 
-        let fact =
-            ObservedFact::new("WindowFocusGained", FactValue::Text("editor-window".into()))
-                .unwrap();
+        let fact = ObservedFact::new("WindowFocusGained", FactValue::Text("editor-window".into()))
+            .unwrap();
         let evidence = Evidence::new(vec![fact]);
 
         (schema, provenance, evidence)

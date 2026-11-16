@@ -32,14 +32,20 @@
 //!   glanced at. That is all.
 
 mod assign;
-pub mod retrieval;
+mod brief;
 mod config;
 mod continuation;
 mod episodes;
+/// The committed regression corpus's label canonicalization, shared by the
+/// `regression` binary and the `ground_truth` test so the CI gate and the
+/// human report can never drift apart.
+pub mod ground_truth;
+pub mod retrieval;
 mod state;
 mod trace;
 mod types;
 
+pub use brief::{WorkAnchor, WorkBrief};
 pub use config::Config;
 pub use trace::{render as render_decision, Decision, ParkReason, Witness};
 pub use types::*;
@@ -50,6 +56,10 @@ use state::State;
 #[derive(Clone, Debug, PartialEq)]
 pub struct Engine {
     pub(crate) st: State,
+    /// Derived lifecycle relationships supplied for this replay only. This is
+    /// intentionally outside `State`: it is never part of the event-sourced
+    /// fold and is never persisted as canonical or derived state.
+    pub(crate) lifecycle_evidence: LifecycleEvidence,
 }
 
 impl Default for Engine {
@@ -62,19 +72,56 @@ impl Engine {
     pub fn new() -> Self {
         Self {
             st: State::new(Config::default()),
+            lifecycle_evidence: LifecycleEvidence::default(),
         }
     }
 
     pub fn with_config(cfg: Config) -> Self {
         Self {
             st: State::new(cfg),
+            lifecycle_evidence: LifecycleEvidence::default(),
         }
+    }
+
+    /// Attach replay-time lifecycle relationships without changing the
+    /// canonical event fold. Callers should rebuild this value from the
+    /// canonical evidence on each replay; the engine does not persist it.
+    pub fn set_lifecycle_evidence(&mut self, evidence: LifecycleEvidence) {
+        self.lifecycle_evidence = evidence;
+    }
+
+    /// Returns the replay-time lifecycle relationships currently attached to
+    /// this engine. The reference is transient and is never part of `State`.
+    pub fn lifecycle_evidence(&self) -> &LifecycleEvidence {
+        &self.lifecycle_evidence
+    }
+
+    /// Builder form of [`Self::set_lifecycle_evidence`].
+    pub fn with_lifecycle_evidence(mut self, evidence: LifecycleEvidence) -> Self {
+        self.set_lifecycle_evidence(evidence);
+        self
+    }
+
+    /// Replay canonical events and attach ephemeral lifecycle relationships in
+    /// one deterministic operation.
+    pub fn replay_with_lifecycle_evidence(events: &[Event], evidence: LifecycleEvidence) -> Self {
+        Self::replay(events).with_lifecycle_evidence(evidence)
     }
 
     /// Feed one event. This is the complete input surface; there is no other
     /// way in. Declarations are events too — the person's word travels the
     /// same pipe as everything else, and outranks all of it.
     pub fn apply(&mut self, event: Event) {
+        // The append stream is authoritative for ordering. A late event must
+        // not move episode spans, contact watermarks, or churn windows back in
+        // time: all downstream arithmetic assumes a monotonic event clock.
+        // Keep the event in the stream, but clamp its timestamp at the last
+        // accepted position rather than letting a delayed adapter observation
+        // rewrite the current sitting's temporal scope.
+        let mut event = event;
+        if self.st.started && event.timestamp < self.st.now {
+            event.timestamp = self.st.now;
+        }
         if !self.st.started {
             self.st.now = event.timestamp;
             self.st.started = true;
@@ -95,10 +142,23 @@ impl Engine {
                 } else {
                     match event.origin {
                         Origin::System => match event.interaction {
-                            Interaction::Mutated => self.apply_mutated(&event),
+                            // A background write is not person production just
+                            // because the person recently looked at the same
+                            // resource. The one defensible system-origin
+                            // mutation is the observable result of a recent
+                            // command the person ran; ordinary autosave/churn
+                            // must remain state-only.
+                            Interaction::Mutated if self.is_recent_command_result(&event) => {
+                                self.apply_mutated(&event)
+                            }
                             _ => self.st.push(Decision::EvidenceDropped {
                                 resource: event.resource.clone(),
-                                reason: "system-origin act; state, not work".to_string(),
+                                reason: if event.interaction == Interaction::Mutated {
+                                    "system-origin mutation without a recent person command; background churn, state not work"
+                                        .to_string()
+                                } else {
+                                    "system-origin act; state, not work".to_string()
+                                },
                             }),
                         },
                         Origin::Execution => {
@@ -123,6 +183,17 @@ impl Engine {
         if self.st.sweep_dirty {
             self.sweep_parked();
         }
+    }
+
+    fn is_recent_command_result(&self, event: &Event) -> bool {
+        self.st
+            .ledger
+            .get(&event.resource)
+            .and_then(|ledger| ledger.pending_command)
+            .map(|command_at| {
+                event.timestamp.saturating_sub(command_at) <= self.st.cfg.churn_window
+            })
+            .unwrap_or(false)
     }
 
     fn apply_person(&mut self, e: &Event) {
@@ -165,10 +236,7 @@ impl Engine {
                 _ => {}
             }
             // Touching a download after it landed closes the "unused" loop.
-            let downloaded_before = l
-                .downloaded_at
-                .map(|d| d < e.timestamp)
-                .unwrap_or(false);
+            let downloaded_before = l.downloaded_at.map(|d| d < e.timestamp).unwrap_or(false);
             if downloaded_before
                 && !l.used_after_download
                 && matches!(
@@ -211,8 +279,7 @@ impl Engine {
         }
         self.st.now = at;
         let gap_close = self.st.cfg.gap_close;
-        loop {
-            let Some(open_id) = self.st.open else { break };
+        while let Some(open_id) = self.st.open {
             let last = self
                 .st
                 .episodes
@@ -253,7 +320,9 @@ impl Engine {
     /// The audit surface: every decision, in order, with its witnesses. When
     /// a grouping is wrong, this log exists so nobody has to wonder where.
     pub fn trace(&self) -> Vec<Decision> {
-        self.st.decisions.clone()
+        let mut trace = self.st.decisions.clone();
+        trace.extend(self.lifecycle_decisions());
+        trace
     }
 
     /// Replay a whole log. By construction this is a left fold of `apply`;

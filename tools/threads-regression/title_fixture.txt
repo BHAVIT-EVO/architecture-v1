@@ -1,0 +1,30 @@
+Thesis rewrite
+Field Guide to Checkbox Land
+Writing across 1 place
+Updating across 2 places
+Reviewing across 1 place
+Working across 3 places
+Untitled — 1 place
+Untitled — 2 places, 45m
+Research notes
+Investor update
+Benchmark arena
+Wake word code
+Banner chat
+Overleaf paper
+Landing page
+Release checklist
+Design review
+Data migration
+Evaluation report
+Customer interview notes
+Product brief
+Architecture decision
+Accessibility audit
+Restore experiment
+Local capture probe
+Repository cleanup
+Voice trigger tests
+Browser identity fixture
+Member lifecycle
+Classification rules

@@ -55,13 +55,13 @@ use evo_observation::evidence::FactValue;
 use evo_observation::observation::Observation;
 use evo_observation::observation_schema::ObservationSchema;
 use evo_observation::observed_state::ObservedState;
-use evo_restoration::{derive_restoration_plan, DerivationOutcome, RestorationInput};
+use evo_restoration::{DerivationOutcome, RestorationInput, derive_restoration_plan};
 use evo_retrieval::{RetrievalIndex, WorkResolution};
-use evo_workspace::projection::{project_engagements, SubjectArtifacts};
+use evo_workspace::projection::{SubjectArtifacts, project_engagements};
 use evo_workspace::workspace::Workspace;
 
 /// The derived Workspace understanding of one canonical history.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct Understanding {
     /// The bodies of work, most recently active first.
     workspaces: Vec<Workspace>,
@@ -77,7 +77,37 @@ pub struct Understanding {
     /// Which canonical Artifact each witnessed resource name resolves to.
     artifacts: SubjectArtifacts,
     retrieval: RetrievalIndex,
+    /// The live Reconstruction this understanding was derived from.
+    /// Retained so the voice loop can resolve triggers against the same
+    /// understanding the daemon derived — not a stale copy.
+    reconstruction: Reconstruction,
 }
+
+impl Default for Understanding {
+    fn default() -> Self {
+        Self {
+            workspaces: Vec::new(),
+            outcomes: HashMap::new(),
+            titles: HashMap::new(),
+            standings: HashMap::new(),
+            artifacts: SubjectArtifacts::default(),
+            retrieval: RetrievalIndex::default(),
+            reconstruction: Reconstruction::build(
+                Vec::new(),
+                &Declarations::new(),
+                EngagementParams::default(),
+            ),
+        }
+    }
+}
+
+/// The four derived views [`Understanding::into_parts`] splits into.
+type UnderstandingParts = (
+    Vec<Workspace>,
+    HashMap<String, DerivationOutcome>,
+    HashMap<String, String>,
+    HashMap<String, Standing>,
+);
 
 impl Understanding {
     /// Resolves a natural-language work reference to stable WorkId evidence.
@@ -87,6 +117,14 @@ impl Understanding {
     /// The bodies of work, most recently active first.
     pub fn workspaces(&self) -> &[Workspace] {
         &self.workspaces
+    }
+
+    /// The live Reconstruction this understanding was derived from.
+    ///
+    /// The voice loop resolves triggers against this — the same understanding
+    /// the daemon derived — not a stale copy.
+    pub fn reconstruction(&self) -> &Reconstruction {
+        &self.reconstruction
     }
 
     /// The Restoration outcomes, keyed by Workspace identity.
@@ -178,14 +216,7 @@ impl Understanding {
     }
 
     /// Consumes this understanding, yielding its derived views.
-    pub fn into_parts(
-        self,
-    ) -> (
-        Vec<Workspace>,
-        HashMap<String, DerivationOutcome>,
-        HashMap<String, String>,
-        HashMap<String, Standing>,
-    ) {
+    pub fn into_parts(self) -> UnderstandingParts {
         (self.workspaces, self.outcomes, self.titles, self.standings)
     }
 }
@@ -264,8 +295,8 @@ pub fn evidence_of(observations: &[Observation]) -> Evidence {
         }
     }
 
-    let designated = current_designation(observations)
-        .and_then(|subject| resolve_subject(&witnessed, &subject));
+    let designated =
+        current_designation(observations).and_then(|subject| resolve_subject(&witnessed, &subject));
     let surface = declared_continuation_surface(observations)
         .map(|subjects| resolve_surface(&witnessed, &subjects))
         .filter(|artifacts| !artifacts.is_empty());
@@ -284,9 +315,11 @@ pub fn evidence_of(observations: &[Observation]) -> Evidence {
 /// valid declaration by canonical Observation Time, with the later append-order
 /// record winning on equal time (RFC-0011 §5).
 pub fn current_designation(observations: &[Observation]) -> Option<String> {
-    latest_declaration(observations, &ObservationSchema::work_designated_v1(), |o| {
-        designation_subject_of(o)
-    })
+    latest_declaration(
+        observations,
+        &ObservationSchema::work_designated_v1(),
+        designation_subject_of,
+    )
 }
 
 /// The declared subjects of the current Continuation Surface (RFC-0013), under
@@ -371,10 +404,10 @@ pub fn resolve_surface(
 ) -> Vec<ArtifactId> {
     let mut resolved: Vec<ArtifactId> = Vec::new();
     for subject in subjects {
-        if let Some(artifact) = resolve_subject(witnessed, subject) {
-            if !resolved.contains(&artifact) {
-                resolved.push(artifact);
-            }
+        if let Some(artifact) = resolve_subject(witnessed, subject)
+            && !resolved.contains(&artifact)
+        {
+            resolved.push(artifact);
         }
     }
     resolved.sort_by(|left, right| left.as_str().cmp(right.as_str()));
@@ -406,12 +439,34 @@ pub fn derive(evidence: Evidence, params: EngagementParams) -> Understanding {
     // its members have in common. Derived here rather than in the projection
     // because a Workspace carries no name (W-3): naming is a reading of the
     // evidence, and it is re-read every time the evidence grows.
-    let titles: HashMap<String, String> = projected
+    let mut titles: HashMap<String, String> = projected
         .iter()
-        .map(|(engagement, workspace)| {
-            (workspace.id().to_string(), engagement.title().to_string())
+        .map(|(engagement, workspace)| (workspace.id().to_string(), engagement.title().to_string()))
+        .collect();
+    // The person's own name outranks every derived title (Law IX, RFC-0014):
+    // derivation proposes, the person disposes. The name was spoken about a
+    // witnessed subject, so it reaches its body of work by the same route a
+    // designation does: subject → Artifact (RFC-0011 §4) → the projected
+    // Workspace holding that Artifact. A name whose subject never resolved,
+    // or whose work the evidence no longer projects, is inert — kept in the
+    // declarations, never minting a body of work (W-3), never guessing.
+    let workspaces_by_artifact: HashMap<&str, &Workspace> = projected
+        .iter()
+        .flat_map(|(_, workspace)| {
+            workspace
+                .attachments()
+                .iter()
+                .map(move |a| (a.artifact_id().as_str(), workspace))
         })
         .collect();
+    for (subject, name) in declarations.names() {
+        let Some(artifact) = resolve_subject(&witnessed, subject) else {
+            continue;
+        };
+        if let Some(workspace) = workspaces_by_artifact.get(artifact.as_str()) {
+            titles.insert(workspace.id().to_string(), name.clone());
+        }
+    }
     // How much Evo will claim of each body of work, taken from the layer that
     // measured it — and, until now, discarded here. Keyed by Workspace identity
     // beside the title, and for the same reason (W-3): standing is a reading of
@@ -466,6 +521,7 @@ pub fn derive(evidence: Evidence, params: EngagementParams) -> Understanding {
         standings,
         artifacts,
         retrieval,
+        reconstruction,
     }
 }
 
@@ -492,16 +548,15 @@ fn work_local_observed_states(
         };
         let state = occurrences
             .iter()
-            .filter(|occurrence| {
+            .rfind(|occurrence| {
                 occurrence.observed_at == observed_at
                     && identity.canonical(&occurrence.subject) == participant.subject()
             })
-            .next_back()
             .and_then(|occurrence| occurrence.state.clone());
-        if let Some(state) = state {
-            if !states.iter().any(|(existing, _)| existing == artifact) {
-                states.push((artifact.clone(), state));
-            }
+        if let Some(state) = state
+            && !states.iter().any(|(existing, _)| existing == artifact)
+        {
+            states.push((artifact.clone(), state));
         }
     }
     states
@@ -608,7 +663,7 @@ mod tests {
         let mut context = HashMap::new();
         state.write_context(&mut context);
         observation = Observation::new(
-            observation.id().clone(),
+            *observation.id(),
             observation.schema().clone(),
             Provenance::new(
                 observation.provenance().source().clone(),
@@ -642,7 +697,7 @@ mod tests {
             .with_insertion_line(37)
             .write_context(&mut first_context);
         first = Observation::new(
-            first.id().clone(),
+            *first.id(),
             first.schema().clone(),
             Provenance::new(
                 first.provenance().source().clone(),
@@ -654,7 +709,13 @@ mod tests {
         let observations = vec![first, focus("Y editor", 60), focus("X editor", 120)];
         let evidence = evidence_of(&observations);
         assert_eq!(evidence.observed_states.len(), 3);
-        assert_eq!(evidence.observed_states[0].state.as_ref().and_then(ObservedState::insertion_line), Some(37));
+        assert_eq!(
+            evidence.observed_states[0]
+                .state
+                .as_ref()
+                .and_then(ObservedState::insertion_line),
+            Some(37)
+        );
         assert_eq!(evidence.observed_states[1].state, None);
         assert_eq!(evidence.observed_states[2].state, None);
     }
@@ -697,11 +758,13 @@ mod tests {
         // must not reuse line 77 simply because it was the last known value.
         observations.push(focus("Automation X editor", moment + 60));
         let later = derive_from(&observations);
-        assert!(later
-            .outcomes()
-            .values()
-            .filter_map(DerivationOutcome::resume_point)
-            .all(|point| point.observed_state().is_none()));
+        assert!(
+            later
+                .outcomes()
+                .values()
+                .filter_map(DerivationOutcome::resume_point)
+                .all(|point| point.observed_state().is_none())
+        );
     }
 
     /// The failure this module exists to fix, restated for the standing model. A
@@ -821,7 +884,9 @@ mod tests {
             // address without its machinery, or the subject itself. Nothing is
             // assembled, so the name can always be traced back to evidence (§14).
             assert!(
-                witnessed.iter().any(|subject| subject.contains(title.as_str())),
+                witnessed
+                    .iter()
+                    .any(|subject| subject.contains(title.as_str())),
                 "the name {title:?} must be traceable to a witnessed subject"
             );
         }
@@ -830,6 +895,66 @@ mod tests {
         // work the same way, so a name is stable across restarts.
         let again = derive_from(&observations);
         assert_eq!(understanding.titles(), again.titles());
+    }
+
+    /// RFC-0014: the person's own name for a body of work outranks every
+    /// derived title (Law IX). The name reaches the work by the designation
+    /// route — subject → Artifact → Workspace — and a name spoken about a
+    /// subject the evidence never witnessed stays inert.
+    #[test]
+    fn the_persons_own_name_outranks_the_derived_title() {
+        let mut observations = Vec::new();
+        let mut moment = 0u64;
+        for _sitting in 0..2 {
+            for _pass in 0..4 {
+                observations.push(focus("Thesis chapter three — Editor", moment));
+                moment += 240;
+                observations.push(saved("/Users/x/thesis/chapter-three.odt", moment));
+                moment += 30;
+            }
+            moment += 3 * 60 * 60;
+        }
+
+        // Sanity: without a naming, the title is derived from the work's material.
+        let derived = derive_from(&observations);
+        assert!(!derived.workspaces().is_empty());
+        assert!(
+            derived
+                .titles()
+                .values()
+                .all(|title| title.as_str() != "Thesis rewrite")
+        );
+
+        // The person names the work through a witnessed subject.
+        observations.push(observe(
+            ObservationConcept::WorkNamed {
+                subject: "/Users/x/thesis/chapter-three.odt".into(),
+                name: "Thesis rewrite".into(),
+            },
+            moment,
+        ));
+        let named = derive_from(&observations);
+        assert!(
+            named
+                .titles()
+                .values()
+                .any(|title| title.as_str() == "Thesis rewrite"),
+            "the person's name must replace the derived title: {:?}",
+            named.titles()
+        );
+
+        // A name spoken about a subject nothing witnessed never mints or
+        // retitles anything.
+        let mut unheard = observations.clone();
+        unheard.push(observe(
+            ObservationConcept::WorkNamed {
+                subject: "/never/witnessed/anywhere.md".into(),
+                name: "Ghost work".into(),
+            },
+            moment + 1,
+        ));
+        let unchanged = derive_from(&unheard);
+        assert_eq!(named.titles(), unchanged.titles());
     }
 
     /// Replay-equivalence by construction (§19): the same evidence derives the

@@ -187,10 +187,7 @@ fn response_line(response: &DesignationResponse) -> String {
 
 /// Desktop-side client: sends one explicit designation request to the daemon
 /// and returns the daemon's honest response.
-pub fn submit_designation(
-    root: &Path,
-    subject: &str,
-) -> Result<DesignationResponse, DaemonError> {
+pub fn submit_designation(root: &Path, subject: &str) -> Result<DesignationResponse, DaemonError> {
     let socket_path = designation_socket_path(root);
     let mut stream = UnixStream::connect(&socket_path).map_err(|err| {
         DaemonError::Designation(format!(
@@ -201,7 +198,9 @@ pub fn submit_designation(
     stream
         .write_all(format!("{}\n", subject.len()).as_bytes())
         .map_err(designation_io)?;
-    stream.write_all(subject.as_bytes()).map_err(designation_io)?;
+    stream
+        .write_all(subject.as_bytes())
+        .map_err(designation_io)?;
     stream.flush().map_err(designation_io)?;
     let mut response = String::new();
     BufReader::new(&mut stream)
@@ -271,7 +270,9 @@ mod tests {
                 UNIX_EPOCH,
                 HashMap::new(),
             ),
-            Evidence::new(vec![ObservedFact::new(fact_name, FactValue::Text(subject.into())).unwrap()]),
+            Evidence::new(vec![
+                ObservedFact::new(fact_name, FactValue::Text(subject.into())).unwrap(),
+            ]),
         )
     }
 
@@ -283,18 +284,16 @@ mod tests {
 
         // Wait for the socket to exist before connecting.
         let socket = designation_socket_path(&root);
-        for _ in 0..100 {
-            if socket.exists() {
-                break;
-            }
-            std::thread::sleep(Duration::from_millis(20));
-        }
+        crate::socket_test_support::wait_for_listener(&socket);
 
         let response = submit_designation(&root, "/tmp/plan.md").expect("submission should work");
         // No content observation exists yet, so the subject cannot resolve to
         // a canonical Artifact: the daemon rejects it honestly.
         assert!(matches!(response, DesignationResponse::Rejected(_)));
-        assert!(receiver.try_recv().is_err(), "rejected request must not be forwarded");
+        assert!(
+            receiver.try_recv().is_err(),
+            "rejected request must not be forwarded"
+        );
 
         // Once a content observation witnesses the subject, the designation
         // is accepted and forwarded.
@@ -331,7 +330,10 @@ mod tests {
         }
 
         let resolved = resolve_designated_artifact(&root, "/tmp/plan.md").expect("resolution");
-        assert!(resolved.is_some(), "witnessed subject resolves to its Artifact");
+        assert!(
+            resolved.is_some(),
+            "witnessed subject resolves to its Artifact"
+        );
 
         // A subject that was never witnessed does not resolve — no fuzzy
         // matching, no guessing.

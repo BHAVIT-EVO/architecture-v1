@@ -1,0 +1,1 @@
+zvariant is not in the aarch64-apple-darwin dependency tree (cargo tree -i zvariant returned nothing). The advisory is an unmaintained crate pulled only for non-macOS targets, so it is ignored.

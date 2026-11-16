@@ -150,6 +150,15 @@ pub(crate) struct State {
     /// and is always derived, never cached into threads.
     pub anchor_index: BTreeMap<String, BTreeSet<ThreadId>>,
     pub quarantined: BTreeSet<String>,
+    /// Subjects the person classified (OBS-SURFACE-CLASSIFIED): resource →
+    /// class. A classified subject never anchors or names a work; it stays a
+    /// participant/companion (the non-deletion guarantee holds).
+    pub classified: BTreeMap<String, String>,
+    /// Work witnesses dismissed from the default presentation surface. The
+    /// evidence remains in the replay state and can still be retrieved.
+    pub dismissed: BTreeSet<String>,
+    /// Latest declared lifecycle state by (work witness, member subject).
+    pub member_states: BTreeMap<(String, String), MemberState>,
     /// Canonical (sorted) declared pairs.
     pub same_work: BTreeSet<(String, String)>,
     pub separate_work: BTreeSet<(String, String)>,
@@ -183,6 +192,9 @@ impl State {
             ledger: BTreeMap::new(),
             anchor_index: BTreeMap::new(),
             quarantined: BTreeSet::new(),
+            classified: BTreeMap::new(),
+            dismissed: BTreeSet::new(),
+            member_states: BTreeMap::new(),
             same_work: BTreeSet::new(),
             separate_work: BTreeSet::new(),
             decisions: Vec::new(),

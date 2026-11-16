@@ -688,7 +688,10 @@ pub(crate) fn build_activity_contexts(
                 // recur in every cycle without making the entire sitting one
                 // context, while a single-surface work can repeat indefinitely
                 // without being fragmented.
-                if !contradicts_active && human_subjects.len() >= 2 && human_subjects.contains(subject) {
+                if !contradicts_active
+                    && human_subjects.len() >= 2
+                    && human_subjects.contains(subject)
+                {
                     if let (Some(start), Some(end)) = (start, end) {
                         contexts.push(make_context(episode_index, episode, start, end));
                     }
@@ -732,7 +735,12 @@ fn context_seed_groups(hypotheses: &[crate::WorkHypothesis]) -> Vec<ContextGroup
         .collect()
 }
 
-fn make_context(episode_index: usize, episode: &Episode, start: usize, end: usize) -> ActivityContext {
+fn make_context(
+    episode_index: usize,
+    episode: &Episode,
+    start: usize,
+    end: usize,
+) -> ActivityContext {
     let acts: Vec<usize> = (start..=end).collect();
     let subjects = acts
         .iter()
@@ -747,8 +755,14 @@ fn make_context(episode_index: usize, episode: &Episode, start: usize, end: usiz
         .collect();
     ActivityContext {
         episode: episode_index,
-        started_at: acts.first().and_then(|index| episode.acts().get(*index)).map(Act::at),
-        ended_at: acts.last().and_then(|index| episode.acts().get(*index)).map(Act::at),
+        started_at: acts
+            .first()
+            .and_then(|index| episode.acts().get(*index))
+            .map(Act::at),
+        ended_at: acts
+            .last()
+            .and_then(|index| episode.acts().get(*index))
+            .map(Act::at),
         acts,
         subjects,
         human_subjects,
@@ -757,33 +771,51 @@ fn make_context(episode_index: usize, episode: &Episode, start: usize, end: usiz
 
 impl ActivityContext {
     /// The sitting containing this context.
-    pub fn episode(&self) -> usize { self.episode }
+    pub fn episode(&self) -> usize {
+        self.episode
+    }
 
     /// Indices of the canonical acts in the containing Episode.
-    pub fn acts(&self) -> &[usize] { &self.acts }
+    pub fn acts(&self) -> &[usize] {
+        &self.acts
+    }
 
     /// Distinct resources observed in this context.
-    pub fn subjects(&self) -> &BTreeSet<String> { &self.subjects }
+    pub fn subjects(&self) -> &BTreeSet<String> {
+        &self.subjects
+    }
 
     /// Resources a person was directly witnessed acting on in this context.
-    pub fn human_subjects(&self) -> &BTreeSet<String> { &self.human_subjects }
+    pub fn human_subjects(&self) -> &BTreeSet<String> {
+        &self.human_subjects
+    }
 
     /// First witnessed moment in this context.
-    pub fn started_at(&self) -> Option<SystemTime> { self.started_at }
+    pub fn started_at(&self) -> Option<SystemTime> {
+        self.started_at
+    }
 
     /// Last witnessed moment in this context.
-    pub fn ended_at(&self) -> Option<SystemTime> { self.ended_at }
+    pub fn ended_at(&self) -> Option<SystemTime> {
+        self.ended_at
+    }
 }
 
 impl Engagement {
     /// Stable identity of the underlying body-of-work hypothesis.
-    pub fn work_id(&self) -> crate::WorkId { self.work_id }
+    pub fn work_id(&self) -> crate::WorkId {
+        self.work_id
+    }
 
     /// Occurrence-level evidence attributed to this body of work.
-    pub fn context_links(&self) -> &[crate::WorkContextLink] { &self.context_links }
+    pub fn context_links(&self) -> &[crate::WorkContextLink] {
+        &self.context_links
+    }
 
     /// Non-exclusive artifact membership and independent restoration roles.
-    pub fn artifact_links(&self) -> &[crate::WorkArtifactLink] { &self.artifact_links }
+    pub fn artifact_links(&self) -> &[crate::WorkArtifactLink] {
+        &self.artifact_links
+    }
 
     /// Every resource in this body of work, most important first.
     pub fn participants(&self) -> &[Participant] {
@@ -1043,10 +1075,20 @@ impl EngagementSet {
     ) -> Self {
         let contexts = build_activity_contexts(episodes, graph, params);
         let hypotheses = crate::hypothesis::infer_work_hypotheses(
-            &contexts, graph, declarations, params, &crate::IdentityIndex::default(),
+            &contexts,
+            graph,
+            declarations,
+            params,
+            &crate::IdentityIndex::default(),
         );
         Self::build_with_hypotheses(
-            episodes, &contexts, &hypotheses, ledger, graph, declarations, params,
+            episodes,
+            &contexts,
+            &hypotheses,
+            ledger,
+            graph,
+            declarations,
+            params,
         )
     }
 
@@ -1065,10 +1107,20 @@ impl EngagementSet {
         params: &EngagementParams,
     ) -> Self {
         let hypotheses = crate::hypothesis::infer_work_hypotheses(
-            contexts, graph, declarations, params, &crate::IdentityIndex::default(),
+            contexts,
+            graph,
+            declarations,
+            params,
+            &crate::IdentityIndex::default(),
         );
         Self::build_with_hypotheses(
-            episodes, contexts, &hypotheses, ledger, graph, declarations, params,
+            episodes,
+            contexts,
+            &hypotheses,
+            ledger,
+            graph,
+            declarations,
+            params,
         )
     }
 
@@ -1318,7 +1370,9 @@ impl ThreadActivity {
         attention: Duration,
     ) {
         self.episodes.insert(episode);
-        if let Some(context) = context { self.contexts.insert(context); }
+        if let Some(context) = context {
+            self.contexts.insert(context);
+        }
         if act.character().is_human_evidence() {
             self.human_acts += 1;
             self.human_episodes.insert(episode);
@@ -1399,13 +1453,19 @@ impl Thread {
                 // Once a sitting has local contexts, an absent seed means this
                 // work was not active in that sitting. Falling back to the
                 // entire sitting would reintroduce the old whole-session leak.
-                if contexts.iter().any(|context| context.episode == episode_index) {
+                if contexts
+                    .iter()
+                    .any(|context| context.episode == episode_index)
+                {
                     Vec::new()
                 } else {
                     vec![(None, (0..episode.acts().len()).collect())]
                 }
             } else {
-                episode_contexts.iter().map(|(index, context)| (Some(*index), context.acts.clone())).collect()
+                episode_contexts
+                    .iter()
+                    .map(|(index, context)| (Some(*index), context.acts.clone()))
+                    .collect()
             };
 
             for (context_index, range) in ranges {
@@ -1423,60 +1483,67 @@ impl Thread {
                 }
 
                 for position in &range {
-                    let Some(act) = episode.acts().get(*position) else { continue };
-                let subject = act.resource().subject();
+                    let Some(act) = episode.acts().get(*position) else {
+                        continue;
+                    };
+                    let subject = act.resource().subject();
                     let mut strength: f64 = if seeds.contains(subject) { 1.0 } else { 0.0 };
                     for (seed_position, seed) in &seed_positions {
-                    if subject == *seed { continue; }
-                    let Some(seed_act) = episode.acts().get(*seed_position) else { continue };
-                    let gap = absolute_seconds_between(seed_act.at(), act.at());
-                    if gap > window {
-                        continue;
+                        if subject == *seed {
+                            continue;
+                        }
+                        let Some(seed_act) = episode.acts().get(*seed_position) else {
+                            continue;
+                        };
+                        let gap = absolute_seconds_between(seed_act.at(), act.at());
+                        if gap > window {
+                            continue;
+                        }
+                        let proximity = 1.0 - gap / window;
+                        let affinity = if subject == *seed {
+                            1.0
+                        } else {
+                            graph.affinity(subject, seed, params)
+                        };
+                        let local_human = act.character().is_human_evidence()
+                            && seed_act.character().is_human_evidence();
+                        let local_support = if local_human {
+                            // Direct human co-attention is occurrence evidence even
+                            // when the canonical resource has no lifetime affinity
+                            // to this seed. This is what lets a shared terminal,
+                            // document, or conversation belong to several works;
+                            // specificity later decides whether it can represent
+                            // any one of them.
+                            proximity
+                        } else {
+                            affinity * proximity
+                        };
+                        strength = strength.max(local_support);
                     }
-                    let proximity = 1.0 - gap / window;
-                    let affinity = if subject == *seed {
-                        1.0
-                    } else {
-                        graph.affinity(subject, seed, params)
-                    };
-                    let local_human = act.character().is_human_evidence()
-                        && seed_act.character().is_human_evidence();
-                    let local_support = if local_human {
-                        // Direct human co-attention is occurrence evidence even
-                        // when the canonical resource has no lifetime affinity
-                        // to this seed. This is what lets a shared terminal,
-                        // document, or conversation belong to several works;
-                        // specificity later decides whether it can represent
-                        // any one of them.
-                        proximity
-                    } else {
-                        affinity * proximity
-                    };
-                    strength = strength.max(local_support);
+                    if strength >= params.affinity_floor {
+                        members
+                            .entry(subject.to_string())
+                            .and_modify(|held| *held = held.max(strength))
+                            .or_insert(strength);
+                        let attributed_attention =
+                            if act.character() == crate::resource::ActCharacter::Attentional {
+                                episode
+                                    .acts()
+                                    .get(*position + 1)
+                                    .and_then(|next| next.at().duration_since(act.at()).ok())
+                                    .filter(|gap| *gap <= params.max_interval_attention)
+                                    .unwrap_or(Duration::ZERO)
+                            } else {
+                                Duration::ZERO
+                            };
+                        activity.entry(subject.to_string()).or_default().record(
+                            episode_index,
+                            context_index,
+                            act,
+                            attributed_attention,
+                        );
+                    }
                 }
-                if strength >= params.affinity_floor {
-                    members
-                        .entry(subject.to_string())
-                        .and_modify(|held| *held = held.max(strength))
-                        .or_insert(strength);
-                    let attributed_attention = if act.character()
-                        == crate::resource::ActCharacter::Attentional
-                    {
-                        episode
-                            .acts()
-                            .get(*position + 1)
-                            .and_then(|next| next.at().duration_since(act.at()).ok())
-                            .filter(|gap| *gap <= params.max_interval_attention)
-                            .unwrap_or(Duration::ZERO)
-                    } else {
-                        Duration::ZERO
-                    };
-                    activity
-                        .entry(subject.to_string())
-                        .or_default()
-                        .record(episode_index, context_index, act, attributed_attention);
-                }
-            }
             }
         }
         let episodes: BTreeSet<usize> = activity
@@ -1671,14 +1738,14 @@ fn form_threads(
 
 fn merge_declared_context_groups(groups: &mut Vec<ContextGroup>, declarations: &Declarations) {
     for (first, second) in declarations.groupings() {
-        let left = groups
-            .iter()
-            .position(|group| group.seeds.contains(first));
-        let right = groups
-            .iter()
-            .position(|group| group.seeds.contains(second));
-        let (Some(left), Some(right)) = (left, right) else { continue };
-        if left == right { continue; }
+        let left = groups.iter().position(|group| group.seeds.contains(first));
+        let right = groups.iter().position(|group| group.seeds.contains(second));
+        let (Some(left), Some(right)) = (left, right) else {
+            continue;
+        };
+        if left == right {
+            continue;
+        }
         let absorbed = groups.remove(right);
         let survivor = if right < left { left - 1 } else { left };
         groups[survivor].contexts.extend(absorbed.contexts);
@@ -1759,10 +1826,7 @@ fn measure_specificity(threads: &mut [Thread]) {
             .members
             .iter()
             .map(|(subject, strength)| {
-                let (total, claimants) = across
-                    .get(subject)
-                    .copied()
-                    .unwrap_or((*strength, 1));
+                let (total, claimants) = across.get(subject).copied().unwrap_or((*strength, 1));
                 let claim = work_local_claim_strength(thread, subject, *strength);
                 let share = if total > 0.0 {
                     claim / total
@@ -1844,9 +1908,9 @@ fn seeds(
 /// person. Not a judgement about importance — a single thirty-second read
 /// satisfies it — only about whether there is a person in the record at all.
 fn witnessed_a_person(ledger: &AttentionLedger, subject: &str) -> bool {
-    ledger.get(subject).is_some_and(|record| {
-        record.human_acts > 0 || record.attention > Duration::ZERO
-    })
+    ledger
+        .get(subject)
+        .is_some_and(|record| record.human_acts > 0 || record.attention > Duration::ZERO)
 }
 
 /// Whether a resource holding this share of its own relatedness may speak for the
@@ -2188,8 +2252,10 @@ fn strongest_ties<'g>(
 ) -> BTreeMap<&'g String, BTreeSet<&'g String>> {
     let mut strongest: BTreeMap<&'g String, BTreeSet<&'g String>> = BTreeMap::new();
     for (subject, neighbours) in adjacency {
-        let mut ranked: Vec<(&'g String, f64)> =
-            neighbours.iter().map(|(name, score)| (*name, *score)).collect();
+        let mut ranked: Vec<(&'g String, f64)> = neighbours
+            .iter()
+            .map(|(name, score)| (*name, *score))
+            .collect();
         ranked.sort_by(|left, right| {
             right
                 .1
@@ -2197,8 +2263,11 @@ fn strongest_ties<'g>(
                 .unwrap_or(std::cmp::Ordering::Equal)
                 .then_with(|| left.0.cmp(right.0))
         });
-        let kept: BTreeSet<&'g String> =
-            ranked.into_iter().take(rank).map(|(name, _)| name).collect();
+        let kept: BTreeSet<&'g String> = ranked
+            .into_iter()
+            .take(rank)
+            .map(|(name, _)| name)
+            .collect();
         strongest.insert(*subject, kept);
     }
     strongest
@@ -2459,12 +2528,10 @@ fn assemble(
             locality,
             witnessed_sittings: record.map_or(0, |record| record.episodes.len()),
             attention_corroborated: is_corroborated_within(subject, &attended, graph),
-            exclusive: work_record.is_some_and(|work| {
-                dwelling.len() >= 2 && dwelling.is_subset(&work.episodes)
-            }),
+            exclusive: work_record
+                .is_some_and(|work| dwelling.len() >= 2 && dwelling.is_subset(&work.episodes)),
             belonging: belonging_within(subject, &members, graph, declarations, params),
-            episodes: work_record
-                .map_or_else(BTreeSet::new, |record| record.episodes.clone()),
+            episodes: work_record.map_or_else(BTreeSet::new, |record| record.episodes.clone()),
             person_acted: work_record.is_some_and(|record| !record.human_episodes.is_empty()),
             strength: thread.members.get(subject).copied().unwrap_or(0.0),
             specificity: thread.specificity.get(subject).copied().unwrap_or(1.0),
@@ -2498,16 +2565,19 @@ fn assemble(
 
     let artifact_links = participants
         .iter()
-        .map(|participant| crate::WorkArtifactLink::new(
-            thread.work_id,
-            participant.subject().to_string(),
-            participant.strength(),
-            participant.specificity(),
-            participant.role(),
-            thread.activity
-                .get(participant.subject())
-                .map_or_else(BTreeSet::new, |activity| activity.contexts.clone()),
-        ))
+        .map(|participant| {
+            crate::WorkArtifactLink::new(
+                thread.work_id,
+                participant.subject().to_string(),
+                participant.strength(),
+                participant.specificity(),
+                participant.role(),
+                thread
+                    .activity
+                    .get(participant.subject())
+                    .map_or_else(BTreeSet::new, |activity| activity.contexts.clone()),
+            )
+        })
         .collect();
 
     let mut engagement = Engagement {
@@ -2679,9 +2749,7 @@ fn choose_title(
         });
 
     match best {
-        Some((participant, shared)) => {
-            (participant.resource().display_name().to_string(), shared)
-        }
+        Some((participant, shared)) => (participant.resource().display_name().to_string(), shared),
         None => ("Untitled work".to_string(), 0.0),
     }
 }
@@ -3034,18 +3102,6 @@ fn name_the_continuation(participants: &mut [Participant], params: &EngagementPa
     participants[index].role = ResourceRole::Continuation;
 }
 
-/// What share of `record`'s witnessed life coincided with this work's sittings.
-///
-/// See [`Participant::locality`]. A resource with no measured sittings has nothing
-/// to divide, so it is reported as fully local rather than as suspiciously
-/// ubiquitous.
-fn locality_of(record: &AttentionRecord, episodes: &BTreeSet<usize>) -> f64 {
-    if record.episodes.is_empty() {
-        return 1.0;
-    }
-    record.episodes.intersection(episodes).count() as f64 / record.episodes.len() as f64
-}
-
 /// The attention `record` accrued during this work's sittings.
 fn attention_within(record: &AttentionRecord, episodes: &BTreeSet<usize>) -> Duration {
     episodes
@@ -3223,9 +3279,12 @@ mod tests {
                     ("automation y", "y slack editor"),
                     ("automation z", "z crm editor"),
                 ] {
-                    acts.push(focus(unique, moment)); moment += 120;
-                    acts.push(focus("shared browser", moment)); moment += 20;
-                    acts.push(focus(&format!("{work} terminal"), moment)); moment += 120;
+                    acts.push(focus(unique, moment));
+                    moment += 120;
+                    acts.push(focus("shared browser", moment));
+                    moment += 20;
+                    acts.push(focus(&format!("{work} terminal"), moment));
+                    moment += 120;
                 }
             }
             moment += 3 * 60 * 60;
@@ -3240,17 +3299,22 @@ mod tests {
             ));
         }
         let set = reconstruct(declared, &params);
-        let find = |subject: &str| set.engagements().iter()
-            .find(|work| work.seeds().any(|seed| seed.subject() == subject))
-            .expect("each unique locus establishes a remembered body of work");
+        let find = |subject: &str| {
+            set.engagements()
+                .iter()
+                .find(|work| work.seeds().any(|seed| seed.subject() == subject))
+                .expect("each unique locus establishes a remembered body of work")
+        };
         let x = find("x webhook editor");
         let y = find("y slack editor");
         let z = find("z crm editor");
         assert_ne!(x.work_id(), y.work_id());
         assert_ne!(x.work_id(), z.work_id());
         assert_ne!(y.work_id(), z.work_id());
-        assert!(set.every_containing("shared browser").len() >= 2,
-            "a shared tool is linked to multiple works instead of choosing or merging");
+        assert!(
+            set.every_containing("shared browser").len() >= 2,
+            "a shared tool is linked to multiple works instead of choosing or merging"
+        );
     }
 
     #[test]
@@ -3259,11 +3323,15 @@ mod tests {
         let mut acts = Vec::new();
         let mut moment = 0u64;
         for _ in 0..8 {
-            acts.push(focus("estate comparison notes", moment)); moment += 180;
-            acts.push(visit("https://research.example/estate-comparison", moment)); moment += 180;
+            acts.push(focus("estate comparison notes", moment));
+            moment += 180;
+            acts.push(visit("https://research.example/estate-comparison", moment));
+            moment += 180;
         }
         let set = reconstruct(acts, &params);
-        let work = set.engagements().iter()
+        let work = set
+            .engagements()
+            .iter()
             .find(|work| work.subjects().contains("estate comparison notes"))
             .expect("deep one-session work must remain discoverable");
         assert_eq!(work.recurrence(), 1);
@@ -3279,7 +3347,10 @@ mod tests {
             for index in 0..40 {
                 acts.push(focus("atlas planning canvas", moment));
                 moment += 30;
-                acts.push(focus(&format!("atlas planning reference {index:02}"), moment));
+                acts.push(focus(
+                    &format!("atlas planning reference {index:02}"),
+                    moment,
+                ));
                 moment += if index < 4 { 120 } else { 5 };
             }
             moment += 3 * 60 * 60;
@@ -3289,8 +3360,18 @@ mod tests {
         // retain this broad history as several overlapping hypotheses. The
         // invariant we can require here is that memory is retained and every
         // projection keeps the immediate restoration set bounded.
-        assert!(set.engagements().iter().map(|work| work.participants().len()).sum::<usize>() >= 40);
-        assert!(set.engagements().iter().all(|work| work.primary().count() <= params.max_primary));
+        assert!(
+            set.engagements()
+                .iter()
+                .map(|work| work.participants().len())
+                .sum::<usize>()
+                >= 40
+        );
+        assert!(
+            set.engagements()
+                .iter()
+                .all(|work| work.primary().count() <= params.max_primary)
+        );
     }
 
     /// One coherent task spread across a document, a terminal, and browser
@@ -3424,7 +3505,10 @@ mod tests {
         let mut acts = Vec::new();
         for step in 0..600 {
             acts.push(save("/Users/x/Pictures/Library/syncstatus.plist", step * 4));
-            acts.push(save("/Users/x/Pictures/Library/metrics.plist", step * 4 + 1));
+            acts.push(save(
+                "/Users/x/Pictures/Library/metrics.plist",
+                step * 4 + 1,
+            ));
         }
         let set = reconstruct(acts, &params);
         assert!(set.is_empty(), "a machine writing files is not work");
@@ -4038,11 +4122,9 @@ mod tests {
         );
         let remembered = set.remembered();
         assert!(
-            remembered.iter().any(|engagement| {
-                engagement
-                    .subjects()
-                    .contains("A Surface On Its Own")
-            }),
+            remembered
+                .iter()
+                .any(|engagement| { engagement.subjects().contains("A Surface On Its Own") }),
             "and the whole record of it is kept, as something witnessed rather than work"
         );
         assert!(
@@ -4102,7 +4184,10 @@ mod tests {
             for _pass in 0..4 {
                 acts.push(focus("A Constant Companion", moment));
                 moment += 300;
-                acts.push(focus(&format!("Unrelated Errand {sitting} — Window"), moment));
+                acts.push(focus(
+                    &format!("Unrelated Errand {sitting} — Window"),
+                    moment,
+                ));
                 moment += 60;
             }
             moment += 2 * 60 * 60;
@@ -4208,7 +4293,11 @@ mod tests {
         let work = set
             .engagements()
             .iter()
-            .find(|engagement| engagement.subjects().contains("Osteology Fieldwork — Notes"))
+            .find(|engagement| {
+                engagement
+                    .subjects()
+                    .contains("Osteology Fieldwork — Notes")
+            })
             .expect("the fieldwork was witnessed across three sittings");
 
         assert!(
@@ -4408,13 +4497,9 @@ mod tests {
         let work = candidates
             .iter()
             .find(|engagement| {
-                engagement
-                    .participants()
-                    .iter()
-                    .any(|participant| {
-                        participant.subject() == "transform.py"
-                            && participant.speaks_for_work(&params)
-                    })
+                engagement.participants().iter().any(|participant| {
+                    participant.subject() == "transform.py" && participant.speaks_for_work(&params)
+                })
             })
             .expect("two long sittings of work on one file is a body of work");
 
@@ -4653,7 +4738,11 @@ mod tests {
         let file = work
             .participants()
             .iter()
-            .find(|participant| participant.subject().ends_with("quarterly-forecast.numbers"))
+            .find(|participant| {
+                participant
+                    .subject()
+                    .ends_with("quarterly-forecast.numbers")
+            })
             .expect("the file was saved in every pass of every sitting");
 
         assert_eq!(
@@ -4726,7 +4815,11 @@ mod tests {
         let file = work
             .participants()
             .iter()
-            .find(|participant| participant.subject().ends_with("quarterly-forecast.numbers"))
+            .find(|participant| {
+                participant
+                    .subject()
+                    .ends_with("quarterly-forecast.numbers")
+            })
             .expect("it was saved in every pass; it is a member either way");
 
         assert!(

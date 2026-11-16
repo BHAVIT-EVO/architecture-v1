@@ -126,6 +126,7 @@ fn main() {
                     process_identifier: None,
                     owning_process_name: None,
                     observed_state: None,
+                    window_id: None,
                 },
             );
             moment += 300;
@@ -167,6 +168,7 @@ fn main() {
                     process_identifier: None,
                     owning_process_name: None,
                     observed_state: None,
+                    window_id: None,
                 },
             );
             moment += 300;
@@ -494,6 +496,14 @@ impl PlatformExecutor for RecordingExecutor {
 impl PreflightSource for RecordingExecutor {
     fn file_exists(&self, path: &str) -> bool {
         Path::new(path).exists()
+    }
+    // The title snapshot is independent of file documents: this scenario
+    // expects file targets to open, with no reported document windows.
+    fn windows_showing_document(
+        &self,
+        _path: &str,
+    ) -> Result<Vec<evo_execution::macos::WindowInfo>, String> {
+        Ok(vec![])
     }
     fn windows(&self) -> Result<Vec<evo_execution::macos::WindowInfo>, String> {
         Ok(vec![

@@ -294,8 +294,7 @@ impl AffinityGraph {
                         // the joint can only lower the measured association —
                         // the required direction of error.
                         .filter(|episode| {
-                            a.human_episodes.contains(episode)
-                                || b.human_episodes.contains(episode)
+                            a.human_episodes.contains(episode) || b.human_episodes.contains(episode)
                         })
                         .count(),
                     _ => 0,
@@ -505,8 +504,7 @@ impl Interleaving {
     /// these resources, in more sittings than one. False for every pair with a
     /// person on either end, which is judged by its own record instead.
     fn is_selective_change_pair(&self, left: &str, right: &str) -> bool {
-        ordered_key(left, right)
-            .is_some_and(|key| self.selective_changes.contains(&key))
+        ordered_key(left, right).is_some_and(|key| self.selective_changes.contains(&key))
     }
     /// How alike two resources' company is, in `0.0..=1.0`.
     ///
@@ -847,8 +845,7 @@ fn accounts_for_most(
     params: &EngagementParams,
 ) -> bool {
     let associations: usize = beside.values().map(|sittings| sittings.len()).sum();
-    associations > 0
-        && (here as f64 / associations as f64) >= params.attributable_change_locality
+    associations > 0 && (here as f64 / associations as f64) >= params.attributable_change_locality
 }
 
 /// Seconds from `from` to `to`, and zero if `to` does not follow `from`.
@@ -1016,6 +1013,7 @@ pub fn flatten_acts(episodes: &[Episode]) -> Vec<&Act> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::engagement::cluster_within;
     use crate::episode::segment_episodes;
     use crate::resource::ActCharacter;
     use std::time::SystemTime;
@@ -1052,6 +1050,30 @@ mod tests {
         let episodes = segment_episodes(acts, params);
         let ledger = AttentionLedger::build(&episodes, params);
         AffinityGraph::build(&episodes, &ledger, declarations, params)
+    }
+
+    /// One sitting of strong mutual attention: the host interleaved with each
+    /// mate, then a gap past the presence horizon so the next sitting starts
+    /// clean.
+    fn sitting_clique(acts: &mut Vec<Act>, host: &str, mates: &[&str], moment: &mut u64) {
+        for _ in 0..6 {
+            for mate in mates {
+                acts.push(focus(host, *moment));
+                *moment += 30;
+                acts.push(focus(mate, *moment));
+                *moment += 30;
+            }
+        }
+        *moment += 1500;
+    }
+
+    /// One brief co-presence of two resources in its own sitting: two focus
+    /// acts a short interval apart, then a gap past the presence horizon.
+    fn brief_touch(acts: &mut Vec<Act>, left: &str, right: &str, moment: &mut u64) {
+        acts.push(focus(left, *moment));
+        *moment += 30;
+        acts.push(focus(right, *moment));
+        *moment += 1500;
     }
 
     #[test]
@@ -1418,14 +1440,8 @@ mod tests {
     #[test]
     fn affinity_is_symmetric_and_order_independent() {
         let params = EngagementParams::default();
-        let forward = graph_of(
-            vec![focus("a", 0), focus("b", 30), focus("a", 60)],
-            &params,
-        );
-        let reversed = graph_of(
-            vec![focus("a", 60), focus("b", 30), focus("a", 0)],
-            &params,
-        );
+        let forward = graph_of(vec![focus("a", 0), focus("b", 30), focus("a", 60)], &params);
+        let reversed = graph_of(vec![focus("a", 60), focus("b", 30), focus("a", 0)], &params);
         assert_eq!(
             forward.affinity("a", "b", &params),
             reversed.affinity("b", "a", &params)
@@ -1498,6 +1514,127 @@ mod tests {
         );
     }
 
+    /// Mutual-strongest clustering must NOT chain weak shared-resource edges.
+    /// Alpha<->Beta and Beta<->Gamma each touch once, weakly — below the
+    /// affinity floor — while Alpha and Gamma never meet. They must not become
+    /// one body of work via Beta: weak edges never enter the clustering
+    /// adjacency, so no transitive collapse is possible.
+    #[test]
+    fn weak_chain_not_merged() {
+        let params = EngagementParams::default();
+        let mut acts = Vec::new();
+        let mut moment = 0u64;
+
+        // Three distinct bodies of work, each a strong clique in its own sitting.
+        sitting_clique(&mut acts, "Alpha", &["D1", "D2"], &mut moment);
+        sitting_clique(&mut acts, "Beta", &["E1", "E2"], &mut moment);
+        sitting_clique(&mut acts, "Gamma", &["F1", "F2"], &mut moment);
+        // The weak chain: one brief touch Alpha<->Beta, one Beta<->Gamma.
+        brief_touch(&mut acts, "Alpha", "Beta", &mut moment);
+        brief_touch(&mut acts, "Beta", "Gamma", &mut moment);
+
+        let graph = graph_of(acts, &params);
+
+        // The premise: both chain links are genuinely weak — below the
+        // relatedness floor — and Alpha<->Gamma has no evidence at all.
+        for (left, right) in [("Alpha", "Beta"), ("Beta", "Gamma")] {
+            let score = graph.affinity(left, right, &params);
+            assert!(
+                score < params.affinity_floor,
+                "{left}<->{right} must score below the floor for this contract, got {score:.4}"
+            );
+        }
+        assert!(
+            graph.affinity("Alpha", "Gamma", &params) < params.affinity_floor,
+            "Alpha and Gamma never meet, so they must have no relationship"
+        );
+
+        let subjects: BTreeSet<String> =
+            ["Alpha", "Beta", "Gamma", "D1", "D2", "E1", "E2", "F1", "F2"]
+                .iter()
+                .map(|name| name.to_string())
+                .collect();
+        let clusters = cluster_within(&subjects, &graph, &params);
+
+        assert!(
+            clusters.iter().all(|cluster| {
+                !(cluster.contains("Alpha")
+                    && cluster.contains("Beta")
+                    && cluster.contains("Gamma"))
+            }),
+            "a weak A-B-C chain must not collapse into one body of work, got {clusters:?}"
+        );
+        // The real works survive intact: each leader stays with its own clique.
+        for (leader, mates) in [
+            ("Alpha", ["D1", "D2"]),
+            ("Beta", ["E1", "E2"]),
+            ("Gamma", ["F1", "F2"]),
+        ] {
+            let home = clusters
+                .iter()
+                .find(|cluster| cluster.contains(leader))
+                .expect("every subject is placed in some cluster");
+            for mate in mates {
+                assert!(
+                    home.contains(mate),
+                    "{leader} must stay clustered with its own work {mate}, got {clusters:?}"
+                );
+            }
+        }
+    }
+
+    /// Deep attention on one resource must not make weakly-connected neighbours
+    /// speak for its work. Alpha gets a long stretch of solo attention; Beta and
+    /// Gamma each touch it once, weakly. Neither may be merged into Alpha's
+    /// body of work: attention depth is not a relationship, and the brief
+    /// touches stay below the relatedness floor.
+    #[test]
+    fn deep_attention_needs_direct_evidence() {
+        let params = EngagementParams::default();
+        let mut acts = Vec::new();
+        let mut moment = 0u64;
+
+        // Deep attention on Alpha: thirty solo focuses, keeping no company.
+        for _ in 0..30 {
+            acts.push(focus("Alpha", moment));
+            moment += 45;
+        }
+        moment += 1500;
+        // Beta and Gamma each have their own strong work elsewhere.
+        sitting_clique(&mut acts, "Beta", &["E1", "E2"], &mut moment);
+        sitting_clique(&mut acts, "Gamma", &["F1", "F2"], &mut moment);
+        // Each touches Alpha once, briefly, in its own sitting.
+        brief_touch(&mut acts, "Alpha", "Beta", &mut moment);
+        brief_touch(&mut acts, "Alpha", "Gamma", &mut moment);
+
+        let graph = graph_of(acts, &params);
+
+        // The premise: the touches are genuinely weak — Alpha's deep attention
+        // does not inflate them into relationships.
+        for (left, right) in [("Alpha", "Beta"), ("Alpha", "Gamma")] {
+            let score = graph.affinity(left, right, &params);
+            assert!(
+                score < params.affinity_floor,
+                "{left}<->{right} must score below the floor for this contract, got {score:.4}"
+            );
+        }
+
+        let subjects: BTreeSet<String> = ["Alpha", "Beta", "Gamma", "E1", "E2", "F1", "F2"]
+            .iter()
+            .map(|name| name.to_string())
+            .collect();
+        let clusters = cluster_within(&subjects, &graph, &params);
+
+        let alpha_work = clusters
+            .iter()
+            .find(|cluster| cluster.contains("Alpha"))
+            .expect("every subject is placed in some cluster");
+        assert!(
+            !alpha_work.contains("Beta") && !alpha_work.contains("Gamma"),
+            "deep attention on Alpha must not pull weak neighbours into its work, got {clusters:?}"
+        );
+    }
+
     /// The counterpart: a word almost nothing else uses is strong evidence.
     #[test]
     fn a_distinctive_shared_word_is_strong_evidence() {
@@ -1520,23 +1657,5 @@ mod tests {
             "a word only these two use is strong evidence, got {}",
             evidence.lexical
         );
-    }
-}
-
-#[cfg(test)]
-mod d2_chaining_regression {
-    use super::*;
-    /// Mutual-strongest clustering must NOT chain weak shared-resource edges.
-    /// If A↔B is weak (below floor) and B↔C is weak, they must not become one work.
-    #[test]
-    fn weak_chain_not_merged() {
-        // The architecture already uses mutual-strongest (not pure single-linkage).
-        // This test verifies the contract is preserved.
-        assert!(true, "mutual-strongest clustering prevents A-B-C weak chain collapse");
-    }
-    /// Deep attention on A with weak A↔B / A↔C — A must not make B,C speak for A.
-    #[test]
-    fn deep_attention_needs_direct_evidence() {
-        assert!(true, "speaks_for requires direct co-presence, not transitive proximity");
     }
 }

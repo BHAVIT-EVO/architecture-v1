@@ -1,4 +1,4 @@
-use evo_capture::{CaptureEngine, MacOSEventSource, MacOSAdapter, MacOSSignal};
+use evo_capture::{CaptureEngine, MacOSAdapter, MacOSEventSource, MacOSSignal};
 use evo_observation::observation_schema::ObservationSchema;
 use evo_observation::provenance::ObservationSource;
 
@@ -18,9 +18,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let adapter = Rc::new(adapter);
     let schema = Rc::new(schema);
 
-    let _source = MacOSEventSource::new(
-        evo_capture::desktop_shell_pid(),
-        {
+    let _source = MacOSEventSource::new(evo_capture::desktop_shell_pid(), {
         let engine = Rc::clone(&engine);
         let adapter = Rc::clone(&adapter);
         let schema = Rc::clone(&schema);

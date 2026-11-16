@@ -51,6 +51,12 @@ pub struct RoomRuntime {
     pub pending_note: Option<String>,
 }
 
+impl Default for RoomRuntime {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RoomRuntime {
     pub fn new() -> Self {
         Self {
@@ -79,10 +85,10 @@ impl RoomRuntime {
         // Switching rooms hibernates the room being left: its web panes
         // release, so the machine pays for one room's web presence at a
         // time.
-        if let Some(previous) = self.active.clone() {
-            if previous != surface.work {
-                self.web.hibernate();
-            }
+        if let Some(previous) = self.active.clone()
+            && previous != surface.work
+        {
+            self.web.hibernate();
         }
         match self.room.switch(&surface) {
             Ok(lease) => {
@@ -179,6 +185,7 @@ impl RoomRuntime {
             .map(|doc| RestoreTarget {
                 resource: doc.clone(),
                 app: surface.resource_apps.get(doc).cloned(),
+                surface: None,
             })
             .collect();
         let outcome = restore::restore(&targets);
@@ -223,12 +230,12 @@ impl RoomRuntime {
         // A room that no longer exists is left honestly: containment
         // without its work is a trap, not a room. The desktop is restored
         // if a lease exists, and the room is gone either way.
-        if let Some(active) = self.active.clone() {
-            if !surfaces.iter().any(|surface| surface.work == active) {
-                let _ = self.leave();
-                self.active = None;
-                self.web.hibernate();
-            }
+        if let Some(active) = self.active.clone()
+            && !surfaces.iter().any(|surface| surface.work == active)
+        {
+            let _ = self.leave();
+            self.active = None;
+            self.web.hibernate();
         }
         self.surfaces = surfaces;
         self.names = names;

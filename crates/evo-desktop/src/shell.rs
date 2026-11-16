@@ -37,8 +37,11 @@ pub fn header(ui: &mut egui::Ui, rect: egui::Rect, daemon_status: &DaemonStatus)
         |ui| {
             ui::gap(ui, (rect.height() - theme::CONTROL_HEIGHT) * 0.5);
             ui.horizontal(|ui| {
-                ui.add_space(theme::PAGE_PAD);
-                ui::label(ui, Role::Title, "Evo", theme::ACCENT);
+                // With the full-size content view the header shares its top
+                // band with the traffic lights; the leading inset clears
+                // them (they end ≈ 70pt at their declared position).
+                ui.add_space(theme::PAGE_PAD + theme::S7);
+                ui::label(ui, Role::Title, crate::copy::BRAND, theme::text_ink());
                 ui.add_space(theme::S4);
                 let (word, severity) = capture_status(daemon_status);
                 // The word is the indicator. A colored dot on its own would
@@ -47,7 +50,7 @@ pub fn header(ui: &mut egui::Ui, rect: egui::Rect, daemon_status: &DaemonStatus)
                 ui::status_word(ui, word, severity);
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     ui.add_space(theme::PAGE_PAD);
-                    if ui::control(ui, Control::quiet("Settings")).clicked() {
+                    if ui::control(ui, Control::quiet(crate::copy::SETTINGS)).clicked() {
                         open_settings = true;
                     }
                 });
@@ -87,7 +90,7 @@ pub fn capture_notice(ui: &mut egui::Ui, daemon_status: &DaemonStatus, daemon: &
                  — and it will not pretend otherwise.",
                 |ui| {
                     ui::gap(ui, theme::S3);
-                    permission_actions(ui, daemon);
+                    permission_actions(ui, || daemon.restart());
                 },
             );
             ui::gap(ui, theme::S4);
@@ -103,7 +106,7 @@ pub fn capture_notice(ui: &mut egui::Ui, daemon_status: &DaemonStatus, daemon: &
                 ),
                 |ui| {
                     ui::gap(ui, theme::S3);
-                    permission_actions(ui, daemon);
+                    permission_actions(ui, || daemon.restart());
                 },
             );
             ui::gap(ui, theme::S4);
@@ -126,7 +129,7 @@ pub fn capture_notice(ui: &mut egui::Ui, daemon_status: &DaemonStatus, daemon: &
                 &format!("Evo's capture worker stopped: {detail}"),
                 |ui| {
                     ui::gap(ui, theme::S3);
-                    permission_actions(ui, daemon);
+                    permission_actions(ui, || daemon.restart());
                 },
             );
             ui::gap(ui, theme::S4);
@@ -135,20 +138,24 @@ pub fn capture_notice(ui: &mut egui::Ui, daemon_status: &DaemonStatus, daemon: &
 }
 
 /// The two real permission mechanisms: hand the user to macOS, then let them
-/// ask Evo to look again. Neither one fabricates a granted state.
-pub fn permission_actions(ui: &mut egui::Ui, daemon: &mut DaemonManager) {
+/// ask Evo to look again. Neither one fabricates a granted state. The caller
+/// supplies what "Check again" does, because the two surfaces reach the
+/// daemon differently: the header notice restarts it directly, while the
+/// Home empty state defers through a flag (its render closure cannot also
+/// borrow the daemon).
+pub fn permission_actions(ui: &mut egui::Ui, check_again: impl FnOnce()) {
     let responses = ui::control_row(
         ui,
         vec![
-            Control::secondary("Open System Settings"),
-            Control::quiet("Check again"),
+            Control::secondary(crate::copy::SYSTEM_SETTINGS_OPEN),
+            Control::quiet(crate::copy::PERMISSION_RECHECK),
         ],
     );
     if responses[0].clicked() {
         crate::daemon::open_accessibility_settings();
     }
     if responses[1].clicked() {
-        daemon.restart();
+        check_again();
     }
 }
 
@@ -157,18 +164,28 @@ pub fn permission_actions(ui: &mut egui::Ui, daemon: &mut DaemonManager) {
 /// The most important thing here is that the user is not looking at their work
 /// — so nothing on this screen imitates work. No list, no surface, no action
 /// that would suggest continuing is possible.
+pub fn loading(ui: &mut egui::Ui) {
+    ui::scroll(ui, |ui| {
+        ui::gap(ui, theme::S6);
+        ui::measure_column(ui, theme::PROSE_WIDTH, |ui| {
+            ui::eyebrow(ui, crate::copy::HOME_LABEL);
+            ui::display(ui, crate::copy::HOME_LOADING);
+            ui::prose(
+                ui,
+                "Evo is reading its local work record. No work is shown until that read completes.",
+            );
+        });
+    });
+}
+
 pub fn storage_error(ui: &mut egui::Ui, status: &str) {
     ui::scroll(ui, |ui| {
         ui::gap(ui, theme::S6);
         ui::measure_column(ui, theme::PROSE_WIDTH, |ui| {
-            ui::eyebrow(ui, "Your work");
-            ui::display(ui, "Evo could not read its record");
+            ui::eyebrow(ui, crate::copy::HOME_LABEL);
+            ui::display(ui, crate::copy::STORAGE_ERROR_TITLE);
             ui::gap(ui, theme::S2);
-            ui::lede(
-                ui,
-                "Nothing is shown because nothing could be read. Evo will not \
-                 show a partial or remembered list as if it were current.",
-            );
+            ui::lede(ui, crate::copy::STORAGE_ERROR_LEDE);
             ui::notice(ui, Severity::Bad, "Unreadable", status);
         });
     });
@@ -199,20 +216,16 @@ pub fn first_run(
             ui::gap(ui, theme::S5);
             let (heading, explanation) = match step {
                 1 => (
-                    "Evo remembers where you were working",
-                    "Evo keeps a private, local record of what you do, so you can \
-                     pick up exactly where you left off.",
+                    crate::copy::FIRST_RUN_INTRO_TITLE,
+                    crate::copy::FIRST_RUN_INTRO_BODY,
                 ),
                 2 => (
-                    "It all stays on this Mac",
-                    "Evo watches which files, windows, and pages you use — entirely \
-                     on this Mac. Nothing is sent anywhere, and nothing needs the \
-                     internet to work.",
+                    crate::copy::FIRST_RUN_STORAGE_TITLE,
+                    crate::copy::FIRST_RUN_STORAGE_BODY,
                 ),
                 _ => (
-                    "Give Evo the permission it needs",
-                    "Evo needs Accessibility permission to witness the windows you \
-                     focus. You can grant it now, or later from Settings.",
+                    crate::copy::FIRST_RUN_PERMISSION_TITLE,
+                    crate::copy::FIRST_RUN_PERMISSION_BODY,
                 ),
             };
             ui::display(ui, heading);
@@ -221,26 +234,23 @@ pub fn first_run(
             ui::gap(ui, theme::S2);
             match step {
                 1 | 2 => {
-                    if ui::control(ui, Control::primary("Continue")).clicked() {
+                    if ui::control(ui, Control::primary(crate::copy::FIRST_RUN_CONTINUE)).clicked()
+                    {
                         *pending = Some(step + 1);
                     }
                 }
                 _ => {
-                    permission_actions(ui, daemon);
+                    permission_actions(ui, || daemon.restart());
                     ui::gap(ui, theme::S5);
                     // Deliberately the only primary control on the step, and
                     // below the permission actions: entering Evo without the
                     // permission is allowed, but it is not the suggestion.
-                    if ui::control(ui, Control::primary("Enter Evo")).clicked() {
+                    if ui::control(ui, Control::primary(crate::copy::FIRST_RUN_ENTER)).clicked() {
                         complete_first_run();
                         *pending = None;
                     }
                     ui::gap(ui, theme::S3);
-                    ui::provenance(
-                        ui,
-                        "Without this permission Evo records file saves only, and \
-                         will say so.",
-                    );
+                    ui::provenance(ui, crate::copy::FIRST_RUN_PERMISSION_LIMIT);
                 }
             }
         });
@@ -255,9 +265,9 @@ fn progress(ui: &mut egui::Ui, step: u8) {
     for index in 0..3u8 {
         let center = egui::pos2(rect.min.x + 4.0 + index as f32 * 16.0, rect.center().y);
         if index + 1 == step {
-            painter.circle_filled(center, 3.5, theme::ACCENT);
+            painter.circle_filled(center, 3.5, theme::accent());
         } else if index + 1 < step {
-            painter.circle_filled(center, 2.5, theme::RECEDED);
+            painter.circle_filled(center, 2.5, theme::receded_ink());
         } else {
             painter.circle_stroke(center, 2.5, egui::Stroke::new(1.0, theme::border_strong()));
         }
@@ -318,6 +328,8 @@ pub fn settings(
     daemon_status: &DaemonStatus,
     daemon: &mut DaemonManager,
     storage_root: &Path,
+    theme_mode: &mut theme::ThemeMode,
+    theme_preference_error: &mut Option<String>,
 ) {
     let reveal = ui::transition(ui, ui.id().with("evo-settings"), *open);
     if !*open && reveal <= 0.002 {
@@ -326,15 +338,19 @@ pub fn settings(
     let max = ui.max_rect();
 
     // The scrim pushes the window back rather than hiding it: the user has not
-    // left where they were, and can see that they have not.
+    // left where they were, and can see that they have not. On the dark
+    // environment the scrim is deep black; the sheet above it is the
+    // lifted material.
     ui.painter().rect_filled(
         max,
         0.0,
-        egui::Color32::from_rgba_unmultiplied(0x14, 0x12, 0x10, (52.0 * reveal) as u8),
+        egui::Color32::from_rgba_unmultiplied(0x05, 0x06, 0x07, (150.0 * reveal) as u8),
     );
 
     let needs_permission = !matches!(daemon_status, DaemonStatus::Capturing);
-    let height = if needs_permission { 400.0 } else { 320.0 };
+    let height = 600.0f32
+        .min(max.height() - theme::PAGE_PAD * 2.0)
+        .max(400.0);
     let width = 460.0f32.min(max.width() - theme::PAGE_PAD * 2.0).max(280.0);
     // The sheet arrives by materializing at scale rather than sliding: it has
     // no source edge to come from, so a slide would imply a direction that
@@ -352,9 +368,9 @@ pub fn settings(
             theme::sheet_frame().show(ui, |ui| {
                 ui.set_width(ui.available_width());
                 ui.horizontal(|ui| {
-                    ui::label(ui, Role::Headline, "Settings", theme::TEXT);
+                    ui::label(ui, Role::Headline, crate::copy::SETTINGS, theme::text_ink());
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        if ui::control(ui, Control::quiet("Done")).clicked() {
+                        if ui::control(ui, Control::quiet(crate::copy::SETTINGS_DONE)).clicked() {
                             *open = false;
                         }
                     });
@@ -362,7 +378,7 @@ pub fn settings(
                 ui::gap(ui, theme::S5);
 
                 let (word, severity) = capture_status(daemon_status);
-                ui::eyebrow(ui, "Capture");
+                ui::eyebrow(ui, crate::copy::SETTINGS_CAPTURE);
                 ui.horizontal(|ui| {
                     ui::status_word(ui, word, severity);
                     ui.add_space(theme::S3);
@@ -370,33 +386,83 @@ pub fn settings(
                         ui,
                         Role::Body,
                         capture_sentence(daemon_status),
-                        theme::MUTED,
+                        theme::muted_ink(),
                     );
                 });
                 if needs_permission {
                     ui::gap(ui, theme::S3);
-                    permission_actions(ui, daemon);
+                    permission_actions(ui, || daemon.restart());
                 }
 
-                ui::gap(ui, theme::S5);
+                ui::gap(ui, theme::S4);
                 ui::hairline(ui);
-                ui::gap(ui, theme::S5);
+                ui::gap(ui, theme::S3);
+                ui::eyebrow(ui, crate::copy::THEME_LABEL);
+                ui.horizontal_wrapped(|ui| {
+                    for (mode, label) in [
+                        (theme::ThemeMode::Dusk, "Dusk"),
+                        (theme::ThemeMode::Day, "Day"),
+                        (theme::ThemeMode::Auto, "Auto"),
+                    ] {
+                        if ui::control(ui, Control::secondary(label)).clicked() {
+                            *theme_mode = mode;
+                            theme::set_theme_mode(mode);
+                            theme::refresh_visuals(ui.ctx());
+                            let path = storage_root.join("preferences/theme");
+                            if let Some(parent) = path.parent() {
+                                let _ = std::fs::create_dir_all(parent);
+                            }
+                            *theme_preference_error =
+                                std::fs::write(path, mode.key()).err().map(|error| {
+                                    format!("Could not save appearance preference: {error}")
+                                });
+                        }
+                    }
+                });
+                ui::gap(ui, theme::S2);
+                ui::caption(ui, &format!("Current choice: {}", theme_mode.key()));
+                if let Some(error) = theme_preference_error.as_deref() {
+                    ui::notice(ui, Severity::Bad, "Not saved", error);
+                }
 
-                ui::field(ui, "Where your record is kept", "On this Mac only");
-                ui::gap(ui, theme::S1);
-                ui::one_line(
-                    ui,
-                    Role::Caption,
-                    &storage_root.display().to_string(),
-                    theme::TERTIARY,
-                );
+                ui::gap(ui, theme::S3);
+                ui::hairline(ui);
+                ui::gap(ui, theme::S3);
+                egui::ScrollArea::vertical()
+                    .max_height((height - 140.0).max(180.0))
+                    .show(ui, |ui| {
+                        ui::eyebrow(ui, crate::copy::TRUST_LABEL);
+                        ui::prose(ui, crate::copy::PRIVACY_BODY);
+                        ui::prose(ui, crate::copy::AUDIO_BODY);
+                        ui::field(
+                            ui,
+                            crate::copy::SETTINGS_STORAGE_PATH,
+                            &storage_root.display().to_string(),
+                        );
 
-                ui::gap(ui, theme::S5);
-                ui::provenance(
-                    ui,
-                    "All processing and storage stay on this Mac. Evo makes no \
-                     network requests.",
-                );
+                        ui::gap(ui, theme::S3);
+                        ui::hairline(ui);
+                        ui::gap(ui, theme::S3);
+                        ui::eyebrow(ui, crate::copy::HELP_LABEL);
+                        ui::prose(ui, crate::copy::HELP_BODY);
+
+                        ui::gap(ui, theme::S3);
+                        ui::hairline(ui);
+                        ui::gap(ui, theme::S3);
+                        ui::eyebrow(ui, crate::copy::DIAGNOSTICS_LABEL);
+                        ui::field(
+                            ui,
+                            crate::copy::SETTINGS_CAPTURE_WORKER,
+                            daemon_status.label(),
+                        );
+                        if let DaemonStatus::PartialCapture { detail } = daemon_status {
+                            ui::prose(ui, detail);
+                        }
+                        if let DaemonStatus::Failed(detail) = daemon_status {
+                            ui::prose(ui, detail);
+                        }
+                        ui::provenance(ui, crate::copy::SETTINGS_DIAGNOSTICS_LIMIT);
+                    });
             });
         },
     );
@@ -410,11 +476,11 @@ pub fn settings(
 /// One plain sentence for each capture state, for the Settings sheet.
 fn capture_sentence(daemon_status: &DaemonStatus) -> &'static str {
     match daemon_status {
-        DaemonStatus::Capturing => "Evo is recording what it witnesses.",
-        DaemonStatus::PartialCapture { .. } => "File saves only — window focus is not permitted.",
-        DaemonStatus::PermissionRequired => "Evo cannot observe your work yet.",
-        DaemonStatus::Unavailable => "The capture worker is not running.",
-        DaemonStatus::Failed(_) => "The capture worker stopped.",
+        DaemonStatus::Capturing => crate::copy::SETTINGS_CAPTURE_RUNNING,
+        DaemonStatus::PartialCapture { .. } => crate::copy::SETTINGS_CAPTURE_LIMITED,
+        DaemonStatus::PermissionRequired => crate::copy::SETTINGS_CAPTURE_BLOCKED,
+        DaemonStatus::Unavailable => crate::copy::SETTINGS_CAPTURE_UNAVAILABLE,
+        DaemonStatus::Failed(_) => crate::copy::SETTINGS_CAPTURE_FAILED,
     }
 }
 

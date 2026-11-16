@@ -1,3 +1,4 @@
+#![allow(clippy::duplicated_attributes)]
 //! Evo Execution Layer.
 //!
 //! This crate implements the Architecture's Restoration Execution layer
@@ -49,6 +50,8 @@
 //! Nothing to the right of the arrow ever flows back to the left.
 
 pub mod binding;
+pub mod browser_identity;
+pub mod browser_macos;
 pub mod engine;
 pub mod locator;
 // The macOS executor module self-gates its platform-specific implementation
@@ -60,6 +63,7 @@ pub mod preflight;
 pub mod resource;
 pub mod restore;
 pub mod room;
+#[cfg(target_os = "macos")]
 pub mod room_macos;
 pub mod selection;
 

@@ -13,6 +13,51 @@ use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
+pub fn tighten_permissions(root: &Path) {
+    use std::os::unix::fs::PermissionsExt;
+    let _ = std::fs::set_permissions(root, std::fs::Permissions::from_mode(0o700));
+    if let Some(parent) = root.parent() {
+        let logs = parent.join("logs");
+        let _ = std::fs::set_permissions(&logs, std::fs::Permissions::from_mode(0o700));
+        if let Ok(entries) = std::fs::read_dir(&logs) {
+            for e in entries.flatten() {
+                let _ = std::fs::set_permissions(e.path(), std::fs::Permissions::from_mode(0o600));
+            }
+        }
+    }
+    if let Ok(entries) = std::fs::read_dir(root) {
+        for e in entries.flatten() {
+            let p = e.path();
+            if p.extension().and_then(|x| x.to_str()) == Some("sock") {
+                let _ = std::fs::set_permissions(p, std::fs::Permissions::from_mode(0o600));
+            }
+        }
+    }
+}
+
+pub fn tighten_all() {
+    tighten_permissions(&canonical_storage_root());
+}
+
+pub fn test_home() -> Option<PathBuf> {
+    std::env::var_os("EVO_TEST_HOME").map(PathBuf::from)
+}
+
+pub fn apply_test_home() -> Option<PathBuf> {
+    if let Some(home) = test_home() {
+        unsafe { std::env::set_var("HOME", &home); }
+        if std::env::var_os("EVO_STORAGE_ROOT").is_none() {
+            unsafe { std::env::set_var("EVO_STORAGE_ROOT", home.join("storage")); }
+        }
+        let tmp = home.join("tmp");
+        let _ = std::fs::create_dir_all(&tmp);
+        unsafe { std::env::set_var("TMPDIR", &tmp); }
+        Some(home)
+    } else {
+        None
+    }
+}
+
 /// The one canonical storage root shared by the desktop shell and the daemon
 /// runtime.
 ///
@@ -21,6 +66,9 @@ use std::path::{Path, PathBuf};
 /// Support location — never the temp directory, which cannot survive
 /// restart, reboot, or temp cleanup.
 pub fn canonical_storage_root() -> PathBuf {
+    if let Some(home) = std::env::var_os("EVO_TEST_HOME") {
+        return PathBuf::from(home).join("storage");
+    }
     std::env::var_os("EVO_STORAGE_ROOT")
         .map(PathBuf::from)
         .unwrap_or_else(default_storage_root)
@@ -79,7 +127,7 @@ pub enum MigrationOutcome {
 /// pointed at a root deliberately, so no legacy temp data is touched.
 pub fn prepare_storage_root() -> Result<PathBuf, StorageError> {
     let canonical = canonical_storage_root();
-    if std::env::var_os("EVO_STORAGE_ROOT").is_some() {
+    if std::env::var_os("EVO_STORAGE_ROOT").is_some() || std::env::var_os("EVO_TEST_HOME").is_some() {
         return Ok(canonical);
     }
     migrate_legacy_root(&legacy_storage_root(), &canonical)?;
@@ -110,7 +158,10 @@ pub fn migrate_legacy_root(
     // scratch space.
     let staging = parent.join(format!(
         ".evo-migrating-{}",
-        canonical.file_name().map(|name| name.to_string_lossy().to_string()).unwrap_or_default()
+        canonical
+            .file_name()
+            .map(|name| name.to_string_lossy().to_string())
+            .unwrap_or_default()
     ));
     // A stale staging directory from a crashed run is this crate's own
     // scratch space, never the user's data; discard it and start clean.
@@ -184,8 +235,7 @@ fn copy_file_verified(from: &Path, to: &Path) -> Result<(), StorageError> {
         fs::create_dir_all(parent)
             .map_err(|err| migration_error(&format!("create {}", parent.display()), &err))?;
     }
-    fs::copy(from, to)
-        .map_err(|err| migration_error(&format!("copy {}", from.display()), &err))?;
+    fs::copy(from, to).map_err(|err| migration_error(&format!("copy {}", from.display()), &err))?;
     let source_len = fs::metadata(from)
         .map_err(|err| migration_error(&format!("read metadata of {}", from.display()), &err))?
         .len();
@@ -411,7 +461,10 @@ mod tests {
             MigrationOutcome::AlreadyPresent
         );
         // Exactly the original records, exactly once.
-        assert_eq!(read(&canonical, "observation.log"), b"record-one\nrecord-two\n");
+        assert_eq!(
+            read(&canonical, "observation.log"),
+            b"record-one\nrecord-two\n"
+        );
         clear_dir(&legacy);
         clear_dir(&canonical);
     }

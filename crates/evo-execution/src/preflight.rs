@@ -149,10 +149,13 @@ pub trait PreflightSource {
     /// (on macOS, the Accessibility `AXDocument` attribute) — never an
     /// inference from window titles, and never application-specific knowledge.
     ///
-    /// The default is `Err`, not an empty list, because "this platform cannot
-    /// tell" and "no window is showing it" are different facts: a source that
-    /// cannot answer must say so, so the binding layer degrades to opening the
-    /// file and reports *why* rather than implying the file was closed.
+    /// The default is `Err`, not an empty list: an inspection failure is not
+    /// evidence that no window is showing the file. Binding fails closed on
+    /// `Err`, reporting the reason without focusing or reopening the file.
+    /// One reported document window permits focus; several are ambiguous and
+    /// permit no action. Only a successful empty result permits opening the
+    /// exact file path. Applications may omit `AXDocument`, so an `Ok([])`
+    /// report remains usable even though it does not prove the file is closed.
     fn windows_showing_document(&self, _path: &str) -> Result<Vec<WindowInfo>, String> {
         Err("this platform cannot report which windows are displaying a file".to_string())
     }

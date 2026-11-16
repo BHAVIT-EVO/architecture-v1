@@ -75,7 +75,13 @@ const AX_WEB_AREA_ROLE: &[u8] = b"AXWebArea\0";
 const AX_GROUP_ROLE: &[u8] = b"AXGroup\0";
 
 fn make_attr(name: &'static [u8]) -> CFStringRef {
-    unsafe { CFStringCreateWithCString(ptr::null(), name.as_ptr() as *const c_char, CFSTRING_ENCODING_UTF8) }
+    unsafe {
+        CFStringCreateWithCString(
+            ptr::null(),
+            name.as_ptr() as *const c_char,
+            CFSTRING_ENCODING_UTF8,
+        )
+    }
 }
 
 fn attr(name: &'static [u8]) -> CFStringRef {
@@ -159,7 +165,9 @@ unsafe fn print_element(element: AXUIElementRef, depth: usize) -> bool {
     let title = copy_string(element, AX_TITLE).unwrap_or_default();
     let pad = "  ".repeat(depth);
     println!("{pad}role={role:?} url={url:?} title={title:?}");
-    url.is_some() && url.as_deref() != Some(title.as_str()) && url.as_deref().unwrap_or("").starts_with("http")
+    url.is_some()
+        && url.as_deref() != Some(title.as_str())
+        && url.as_deref().unwrap_or("").starts_with("http")
 }
 
 unsafe fn walk(element: AXUIElementRef, depth: usize) -> bool {

@@ -7,13 +7,21 @@
 
 use evo_artifact::artifact_id::ArtifactId;
 use evo_daemon::cache::CanonicalIndex;
+use evo_daemon::classification::{
+    ClassificationResponse, submit_classification as daemon_submit_classification,
+};
 use evo_daemon::continuation::{
     ContinuationResponse, submit_continuation_surface as daemon_submit_continuation_surface,
 };
 use evo_daemon::designation::{
     DesignationResponse, submit_designation as daemon_submit_designation,
 };
+use evo_daemon::feedback::{
+    FeedbackResponse, submit_dismissal as daemon_submit_dismissal,
+    submit_member_state as daemon_submit_member_state,
+};
 use evo_daemon::grouping::{GroupingResponse, submit_grouping as daemon_submit_grouping};
+use evo_daemon::naming::{NamingResponse, submit_naming as daemon_submit_naming};
 use evo_daemon::ui::select_display_workspace;
 use evo_engagement::Standing;
 use evo_execution::RestorationSelection;
@@ -135,9 +143,9 @@ pub fn order_home_workspaces(
     // come first. `sort_by_key` is stable: canonical order is preserved
     // within each group.
     ordered.sort_by_key(|workspace| {
-        !outcomes
+        outcomes
             .get(&workspace.id().to_string())
-            .is_some_and(|outcome| outcome.resume_point().is_some())
+            .is_none_or(|outcome| outcome.resume_point().is_none())
     });
     ordered
 }
@@ -262,10 +270,10 @@ pub fn locators_from_locators(
 ) -> HashMap<String, Locator> {
     let mut resolved = HashMap::new();
     for (artifact_id, (schema_name, subject)) in locators {
-        if let Some(kind) = classify_locator(schema_name, subject) {
-            if let Ok(id) = ArtifactId::new(artifact_id.clone()) {
-                resolved.insert(artifact_id.clone(), Locator::new(id, kind));
-            }
+        if let Some(kind) = classify_locator(schema_name, subject)
+            && let Ok(id) = ArtifactId::new(artifact_id.clone())
+        {
+            resolved.insert(artifact_id.clone(), Locator::new(id, kind));
         }
     }
     resolved
@@ -339,6 +347,57 @@ pub fn submit_continuation_surface(
 /// declaration that two witnessed resources belong to the same body of work.
 pub fn submit_grouping(root: &Path, first: &str, second: &str) -> Result<GroupingResponse, String> {
     daemon_submit_grouping(root, first, second).map_err(|err| err.to_string())
+}
+
+/// Submits the user's own name for a body of work through the daemon's
+/// canonical channel (RFC-0014 WorkNamed) and returns the daemon's honest
+/// response.
+///
+/// The shell never writes canonical state: the daemon — the canonical
+/// runtime owner — validates the declaration's shape, accepts and persists
+/// the OBS-WORK-NAMED observation, and re-derives. `subject` is the witnessed
+/// subject the person is naming (a card's strongest member); `name` is
+/// exactly what the person wrote.
+pub fn submit_naming(root: &Path, subject: &str, name: &str) -> Result<NamingResponse, String> {
+    daemon_submit_naming(root, subject, name).map_err(|err| err.to_string())
+}
+
+/// Submits the person's own classification of a surface through the daemon's
+/// canonical channel (OBS-SURFACE-CLASSIFIED) and returns the daemon's honest
+/// response.
+///
+/// The shell never writes canonical state: the daemon — the canonical runtime
+/// owner — validates the declaration's shape, accepts and persists the
+/// OBS-SURFACE-CLASSIFIED observation, and re-derives. `subject` is the
+/// witnessed surface the person is classifying (a card's strongest member);
+/// `class` is exactly the class they assigned. A classification gates founding
+/// and titling only — it never removes the surface from a body of work, and it
+/// re-runs over all history on the next replay.
+pub fn submit_classification(
+    root: &Path,
+    subject: &str,
+    class: &str,
+) -> Result<ClassificationResponse, String> {
+    daemon_submit_classification(root, subject, class).map_err(|err| err.to_string())
+}
+
+/// Removes a witnessed body of work from the default Home surface without
+/// deleting its replay evidence. The daemon resolves the subject and records
+/// the explicit dismissal; the shell never writes canonical state.
+pub fn submit_dismissal(root: &Path, work: &str) -> Result<FeedbackResponse, String> {
+    daemon_submit_dismissal(root, work).map_err(|err| err.to_string())
+}
+
+/// Records the person's lifecycle correction for one witnessed member. The
+/// state is applied only during restoration; membership and historical
+/// evidence remain unchanged.
+pub fn submit_member_state(
+    root: &Path,
+    work: &str,
+    member: &str,
+    state: evo_threads::MemberState,
+) -> Result<FeedbackResponse, String> {
+    daemon_submit_member_state(root, work, member, state).map_err(|err| err.to_string())
 }
 
 /// The witnessed subjects of the Artifacts in a Workspace's current
@@ -419,20 +478,20 @@ pub fn select_workspace_with_designation<'a>(
     selected: Option<&WorkspaceId>,
     designated: Option<&ArtifactId>,
 ) -> Option<&'a Workspace> {
-    if let Some(id) = selected {
-        if let Some(workspace) = workspaces.iter().find(|workspace| workspace.id() == id) {
-            return Some(workspace);
-        }
+    if let Some(id) = selected
+        && let Some(workspace) = workspaces.iter().find(|workspace| workspace.id() == id)
+    {
+        return Some(workspace);
     }
-    if let Some(artifact) = designated {
-        if let Some(workspace) = workspaces.iter().find(|workspace| {
+    if let Some(artifact) = designated
+        && let Some(workspace) = workspaces.iter().find(|workspace| {
             workspace
                 .attachments()
                 .iter()
                 .any(|attachment| attachment.artifact_id() == artifact)
-        }) {
-            return Some(workspace);
-        }
+        })
+    {
+        return Some(workspace);
     }
     select_display_workspace(workspaces)
 }
@@ -527,7 +586,7 @@ pub fn subject_for<'a>(
 
 /// Human-readable label for one Artifact: the witnessed subject when the
 /// canonical Observation log establishes one, otherwise the short identity.
-pub fn artifact_label<'a>(subjects: &'a HashMap<String, String>, artifact_id: &str) -> String {
+pub fn artifact_label(subjects: &HashMap<String, String>, artifact_id: &str) -> String {
     subject_for(subjects, artifact_id)
         .map(str::to_string)
         .unwrap_or_else(|| short_artifact_id(artifact_id))
@@ -717,125 +776,54 @@ pub fn workspace_card(
     }
 }
 
-/// Presentation-only filter over the kind of resources a body of work
-/// witnessed. Filtering is a retrieval view, never continuation evidence and
-/// never a ranking.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum WorkKindFilter {
-    #[default]
-    All,
-    Files,
-    Windows,
-    Urls,
-    Commits,
-}
-
-impl WorkKindFilter {
-    /// The plain-language chip label.
-    pub fn label(self) -> &'static str {
-        match self {
-            WorkKindFilter::All => "All work",
-            WorkKindFilter::Files => "Files",
-            WorkKindFilter::Windows => "Windows",
-            WorkKindFilter::Urls => "URLs",
-            WorkKindFilter::Commits => "Commits",
+/// The presentation bridge from an engine thread (identified by its own
+/// member witnesses) to the canonical Workspace it belongs to, if the
+/// record establishes one.
+///
+/// Membership, never name (the same rule the merge proposals were corrected
+/// to): a thread and a Workspace belong together when they witnessed the
+/// same resources — the thread's raw member subjects against the Workspace's
+/// Artifacts' witnessed subjects. The Workspace with the most overlap wins;
+/// ties break by canonical order, which keeps the result deterministic.
+/// Presentation material only — this never merges, mutates, or ranks
+/// anything canonical.
+pub fn workspace_for_thread(
+    thread_member_subjects: &[String],
+    workspaces: &[Workspace],
+    subjects: &HashMap<String, String>,
+) -> Option<WorkspaceId> {
+    if thread_member_subjects.is_empty() {
+        return None;
+    }
+    let mut best: Option<(usize, &Workspace)> = None;
+    for workspace in workspaces {
+        let witnessed: std::collections::HashSet<&str> = workspace
+            .attachments()
+            .iter()
+            .filter_map(|attachment| {
+                subjects
+                    .get(attachment.artifact_id().as_str())
+                    .map(String::as_str)
+            })
+            .collect();
+        let overlap = thread_member_subjects
+            .iter()
+            .filter(|subject| witnessed.contains(subject.as_str()))
+            .count();
+        if overlap == 0 {
+            continue;
+        }
+        match best {
+            // Strictly greater wins, so the first (canonically earliest)
+            // Workspace keeps a tie.
+            Some((best_overlap, _)) if overlap > best_overlap => {
+                best = Some((overlap, workspace));
+            }
+            None => best = Some((overlap, workspace)),
+            _ => {}
         }
     }
-
-    /// All filters in display order (All first).
-    pub fn all() -> [WorkKindFilter; 5] {
-        [
-            WorkKindFilter::All,
-            WorkKindFilter::Files,
-            WorkKindFilter::Windows,
-            WorkKindFilter::Urls,
-            WorkKindFilter::Commits,
-        ]
-    }
-}
-
-/// Presentation-only time filter over when a body of work was last witnessed,
-/// using the factual canonical snapshot timestamps. Filtering is a retrieval
-/// view, never continuation evidence.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum WorkPeriodFilter {
-    #[default]
-    All,
-    Today,
-    ThisWeek,
-    Older,
-}
-
-impl WorkPeriodFilter {
-    /// The plain-language chip label.
-    pub fn label(self) -> &'static str {
-        match self {
-            WorkPeriodFilter::All => "Any time",
-            WorkPeriodFilter::Today => "Today",
-            WorkPeriodFilter::ThisWeek => "This week",
-            WorkPeriodFilter::Older => "Older",
-        }
-    }
-
-    /// All filters in display order (All first).
-    pub fn all() -> [WorkPeriodFilter; 4] {
-        [
-            WorkPeriodFilter::All,
-            WorkPeriodFilter::Today,
-            WorkPeriodFilter::ThisWeek,
-            WorkPeriodFilter::Older,
-        ]
-    }
-}
-
-/// Whether a body of work witnessed at least one resource of the requested
-/// kind. A workspace with no witnessed artifacts matches only `All`.
-pub fn workspace_matches_kind(
-    kinds: &HashMap<String, String>,
-    workspace: &Workspace,
-    filter: WorkKindFilter,
-) -> bool {
-    if filter == WorkKindFilter::All {
-        return true;
-    }
-    let wanted: &str = match filter {
-        WorkKindFilter::Files => KIND_FILE,
-        WorkKindFilter::Windows => KIND_WINDOW,
-        WorkKindFilter::Urls => KIND_URL,
-        WorkKindFilter::Commits => KIND_COMMIT,
-        WorkKindFilter::All => return true,
-    };
-    distinct_artifacts_across_history(workspace)
-        .iter()
-        .any(|id| kinds.get(id).map(String::as_str) == Some(wanted))
-}
-
-/// Whether a body of work was last witnessed within the requested period,
-/// judged against the canonical latest snapshot instant and `now`. A
-/// workspace with no snapshot matches only `All` (nothing factual to filter
-/// on).
-pub fn workspace_matches_period(
-    workspace: &Workspace,
-    filter: WorkPeriodFilter,
-    now: std::time::SystemTime,
-) -> bool {
-    if filter == WorkPeriodFilter::All {
-        return true;
-    }
-    let Some(latest) = workspace.snapshots().last() else {
-        return false;
-    };
-    let elapsed = match now.duration_since(*latest.captured_at()) {
-        Ok(elapsed) => elapsed,
-        // A witness moment in the future (clock skew) counts as today.
-        Err(_) => return filter == WorkPeriodFilter::Today,
-    };
-    match filter {
-        WorkPeriodFilter::Today => elapsed < std::time::Duration::from_secs(24 * 60 * 60),
-        WorkPeriodFilter::ThisWeek => elapsed < std::time::Duration::from_secs(7 * 24 * 60 * 60),
-        WorkPeriodFilter::Older => elapsed >= std::time::Duration::from_secs(7 * 24 * 60 * 60),
-        WorkPeriodFilter::All => true,
-    }
+    best.map(|(_, workspace)| workspace.id().clone())
 }
 
 fn distinct_ids(attachments: &[Attachment]) -> Vec<String> {
@@ -1119,6 +1107,7 @@ mod tests {
             process_identifier: None,
             owning_process_name: None,
             observed_state: None,
+            window_id: None,
         }
     }
 
@@ -1405,146 +1394,6 @@ mod tests {
         );
     }
 
-    // The kind filter matches a workspace only when it actually witnessed a
-    // resource of that kind; a workspace with no artifacts matches only All.
-    #[test]
-    fn workspace_matches_kind_is_evidence_based() {
-        let ws = workspace(
-            "123e4567-e89b-12d3-a456-426614174000",
-            vec![snapshot(
-                0,
-                vec![attachment("artifact-aa"), attachment("artifact-bb")],
-            )],
-        );
-        let mut kinds = HashMap::new();
-        kinds.insert("artifact-aa".to_string(), KIND_FILE.to_string());
-        kinds.insert("artifact-bb".to_string(), KIND_WINDOW.to_string());
-
-        assert!(workspace_matches_kind(&kinds, &ws, WorkKindFilter::All));
-        assert!(workspace_matches_kind(&kinds, &ws, WorkKindFilter::Files));
-        assert!(workspace_matches_kind(&kinds, &ws, WorkKindFilter::Windows));
-        assert!(!workspace_matches_kind(&kinds, &ws, WorkKindFilter::Urls));
-        assert!(!workspace_matches_kind(
-            &kinds,
-            &ws,
-            WorkKindFilter::Commits
-        ));
-
-        // A workspace that witnessed nothing matches only All: filtering by
-        // any kind must not invent evidence.
-        let empty = workspace(
-            "123e4567-e89b-12d3-a456-426614174001",
-            vec![snapshot(0, vec![])],
-        );
-        assert!(workspace_matches_kind(&kinds, &empty, WorkKindFilter::All));
-        assert!(!workspace_matches_kind(
-            &kinds,
-            &empty,
-            WorkKindFilter::Files
-        ));
-    }
-
-    // The period filter judges only the factual latest witness instant; a
-    // workspace with no snapshot matches only All because there is nothing
-    // factual to filter on.
-    #[test]
-    fn workspace_matches_period_uses_only_the_latest_witness_instant() {
-        // "Now" sits 100 days after the epoch; the fixtures below are placed
-        // relative to it so every elapsed-time branch is exercised.
-        let day = 24 * 60 * 60;
-        let now = UNIX_EPOCH
-            .checked_add(Duration::from_secs(100 * day))
-            .unwrap();
-        let at = |offset_secs: u64, id: &str| {
-            workspace(
-                id,
-                vec![snapshot(offset_secs, vec![attachment("artifact-aa")])],
-            )
-        };
-        let today = at(
-            99 * day + 21 * 60 * 60,
-            "123e4567-e89b-12d3-a456-426614174010",
-        ); // ~3h ago
-        let this_week = at(96 * day, "123e4567-e89b-12d3-a456-426614174011"); // ~4 days ago
-        let older = at(60 * day, "123e4567-e89b-12d3-a456-426614174012"); // ~40 days ago
-        let no_snapshot = workspace(
-            "123e4567-e89b-12d3-a456-426614174013",
-            vec![snapshot(0, vec![])],
-        );
-
-        assert!(workspace_matches_period(&today, WorkPeriodFilter::All, now));
-        assert!(workspace_matches_period(
-            &today,
-            WorkPeriodFilter::Today,
-            now
-        ));
-        assert!(workspace_matches_period(
-            &today,
-            WorkPeriodFilter::ThisWeek,
-            now
-        ));
-        assert!(!workspace_matches_period(
-            &today,
-            WorkPeriodFilter::Older,
-            now
-        ));
-
-        assert!(!workspace_matches_period(
-            &this_week,
-            WorkPeriodFilter::Today,
-            now
-        ));
-        assert!(workspace_matches_period(
-            &this_week,
-            WorkPeriodFilter::ThisWeek,
-            now
-        ));
-        assert!(!workspace_matches_period(
-            &this_week,
-            WorkPeriodFilter::Older,
-            now
-        ));
-
-        assert!(!workspace_matches_period(
-            &older,
-            WorkPeriodFilter::Today,
-            now
-        ));
-        assert!(!workspace_matches_period(
-            &older,
-            WorkPeriodFilter::ThisWeek,
-            now
-        ));
-        assert!(workspace_matches_period(
-            &older,
-            WorkPeriodFilter::Older,
-            now
-        ));
-
-        // Nothing factual to judge: only All matches.
-        assert!(workspace_matches_period(
-            &no_snapshot,
-            WorkPeriodFilter::All,
-            now
-        ));
-        assert!(!workspace_matches_period(
-            &no_snapshot,
-            WorkPeriodFilter::Today,
-            now
-        ));
-
-        // A witness instant after "now" (clock skew) counts as today.
-        let future = workspace(
-            "123e4567-e89b-12d3-a456-426614174014",
-            vec![snapshot(101 * day, vec![attachment("artifact-aa")])],
-        );
-        assert!(workspace_matches_period(
-            &future,
-            WorkPeriodFilter::Today,
-            now
-        ));
-    }
-
     // End-to-end: canonical Observation → Artifact identity → derived
     // Workspace → desktop state. The display state must carry the
     // human-readable subject each canonical Artifact's Observations witnessed,
@@ -1733,6 +1582,14 @@ mod tests {
         // test exercises execution, not OS state.
         fn file_exists(&self, _path: &str) -> bool {
             true
+        }
+        // File targets in this routing fixture have no reported document
+        // windows; they are expected to open rather than focus an existing view.
+        fn windows_showing_document(
+            &self,
+            _path: &str,
+        ) -> Result<Vec<evo_execution::macos::WindowInfo>, String> {
+            Ok(vec![])
         }
         // The fixture's window targets are reported as uniquely open, so they
         // preflight READY and are attempted. The list mirrors the window
@@ -3065,6 +2922,28 @@ mod tests {
     // witnessed subjects is accepted and forwarded with the canonical pair
     // ordering; a declaration naming an unwitnessed subject is rejected
     // verbatim, never invented.
+    /// Blocks until the grouping listener accepts a connection, bounded.
+    /// Waiting for the socket file alone races with bind→listen under
+    /// parallel test load (ECONNREFUSED between the two). The probe
+    /// connection is dropped before any bytes are written, so the daemon
+    /// thread reads EOF and finishes harmlessly; the channel receives
+    /// nothing from the probe.
+    fn wait_for_grouping_listener(socket: &std::path::Path) {
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+        let mut last_err = None;
+        while std::time::Instant::now() < deadline {
+            match std::os::unix::net::UnixStream::connect(socket) {
+                Ok(_probe) => return,
+                Err(err) => last_err = Some(err),
+            }
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
+        panic!(
+            "grouping listener at {} never accepted within the budget; last error: {last_err:?}",
+            socket.display()
+        );
+    }
+
     #[test]
     fn submit_grouping_forwards_to_the_daemon_and_reports_honestly() {
         use evo_daemon::grouping::{grouping_socket_path, spawn_grouping_listener};
@@ -3081,14 +2960,9 @@ mod tests {
         let (sender, receiver) = channel::<MacOSSignal>();
         let _listener = spawn_grouping_listener(root.clone(), sender);
         let socket = grouping_socket_path(&root);
-        for _ in 0..100 {
-            if socket.exists() {
-                break;
-            }
-            std::thread::sleep(Duration::from_millis(20));
-        }
+        wait_for_grouping_listener(&socket);
 
-        let witness = |subject: &str| {
+        let _witness = |subject: &str| {
             let _guard = Storage::with_thread_root(root.clone());
             let observation = {
                 let fact =
@@ -3134,6 +3008,77 @@ mod tests {
         };
         assert_eq!(first, "/tmp/a.md");
         assert_eq!(second, "/tmp/never-witnessed.md");
+    }
+
+    #[test]
+    fn submit_naming_forwards_to_the_daemon_and_reports_honestly() {
+        use evo_daemon::naming::{naming_socket_path, spawn_naming_listener};
+        use std::sync::mpsc::channel;
+
+        let root = unique_root("naming");
+        let (sender, receiver) = channel::<MacOSSignal>();
+        let _listener = spawn_naming_listener(root.clone(), sender);
+        let socket = naming_socket_path(&root);
+        wait_for_grouping_listener(&socket);
+
+        // A declaration is the person's word (Law IX, RFC-0014): a name for
+        // a subject nothing ever witnessed is still accepted and forwarded
+        // whole — witnessing is not a precondition for speaking.
+        let accepted =
+            submit_naming(&root, "/tmp/a.md", "Thesis rewrite").expect("submission works");
+        assert_eq!(accepted, NamingResponse::Accepted);
+        let signal = receiver
+            .recv_timeout(Duration::from_secs(5))
+            .expect("accepted naming forwards to the runtime");
+        let MacOSSignal::WorkNamed { subject, name, .. } = signal else {
+            panic!("forwarded signal must be WorkNamed");
+        };
+        assert_eq!(subject, "/tmp/a.md");
+        assert_eq!(name, "Thesis rewrite");
+
+        // A blank name is rejected at the boundary, honestly.
+        let rejected = submit_naming(&root, "/tmp/a.md", "   ").expect("submission works");
+        assert!(
+            matches!(rejected, NamingResponse::Rejected(_)),
+            "a blank name must be rejected: {rejected:?}"
+        );
+    }
+
+    #[test]
+    fn submit_classification_forwards_to_the_daemon_and_reports_honestly() {
+        use evo_daemon::classification::{
+            classification_socket_path, spawn_classification_listener,
+        };
+        use std::sync::mpsc::channel;
+
+        let root = unique_root("classification");
+        let (sender, receiver) = channel::<MacOSSignal>();
+        let _listener = spawn_classification_listener(root.clone(), sender);
+        let socket = classification_socket_path(&root);
+        wait_for_grouping_listener(&socket);
+
+        // A classification is the person's word (Law IX): a class for a
+        // surface nothing ever witnessed is still accepted and forwarded
+        // whole — witnessing is not a precondition for speaking.
+        let accepted =
+            submit_classification(&root, "/tmp/video-page", "NotWork").expect("submission works");
+        assert_eq!(accepted, ClassificationResponse::Accepted);
+        let signal = receiver
+            .recv_timeout(Duration::from_secs(5))
+            .expect("accepted classification forwards to the runtime");
+        let MacOSSignal::SurfaceClassified { subject, class, .. } = signal else {
+            panic!("forwarded signal must be SurfaceClassified");
+        };
+        assert_eq!(subject, "/tmp/video-page");
+        assert_eq!(class, "NotWork");
+
+        // A blank class is rejected at the boundary, honestly.
+        let rejected =
+            submit_classification(&root, "/tmp/video-page", "   ").expect("submission works");
+        assert!(
+            matches!(rejected, ClassificationResponse::Rejected(_)),
+            "a blank class must be rejected: {rejected:?}"
+        );
     }
 
     // D2 — the WorkGrouped surface must only ever offer witnessed subjects:

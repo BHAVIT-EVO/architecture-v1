@@ -1,0 +1,156 @@
+/* Evo design tokens — DESIGN_LAW §2, verbatim.
+   The only place a colour, font, radius, control height or timing is defined. */
+
+@font-face {
+  font-family: "Instrument Serif";
+  src: url("fonts/InstrumentSerif-400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+@font-face {
+  font-family: "Instrument Sans";
+  src: url("fonts/InstrumentSans-400-500-600.woff2") format("woff2");
+  font-weight: 400 600;
+  font-style: normal;
+  font-display: block;
+}
+
+:root {
+  /* Colour */
+  --ink: #06120e;
+  --panel: rgba(9, 21, 17, .9);
+  --line: rgba(240, 234, 216, .13);
+  --text: #f0ead8;
+  --muted: #a9b8ab;
+  --faint: #7f9283;
+  --accent: #8fe0a8;
+  --on-accent: #06180f;
+  --accent-soft: #1a3a2a;
+  --h1-color: #f0ead8;
+  --left-veil: none;
+
+  /* Type */
+  --serif: "Instrument Serif", Georgia, serif;
+  --sans: "Instrument Sans", system-ui, -apple-system, sans-serif;
+  --h1-size: 56px;
+  --h1-line: 1.02;
+  --h1-track: -.015em;
+  --card-title-size: 31px;
+  --card-title-line: 1.08;
+  --ui-size: 15px;
+  --ui-line: 1.45;
+  --w-regular: 400;
+  --w-medium: 500;
+  --w-semibold: 600;
+
+  /* Radius */
+  --r-card: 24px;
+  --r-menu: 16px;
+  --r-row: 14px;
+  --r-pill: 99px;
+
+  /* Controls */
+  --h-primary: 46px;
+  --h-chip: 34px;
+  --h-icon: 36px;
+
+  /* Motion */
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --t-type: 42ms;          /* per character */
+  --t-card-delay: 800ms;
+  --t-card: 900ms;
+  --t-notch: 450ms;
+  --frame: 80ms;           /* the scene's ~12fps */
+
+  /* Elevation — the mockup's two soft long shadows, and nothing else. */
+  --shadow-card: 0 30px 60px -24px #000;
+  --shadow-menu: 0 24px 48px -14px #000;
+  --shadow-notch: 0 24px 50px -16px #000;
+}
+
+html[data-theme="day"] {
+  --ink: #cfe6f4;
+  --panel: rgba(255, 255, 255, .93);
+  --line: rgba(16, 36, 27, .10);
+  --text: #10241b;
+  --muted: #4f6258;
+  --faint: #62736a;
+  --accent: #187a4a;
+  --on-accent: #ffffff;
+  --accent-soft: #e2f3ea;
+  --h1-color: #0d2a1c;
+  --left-veil: linear-gradient(90deg, rgba(255,255,255,.55), transparent 60%);
+}
+
+@media (prefers-color-scheme: light) {
+  html[data-theme="auto"] {
+    --ink: #cfe6f4;
+    --panel: rgba(255, 255, 255, .93);
+    --line: rgba(16, 36, 27, .10);
+    --text: #10241b;
+    --muted: #4f6258;
+    --faint: #62736a;
+    --accent: #187a4a;
+    --on-accent: #ffffff;
+    --accent-soft: #e2f3ea;
+    --h1-color: #0d2a1c;
+    --left-veil: linear-gradient(90deg, rgba(255,255,255,.55), transparent 60%);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  html[data-theme="auto"] {
+    color-scheme: dark;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  html[data-theme="auto"] {
+    color-scheme: light;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--ink);
+  color: var(--text);
+  font: var(--ui-size)/var(--ui-line) var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input, select, textarea { font: inherit; color: inherit; }
+button { background: none; border: 0; cursor: pointer; }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 10px;
+}
+
+h1 {
+  font: var(--w-regular) var(--h1-size)/var(--h1-line) var(--serif);
+  letter-spacing: var(--h1-track);
+}
+
+/* Type roles. Everything else in the product is one of these. */
+.t-display { font: 400 var(--h1-size)/var(--h1-line) var(--serif); letter-spacing: var(--h1-track); }
+.t-card-title { font: 400 var(--card-title-size)/var(--card-title-line) var(--serif); letter-spacing: -.01em; }
+.t-body { font: var(--ui-size)/var(--ui-line) var(--sans); }
+.t-caption { font: 400 13px/1.45 var(--sans); }
+.t-small { font: 500 13px/1.45 var(--sans); }
+.t-kbd { font: 500 11px/1.45 var(--sans); }
+
+.ink { color: var(--text); }
+.muted { color: var(--muted); }
+.faint { color: var(--faint); }
+.accent { color: var(--accent); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

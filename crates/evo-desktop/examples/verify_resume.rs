@@ -96,10 +96,7 @@ fn main() {
     let adapter = MacOSAdapter::new(source);
     let mut engine = CaptureEngine::new();
 
-    let (sender, receiver): (
-        std::sync::mpsc::Sender<Result<RestorationInputBoundary, evo_daemon::DaemonError>>,
-        std::sync::mpsc::Receiver<Result<RestorationInputBoundary, evo_daemon::DaemonError>>,
-    ) = channel();
+    let (sender, receiver) = channel::<Result<RestorationInputBoundary, evo_daemon::DaemonError>>();
     let mut pipeline =
         VerticalPipeline::new(sender, storage_root.clone()).expect("pipeline builds");
 
@@ -270,6 +267,7 @@ fn worked_on(open_title: &str) -> Vec<MacOSSignal> {
                 process_identifier: None,
                 owning_process_name: None,
                 observed_state: None,
+                window_id: None,
             });
             offset += 300;
             signals.push(MacOSSignal::FileSaved {

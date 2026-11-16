@@ -62,9 +62,15 @@ fn main() {
     }
 
     println!("================================================================");
-    println!("EVO — SELECTIVITY PROBE  (OLD reconstruction, {} seeds)", seeds.len());
+    println!(
+        "EVO — SELECTIVITY PROBE  (OLD reconstruction, {} seeds)",
+        seeds.len()
+    );
     println!("root: {}", root.display());
-    println!("floor {:.2}   (degree = above-floor neighbours in full graph)", params.affinity_floor);
+    println!(
+        "floor {:.2}   (degree = above-floor neighbours in full graph)",
+        params.affinity_floor
+    );
     println!("================================================================");
 
     // Per-seed relationship shape.
@@ -187,7 +193,11 @@ fn report_gate(
         }
     }
     let dropped_show: Vec<String> = dropped.iter().take(24).map(|s| trim(s, 40)).collect();
-    println!("  dropped ({}): {}", dropped.len(), dropped_show.join(" · "));
+    println!(
+        "  dropped ({}): {}",
+        dropped.len(),
+        dropped_show.join(" · ")
+    );
 }
 
 fn connected_components(

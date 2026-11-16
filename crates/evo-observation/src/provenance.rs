@@ -398,7 +398,6 @@ impl ObservationOrigin {
     }
 }
 
-
 impl Provenance {
     /// Marks this observation as originating from Evo execution/restoration.
     /// Uses existing `context` HashMap — no new structural fields.
@@ -407,7 +406,11 @@ impl Provenance {
     }
     /// Returns true if this observation came from Evo execution.
     pub fn is_execution_origin(&self) -> bool {
-        self.context.get("evo_origin").map(|v| v.as_str()).unwrap_or("") == "execution"
+        self.context
+            .get("evo_origin")
+            .map(|v| v.as_str())
+            .unwrap_or("")
+            == "execution"
     }
 }
 #[cfg(test)]
@@ -439,12 +442,18 @@ mod provenance_regression_tests {
         assert!(ObservationOrigin::Execution.is_execution());
         assert!(!ObservationOrigin::User.is_execution());
     }
-#[cfg(test)]
-mod persistence_regression {
-    use super::*;
-    #[test]
-    fn provenance_persists_execution_origin() {
-        // persistence verified by is_execution_origin after set
+    #[cfg(test)]
+    mod persistence_regression {
+        /// Restart persistence: execution origin survives reload and stays excluded.
+        ///
+        /// Contract marker, not a passing test: the real test (set execution
+        /// origin, serialize, reload, still excluded) is not written yet.
+        /// Ignored until then so the suite never claims a property it does not
+        /// verify.
+        #[test]
+        #[ignore = "contract not yet tested: persistence round-trip of execution origin"]
+        fn provenance_persists_execution_origin() {
+            todo!("persistence verified by is_execution_origin after set");
+        }
     }
-}
 }

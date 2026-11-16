@@ -1,8 +1,8 @@
 //! Probe: does the real FSEvents watcher deliver events for a write under the
 //! checkout's `target/` directory in this environment?
 use evo_capture::macos_fsevents::FSEventsWatcher;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 
 fn main() {
@@ -26,7 +26,10 @@ fn main() {
     std::fs::create_dir_all(&dir).expect("create probe dir");
     let file = dir.join("probe.txt");
     std::fs::write(&file, "hello\n").expect("write probe file");
-    println!("wrote {}", std::path::absolute(&file).unwrap_or(file.clone()).display());
+    println!(
+        "wrote {}",
+        std::path::absolute(&file).unwrap_or(file.clone()).display()
+    );
 
     let start = Instant::now();
     while start.elapsed() < Duration::from_secs(20) {

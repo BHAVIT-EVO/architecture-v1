@@ -93,7 +93,9 @@ impl DaemonManager {
             // cleanup. Replace it so capture is owned by this shell and the
             // self-capture boundary excludes the right pid.
             let owner = evo_daemon::daemon_status::read_desktop_owner_pid(&self.storage_root);
-            if evo_daemon::daemon_status::should_replace_daemon(owner, std::process::id()) {
+            if evo_daemon::daemon_status::should_replace_daemon(owner, std::process::id())
+                && owner.is_some_and(|pid| !Self::process_is_alive(pid))
+            {
                 eprintln!("EVO-DESKTOP replacing orphaned daemon (owner {owner:?})");
                 self.kill_running_daemon();
                 // Give the killed daemon a moment to die so the fresh daemon
@@ -107,9 +109,11 @@ impl DaemonManager {
                     return;
                 }
             } else {
-                // A daemon already owns the storage root and is ours (or
-                // declared no owner); there is nothing to start. Report what
-                // that daemon itself reports.
+                // A daemon already owns the storage root and its declared
+                // owner is still alive (for example the desktop shell while
+                // the login agent is starting). Adopt it instead of killing
+                // the other process's capture worker. Both surfaces share
+                // one daemon; they must never fight over its PID.
                 self.status = self.reported_status();
                 self.spawned = true;
                 return;
@@ -141,16 +145,22 @@ impl DaemonManager {
         let stderr = Arc::clone(&self.stderr);
         if let Some(pipe) = child.stderr.take() {
             std::thread::spawn(move || {
-                for line in std::io::BufReader::new(pipe).lines() {
-                    if let Ok(line) = line {
-                        stderr.lock().expect("stderr lock").push(line);
-                    }
+                for line in std::io::BufReader::new(pipe).lines().map_while(Result::ok) {
+                    stderr.lock().expect("stderr lock").push(line);
                 }
             });
         }
         self.child = Some(child);
         self.status = DaemonStatus::Capturing;
         self.spawned = true;
+    }
+
+    fn process_is_alive(pid: u32) -> bool {
+        Command::new("kill")
+            .arg("-0")
+            .arg(pid.to_string())
+            .status()
+            .is_ok_and(|status| status.success())
     }
 
     /// Re-checks the worker: when it has exited, classify the exit honestly
@@ -163,6 +173,12 @@ impl DaemonManager {
             // No live child: a daemon may still own the storage root.
             if evo_daemon::daemon_lock::daemon_is_running(&self.storage_root) {
                 self.status = self.reported_status();
+            } else {
+                // An adopted daemon belongs to another process (for example
+                // the desktop shell). If that process exits, the lock
+                // disappears but `status` would otherwise remain Capturing
+                // forever and a background agent would never restart it.
+                self.status = DaemonStatus::Unavailable;
             }
             return self.status.clone();
         };
@@ -226,8 +242,19 @@ impl DaemonManager {
 
     /// Stops the current worker so a fresh one can be started (for example
     /// after the user grants Accessibility permission).
+    ///
+    /// The always-on install lets launchd own the worker: this manager may
+    /// hold no child even though a daemon is running, and `spawn` would then
+    /// adopt that daemon instead of replacing it — leaving "Check again"
+    /// unable to re-evaluate permissions. So the running daemon is stopped
+    /// too, whoever owns it; launchd's KeepAlive replaces it (its fresh
+    /// process re-evaluates trust), or the spawn below starts ours. The
+    /// pause lets launchd's revival win the single-instance lock race
+    /// predictably, the same way the orphan replacement in `spawn` does.
     pub fn restart(&mut self) {
         self.kill();
+        self.kill_running_daemon();
+        std::thread::sleep(Duration::from_millis(300));
         self.spawn();
     }
 
@@ -401,6 +428,21 @@ mod tests {
             spawned: true,
         };
         assert_eq!(manager.poll(), DaemonStatus::Capturing);
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn adopted_daemon_disappearing_from_lock_becomes_unavailable() {
+        let root = unique_root("adopted-dead");
+        std::fs::create_dir_all(&root).expect("root dir");
+        let mut manager = DaemonManager {
+            child: None,
+            stderr: Arc::new(Mutex::new(Vec::new())),
+            status: DaemonStatus::Capturing,
+            storage_root: root.clone(),
+            spawned: true,
+        };
+        assert_eq!(manager.poll(), DaemonStatus::Unavailable);
         let _ = std::fs::remove_dir_all(&root);
     }
 

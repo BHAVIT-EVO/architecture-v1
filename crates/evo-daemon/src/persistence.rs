@@ -91,7 +91,10 @@ pub fn load_persisted_observations(root: &Path) -> Result<Vec<Observation>, Daem
         }
     }
     if skipped > 0 {
-        eprintln!("EVO-PERSISTENCE skipped {skipped} malformed record(s) out of {}", observations.len() + skipped);
+        eprintln!(
+            "EVO-PERSISTENCE skipped {skipped} malformed record(s) out of {}",
+            observations.len() + skipped
+        );
     }
     Ok(observations)
 }
@@ -111,7 +114,12 @@ pub(crate) fn encode_observation_record(observation: &Observation) -> String {
         hex_encode(observation.schema().name().as_bytes())
     )
     .unwrap();
-    writeln!(&mut record, "schema_version={}", observation.schema().version()).unwrap();
+    writeln!(
+        &mut record,
+        "schema_version={}",
+        observation.schema().version()
+    )
+    .unwrap();
     writeln!(
         &mut record,
         "source_hex={}",
@@ -192,7 +200,8 @@ pub(crate) fn decode_observation_record(record: &[u8]) -> Result<Observation, Da
         .map_err(|_| storage_error())?;
     let schema_name = decode_text(next_value(&mut lines, "schema_name_hex=")?)?;
     let schema_version = parse_u32(next_value(&mut lines, "schema_version=")?)?;
-    let schema = ObservationSchema::new(schema_name, schema_version).map_err(|_| storage_error())?;
+    let schema =
+        ObservationSchema::new(schema_name, schema_version).map_err(|_| storage_error())?;
     let source = ObservationSource::new(decode_text(next_value(&mut lines, "source_hex=")?)?)
         .map_err(|_| storage_error())?;
     let observed_at = decode_system_time(next_value(&mut lines, "observed_at=")?)?;
@@ -275,16 +284,13 @@ pub fn load_artifact_subjects(root: &Path) -> Result<HashMap<String, String>, Da
             },
             None => continue,
         };
-        let artifact_id =
-            match evo_artifact::derive_artifact_id_from_observations(std::slice::from_ref(
-                &observation,
-            )) {
-                Ok(id) => id,
-                Err(_) => continue,
-            };
-        subjects
-            .entry(artifact_id.to_string())
-            .or_insert(subject);
+        let artifact_id = match evo_artifact::derive_artifact_id_from_observations(
+            std::slice::from_ref(&observation),
+        ) {
+            Ok(id) => id,
+            Err(_) => continue,
+        };
+        subjects.entry(artifact_id.to_string()).or_insert(subject);
     }
     Ok(subjects)
 }
@@ -297,7 +303,9 @@ pub fn load_artifact_subjects(root: &Path) -> Result<HashMap<String, String>, Da
 /// exact inputs the Execution layer's deterministic locator classification
 /// consumes (IS-0003 schema → target kind). Presentation evidence only: the
 /// map is derived from the immutable Observation log and never stored.
-pub fn load_artifact_locators(root: &Path) -> Result<HashMap<String, (String, String)>, DaemonError> {
+pub fn load_artifact_locators(
+    root: &Path,
+) -> Result<HashMap<String, (String, String)>, DaemonError> {
     let mut locators: HashMap<String, (String, String)> = HashMap::new();
     for observation in load_persisted_observations(root)? {
         // Reference-only schemas reference, they do not establish; their
@@ -316,13 +324,12 @@ pub fn load_artifact_locators(root: &Path) -> Result<HashMap<String, (String, St
             },
             None => continue,
         };
-        let artifact_id =
-            match evo_artifact::derive_artifact_id_from_observations(std::slice::from_ref(
-                &observation,
-            )) {
-                Ok(id) => id,
-                Err(_) => continue,
-            };
+        let artifact_id = match evo_artifact::derive_artifact_id_from_observations(
+            std::slice::from_ref(&observation),
+        ) {
+            Ok(id) => id,
+            Err(_) => continue,
+        };
         locators
             .entry(artifact_id.to_string())
             .or_insert((observation.schema().name().to_string(), subject));
@@ -397,10 +404,7 @@ pub fn resolve_designated_artifact(
             None => continue,
         };
         let witnessed = match observation.evidence().fact(fact_name) {
-            Some(fact) => match fact.value() {
-                FactValue::Text(text) if text == subject => true,
-                _ => false,
-            },
+            Some(fact) => matches!(fact.value(), FactValue::Text(text) if text == subject),
             None => false,
         };
         if !witnessed {
@@ -573,7 +577,7 @@ fn hex_encode(bytes: &[u8]) -> String {
 }
 
 fn hex_decode(value: &str) -> Result<Vec<u8>, DaemonError> {
-    if value.len() % 2 != 0 {
+    if !value.len().is_multiple_of(2) {
         return Err(storage_error());
     }
 
@@ -616,11 +620,8 @@ mod tests {
                 .unwrap(),
             context,
         );
-        let fact = ObservedFact::new(
-            "WindowFocusGained",
-            FactValue::Text("editor-window".into()),
-        )
-        .unwrap();
+        let fact = ObservedFact::new("WindowFocusGained", FactValue::Text("editor-window".into()))
+            .unwrap();
         let evidence = Evidence::new(vec![fact]);
         Observation::new(
             ObservationId::from_str("123e4567-e89b-12d3-a456-426614174001").unwrap(),
@@ -677,15 +678,17 @@ mod tests {
             ObservationId::from_str("123e4567-e89b-12d3-a456-426614174099").unwrap(),
             ObservationSchema::window_focus_gained_v3(),
             Provenance::new(source, UNIX_EPOCH, context),
-            Evidence::new(vec![ObservedFact::new(
-                "WindowFocusGained",
-                FactValue::Text("editor-window".into()),
-            )
-            .unwrap()]),
+            Evidence::new(vec![
+                ObservedFact::new("WindowFocusGained", FactValue::Text("editor-window".into()))
+                    .unwrap(),
+            ]),
         );
-        let decoded = decode_observation_record(encode_observation_record(&observation).as_bytes())
-            .unwrap();
-        assert_eq!(ObservedState::from_context(decoded.provenance().context()), Some(state));
+        let decoded =
+            decode_observation_record(encode_observation_record(&observation).as_bytes()).unwrap();
+        assert_eq!(
+            ObservedState::from_context(decoded.provenance().context()),
+            Some(state)
+        );
         assert_eq!(observation, decoded);
     }
 
@@ -705,11 +708,8 @@ mod tests {
                 .unwrap(),
             context,
         );
-        let fact = ObservedFact::new(
-            "WindowFocusGained",
-            FactValue::Text("editor-window".into()),
-        )
-        .unwrap();
+        let fact = ObservedFact::new("WindowFocusGained", FactValue::Text("editor-window".into()))
+            .unwrap();
         Observation::new(
             ObservationId::from_str("123e4567-e89b-12d3-a456-426614174003").unwrap(),
             ObservationSchema::window_focus_gained_v2(),
@@ -728,7 +728,10 @@ mod tests {
         let decoded =
             decode_observation_record(encode_observation_record(&original).as_bytes()).unwrap();
         assert_eq!(original, decoded);
-        assert_eq!(original.schema(), &ObservationSchema::window_focus_gained_v2());
+        assert_eq!(
+            original.schema(),
+            &ObservationSchema::window_focus_gained_v2()
+        );
         assert_eq!(
             decoded
                 .provenance()
@@ -760,7 +763,11 @@ mod tests {
             None
         );
         assert_eq!(
-            decoded.provenance().context().get("observer_version").map(String::as_str),
+            decoded
+                .provenance()
+                .context()
+                .get("observer_version")
+                .map(String::as_str),
             Some("0.1.0")
         );
         assert_eq!(decoded.evidence(), v1.evidence());
@@ -804,11 +811,10 @@ mod tests {
                     .unwrap(),
                 context,
             ),
-            Evidence::new(vec![ObservedFact::new(
-                "WindowFocusGained",
-                FactValue::Text("editor-window".into()),
-            )
-            .unwrap()]),
+            Evidence::new(vec![
+                ObservedFact::new("WindowFocusGained", FactValue::Text("editor-window".into()))
+                    .unwrap(),
+            ]),
         );
         {
             let _guard = Storage::with_thread_root(&root);
@@ -847,7 +853,10 @@ mod tests {
             "one resource witnessed twice is remembered, not a body of work"
         );
         for record in &reloaded {
-            assert_eq!(record.schema(), &ObservationSchema::window_focus_gained_v2());
+            assert_eq!(
+                record.schema(),
+                &ObservationSchema::window_focus_gained_v2()
+            );
         }
     }
 
@@ -861,9 +870,10 @@ mod tests {
         // versioning (OA-6), and v1 is never re-interpreted as v2.
         let v1 = observation_fixture();
         let v2 = window_focus_v2_with_pid_fixture();
-        let id_before = evo_artifact::derive_artifact_id_from_observations(&[v1.clone()]).unwrap();
+        let id_before =
+            evo_artifact::derive_artifact_id_from_observations(std::slice::from_ref(&v1)).unwrap();
         let id_after =
-            evo_artifact::derive_artifact_id_from_observations(&[v1.clone()]).unwrap();
+            evo_artifact::derive_artifact_id_from_observations(std::slice::from_ref(&v1)).unwrap();
         assert_eq!(id_before, id_after);
         let id_v2 = evo_artifact::derive_artifact_id_from_observations(&[v2]).unwrap();
         assert_ne!(id_before, id_v2, "v1 and v2 are distinct schema identities");
@@ -886,11 +896,13 @@ mod tests {
                 SystemTime::now(),
                 HashMap::new(),
             ),
-            Evidence::new(vec![ObservedFact::new(
-                "WindowFocusGained",
-                FactValue::Text("Design Brief — Canvas".into()),
-            )
-            .unwrap()]),
+            Evidence::new(vec![
+                ObservedFact::new(
+                    "WindowFocusGained",
+                    FactValue::Text("Design Brief — Canvas".into()),
+                )
+                .unwrap(),
+            ]),
         );
         let second = Observation::new(
             ObservationId::from_str("123e4567-e89b-12d3-a456-426614174011").unwrap(),
@@ -908,8 +920,8 @@ mod tests {
         // Two Observations of the same window collapse to one Artifact whose
         // subject is the witnessed window title.
         assert_eq!(subjects.len(), 1);
-        let artifact_id = evo_artifact::derive_artifact_id_from_observations(&[first])
-            .expect("identity derives");
+        let artifact_id =
+            evo_artifact::derive_artifact_id_from_observations(&[first]).expect("identity derives");
         assert_eq!(
             subjects.get(artifact_id.as_str()).map(String::as_str),
             Some("Design Brief — Canvas")
@@ -933,31 +945,33 @@ mod tests {
                 SystemTime::now(),
                 HashMap::new(),
             ),
-            Evidence::new(vec![ObservedFact::new(
-                "WindowFocusGained",
-                FactValue::Text("Design Brief — Canvas".into()),
-            )
-            .unwrap()]),
+            Evidence::new(vec![
+                ObservedFact::new(
+                    "WindowFocusGained",
+                    FactValue::Text("Design Brief — Canvas".into()),
+                )
+                .unwrap(),
+            ]),
         );
         let url = Observation::new(
             ObservationId::from_str("123e4567-e89b-12d3-a456-426614174021").unwrap(),
             ObservationSchema::url_navigated_v1(),
             window.provenance().clone(),
-            Evidence::new(vec![ObservedFact::new(
-                "URLNavigated",
-                FactValue::Text("https://example.com/doc".into()),
-            )
-            .unwrap()]),
+            Evidence::new(vec![
+                ObservedFact::new(
+                    "URLNavigated",
+                    FactValue::Text("https://example.com/doc".into()),
+                )
+                .unwrap(),
+            ]),
         );
         let commit = Observation::new(
             ObservationId::from_str("123e4567-e89b-12d3-a456-426614174022").unwrap(),
             ObservationSchema::commit_made_v1(),
             window.provenance().clone(),
-            Evidence::new(vec![ObservedFact::new(
-                "CommitMade",
-                FactValue::Text("abc123".into()),
-            )
-            .unwrap()]),
+            Evidence::new(vec![
+                ObservedFact::new("CommitMade", FactValue::Text("abc123".into())).unwrap(),
+            ]),
         );
         {
             let _guard = Storage::with_thread_root(&root);

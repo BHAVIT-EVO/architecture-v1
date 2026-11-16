@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  fmt:
+    name: rustfmt
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --check
+
+  clippy:
+    name: clippy
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      # Warning-free on stable. `-D warnings` is applied by RUSTFLAGS above.
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+
+  test:
+    name: tests
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Unit and integration tests
+        run: cargo test --workspace --no-fail-fast
+      - name: Trust constraints (no network, no screen, no audio by default)
+        run: cargo test -p evo-desktop --test trust_constraints
+      - name: Critical isolated journeys
+        run: bash scripts/selftest.sh
+
+  audit:
+    name: dependency audit
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo install cargo-audit --locked
+      # Fails on any advisory without a fix or an explicit ignore in
+      # .cargo/audit.toml (currently: libsqlite3-sys, see SECURITY.md).
+      - run: cargo audit
+
+  web:
+    name: web layer
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Home cleaner and sprite tests
+        working-directory: ui
+        run: node --test "home/*.test.js"
+      - name: App modules parse as ES modules
+        run: |
+          status=0
+          for f in crates/evo-desktop/ui/app/*.js crates/evo-desktop/ui/scene/*.js; do
+            cp "$f" /tmp/parse-check.mjs
+            node --check /tmp/parse-check.mjs || status=1
+          done
+          exit $status
+
+      - name: Safe rendering and bridge tests
+        working-directory: crates/evo-desktop/ui
+        run: node --test "app/*.test.js"
+      - name: Static site links
+        run: |
+          python3 - <<'PY'
+          import glob, re, sys
+          missing = []
+          for page in glob.glob('site/*.html'):
+              for href in re.findall(r'href="([^"#:]+)"', open(page).read()):
+                  if href.startswith(('mailto:', 'http')) or href.endswith(('.css', '.js', '.svg', '.woff2')):
+                      continue
+                  import os
+                  if not os.path.exists(os.path.join('site', href)):
+                      missing.append((page, href))
+          for page, href in missing:
+              print(f'MISSING {page} -> {href}')
+          sys.exit(1 if missing else 0)
+          PY

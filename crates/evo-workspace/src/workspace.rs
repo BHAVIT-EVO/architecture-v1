@@ -242,10 +242,7 @@ mod tests {
 
         assert_eq!(
             workspace.members_across_history(),
-            vec![(
-                reference.artifact_id().clone(),
-                ResourceRole::Continuation
-            )],
+            vec![(reference.artifact_id().clone(), ResourceRole::Continuation)],
             "one Artifact is one member, holding the most important part claimed"
         );
     }

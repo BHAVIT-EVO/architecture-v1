@@ -1,4 +1,5 @@
 [package]
+publish = false
 name = "evo-desktop"
 version = "0.1.0"
 edition = "2024"
@@ -6,6 +7,8 @@ description = "Evo desktop shell — macOS-native presentation of the canonical 
 
 [dependencies]
 eframe = "0.35"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 egui = "0.35"
 evo-artifact = { path = "../evo-artifact" }
 evo-daemon = { path = "../evo-daemon" }
@@ -13,14 +16,43 @@ evo-threads = { path = "../evo-threads" }
 evo-ledger = { path = "../evo-ledger" }
 evo-engagement = { path = "../evo-engagement" }
 evo-execution = { path = "../evo-execution" }
+evo-pods = { path = "../evo-pods" }
 evo-restoration = { path = "../evo-restoration" }
 evo-storage = { path = "../evo-storage" }
+evo-voice = { path = "../evo-voice" }
 evo-workspace = { path = "../evo-workspace" }
+
+[features]
+# Propagates local semantic embeddings into the daemon dependency. Voice audio
+# and wake-word support remain independently opt-in.
+embeddings = ["evo-daemon/embeddings", "evo-voice/embeddings"]
+# Voice audio pipeline: mic capture + whisper transcription. Requires
+# hardware and the bundled whisper model; the socket client and panel
+# work without it.
+voice-audio = ["evo-voice/audio"]
+# Trained acoustic wake-word spotting (openWakeWord ONNX models beside
+# the exe): melspectrogram.onnx, embedding_model.onnx, hey_evoh.onnx.
+voice-wake = ["voice-audio", "evo-voice/wake-model"]
+# The notch/Dynamic-Island surface: engine + macOS window + occupancy
+# probe. Independent of audio; the voice wiring joins them at runtime.
+evo-notch = []
+
+[build-dependencies]
+cc = "1"
 
 [dev-dependencies]
 evo-capture = { path = "../evo-capture" }
 evo-observation = { path = "../evo-observation" }
 
-[build-dependencies]
-# Compiles the ObjC exception guard used by the WebKit surface (websurface.rs).
-cc = "1"
+[[bin]]
+# The headless always-on voice agent (no window; the notch is the UI).
+name = "evo-agent"
+path = "src/bin/evo-agent.rs"
+required-features = ["voice-wake", "evo-notch"]
+
+[[bin]]
+# Installs evo-agent as a login LaunchAgent (idempotent launchctl step).
+# Feature-independent: it only writes a plist and calls launchctl; the
+# agent it points at must of course have been built with the features.
+name = "evo-agent-install"
+path = "src/bin/evo-agent-install.rs"

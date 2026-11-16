@@ -118,23 +118,19 @@ mod imp {
     use std::ffi::c_void;
     use std::ptr;
 
-    type CFStringRef = *mut c_void;
+    type CFStringRef = *const c_void;
     type CFMachPortRef = *mut c_void;
-    type CFRunLoopSourceRef = *mut c_void;
+    type CFRunLoopSourceRef = *const c_void;
     type CFRunLoopTimerRef = *mut c_void;
-    type CFRunLoopTimerCallBack =
-        extern "C" fn(CFRunLoopTimerRef, *mut c_void);
+    type CFRunLoopTimerCallBack = extern "C" fn(CFRunLoopTimerRef, *mut c_void);
     type CGEventTapProxy = *mut c_void;
     type CGEventRef = *mut c_void;
     type CGEventType = u32;
     type CGEventMask = u64;
-    type CGEventTapCallBack = extern "C" fn(
-        CGEventTapProxy,
-        CGEventType,
-        CGEventRef,
-        *mut c_void,
-    ) -> CGEventRef;
+    type CGEventTapCallBack =
+        extern "C" fn(CGEventTapProxy, CGEventType, CGEventRef, *mut c_void) -> CGEventRef;
 
+    #[allow(dead_code)]
     const K_CGFLOAT_MAX: f64 = f64::MAX;
 
     // Event types counted. `flagsChanged` is deliberately excluded: modifier
@@ -171,27 +167,23 @@ mod imp {
             order: isize,
         ) -> CFRunLoopSourceRef;
         fn CFRunLoopAddSource(
-            run_loop: *mut c_void,
+            run_loop: *const c_void,
             source: CFRunLoopSourceRef,
             mode: CFStringRef,
         );
         fn CFRunLoopRemoveSource(
-            run_loop: *mut c_void,
+            run_loop: *const c_void,
             source: CFRunLoopSourceRef,
             mode: CFStringRef,
         );
-        fn CFRunLoopAddTimer(
-            run_loop: *mut c_void,
-            timer: CFRunLoopTimerRef,
-            mode: CFStringRef,
-        );
+        fn CFRunLoopAddTimer(run_loop: *const c_void, timer: CFRunLoopTimerRef, mode: CFStringRef);
         fn CFRunLoopRemoveTimer(
-            run_loop: *mut c_void,
+            run_loop: *const c_void,
             timer: CFRunLoopTimerRef,
             mode: CFStringRef,
         );
-        fn CFRetain(cf: *mut c_void) -> *mut c_void;
-        fn CFRunLoopGetCurrent() -> *mut c_void;
+        fn CFRetain(cf: *const c_void) -> *const c_void;
+        fn CFRunLoopGetCurrent() -> *const c_void;
         fn CFMachPortInvalidate(port: CFMachPortRef);
         fn CFRunLoopTimerCreate(
             allocator: *mut c_void,
@@ -202,7 +194,7 @@ mod imp {
             callout: CFRunLoopTimerCallBack,
             context: *mut c_void,
         ) -> CFRunLoopTimerRef;
-        fn CFRelease(cf: *mut c_void);
+        fn CFRelease(cf: *const c_void);
         fn CFAbsoluteTimeGetCurrent() -> f64;
     }
 
@@ -234,7 +226,7 @@ mod imp {
         /// retained. Removal must happen on this exact loop: a run loop
         /// retains whatever is added to it, so releasing our own reference
         /// alone would leave the tap live with callbacks into freed memory.
-        run_loop: *mut c_void,
+        run_loop: *const c_void,
         shared: Arc<Mutex<Option<Shared>>>,
     }
 
@@ -265,16 +257,16 @@ mod imp {
             ) -> CGEventRef {
                 unsafe {
                     let shared = &*(user_info as *const Mutex<Option<Shared>>);
-                    if let Ok(guard) = shared.lock() {
-                        if let Some(state) = guard.as_ref() {
-                            match event_type {
-                                K_CGEVENT_KEY_DOWN => state.counters.key(),
-                                K_CGEVENT_LEFT_MOUSE_DOWN | K_CGEVENT_RIGHT_MOUSE_DOWN => {
-                                    state.counters.click()
-                                }
-                                K_CGEVENT_SCROLL_WHEEL => state.counters.scroll(),
-                                _ => {}
+                    if let Ok(guard) = shared.lock()
+                        && let Some(state) = guard.as_ref()
+                    {
+                        match event_type {
+                            K_CGEVENT_KEY_DOWN => state.counters.key(),
+                            K_CGEVENT_LEFT_MOUSE_DOWN | K_CGEVENT_RIGHT_MOUSE_DOWN => {
+                                state.counters.click()
                             }
+                            K_CGEVENT_SCROLL_WHEEL => state.counters.scroll(),
+                            _ => {}
                         }
                     }
                 }
@@ -306,8 +298,7 @@ mod imp {
             }
             unsafe { CGEventTapEnable(tap, true) };
 
-            let source =
-                unsafe { CFMachPortCreateRunLoopSource(ptr::null_mut(), tap, 0) };
+            let source = unsafe { CFMachPortCreateRunLoopSource(ptr::null_mut(), tap, 0) };
             if source.is_null() {
                 unsafe { CFRelease(tap) };
                 return Err(InputCounterError::RuntimeSetupFailed(
@@ -363,11 +354,19 @@ mod imp {
                     CFRelease(source);
                     CFRelease(tap);
                 }
-                return Err(InputCounterError::RuntimeSetupFailed("CFRunLoopTimerCreate"));
+                return Err(InputCounterError::RuntimeSetupFailed(
+                    "CFRunLoopTimerCreate",
+                ));
             }
             unsafe { CFRunLoopAddTimer(run_loop, timer, kCFRunLoopDefaultMode) };
 
-            Ok(Self { tap, source, timer, run_loop, shared })
+            Ok(Self {
+                tap,
+                source,
+                timer,
+                run_loop,
+                shared,
+            })
         }
 
         /// The aggregated counts so far, for a composition layer that wants
@@ -471,6 +470,7 @@ mod tests {
     /// permission error; with it, the full lifecycle must be clean. Either
     /// way, this test proves the tap never crashes the process.
     #[test]
+    #[cfg(target_os = "macos")]
     fn counter_lifecycle_is_clean_on_a_plain_thread() {
         use std::sync::mpsc;
         let (tx, rx) = mpsc::channel();

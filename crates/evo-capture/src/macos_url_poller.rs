@@ -22,8 +22,8 @@ use std::collections::HashMap;
 use std::ffi::c_char;
 use std::os::raw::c_void;
 use std::ptr;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, SystemTime};
 
@@ -38,7 +38,7 @@ mod imp {
     type CFTypeRef = *const c_void;
     type CFArrayRef = *const c_void;
     type CFStringRef = *const c_void;
-    type AXUIElementRef = *const c_void;
+    type AXUIElementRef = *mut c_void;
     type AXError = i32;
 
     const AX_SUCCESS: AXError = 0;
@@ -54,6 +54,7 @@ mod imp {
         _priv: [u8; 0],
     }
 
+    #[allow(clippy::duplicated_attributes)]
     #[link(name = "objc")]
     #[link(name = "Foundation", kind = "framework")]
     #[link(name = "AppKit", kind = "framework")]
@@ -100,6 +101,8 @@ mod imp {
     const AX_ROLE: &[u8] = b"AXRole\0";
     const AX_URL: &[u8] = b"AXURL\0";
     const AX_DOCUMENT: &[u8] = b"AXDocument\0";
+    const AX_TITLE: &[u8] = b"AXTitle\0";
+    #[allow(dead_code)]
     const AX_WEB_AREA_ROLE: &[u8] = b"AXWebArea\0";
 
     fn ax_attr(attribute: &'static [u8]) -> CFStringRef {
@@ -112,13 +115,18 @@ mod imp {
             AX_ROLE => ax_role(),
             AX_URL => ax_url(),
             AX_DOCUMENT => ax_document(),
+            AX_TITLE => ax_title(),
             _ => unreachable!("unknown attribute"),
         }
     }
 
     fn create_cfstring(bytes: &'static [u8]) -> CFStringRef {
         unsafe {
-            CFStringCreateWithCString(ptr::null(), bytes.as_ptr() as *const c_char, CFSTRING_ENCODING_UTF8)
+            CFStringCreateWithCString(
+                ptr::null(),
+                bytes.as_ptr() as *const c_char,
+                CFSTRING_ENCODING_UTF8,
+            )
         }
     }
 
@@ -152,6 +160,11 @@ mod imp {
         *VALUE.get_or_init(|| create_cfstring(AX_DOCUMENT) as usize) as CFStringRef
     }
 
+    fn ax_title() -> CFStringRef {
+        static VALUE: std::sync::OnceLock<usize> = std::sync::OnceLock::new();
+        *VALUE.get_or_init(|| create_cfstring(AX_TITLE) as usize) as CFStringRef
+    }
+
     /// Keepalive for the live URL poller thread.
     pub struct MacOSURLPoller {
         stop: Arc<AtomicBool>,
@@ -170,6 +183,7 @@ mod imp {
             let handle = thread::spawn(move || {
                 let mut callback = callback;
                 let mut last_url_by_pid: HashMap<i32, String> = HashMap::new();
+                let mut last_title_by_pid: HashMap<i32, String> = HashMap::new();
                 // Evo's own UI (and this process) is never polled: walking
                 // the shell's own accessibility tree both observes ourselves
                 // and — measured — aborts the process when the egui
@@ -178,32 +192,55 @@ mod imp {
                 let self_pid = std::process::id() as i32;
                 let desktop_pid = crate::desktop_shell_pid();
                 while !stop_flag.load(Ordering::Relaxed) {
-                    if let Some(front) = frontmost_pid() {
-                        if front == self_pid || Some(front) == desktop_pid {
-                            thread::sleep(Duration::from_secs(2));
-                            continue;
-                        }
+                    if let Some(front) = frontmost_pid()
+                        && (front == self_pid || Some(front) == desktop_pid)
+                    {
+                        thread::sleep(Duration::from_secs(2));
+                        continue;
                     }
-                    match focused_web_url() {
-                        Some((pid, url)) => {
-                            // A navigation is emitted only when a transition
-                            // from one URL to another was witnessed. The first
-                            // observation of a pid (daemon start, or switching
-                            // back to an application) records a baseline and
-                            // emits nothing: the URL may have changed while we
-                            // were not watching, so no navigation was witnessed.
-                            let transition =
-                                witnessed_url_transition(last_url_by_pid.get(&pid).map(String::as_str), &url);
-                            last_url_by_pid.insert(pid, url.clone());
-                            if transition {
-                                eprintln!("EVO-CAPTURE url: {url}");
-                                callback(MacOSSignal::URLNavigated {
-                                    subject: url,
-                                    observed_at: SystemTime::now(),
-                                });
-                            }
+                    if let Some((pid, url, title)) = focused_web_url() {
+                        // A navigation is emitted only when a transition
+                        // from one URL to another was witnessed. The first
+                        // observation of a pid (daemon start, or switching
+                        // back to an application) records a baseline and
+                        // emits nothing: the URL may have changed while we
+                        // were not watching, so no navigation was witnessed.
+                        let transition = witnessed_url_transition(
+                            last_url_by_pid.get(&pid).map(String::as_str),
+                            &url,
+                        );
+                        last_url_by_pid.insert(pid, url.clone());
+                        if transition {
+                            eprintln!("EVO-CAPTURE url: {url}");
+                            callback(MacOSSignal::URLNavigated {
+                                subject: url,
+                                observed_at: SystemTime::now(),
+                            });
+                            // A navigation's first title observation is a
+                            // baseline too: the page may have been loaded
+                            // before we watched it arrive.
+                            last_title_by_pid.insert(pid, title.clone().unwrap_or_default());
+                        } else if let Some(title) = title
+                            && !title.trim().is_empty()
+                            && last_title_by_pid
+                                .get(&pid)
+                                .map(|prior| prior.as_str() != title)
+                                .unwrap_or(true)
+                        {
+                            // The page title of an already-witnessed URL
+                            // changed: the surface presented a new name of
+                            // itself (a document's title edit, a video's
+                            // title update, a SPA's in-place navigation).
+                            // The subject is the URL we are still watching;
+                            // the name is exactly what the window displays.
+                            eprintln!("EVO-CAPTURE surface-named: {url} \u{2192} {title}");
+                            last_title_by_pid.insert(pid, title.clone());
+                            callback(MacOSSignal::SurfaceNamed {
+                                subject: url,
+                                name: title,
+                                observed_at: SystemTime::now(),
+                            });
                         }
-                        None => {}
                     }
                     thread::sleep(Duration::from_secs(2));
                 }
@@ -224,23 +261,35 @@ mod imp {
         }
     }
 
-    /// Reads the focused web-area URL of the frontmost application.
+    /// Reads the focused web-area URL of the frontmost application, with the
+    /// window title the surface presented alongside it.
     ///
-    /// Returns `(pid, url)`. The pid is used only internally to distinguish
-    /// which browsing context the URL belongs to; it never enters the
-    /// canonical signal.
-    fn focused_web_url() -> Option<(i32, String)> {
+    /// Returns `(pid, url, title)`. The pid is used only internally to
+    /// distinguish which browsing context the URL belongs to; it never enters
+    /// the canonical signal. The title is the focused window's `AXTitle` —
+    /// for browsers that is the page title the person reads (with the
+    /// application's own title suffix, which downstream naming strips
+    /// structurally). `None` when the platform exposes no title; the URL
+    /// navigation is still witnessed, only unnamed.
+    fn focused_web_url() -> Option<(i32, String, Option<String>)> {
         let pid = frontmost_pid()?;
-        let url = unsafe {
+        let witnessed = unsafe {
             let app = AXUIElementCreateApplication(pid);
             if app.is_null() {
                 return None;
             }
-            let url = focused_window_url(app);
+            let witnessed = focused_window_url(app);
             CFRelease(app);
-            url
+            witnessed
         };
-        url.map(|url| (pid, url))
+        witnessed.map(|(url, title)| (pid, url, title))
+    }
+
+    /// The focused window's title, exactly as displayed. A pure read of the
+    /// same CFString-typed attribute discipline the URL witnesses use;
+    /// non-string values are honestly absent.
+    unsafe fn window_title(window: AXUIElementRef) -> Option<String> {
+        unsafe { copy_string_attribute(window, AX_TITLE) }
     }
 
     /// The pid of the frontmost application, via NSWorkspace (the same
@@ -270,18 +319,22 @@ mod imp {
     }
 
     unsafe fn msg_send_id(receiver: Id, selector: Sel) -> Id {
-        let raw = objc_msgSend as *const ();
-        let function: extern "C" fn(Id, Sel) -> Id = std::mem::transmute(raw);
-        function(receiver, selector)
+        unsafe {
+            let raw = objc_msgSend as *const ();
+            let function: extern "C" fn(Id, Sel) -> Id = std::mem::transmute(raw);
+            function(receiver, selector)
+        }
     }
 
     unsafe fn msg_send_i32(receiver: Id, selector: Sel) -> i32 {
-        let raw = objc_msgSend as *const ();
-        let function: extern "C" fn(Id, Sel) -> i32 = std::mem::transmute(raw);
-        function(receiver, selector)
+        unsafe {
+            let raw = objc_msgSend as *const ();
+            let function: extern "C" fn(Id, Sel) -> i32 = std::mem::transmute(raw);
+            function(receiver, selector)
+        }
     }
 
-    unsafe fn focused_window_url(app: AXUIElementRef) -> Option<String> {
+    unsafe fn focused_window_url(app: AXUIElementRef) -> Option<(String, Option<String>)> {
         unsafe {
             let mut window_value: CFTypeRef = ptr::null();
             if AXUIElementCopyAttributeValue(app, ax_attr(AX_FOCUSED_WINDOW), &mut window_value)
@@ -306,7 +359,15 @@ mod imp {
             //    own AXURL is deliberately never read: browsers report the
             //    window *title* there (e.g. "Example Domain - Google Chrome
             //    – …"), which is not a URL and must never be emitted.
-            let found = find_web_area_url(window, 0).or_else(|| window_document_url(window));
+            //
+            // The window's AXTitle is witnessed alongside whichever URL
+            // witness lands: for a browser it is the page title. It is
+            // presentation evidence (OBS-SURFACE-NAMED), never identity —
+            // it rides with the URL, it never replaces it.
+            let title = window_title(window);
+            let found = find_web_area_url(window, 0)
+                .or_else(|| window_document_url(window))
+                .map(|url| (url, title));
             CFRelease(window_value);
             found
         }
@@ -316,11 +377,13 @@ mod imp {
     /// URL. `AXDocument` is the URL of the document the window is viewing, a
     /// directly witnessed fact — not a title and not inferred.
     unsafe fn window_document_url(window: AXUIElementRef) -> Option<String> {
-        let value = copy_string_attribute(window, AX_DOCUMENT)?;
-        if is_http_url(&value) {
-            Some(value)
-        } else {
-            None
+        unsafe {
+            let value = copy_string_attribute(window, AX_DOCUMENT)?;
+            if is_http_url(&value) {
+                Some(value)
+            } else {
+                None
+            }
         }
     }
 
@@ -328,53 +391,55 @@ mod imp {
     /// whose AXURL is a real http(s) URL. Depth and breadth are bounded so a
     /// hostile or broken tree cannot stall capture.
     unsafe fn find_web_area_url(element: AXUIElementRef, depth: usize) -> Option<String> {
-        if depth > 4 {
-            return None;
-        }
-        if role_is_web_area(element) {
-            if let Some(url) = copy_string_attribute(element, AX_URL) {
-                if is_http_url(&url) {
+        unsafe {
+            if depth > 4 {
+                return None;
+            }
+            if role_is_web_area(element) {
+                if let Some(url) = copy_string_attribute(element, AX_URL)
+                    && is_http_url(&url)
+                {
                     return Some(url);
                 }
+                return None;
             }
-            return None;
-        }
 
-        let mut children_value: CFTypeRef = ptr::null();
-        if AXUIElementCopyAttributeValue(element, ax_attr(AX_CHILDREN), &mut children_value)
-            == AX_SUCCESS
-            && !children_value.is_null()
-        {
-            let array = children_value as CFArrayRef;
-            let count = CFArrayGetCount(array).min(32);
-            for index in 0..count {
-                let item = CFArrayGetValueAtIndex(array, index) as AXUIElementRef;
-                if let Some(url) = find_web_area_url(item, depth + 1) {
-                    CFRelease(children_value);
-                    return Some(url);
+            let mut children_value: CFTypeRef = ptr::null();
+            if AXUIElementCopyAttributeValue(element, ax_attr(AX_CHILDREN), &mut children_value)
+                == AX_SUCCESS
+                && !children_value.is_null()
+            {
+                let array = children_value as CFArrayRef;
+                let count = CFArrayGetCount(array).min(32);
+                for index in 0..count {
+                    let item = CFArrayGetValueAtIndex(array, index) as AXUIElementRef;
+                    if let Some(url) = find_web_area_url(item, depth + 1) {
+                        CFRelease(children_value);
+                        return Some(url);
+                    }
                 }
+                CFRelease(children_value);
+                return None;
             }
-            CFRelease(children_value);
-            return None;
-        }
 
-        let mut contents_value: CFTypeRef = ptr::null();
-        if AXUIElementCopyAttributeValue(element, ax_attr(AX_CONTENTS), &mut contents_value)
-            == AX_SUCCESS
-            && !contents_value.is_null()
-        {
-            let array = contents_value as CFArrayRef;
-            let count = CFArrayGetCount(array).min(32);
-            for index in 0..count {
-                let item = CFArrayGetValueAtIndex(array, index) as AXUIElementRef;
-                if let Some(url) = find_web_area_url(item, depth + 1) {
-                    CFRelease(contents_value);
-                    return Some(url);
+            let mut contents_value: CFTypeRef = ptr::null();
+            if AXUIElementCopyAttributeValue(element, ax_attr(AX_CONTENTS), &mut contents_value)
+                == AX_SUCCESS
+                && !contents_value.is_null()
+            {
+                let array = contents_value as CFArrayRef;
+                let count = CFArrayGetCount(array).min(32);
+                for index in 0..count {
+                    let item = CFArrayGetValueAtIndex(array, index) as AXUIElementRef;
+                    if let Some(url) = find_web_area_url(item, depth + 1) {
+                        CFRelease(contents_value);
+                        return Some(url);
+                    }
                 }
+                CFRelease(contents_value);
             }
-            CFRelease(contents_value);
+            None
         }
-        None
     }
 
     fn is_http_url(value: &str) -> bool {
@@ -394,7 +459,7 @@ mod imp {
     }
 
     unsafe fn role_is_web_area(element: AXUIElementRef) -> bool {
-        copy_string_attribute(element, AX_ROLE).as_deref() == Some("AXWebArea")
+        unsafe { copy_string_attribute(element, AX_ROLE).as_deref() == Some("AXWebArea") }
     }
 
     unsafe fn copy_string_attribute(

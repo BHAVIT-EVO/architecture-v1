@@ -1,0 +1,51 @@
+/* The scene's chrome: the canvas fills its box, cropped like object-fit: cover.
+   Shared by every screen that lives in the world. */
+
+.scene {
+  position: relative;
+  overflow: hidden;
+  background: var(--ink);
+  isolation: isolate;
+}
+.scene > canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+  z-index: 0;
+}
+.scene .veil {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    var(--left-veil),
+    linear-gradient(180deg, rgba(4, 12, 10, .5), transparent 22%);
+  opacity: 0;
+  transition: opacity .3s var(--ease);
+}
+.scene[data-mode="quiet"] .veil { opacity: 1; }
+
+.scene .hit {
+  position: absolute;
+  z-index: 2;
+  border-radius: 6px;
+  transition: background .15s;
+  padding: 0;
+}
+.scene .hit:hover { background: rgba(143, 224, 168, .08); }
+.scene .hit .tag {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s;
+}
+.scene .hit:hover .tag,
+.scene .hit:focus-visible .tag { opacity: 1; }
+.scene .hit[disabled] { cursor: default; }

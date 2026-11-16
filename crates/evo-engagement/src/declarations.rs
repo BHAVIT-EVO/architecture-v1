@@ -39,6 +39,11 @@ pub struct Declarations {
     /// declaration can supersede it and an earlier one cannot.
     continuation_at: Option<SystemTime>,
     containers: BTreeMap<String, String>,
+    /// The person's own name for a body of work, keyed by the witnessed
+    /// subject the person named (RFC-0014). Ground truth over every derived
+    /// title (Law IX): a later naming of the same subject replaces an
+    /// earlier one, because it was said later.
+    names: BTreeMap<String, String>,
 }
 
 impl Declarations {
@@ -94,10 +99,7 @@ impl Declarations {
         if subjects.is_empty() {
             return;
         }
-        if self
-            .continuation_at
-            .is_some_and(|held| witnessed_at < held)
-        {
+        if self.continuation_at.is_some_and(|held| witnessed_at < held) {
             return;
         }
         self.continuation = subjects.into_iter().collect();
@@ -108,6 +110,35 @@ impl Declarations {
     /// the container implied by its own name.
     pub fn contain(&mut self, member: impl Into<String>, container: impl Into<String>) {
         self.containers.insert(member.into(), container.into());
+    }
+
+    /// Records the person's own name for a body of work (RFC-0014).
+    ///
+    /// `subject` is the witnessed subject the person named; resolution to the
+    /// body of work it belongs to happens at derivation (the same route a
+    /// designation takes). `name` is exactly what the person wrote. A blank
+    /// name, or a name that is really the subject re-observed, carries
+    /// nothing the declaration can express and is refused here at the same
+    /// place every other non-canonical value is. A later naming of the same
+    /// subject replaces an earlier one — the person is allowed to change
+    /// their mind.
+    pub fn name(&mut self, subject: impl Into<String>, name: impl Into<String>) {
+        let subject = subject.into();
+        let name = name.into();
+        if name.trim().is_empty() || name.trim() == subject.trim() {
+            return;
+        }
+        self.names.insert(subject, name);
+    }
+
+    /// The person's own name for a body of work, when they gave one.
+    pub fn name_of(&self, subject: &str) -> Option<&String> {
+        self.names.get(subject)
+    }
+
+    /// Every given name, as `(workspace identity, name)`.
+    pub fn names(&self) -> impl Iterator<Item = (&String, &String)> {
+        self.names.iter()
     }
 
     /// Whether the person named this resource as their work.
@@ -123,12 +154,12 @@ impl Declarations {
     /// Whether the person stated these two belong together.
     pub fn is_grouped(&self, left: &str, right: &str) -> bool {
         match left.cmp(right) {
-            std::cmp::Ordering::Less => {
-                self.grouped.contains(&(left.to_string(), right.to_string()))
-            }
-            std::cmp::Ordering::Greater => {
-                self.grouped.contains(&(right.to_string(), left.to_string()))
-            }
+            std::cmp::Ordering::Less => self
+                .grouped
+                .contains(&(left.to_string(), right.to_string())),
+            std::cmp::Ordering::Greater => self
+                .grouped
+                .contains(&(right.to_string(), left.to_string())),
             std::cmp::Ordering::Equal => false,
         }
     }
@@ -181,6 +212,7 @@ impl Declarations {
     pub fn is_empty(&self) -> bool {
         self.designated.is_empty()
             && self.grouped.is_empty()
+            && self.names.is_empty()
             && self.continuation.is_empty()
             && self.containers.is_empty()
     }
@@ -209,10 +241,7 @@ mod tests {
     #[test]
     fn a_continuation_surface_also_groups_its_members() {
         let mut declarations = Declarations::new();
-        declarations.continue_from(
-            ["a".to_string(), "b".to_string(), "c".to_string()],
-            at(10),
-        );
+        declarations.continue_from(["a".to_string(), "b".to_string(), "c".to_string()], at(10));
         assert!(declarations.is_grouped("a", "c"));
         assert!(declarations.is_continuation("b"));
     }

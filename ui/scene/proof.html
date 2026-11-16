@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Evo — scene proof (dev only)</title>
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="scene.css">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--ink); }
+  .scene { position: fixed; inset: 0; }
+  .scene .veil { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="scene" data-mode="home">
+  <canvas aria-hidden="true"></canvas>
+  <div class="veil"></div>
+</div>
+<script type="module">
+// Full-bleed scene at the §9 viewport: 1100x806, cover-cropped, veil on.
+// Used only to measure the port against the mockup.
+import { createScene } from "./index.js";
+import { sampleWorks } from "./sprites.js";
+createScene({ canvas: document.querySelector("canvas"), works: sampleWorks(), mode: "home" });
+</script>
+</body>
+</html>

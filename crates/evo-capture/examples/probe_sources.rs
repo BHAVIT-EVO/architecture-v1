@@ -34,9 +34,7 @@ fn main() {
         url.as_ref().map(|_| "ok").map_err(|e| e.to_string())
     );
 
-    let source = MacOSEventSource::new(
-        evo_capture::desktop_shell_pid(),
-        {
+    let source = MacOSEventSource::new(evo_capture::desktop_shell_pid(), {
         let sender = signal_sender.clone();
         move |signal| {
             let _ = sender.send(signal);

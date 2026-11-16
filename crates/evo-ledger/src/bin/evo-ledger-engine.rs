@@ -76,7 +76,7 @@ fn main() {
         last_observation_len = obs_len;
 
         // ─── Read attention events + file saves from observation.log ───
-        let (mut events, saves, declared) =
+        let (mut events, saves, declared, _classified) =
             evo_ledger::observation_log::read_observation_log(&observation_log);
         let obs_count = events.len();
         let save_count = saves.len();
@@ -319,6 +319,7 @@ fn read_legacy_sqlite(db_path: &std::path::Path) -> Vec<evo_ledger::ObservedEven
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
+#[allow(dead_code)]
 fn unhex(hex: &str) -> String {
     evo_ledger::observation_log::unhex(hex)
 }

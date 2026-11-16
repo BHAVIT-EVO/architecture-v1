@@ -118,11 +118,11 @@ impl Storage {
     /// # Errors
     pub fn read_all(&self, kind: StorageObjectKind) -> Result<Vec<Vec<u8>>, StorageError> {
         let path = record_path(kind);
-        if !path.exists() {
-            return Ok(Vec::new());
-        }
-
-        let bytes = fs::read(&path).map_err(|_| StorageError::BackendNotConfigured)?;
+        let bytes = match fs::read(&path) {
+            Ok(bytes) => bytes,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+            Err(_) => return Err(StorageError::BackendNotConfigured),
+        };
         let mut records = Vec::new();
         let mut offset = 0usize;
         let mut last_good = 0usize;
@@ -167,9 +167,7 @@ impl Storage {
                 // follow, the file was corrupted in the middle (the writer
                 // never appends after an incomplete record); only a bare torn
                 // tail is recovered.
-                if record_end < bytes.len()
-                    && has_complete_record_after(&bytes, record_end + 1)
-                {
+                if record_end < bytes.len() && has_complete_record_after(&bytes, record_end + 1) {
                     return Err(StorageError::BackendNotConfigured);
                 }
                 break;
@@ -188,7 +186,8 @@ impl Storage {
                 .map_err(|_| StorageError::BackendNotConfigured)?;
             file.set_len(last_good as u64)
                 .map_err(|_| StorageError::BackendNotConfigured)?;
-            file.sync_data().map_err(|_| StorageError::BackendNotConfigured)?;
+            file.sync_data()
+                .map_err(|_| StorageError::BackendNotConfigured)?;
         }
 
         Ok(records)
@@ -217,6 +216,9 @@ impl Storage {
     /// - When the log is shorter than `offset` (e.g. the writer recovered a
     ///   torn tail at startup), the read restarts from the beginning so no
     ///   record is missed.
+    /// - A missing log returns no records and offset zero. Readers must discard
+    ///   derived state from the removed log before reading a recreated one.
+    ///   Other read failures are errors, not empty history.
     ///
     /// # Parameters
     ///
@@ -230,11 +232,13 @@ impl Storage {
         offset: u64,
     ) -> Result<(Vec<Vec<u8>>, u64), StorageError> {
         let path = record_path(kind);
-        if !path.exists() {
-            return Ok((Vec::new(), offset));
-        }
-
-        let bytes = fs::read(&path).map_err(|_| StorageError::BackendNotConfigured)?;
+        let bytes = match fs::read(&path) {
+            Ok(bytes) => bytes,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                return Ok((Vec::new(), 0));
+            }
+            Err(_) => return Err(StorageError::BackendNotConfigured),
+        };
         let mut records = Vec::new();
         let mut current = offset as usize;
         let mut last_good = offset as usize;
@@ -269,9 +273,7 @@ impl Storage {
                 break;
             }
             if record_end == bytes.len() || bytes[record_end] != b'\n' {
-                if record_end < bytes.len()
-                    && has_complete_record_after(&bytes, record_end + 1)
-                {
+                if record_end < bytes.len() && has_complete_record_after(&bytes, record_end + 1) {
                     return Err(StorageError::BackendNotConfigured);
                 }
                 break;
@@ -287,7 +289,10 @@ impl Storage {
 
 /// Finds the first newline at or after `from`, returning its byte offset.
 fn find_newline(bytes: &[u8], from: usize) -> Option<usize> {
-    bytes[from..].iter().position(|byte| *byte == b'\n').map(|index| from + index)
+    bytes[from..]
+        .iter()
+        .position(|byte| *byte == b'\n')
+        .map(|index| from + index)
 }
 
 /// Whether a complete record (`len\n<bytes>\n`) begins exactly at `from`.
@@ -458,8 +463,12 @@ mod tests {
         {
             let _guard = Storage::with_thread_root(root.clone());
             let storage = Storage::new();
-            storage.append(StorageObjectKind::Observation, b"record-a").unwrap();
-            storage.append(StorageObjectKind::Observation, b"record-b").unwrap();
+            storage
+                .append(StorageObjectKind::Observation, b"record-a")
+                .unwrap();
+            storage
+                .append(StorageObjectKind::Observation, b"record-b")
+                .unwrap();
             // Simulate a crash mid-write: a length line whose body was never
             // durably written.
             let path = root.join("observation.log");
@@ -473,7 +482,9 @@ mod tests {
         // The complete records survive; the torn tail is dropped and the log
         // is truncated so the next append starts clean.
         assert_eq!(records, vec![b"record-a".to_vec(), b"record-b".to_vec()]);
-        storage.append(StorageObjectKind::Observation, b"record-c").unwrap();
+        storage
+            .append(StorageObjectKind::Observation, b"record-c")
+            .unwrap();
         let records = storage.read_all(StorageObjectKind::Observation).unwrap();
         assert_eq!(
             records,
@@ -491,7 +502,9 @@ mod tests {
         {
             let _guard = Storage::with_thread_root(root.clone());
             let storage = Storage::new();
-            storage.append(StorageObjectKind::Observation, b"record-a").unwrap();
+            storage
+                .append(StorageObjectKind::Observation, b"record-a")
+                .unwrap();
             let path = root.join("observation.log");
             let mut file = OpenOptions::new().append(true).open(&path).unwrap();
             // The final write was interrupted inside the length line.
@@ -510,7 +523,9 @@ mod tests {
         {
             let _guard = Storage::with_thread_root(root.clone());
             let storage = Storage::new();
-            storage.append(StorageObjectKind::Observation, b"record-a").unwrap();
+            storage
+                .append(StorageObjectKind::Observation, b"record-a")
+                .unwrap();
             let path = root.join("observation.log");
             let mut file = OpenOptions::new().append(true).open(&path).unwrap();
             // Garbage mid-log followed by a complete record: the log is
@@ -547,8 +562,12 @@ mod tests {
         let _guard = Storage::with_thread_root(root.clone());
         let storage = Storage::new();
 
-        storage.append(StorageObjectKind::Observation, b"record-a").unwrap();
-        storage.append(StorageObjectKind::Observation, b"record-b").unwrap();
+        storage
+            .append(StorageObjectKind::Observation, b"record-a")
+            .unwrap();
+        storage
+            .append(StorageObjectKind::Observation, b"record-b")
+            .unwrap();
         let (first, offset) = storage
             .read_from(StorageObjectKind::Observation, 0)
             .unwrap();
@@ -557,7 +576,9 @@ mod tests {
 
         // Appending after the recorded offset must not re-read the earlier
         // records — only the new one is returned.
-        storage.append(StorageObjectKind::Observation, b"record-c").unwrap();
+        storage
+            .append(StorageObjectKind::Observation, b"record-c")
+            .unwrap();
         let (next, next_offset) = storage
             .read_from(StorageObjectKind::Observation, offset)
             .unwrap();
@@ -572,7 +593,9 @@ mod tests {
         {
             let _guard = Storage::with_thread_root(root.clone());
             let storage = Storage::new();
-            storage.append(StorageObjectKind::Observation, b"record-a").unwrap();
+            storage
+                .append(StorageObjectKind::Observation, b"record-a")
+                .unwrap();
         }
         // Simulate a writer-side torn-tail recovery that truncated the log
         // below the reader's recorded offset: the reader must restart from
@@ -587,12 +610,69 @@ mod tests {
     }
 
     #[test]
+    fn deleted_log_resets_the_tail_offset() {
+        let root = unique_root("deleted-log");
+        let _guard = Storage::with_thread_root(root.clone());
+        let storage = Storage::new();
+        storage
+            .append(StorageObjectKind::Observation, b"synthetic private record")
+            .unwrap();
+        let (_, offset) = storage
+            .read_from(StorageObjectKind::Observation, 0)
+            .unwrap();
+        assert!(offset > 0);
+
+        fs::remove_file(root.join("observation.log")).unwrap();
+        assert_eq!(
+            storage
+                .read_from(StorageObjectKind::Observation, offset)
+                .unwrap(),
+            (Vec::new(), 0),
+            "deleted history cannot retain an offset into the old log"
+        );
+        assert!(
+            storage
+                .read_all(StorageObjectKind::Observation)
+                .unwrap()
+                .is_empty()
+        );
+
+        storage
+            .append(StorageObjectKind::Observation, b"public")
+            .unwrap();
+        let (records, _) = storage
+            .read_from(StorageObjectKind::Observation, 0)
+            .unwrap();
+        assert_eq!(records, vec![b"public".to_vec()]);
+        fs::remove_file(root.join("observation.log")).unwrap();
+        fs::remove_dir(root).unwrap();
+    }
+
+    #[test]
+    fn inaccessible_storage_path_is_an_error_not_empty_history() {
+        let root = unique_root("inaccessible-path");
+        // ENOTDIR is a deterministic read failure; no permissions are changed.
+        fs::write(&root, b"synthetic blocker").unwrap();
+        let _guard = Storage::with_thread_root(root.clone());
+        let storage = Storage::new();
+        assert!(storage.read_all(StorageObjectKind::Observation).is_err());
+        assert!(
+            storage
+                .read_from(StorageObjectKind::Observation, 42)
+                .is_err()
+        );
+        fs::remove_file(root).unwrap();
+    }
+
+    #[test]
     fn read_from_stops_at_a_torn_tail_without_truncating() {
         let root = unique_root("tail-torn");
         {
             let _guard = Storage::with_thread_root(root.clone());
             let storage = Storage::new();
-            storage.append(StorageObjectKind::Observation, b"record-a").unwrap();
+            storage
+                .append(StorageObjectKind::Observation, b"record-a")
+                .unwrap();
             let path = root.join("observation.log");
             let mut file = OpenOptions::new().append(true).open(&path).unwrap();
             file.write_all(b"999\npart").unwrap();
@@ -618,7 +698,9 @@ mod tests {
         {
             let _guard = Storage::with_thread_root(root.clone());
             let storage = Storage::new();
-            storage.append(StorageObjectKind::Observation, b"record-a").unwrap();
+            storage
+                .append(StorageObjectKind::Observation, b"record-a")
+                .unwrap();
             let path = root.join("observation.log");
             let mut file = OpenOptions::new().append(true).open(&path).unwrap();
             // Garbage mid-log followed by a complete record: corruption.
@@ -627,7 +709,11 @@ mod tests {
 
         let _guard = Storage::with_thread_root(root);
         let storage = Storage::new();
-        assert!(storage.read_from(StorageObjectKind::Observation, 0).is_err());
+        assert!(
+            storage
+                .read_from(StorageObjectKind::Observation, 0)
+                .is_err()
+        );
     }
 
     #[test]
@@ -636,7 +722,9 @@ mod tests {
         {
             let _guard = Storage::with_thread_root(root.clone());
             let storage = Storage::new();
-            storage.append(StorageObjectKind::Observation, b"record-a").unwrap();
+            storage
+                .append(StorageObjectKind::Observation, b"record-a")
+                .unwrap();
             let path = root.join("observation.log");
             let mut file = OpenOptions::new().append(true).open(&path).unwrap();
             // A zero-length record is never produced by the writer; one that
@@ -655,7 +743,9 @@ mod tests {
         {
             let _guard = Storage::with_thread_root(root.clone());
             let storage = Storage::new();
-            storage.append(StorageObjectKind::Observation, b"record-a").unwrap();
+            storage
+                .append(StorageObjectKind::Observation, b"record-a")
+                .unwrap();
             let path = root.join("observation.log");
             let mut file = OpenOptions::new().append(true).open(&path).unwrap();
             file.write_all(b"12").unwrap();

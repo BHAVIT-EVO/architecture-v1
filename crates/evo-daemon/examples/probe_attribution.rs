@@ -22,7 +22,7 @@
 //!
 //! Read-only: it derives from the canonical log and writes nothing.
 
-use evo_engagement::{EngagementParams, Reconstruction, ResourceRole};
+use evo_engagement::{EngagementParams, Reconstruction};
 use std::time::Duration;
 
 fn main() {
@@ -38,7 +38,7 @@ fn main() {
     println!("observations: {}\n", observations.len());
 
     let params = EngagementParams::default();
-    let reconstruction = Reconstruction::from_observations(&observations, params.clone());
+    let reconstruction = Reconstruction::from_observations(&observations, params);
     let graph = reconstruction.graph();
 
     let mut unattended_total = 0usize;
@@ -141,6 +141,8 @@ fn short(subject: &str) -> String {
     if characters.len() <= LIMIT {
         return subject.to_string();
     }
-    let tail: String = characters[characters.len() - (LIMIT - 1)..].iter().collect();
+    let tail: String = characters[characters.len() - (LIMIT - 1)..]
+        .iter()
+        .collect();
     format!("…{tail}")
 }

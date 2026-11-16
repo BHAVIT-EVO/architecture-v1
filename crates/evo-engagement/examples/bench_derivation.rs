@@ -30,7 +30,10 @@ fn main() {
 
     println!("== derivation cost vs. distinct resources ==");
     println!("(each resource is attended in 3 sittings, 4 passes per sitting)\n");
-    println!("{:>10}  {:>8}  {:>12}  {:>10}", "resources", "acts", "derive", "per-pair");
+    println!(
+        "{:>10}  {:>8}  {:>12}  {:>10}",
+        "resources", "acts", "derive", "per-pair"
+    );
 
     for size in sizes {
         let acts = build_acts(size);

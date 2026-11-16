@@ -89,9 +89,8 @@ pub fn write_capture_report(
     sources: &[(&'static str, &'static str)],
 ) -> Result<(), DaemonError> {
     let path = root.join(DAEMON_STATUS_FILENAME);
-    fs::create_dir_all(root).map_err(|_| {
-        DaemonError::from(evo_storage::StorageError::BackendNotConfigured)
-    })?;
+    fs::create_dir_all(root)
+        .map_err(|_| DaemonError::from(evo_storage::StorageError::BackendNotConfigured))?;
     let mut contents = status.serialize();
     for (source, state) in sources {
         contents.push_str(&format!("{source}={state}\n"));
@@ -99,9 +98,8 @@ pub fn write_capture_report(
     if let Some(owner) = owner_pid_from_env() {
         contents.push_str(&format!("owner_pid={owner}\n"));
     }
-    fs::write(&path, contents).map_err(|_| {
-        DaemonError::from(evo_storage::StorageError::BackendNotConfigured)
-    })
+    fs::write(&path, contents)
+        .map_err(|_| DaemonError::from(evo_storage::StorageError::BackendNotConfigured))
 }
 
 /// The per-source health report from a daemon's status file: `(source, state)`
@@ -264,9 +262,14 @@ mod tests {
             ("url", "active"),
             ("designation", "active"),
         ];
-        write_capture_report(&root, &CaptureStatus::Partial {
-            detail: "Accessibility permission is required to witness focused windows".to_string(),
-        }, &sources)
+        write_capture_report(
+            &root,
+            &CaptureStatus::Partial {
+                detail: "Accessibility permission is required to witness focused windows"
+                    .to_string(),
+            },
+            &sources,
+        )
         .expect("write");
         let reported = read_capture_sources(&root);
         let expected: Vec<(String, String)> = sources
@@ -283,7 +286,10 @@ mod tests {
             })
         );
         // Unknown keys never surface as sources.
-        let _ = std::fs::write(root.join(DAEMON_STATUS_FILENAME), "capture=full\nmystery=xyz\n");
+        let _ = std::fs::write(
+            root.join(DAEMON_STATUS_FILENAME),
+            "capture=full\nmystery=xyz\n",
+        );
         assert!(read_capture_sources(&root).is_empty());
         let _ = std::fs::remove_dir_all(&root);
     }

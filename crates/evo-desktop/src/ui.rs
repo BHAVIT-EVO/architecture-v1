@@ -55,10 +55,16 @@ fn veil(color: Color32, t: f32) -> Color32 {
     )
 }
 
-/// A neutral shade at a fraction of the given alpha. Black is safe to build
-/// this way because premultiplication leaves its components at zero.
-fn shade(alpha: u8, t: f32) -> Color32 {
-    Color32::from_rgba_unmultiplied(0, 0, 0, (alpha as f32 * t.clamp(0.0, 1.0)).round() as u8)
+/// The dark theme's counterpart to [`shade`]: a white wash at a fraction of
+/// the given alpha. On charcoal, a black wash is invisible — light is what
+/// reads as interaction here.
+fn glow(alpha: u8, t: f32) -> Color32 {
+    Color32::from_rgba_unmultiplied(
+        0xFF,
+        0xFF,
+        0xFF,
+        (alpha as f32 * t.clamp(0.0, 1.0)).round() as u8,
+    )
 }
 
 // ────────────────────────────────────────────────────────────────────────
@@ -84,7 +90,7 @@ pub fn paint_environment(painter: &egui::Painter, rect: Rect) {
         painter.rect_filled(
             band,
             CornerRadius::ZERO,
-            mix(theme::ENV_TOP, theme::ENV_BOTTOM, t),
+            mix(theme::environment_top(), theme::environment_bottom(), t),
         );
     }
 }
@@ -196,7 +202,7 @@ pub fn fits(ui: &egui::Ui, width: f32) -> bool {
 pub fn measure(ui: &egui::Ui, role: Role, value: &str) -> Vec2 {
     let galley = ui
         .painter()
-        .layout_no_wrap(value.to_owned(), role.font(), theme::TEXT);
+        .layout_no_wrap(value.to_owned(), role.font(), theme::text_ink());
     let tracking = (role.tracking() * value.chars().count() as f32).max(0.0);
     Vec2::new(galley.size().x + tracking, galley.size().y)
 }
@@ -213,33 +219,33 @@ pub fn label(ui: &mut egui::Ui, role: Role, value: &str, color: Color32) -> Resp
 
 /// The one sentence a screen exists to say.
 pub fn display(ui: &mut egui::Ui, value: &str) {
-    label(ui, Role::Display, value, theme::TEXT);
+    label(ui, Role::Display, value, theme::text_ink());
     gap(ui, theme::S3);
 }
 
 /// A screen or region heading.
 pub fn headline(ui: &mut egui::Ui, value: &str) {
-    label(ui, Role::Headline, value, theme::TEXT);
+    label(ui, Role::Headline, value, theme::text_ink());
     gap(ui, theme::S3);
 }
 
 /// A group title.
 pub fn title(ui: &mut egui::Ui, value: &str) {
-    label(ui, Role::Title, value, theme::TEXT);
+    label(ui, Role::Title, value, theme::text_ink());
     gap(ui, theme::S2);
 }
 
 /// An all-caps region label. Sits above the thing it names, close enough that
 /// the proximity does the work a box would otherwise do.
 pub fn eyebrow(ui: &mut egui::Ui, value: &str) {
-    ui.label(theme::eyebrow(value, theme::TERTIARY));
+    ui.label(theme::eyebrow(value, theme::tertiary_ink()));
     gap(ui, theme::S2);
 }
 
 /// The supporting sentence under a heading.
 pub fn lede(ui: &mut egui::Ui, value: &str) {
     constrained(ui, theme::PROSE_WIDTH, |ui| {
-        ui.label(theme::text(Role::Lede, value, theme::MUTED));
+        ui.label(theme::text(Role::Lede, value, theme::muted_ink()));
     });
     gap(ui, theme::S4);
 }
@@ -247,7 +253,7 @@ pub fn lede(ui: &mut egui::Ui, value: &str) {
 /// Body prose, wrapped to a readable measure.
 pub fn prose(ui: &mut egui::Ui, value: &str) {
     constrained(ui, theme::PROSE_WIDTH, |ui| {
-        ui.label(theme::text(Role::Body, value, theme::MUTED));
+        ui.label(theme::text(Role::Body, value, theme::muted_ink()));
     });
     gap(ui, theme::S3);
 }
@@ -255,7 +261,7 @@ pub fn prose(ui: &mut egui::Ui, value: &str) {
 /// A short explanatory line — a count, a reason, a source.
 pub fn caption(ui: &mut egui::Ui, value: &str) {
     constrained(ui, theme::PROSE_WIDTH, |ui| {
-        ui.label(theme::text(Role::Caption, value, theme::TERTIARY));
+        ui.label(theme::text(Role::Caption, value, theme::tertiary_ink()));
     });
     gap(ui, theme::S2);
 }
@@ -264,7 +270,7 @@ pub fn caption(ui: &mut egui::Ui, value: &str) {
 /// is what lets the interface state a conclusion without asserting it.
 pub fn provenance(ui: &mut egui::Ui, value: &str) {
     constrained(ui, theme::PROSE_WIDTH, |ui| {
-        ui.label(theme::text(Role::Caption, value, theme::TERTIARY));
+        ui.label(theme::text(Role::Caption, value, theme::tertiary_ink()));
     });
     gap(ui, theme::S1);
 }
@@ -273,10 +279,10 @@ pub fn provenance(ui: &mut egui::Ui, value: &str) {
 /// below with the weight. Reading down a column of these gives the field
 /// names for free without a table.
 pub fn field(ui: &mut egui::Ui, name: &str, value: &str) {
-    ui.label(theme::eyebrow(name, theme::TERTIARY));
+    ui.label(theme::eyebrow(name, theme::tertiary_ink()));
     gap(ui, theme::S1);
     constrained(ui, theme::PROSE_WIDTH, |ui| {
-        ui.label(theme::text(Role::BodyStrong, value, theme::TEXT));
+        ui.label(theme::text(Role::BodyStrong, value, theme::text_ink()));
     });
 }
 
@@ -293,7 +299,7 @@ pub fn unknown(ui: &mut egui::Ui, value: &str) {
     ui.scope(|ui| {
         ui.set_opacity(0.85);
         constrained(ui, theme::PROSE_WIDTH, |ui| {
-            ui.label(theme::text(Role::Body, value, theme::TERTIARY));
+            ui.label(theme::text(Role::Body, value, theme::tertiary_ink()));
         });
     });
     gap(ui, theme::S2);
@@ -382,7 +388,7 @@ pub fn notice_with(
             ui.horizontal_wrapped(|ui| {
                 status_word(ui, word, severity);
                 ui.add_space(theme::S3);
-                ui.label(theme::text(Role::Body, message, theme::TEXT));
+                ui.label(theme::text(Role::Body, message, theme::text_ink()));
             });
             actions(ui);
         });
@@ -421,6 +427,8 @@ pub struct Control<'a> {
     enabled: bool,
     min_width: f32,
     salt: &'a str,
+    /// Whether the control is a pill: its radius is half its height.
+    pill: bool,
 }
 
 impl<'a> Control<'a> {
@@ -446,7 +454,15 @@ impl<'a> Control<'a> {
             enabled: true,
             min_width: 0.0,
             salt: "",
+            pill: false,
         }
+    }
+
+    /// A pill: fully rounded ends, radius taken from the control's own
+    /// height rather than from the corner scale.
+    pub fn pill(mut self) -> Self {
+        self.pill = true;
+        self
     }
 
     /// A disabled control stays visible and keeps its full label: the user
@@ -546,26 +562,27 @@ fn wrapped_control(ui: &mut egui::Ui, spec: Control<'_>) -> Response {
 /// The fill, ink and border a control shows at rest.
 fn resting_colors(spec: &Control<'_>) -> (Color32, Color32, Stroke) {
     match (spec.emphasis, spec.enabled) {
-        (Emphasis::Primary, true) => (theme::ACCENT, Color32::WHITE, Stroke::NONE),
+        (Emphasis::Primary, true) => (theme::accent(), theme::on_accent(), Stroke::NONE),
         (Emphasis::Primary, false) => (
             // A disabled primary keeps its shape so the screen's structure
-            // does not shift when it becomes available.
-            shade(theme::border().a(), 1.0),
-            theme::TERTIARY,
+            // does not shift when it becomes available. On charcoal the
+            // ghost fill is light, not dark.
+            glow(10, 1.0),
+            theme::tertiary_ink(),
             Stroke::NONE,
         ),
         (Emphasis::Secondary, true) => (
-            theme::RAISED,
-            theme::TEXT,
+            theme::raised(),
+            theme::text_ink(),
             Stroke::new(1.0, theme::border_strong()),
         ),
         (Emphasis::Secondary, false) => (
             Color32::TRANSPARENT,
-            theme::RECEDED,
+            theme::receded_ink(),
             Stroke::new(1.0, theme::border()),
         ),
-        (Emphasis::Quiet, true) => (Color32::TRANSPARENT, theme::MUTED, Stroke::NONE),
-        (Emphasis::Quiet, false) => (Color32::TRANSPARENT, theme::RECEDED, Stroke::NONE),
+        (Emphasis::Quiet, true) => (Color32::TRANSPARENT, theme::muted_ink(), Stroke::NONE),
+        (Emphasis::Quiet, false) => (Color32::TRANSPARENT, theme::receded_ink(), Stroke::NONE),
     }
 }
 
@@ -574,27 +591,31 @@ fn paint_control(ui: &mut egui::Ui, spec: &Control<'_>, rect: Rect, hover: f32, 
     // A press moves the control very slightly away from the finger, which
     // reads as the surface giving under pressure.
     let rect = if pressed { rect.shrink(1.0) } else { rect };
-    let radius = CornerRadius::same(theme::CORNER_CONTROL);
+    let radius = if spec.pill {
+        CornerRadius::same((rect.height() * 0.5).round() as u8)
+    } else {
+        CornerRadius::same(theme::CORNER_CONTROL)
+    };
     let painter = ui.painter();
 
     match spec.emphasis {
         Emphasis::Primary if spec.enabled => {
             let fill = if pressed {
-                theme::ACCENT_PRESSED
+                theme::accent_pressed()
             } else {
-                mix(theme::ACCENT, theme::ACCENT_HOVER, hover)
+                mix(theme::accent(), theme::accent_hover(), hover)
             };
             painter.rect_filled(rect, radius, fill);
         }
         Emphasis::Quiet => {
             if hover > 0.0 {
-                painter.rect_filled(rect, radius, shade(theme::hover_wash().a(), hover));
+                painter.rect_filled(rect, radius, glow(theme::hover_wash().a(), hover));
             }
         }
         _ => {
             painter.rect_filled(rect, radius, fill);
             if hover > 0.0 {
-                painter.rect_filled(rect, radius, shade(theme::hover_wash().a(), hover * 0.6));
+                painter.rect_filled(rect, radius, glow(theme::hover_wash().a(), hover * 0.6));
             }
             if stroke.width > 0.0 {
                 painter.rect_stroke(rect, radius, stroke, egui::StrokeKind::Inside);
@@ -659,9 +680,9 @@ pub fn control_row(ui: &mut egui::Ui, specs: Vec<Control<'_>>) -> Vec<Response> 
 /// Sized by its own content through a `Frame`, so it cannot clip.
 pub fn chip(ui: &mut egui::Ui, label: &str, selected: bool) -> Response {
     let ink = if selected {
-        theme::ACCENT
+        theme::accent()
     } else {
-        theme::MUTED
+        theme::muted_ink()
     };
     // A `Frame` reports its width only after its contents are laid out, so a
     // wrapping row never receives the overflow it breaks rows on: the chip
@@ -720,14 +741,15 @@ pub fn search_field(
             let field = ui.add(
                 egui::TextEdit::singleline(query)
                     .id_salt(salt)
-                    .hint_text(theme::text(Role::Body, placeholder, theme::TERTIARY))
+                    .hint_text(theme::text(Role::Body, placeholder, theme::tertiary_ink()))
                     .desired_width(ui.available_width() - 20.0)
                     .background_color(Color32::TRANSPARENT)
                     .frame(egui::Frame::NONE),
             );
             if !query.is_empty() {
                 let clear = ui.add(
-                    egui::Button::new(theme::text(Role::Body, "✕", theme::TERTIARY)).frame(false),
+                    egui::Button::new(theme::text(Role::Body, "✕", theme::tertiary_ink()))
+                        .frame(false),
                 );
                 if clear.clicked() {
                     query.clear();
@@ -760,18 +782,18 @@ pub fn origin_mark(ui: &mut egui::Ui, id: egui::Id, chosen: bool) -> Response {
     let center = rect.center();
     let painter = ui.painter();
     if chosen {
-        painter.circle_filled(center, 8.0, theme::ACCENT);
-        painter.circle_filled(center, 3.0, Color32::WHITE);
+        painter.circle_filled(center, 8.0, theme::accent());
+        painter.circle_filled(center, 3.0, theme::on_accent());
     } else {
-        painter.circle_filled(center, 8.0, shade(theme::hover_wash().a(), hover));
+        painter.circle_filled(center, 8.0, glow(theme::hover_wash().a(), hover));
         painter.circle_stroke(
             center,
             7.5,
             Stroke::new(
                 1.5,
                 mix(
-                    Color32::from_rgb(0xB0, 0xAE, 0xAA),
-                    Color32::from_rgb(0x7A, 0x78, 0x74),
+                    Color32::from_rgb(0x6A, 0x6E, 0x70),
+                    Color32::from_rgb(0xB9, 0xBD, 0xBD),
                     hover,
                 ),
             ),
@@ -799,13 +821,13 @@ pub fn set_mark(ui: &mut egui::Ui, id: egui::Id, member: bool, draft: bool) -> R
     let painter = ui.painter();
     match (member, draft) {
         (true, false) => {
-            painter.rect_filled(box_rect, radius, theme::ACCENT);
+            painter.rect_filled(box_rect, radius, theme::accent());
             painter.text(
                 box_rect.center(),
                 egui::Align2::CENTER_CENTER,
                 "✓",
                 theme::strong_font(11.0),
-                Color32::WHITE,
+                theme::on_accent(),
             );
         }
         (true, true) => {
@@ -813,12 +835,12 @@ pub fn set_mark(ui: &mut egui::Ui, id: egui::Id, member: bool, draft: bool) -> R
             painter.rect_filled(
                 box_rect,
                 radius,
-                Color32::from_rgba_unmultiplied(10, 94, 88, 38),
+                Color32::from_rgba_unmultiplied(0xC8, 0x9B, 0x6B, 38),
             );
             painter.rect_stroke(
                 box_rect,
                 radius,
-                Stroke::new(1.5, Color32::from_rgba_unmultiplied(10, 94, 88, 96)),
+                Stroke::new(1.5, Color32::from_rgba_unmultiplied(0xC8, 0x9B, 0x6B, 96)),
                 egui::StrokeKind::Inside,
             );
             painter.text(
@@ -826,19 +848,19 @@ pub fn set_mark(ui: &mut egui::Ui, id: egui::Id, member: bool, draft: bool) -> R
                 egui::Align2::CENTER_CENTER,
                 "✓",
                 theme::strong_font(11.0),
-                Color32::from_rgba_unmultiplied(10, 94, 88, 150),
+                Color32::from_rgba_unmultiplied(0xC8, 0x9B, 0x6B, 150),
             );
         }
         _ => {
-            painter.rect_filled(box_rect, radius, shade(theme::hover_wash().a(), hover));
+            painter.rect_filled(box_rect, radius, glow(theme::hover_wash().a(), hover));
             painter.rect_stroke(
                 box_rect,
                 radius,
                 Stroke::new(
                     1.5,
                     mix(
-                        Color32::from_rgb(0xB0, 0xAE, 0xAA),
-                        Color32::from_rgb(0x7A, 0x78, 0x74),
+                        Color32::from_rgb(0x6A, 0x6E, 0x70),
+                        Color32::from_rgb(0xB9, 0xBD, 0xBD),
                         hover,
                     ),
                 ),
@@ -872,7 +894,7 @@ pub fn row<R>(
         theme::RESPONSE_TOUCH,
     );
     let inner = egui::Frame::new()
-        .fill(shade(theme::hover_wash().a(), wash))
+        .fill(glow(theme::hover_wash().a(), wash))
         .corner_radius(CornerRadius::same(theme::CORNER_SMALL))
         .inner_margin(Margin::symmetric(theme::M3, theme::M2))
         .show(ui, |ui| {
@@ -898,8 +920,8 @@ pub fn disclosure(ui: &mut egui::Ui, id: egui::Id, label_text: &str) -> bool {
     let response = ui.add(
         egui::Label::new(theme::text(
             Role::Caption,
-            &format!("{marker}  {label_text}"),
-            theme::MUTED,
+            format!("{marker}  {label_text}"),
+            theme::muted_ink(),
         ))
         .sense(Sense::click()),
     );
@@ -952,7 +974,7 @@ mod tests {
 
     #[test]
     fn veiling_an_opaque_color_keeps_its_hue() {
-        let color = theme::ACTION_SURFACE;
+        let color = theme::action_surface();
         let faded = veil(color, 0.5);
         assert_eq!(faded.a(), 128);
         // The hue must survive: a scrim that turns grey would read as dirt.
@@ -970,17 +992,19 @@ mod tests {
                 "veil() shifted a channel: {restored} is not {original}"
             );
         }
-        // And it has not drifted toward neutral: this is a warm white, so the
-        // channels stay in their warm order rather than converging on grey.
-        assert!(r >= g && g >= b, "veil() flattened the hue to {r},{g},{b}");
+        // And it has not drifted toward neutral: this is a cool charcoal, so
+        // the channels stay in their cool order rather than converging on
+        // grey.
+        assert!(b > r, "veil() flattened the hue to {r},{g},{b}");
     }
 
     #[test]
-    fn shading_scales_alpha_and_stays_neutral() {
-        let full = shade(20, 1.0);
+    fn glowing_scales_alpha_and_stays_light() {
+        // The dark theme's wash is light: it must never darken toward black.
+        let full = glow(20, 1.0);
         assert_eq!(full.a(), 20);
-        assert_eq!(shade(20, 0.0).a(), 0);
-        assert_eq!(shade(20, 0.5).a(), 10);
+        assert_eq!(glow(20, 0.0).a(), 0);
+        assert_eq!(glow(20, 0.5).a(), 10);
     }
 
     #[test]
@@ -1017,10 +1041,13 @@ mod tests {
     fn a_disabled_primary_control_never_keeps_the_accent_fill() {
         // A disabled action must not look pressable.
         let (fill, _, _) = resting_colors(&Control::primary("Continue").enabled(false));
-        assert_ne!(fill, theme::ACCENT);
+        assert_ne!(fill, theme::accent());
         let (fill, ink, _) = resting_colors(&Control::primary("Continue"));
-        assert_eq!(fill, theme::ACCENT);
-        assert_eq!(ink, Color32::WHITE);
+        assert_eq!(fill, theme::accent());
+        // The caramel fill is a light color: its label is the dark on-accent
+        // ink, never white.
+        assert_eq!(ink, theme::on_accent());
+        assert_ne!(ink, Color32::WHITE);
     }
 
     #[test]

@@ -15,7 +15,7 @@
 //!
 //! Attached saves enrich the interval (production evidence + restore target
 //! + search text) without touching its identity: the task key stays whatever
-//! attention resolved it to.
+//!   attention resolved it to.
 
 use crate::ProductionSave;
 use rusqlite::{params, Connection};
@@ -77,10 +77,13 @@ struct IntervalRow {
     typed_count: u32,
 }
 
+/// Per-path save statistics: (total saves, saves per day bucket, distinct days).
+type PathSaveStats = (usize, BTreeMap<u64, usize>, BTreeSet<u64>);
+
 /// Behavioral statistics over the save stream, computed once per attach.
 struct SaveStats {
     /// path -> (total saves, saves per day bucket, distinct days)
-    path_counts: BTreeMap<String, (usize, BTreeMap<u64, usize>, BTreeSet<u64>)>,
+    path_counts: BTreeMap<String, PathSaveStats>,
     /// directory -> sorted save timestamps under it (ancestors included).
     dir_times: BTreeMap<String, Vec<u64>>,
     /// directory -> (first save ts, last save ts) — the directory's lifetime.
@@ -423,7 +426,7 @@ fn find_interval<'a>(
             continue;
         }
         let distance = span_distance(save.timestamp_ms, row);
-        if best.map_or(true, |(_, d)| distance < d) {
+        if best.is_none_or(|(_, d)| distance < d) {
             best = Some((row, distance));
         }
     }
@@ -453,7 +456,7 @@ fn find_interval<'a>(
             continue; // no presence evidence in this interval
         }
         let distance = span_distance(save.timestamp_ms, row);
-        if best.map_or(true, |(_, d)| distance < d) {
+        if best.is_none_or(|(_, d)| distance < d) {
             best = Some((row, distance));
         }
     }
@@ -476,10 +479,8 @@ fn near(ts: u64, row: &IntervalRow, grace: u64) -> bool {
 fn span_distance(ts: u64, row: &IntervalRow) -> u64 {
     if ts < row.start_ms {
         row.start_ms - ts
-    } else if ts > row.end_ms {
-        ts - row.end_ms
     } else {
-        0
+        ts.saturating_sub(row.end_ms)
     }
 }
 
@@ -729,7 +730,9 @@ mod tests {
             timestamp_ms: 30_000,
             path: "/Users/…/app.rs".to_string(),
         };
-        ledger.attach_production(&[save.clone()]).unwrap();
+        ledger
+            .attach_production(std::slice::from_ref(&save))
+            .unwrap();
         ledger.attach_production(&[save]).unwrap(); // engine rebuilds re-run attach
 
         let works = ledger.works(10).unwrap();
