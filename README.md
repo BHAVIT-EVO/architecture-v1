@@ -1,6 +1,9 @@
 <div align="center">
 
-<img src="design/brand/evo-lockup.svg" alt="Evo" width="260">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="design/brand/evo-lockup-dark.svg">
+  <img src="design/brand/evo-lockup.svg" alt="Evo" width="260">
+</picture>
 
 ### Your work, ready when you are.
 
