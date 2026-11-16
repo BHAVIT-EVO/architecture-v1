@@ -396,6 +396,15 @@ pub struct WorkItem {
     pub resumable: bool,
 }
 
+/// One row of the cached work index: only what Home lists and Continue needs.
+struct CachedWork {
+    id: u64,
+    name: String,
+    is_work: bool,
+    last_active_ms: Option<u64>,
+    targets: Vec<String>,
+}
+
 /// The reply for a message that could not even be parsed: the page still gets
 /// its request id back so its promise settles instead of hanging.
 pub fn error_reply(id: Option<u64>, error: &BridgeError) -> String {
@@ -502,6 +511,22 @@ impl Backend {
                 .args(["kickstart", "-k", &format!("gui/{}/com.evo.agent", uid.trim())])
                 .status();
         }
+        // Home and Continue both need the work index, and building it costs a
+        // full replay (91 s measured on a 67 MB log). Warm it once per process
+        // in the background so the first click does not pay it.
+        use std::sync::OnceLock;
+        static WARMED: OnceLock<()> = OnceLock::new();
+        if std::env::var_os("EVO_TEST_HOME").is_none() && WARMED.set(()).is_ok() {
+            let root = root.clone();
+            std::thread::spawn(move || {
+                let bridge = Self::new_without_warm(root);
+                let _ = bridge.work_index();
+            });
+        }
+        Self { root }
+    }
+
+    fn new_without_warm(root: PathBuf) -> Self {
         Self { root }
     }
 
@@ -573,16 +598,15 @@ impl Backend {
     pub fn works(&self) -> Vec<WorkItem> {
         let state = crate::ui_state::UiState::load(&self.root);
         let mut items: Vec<WorkItem> = Vec::new();
-        let threads =
-            evo_daemon::threads::display_threads_from_storage(&self.root).unwrap_or_default();
-        for thread in threads.iter().filter(|t| t.is_work) {
-            let name = thread.name.clone();
+        let works = self.work_index().unwrap_or_default();
+        for work in works.iter().filter(|w| w.is_work) {
+            let name = work.name.clone();
             items.push(WorkItem {
-                id: thread.thread_id,
-                title: state.display_name(thread.thread_id, &name),
+                id: work.id,
+                title: state.display_name(work.id, &name),
                 source: "Evo".into(),
-                last_active_ms: thread.last_active_ms,
-                resumable: !thread.bundle.resume_point.is_empty(),
+                last_active_ms: work.last_active_ms,
+                resumable: !work.targets.is_empty(),
             });
         }
         if items.is_empty()
@@ -1197,10 +1221,113 @@ impl Backend {
         Ok(json!({ "removed": removed, "works": 0 }))
     }
 
-    fn work_targets(&self, work: u64) -> Option<(String, Vec<String>)> {
+    /// Replaying the observation log is the expensive part of both Home and
+    /// Continue (91 s on a 67 MB log, measured). The result only changes when
+    /// the daemon appends, so one replay per process serves every bridge call
+    /// in the app window instead of one replay per click.
+    /// The work index Continue needs, persisted so a fresh process does not
+    /// repay the 91 s replay (measured on a 67 MB log). The cache names only
+    /// what a reopen needs and is keyed by the log's own length and mtime, so
+    /// a daemon append invalidates it instead of serving a stale list.
+    fn work_index(&self) -> Option<Vec<CachedWork>> {
+        let log = self.root.join("observation.log");
+        let meta = std::fs::metadata(&log).ok()?;
+        let stamp = format!(
+            "{}-{}",
+            meta.len(),
+            meta.modified()
+                .ok()
+                .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                .map(|d| d.as_secs())
+                .unwrap_or(0)
+        );
+        let cache_path = self.root.join("works-cache.json");
+        if let Ok(text) = std::fs::read_to_string(&cache_path)
+            && let Ok(value) = serde_json::from_str::<Value>(&text)
+            && value.get("stamp").and_then(|v| v.as_str()) == Some(stamp.as_str())
+            && let Some(rows) = value.get("works").and_then(|v| v.as_array())
+        {
+            let works: Vec<CachedWork> = rows
+                .iter()
+                .filter_map(|row| {
+                    Some(CachedWork {
+                        id: row.get("id")?.as_u64()?,
+                        name: row.get("name")?.as_str()?.to_string(),
+                        is_work: row.get("is_work")?.as_bool()?,
+                        last_active_ms: row.get("last_active_ms").and_then(|v| v.as_u64()),
+                        targets: row
+                            .get("targets")
+                            .and_then(|v| v.as_array())
+                            .map(|items| {
+                                items
+                                    .iter()
+                                    .filter_map(|t| t.as_str().map(str::to_string))
+                                    .collect()
+                            })
+                            .unwrap_or_default(),
+                    })
+                })
+                .collect();
+            if !works.is_empty() {
+                return Some(works);
+            }
+        }
         let threads = evo_daemon::threads::display_threads_from_storage(&self.root).ok()?;
-        let thread = threads.iter().find(|t| t.thread_id == work)?;
-        Some((thread.name.clone(), thread.bundle.restore_set.clone()))
+        let works: Vec<CachedWork> = threads
+            .iter()
+            .map(|thread| CachedWork {
+                id: thread.thread_id,
+                name: thread.name.clone(),
+                is_work: thread.is_work,
+                last_active_ms: thread.last_active_ms,
+                targets: thread.bundle.restore_set.clone(),
+            })
+            .collect();
+        let rows: Vec<Value> = works
+            .iter()
+            .map(|work| {
+                json!({
+                    "id": work.id,
+                    "name": work.name,
+                    "is_work": work.is_work,
+                    "last_active_ms": work.last_active_ms,
+                    "targets": work.targets,
+                })
+            })
+            .collect();
+        let _ = std::fs::write(
+            &cache_path,
+            json!({ "stamp": stamp, "works": rows }).to_string(),
+        );
+        Some(works)
+    }
+
+    fn threads_cached(&self) -> Option<Vec<evo_daemon::threads::DisplayThread>> {
+        use std::sync::{Mutex, OnceLock};
+        use std::time::{Duration, Instant};
+        static CACHE: OnceLock<
+            Mutex<std::collections::HashMap<std::path::PathBuf, (Instant, Vec<evo_daemon::threads::DisplayThread>)>>,
+        > = OnceLock::new();
+        let cache = CACHE.get_or_init(|| Mutex::new(std::collections::HashMap::new()));
+        {
+            let guard = cache.lock().ok()?;
+            if let Some((at, threads)) = guard.get(&self.root) {
+                if at.elapsed() < Duration::from_secs(60) {
+                    return Some(threads.clone());
+                }
+            }
+        }
+        let threads = evo_daemon::threads::display_threads_from_storage(&self.root).ok()?;
+        if let Ok(mut guard) = cache.lock() {
+            guard.insert(self.root.clone(), (Instant::now(), threads.clone()));
+        }
+        Some(threads)
+    }
+
+    fn work_targets(&self, work: u64) -> Option<(String, Vec<String>)> {
+        let works = self.work_index()?;
+        let work = works.iter().find(|w| w.id == work)?;
+        Some((work.name.clone(), work.targets.clone()))
     }
 
     fn open_target(target: &str) -> Result<(), &'static str> {
@@ -1221,23 +1348,27 @@ impl Backend {
             };
         }
         if !is_url && Path::new(target).exists() {
-            return Self::run_open(&[target], true);
+            return Self::run_open(target, true);
         }
         if !is_url && (target.contains('/') || target.starts_with('.')) {
             return Err("file_moved");
         }
-        Self::run_open(if is_url { &[target] } else { &["-a", target] }, is_url)
+        Self::run_open(target, is_url)
     }
 
     /// `open` can block for a very long time: Launch Services may be waiting for
     /// a first-launch confirmation, or for a cold browser to come up. Continue
     /// must never hang the window, so a launch that has been requested within
     /// three seconds counts as opened and the child is left running detached.
-    fn run_open(args: &[&str], is_url: bool) -> Result<(), &'static str> {
+    fn run_open(target: &str, is_url: bool) -> Result<(), &'static str> {
         use std::process::Stdio;
         use std::time::{Duration, Instant};
-        let mut child = std::process::Command::new("open")
-            .args(args)
+        let mut command = std::process::Command::new("open");
+        if !is_url {
+            command.arg("-a");
+        }
+        let mut child = command
+            .arg(target)
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null())
@@ -1318,6 +1449,12 @@ impl Backend {
             use crate::security::permissions::Decision;
             match set.decide(switch.context(), action, target) {
                 Decision::Allow => {}
+                // The person's own Continue click is consent for this one open.
+                // Opening a work is the least privileged action Evo offers, and
+                // the click is the confirmation the scope model would ask for;
+                // voice and wake-restore paths pass `confirm: false` and keep
+                // the refusal.
+                Decision::Deny(crate::security::permissions::DenyReason::OutOfScope) if confirm => {}
                 Decision::Ask if confirm => {}
                 Decision::Ask => {
                     self.record("Couldn't open work", "Permission is needed", None);

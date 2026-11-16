@@ -7,7 +7,9 @@ Read this first; continue from the first unfinished step.
 - 0.0 save the mission text — DONE — docs/mission/MISSION.md
 - 0.1 tag + branch — DONE — evidence/0-baseline.txt
 - 0.2 backups (copy only, ~/Evo-backups) — DONE — evidence/0-baseline.txt
-- 0.3 baseline suites — DOING — evidence/0.3-node-tests.txt (28 pass); evidence/0.3-cargo-test.txt: every suite reported `ok` (315, 168, 111, 68, 20, 7, 7 …) and `tests/regression_gate.rs::regression_gate_on_the_real_log` was still running past 7 minutes when the turn ended; clippy is queued behind it and has not run
+- 0.3 clippy — PASS — evidence/0.3-clippy.txt: `cargo clippy --workspace -- -D warnings` finished, CLIPPY_EXIT=0, zero warnings
+- 0.3 cargo test — RUNNING — evidence/0.3-cargo-test.txt (per-suite results and TEST_EXIT land when the workspace run ends; `regression_gate_on_the_real_log` is the long suite)
+- 0.3 node tests — PASS — evidence/0.3-node-tests.txt (28 pass)
 - 0.4 mission-verify.sh + STATE.md — DONE — scripts/mission-verify.sh
 - 0.5 duplicate bundles — BLOCKED — evidence/0.5-duplicates.txt (host refused the unscoped `mdfind`; bounded query returned nothing; HUMAN step added)
 
@@ -25,9 +27,9 @@ Read this first; continue from the first unfinished step.
 
 ## Phase 3 — Continue reopens work
 - 3.1 classify the 6 newest works — DONE — evidence/3.1-reproduce.txt (work 68 stores a real URL but was refused as permission_needed; works 69 and 66 hang in `open`)
-- 3.2 fix (openable target, UI pulse, reasons) — DOING — pulse instead of bars; explicit click passes confirm; `open` bounded at 3s; NOT yet rebuilt or re-tested
-- 3.3 fixture tests — TODO
-- 3.4 live proof — TODO
+- 3.2 fix — PASS — evidence/3.2-after.txt, 3.2-three-works.txt, 3.2-rebuild.txt, 3.2-bundle.txt: click consent + bounded `open` + persistent work index; 68 partly_opened 8.37s, 69 opened 5.90s, 66 opened 5.89s, all EXIT=0
+- 3.3 fixture tests — PASS — evidence/3.3-fixtures.txt: 1 passed, FIXTURE_EXIT=0
+- 3.4 live proof — PASS (bridge-level, real works 68/69/66 on the installed build's code) — evidence/3.2-three-works.txt
 - 3.5 collage — TODO
 
 ## Phase 4 — Hey Evo
