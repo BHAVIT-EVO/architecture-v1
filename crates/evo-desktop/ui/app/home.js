@@ -390,7 +390,9 @@ async function continueSelected() {
   // Opening is not listening: one calm pulse on the CRT, never the waveform.
   scene.setOpening(true);
   try {
-    const result = await api.continueWork(w.id);
+    // The click itself is the permission confirmation; the bridge still
+    // enforces the kill switch, the scope and the pause state from disk.
+    const result = await api.continueWork(w.id, true);
     const outcome = result?.hint ?? "Evo could not open this work.";
     const action = result?.action ?? "Try again";
     const outcomeNode = $("#continue-outcome");

@@ -1221,32 +1221,45 @@ impl Backend {
             };
         }
         if !is_url && Path::new(target).exists() {
-            return std::process::Command::new("open")
-                .arg(target)
-                .status()
-                .ok()
-                .filter(std::process::ExitStatus::success)
-                .map(|_| ())
-                .ok_or("other");
+            return Self::run_open(&[target], true);
         }
         if !is_url && (target.contains('/') || target.starts_with('.')) {
             return Err("file_moved");
         }
-        let status = if is_url {
-            std::process::Command::new("open").arg(target).status()
-        } else {
-            std::process::Command::new("open")
-                .args(["-a", target])
-                .status()
-        };
-        match status {
-            Ok(status) if status.success() => Ok(()),
-            Ok(_) if is_url => Err("browser_not_running"),
-            Ok(_) => Err("app_missing"),
-            Err(_) => Err("other"),
+        Self::run_open(if is_url { &[target] } else { &["-a", target] }, is_url)
+    }
+
+    /// `open` can block for a very long time: Launch Services may be waiting for
+    /// a first-launch confirmation, or for a cold browser to come up. Continue
+    /// must never hang the window, so a launch that has been requested within
+    /// three seconds counts as opened and the child is left running detached.
+    fn run_open(args: &[&str], is_url: bool) -> Result<(), &'static str> {
+        use std::process::Stdio;
+        use std::time::{Duration, Instant};
+        let mut child = std::process::Command::new("open")
+            .args(args)
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .map_err(|_| "other")?;
+        let deadline = Instant::now() + Duration::from_secs(3);
+        loop {
+            match child.try_wait() {
+                Ok(Some(status)) if status.success() => return Ok(()),
+                Ok(Some(_)) if is_url => return Err("browser_not_running"),
+                Ok(Some(_)) => return Err("app_missing"),
+                Ok(None) if Instant::now() >= deadline => return Ok(()),
+                Ok(None) => std::thread::sleep(Duration::from_millis(50)),
+                Err(_) => return Err("other"),
+            }
         }
     }
 
+    /// `confirm` is the person's explicit Continue click, which is the
+    /// confirmation the permission model asks for. Unattended paths (voice,
+    /// restore after wake) still pass `confirm: false` and keep getting
+    /// `permission_needed`.
     fn continue_work(&self, work: u64, confirm: bool) -> Result<Value, BridgeError> {
         // Duplicate guard: ignore the same work within 3 seconds.
         use std::sync::{Mutex, OnceLock};

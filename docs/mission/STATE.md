@@ -7,7 +7,7 @@ Read this first; continue from the first unfinished step.
 - 0.0 save the mission text — DONE — docs/mission/MISSION.md
 - 0.1 tag + branch — DONE — evidence/0-baseline.txt
 - 0.2 backups (copy only, ~/Evo-backups) — DONE — evidence/0-baseline.txt
-- 0.3 baseline suites — TODO — evidence/0.3-node-tests.txt (28 pass); the cargo test file is empty because the runner restarted mid-run, so it must be run again
+- 0.3 baseline suites — DOING — evidence/0.3-node-tests.txt (28 pass); evidence/0.3-cargo-test.txt: every suite reported `ok` (315, 168, 111, 68, 20, 7, 7 …) and `tests/regression_gate.rs::regression_gate_on_the_real_log` was still running past 7 minutes when the turn ended; clippy is queued behind it and has not run
 - 0.4 mission-verify.sh + STATE.md — DONE — scripts/mission-verify.sh
 - 0.5 duplicate bundles — BLOCKED — evidence/0.5-duplicates.txt (host refused the unscoped `mdfind`; bounded query returned nothing; HUMAN step added)
 
@@ -24,8 +24,8 @@ Read this first; continue from the first unfinished step.
 - 2.4 live proof — TODO
 
 ## Phase 3 — Continue reopens work
-- 3.1 classify the 6 newest works — TODO
-- 3.2 fix (openable target, UI pulse, reasons) — DOING — Continue now pulses instead of drawing listening bars (home.js, scene/index.js); openable-target work TODO
+- 3.1 classify the 6 newest works — DONE — evidence/3.1-reproduce.txt (work 68 stores a real URL but was refused as permission_needed; works 69 and 66 hang in `open`)
+- 3.2 fix (openable target, UI pulse, reasons) — DOING — pulse instead of bars; explicit click passes confirm; `open` bounded at 3s; NOT yet rebuilt or re-tested
 - 3.3 fixture tests — TODO
 - 3.4 live proof — TODO
 - 3.5 collage — TODO
