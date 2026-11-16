@@ -42,3 +42,18 @@ the agent is running before the window is opened.
 ## 8. A visual pass of Day and Dusk
 Flip Appearance → Day, Dusk, Auto and walk Home, Search, Settings, Activity,
 Permissions, Diagnostics, About, onboarding.
+
+## Decision needed: the title-similarity closure (blocks 0.3 cargo test)
+
+`cargo test --workspace` fails on its own no-mega-work rule: one work holds 1420 of 1584 resources
+(90 % against a 60 % tripwire). Measured cause: 907 pairwise title-similarity links are applied with
+unconditional union-find closure, fusing 1066 of 3770 pages into one group (next largest: 23).
+Choosing the remedy changes how your real works are grouped, so it needs your call, not mine:
+
+- (a) forbid closure through title links the way the module already forbids it through temporal
+  evidence — a pair may merge only when both sides are near-duplicates of each other directly, not
+  through an intermediate;
+- (b) keep closure but require near-duplicate titles to be mutually best matches;
+- (c) treat it as Phase 4.2 and re-tune attachment against the labeled ground truth.
+
+Until one is chosen the workspace suite stays at `TEST_EXIT=101`, recorded in STATE.md.

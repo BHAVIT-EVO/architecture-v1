@@ -8,7 +8,21 @@ Read this first; continue from the first unfinished step.
 - 0.1 tag + branch — DONE — evidence/0-baseline.txt
 - 0.2 backups (copy only, ~/Evo-backups) — DONE — evidence/0-baseline.txt
 - 0.3 clippy — PASS — evidence/0.3-clippy.txt: `cargo clippy --workspace -- -D warnings` finished, CLIPPY_EXIT=0, zero warnings
-- 0.3 cargo test — **FAIL** — `evidence/0.3-cargo-test.txt` holds a completed run: `TEST_EXIT=101`.
+- 0.3 cargo test — **BLOCKED** — `evidence/0.3-cargo-test.txt` holds a completed run,
+  `TEST_EXIT=101`: 25 suites `ok`, 1 FAILED. Exact error:
+  `crates/evo-ledger/tests/regression_gate.rs:41` — `regression gate failures:\n a mega-work holds 1420 of 1584 resources`
+  (`test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 151.36s`).
+  Cause, measured (`evidence/0.3-gate-mega-work.txt`): `crates/evo-ledger/src/hypotheses.rs:467`
+  `union.union_reason(a, b, "title similarity")` applies 907 pairwise title links with
+  unconditional union-find closure — `[group-debug] pages=3770 groups=2384 title_links=907
+  largest=[1066, 23, 16, 13, 11, 9]`. One group holds 1066 pages, the next holds 23.
+  Tried: (1) removed the quadratic rescan in `specific_tokens` (corpus token frequency built once) —
+  the suite went from >26 min unfinished to 136–151 s, so the assertion now runs; (2) re-ran with the
+  per-page memo deleted — identical failure, so the optimisation is not implicated;
+  (3) instrumented the union phase to count groups and links — numbers above.
+  Not done: changing the closure itself. That is a grouping-model change (any cap or ordering
+  rule is a number the mission forbids inventing) and it rewrites how this person's real works are
+  formed, so it is listed in HUMAN.md for a decision instead of guessed.
   25 suites `ok` (1 ignored in two suites, 252 tests in the largest), 1 suite FAILED —
   `evo-ledger --test regression_gate::regression_gate_on_the_real_log`,
   `test result: FAILED. 0 passed; 1 failed; … finished in 151.36s`.
